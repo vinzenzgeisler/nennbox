@@ -225,6 +225,13 @@
       "when": 1794422128487,
       "tag": "0031_global_random_orga_codes",
       "breakpoints": false
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794422200000,
+      "tag": "0032_passenger_spare_vehicle",
+      "breakpoints": false
     }
   ]
 }
