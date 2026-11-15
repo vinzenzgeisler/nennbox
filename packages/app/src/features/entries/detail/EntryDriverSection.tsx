@@ -231,6 +231,8 @@ export function EntryDriverSection({
           <FieldItem label="E-Mail">
             <Value>{driver.email}</Value>
           </FieldItem>
+          <FieldItem label="Blutgruppe"><Value>{driver.bloodGroup}</Value></FieldItem>
+          <FieldItem label="Lizenznummer"><Value>{driver.licenseNumber}</Value></FieldItem>
           <FieldItem label="Telefon">
             <Value>{driver.phone}</Value>
           </FieldItem>

@@ -48,6 +48,12 @@ export function RegistrationVehicleDetailFields({
           onChange={(event) => onChange({ cylinders: event.target.value })}
         />
       )}
+      {(['transponderNumber', 'vehiclePassNumber'] as const).map((key) =>
+        state(key) !== 'hidden' && (
+          <Field key={key} label={t[key]} required={required(key)} maxLength={100}
+            value={vehicle[key]} onChange={(event) => onChange({ [key]: event.target.value })} />
+        ),
+      )}
       {state('owner') !== 'hidden' && (
         <Field
           label={t.owner}

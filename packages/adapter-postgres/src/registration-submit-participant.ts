@@ -33,20 +33,23 @@ export async function resolveRegistrationParticipant(args: {
   await tx.execute(
     sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.organizationId}:person:${normalizedName(payload.person.firstName)}:${normalizedName(payload.person.lastName)}:${payload.person.dateOfBirth}`}, 0))`,
   );
-  const dob = new Date(`${payload.person.dateOfBirth}T00:00:00.000Z`);
+  const dob = payload.person.dateOfBirth
+    ? new Date(`${payload.person.dateOfBirth}T00:00:00.000Z`)
+    : null;
   const eventStart = new Date(`${event.startsOn}T00:00:00.000Z`);
-  if (!Number.isFinite(dob.getTime()) || dob > eventStart)
+  if ((dob && (!Number.isFinite(dob.getTime()) || dob > eventStart)) ||
+      (!dob && settings.minimumAge !== null))
     throw new RegistrationUnavailable('invalid-participant');
-  let age = eventStart.getUTCFullYear() - dob.getUTCFullYear();
+  let age = dob ? eventStart.getUTCFullYear() - dob.getUTCFullYear() : null;
   if (
-    eventStart.getUTCMonth() < dob.getUTCMonth() ||
+    dob && (eventStart.getUTCMonth() < dob.getUTCMonth() ||
     (eventStart.getUTCMonth() === dob.getUTCMonth() &&
-      eventStart.getUTCDate() < dob.getUTCDate())
+      eventStart.getUTCDate() < dob.getUTCDate()))
   )
-    age--;
-  if (settings.minimumAge !== null && age < settings.minimumAge)
+    age!--;
+  if (settings.minimumAge !== null && age !== null && age < settings.minimumAge)
     throw new RegistrationUnavailable('age-restricted');
-  const needsGuardian = age < settings.guardianRequiredBelowAge;
+  const needsGuardian = age !== null && age < settings.guardianRequiredBelowAge;
   if (
     needsGuardian &&
     (!payload.person.guardianName?.trim() || !payload.person.guardianEmail)
@@ -126,7 +129,7 @@ export async function resolveRegistrationParticipant(args: {
     throw new RegistrationUnavailable('shared-email-disallowed');
   let personId = samePerson?.id;
   if (!personId) {
-    const sameBirthDate = await tx
+    const sameBirthDate = payload.person.dateOfBirth ? await tx
       .select({
         id: people.id,
         firstName: people.firstName,
@@ -139,7 +142,7 @@ export async function resolveRegistrationParticipant(args: {
           eq(people.dateOfBirth, payload.person.dateOfBirth),
           sql`${people.deletedAt} is null`,
         ),
-      );
+      ) : [];
     if (
       sameBirthDate.some(
         (person) =>
@@ -158,7 +161,7 @@ export async function resolveRegistrationParticipant(args: {
         lastName: payload.person.lastName.trim(),
         email: payload.person.email.trim(),
         emailNormalized,
-        dateOfBirth: payload.person.dateOfBirth,
+        dateOfBirth: payload.person.dateOfBirth ?? null,
         country: payload.person.country ?? null,
       })
       .returning({ id: people.id });

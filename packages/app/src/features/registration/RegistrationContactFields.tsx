@@ -80,6 +80,15 @@ export function RegistrationContactFields({
           </FormGrid>
         </FormSection>
       </FormWide>
+      {state('bloodGroup') !== 'hidden' && (
+        <SelectField label={t.bloodGroup} required={state('bloodGroup') === 'required'}
+          value={values.bloodGroup} onChange={(event) => set('bloodGroup')(event.target.value)}>
+          <option value="">{t.countryNotGiven}</option>
+          {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'].map((group) =>
+            <option key={group} value={group}>{group}</option>)}
+        </SelectField>
+      )}
+      {text('licenseNumber', 'licenseNumber')}
       {emergency !== 'hidden' && (
         <FormWide>
           <FormSection title={t.emergencyContact} variant="registration">

@@ -26,6 +26,8 @@ export const registrationFieldKeys = [
   'city',
   'country',
   'emergencyContact',
+  'bloodGroup',
+  'licenseNumber',
   'publicationPreference',
   'biography',
   'organizerNotes',
@@ -35,6 +37,8 @@ export const registrationFieldKeys = [
   'year',
   'displacement',
   'cylinders',
+  'transponderNumber',
+  'vehiclePassNumber',
   'owner',
   'history',
   'vehicleImage',
@@ -109,7 +113,19 @@ export const RegistrationCustomFieldAnswersSchema = z.record(
   ]),
 );
 const registrationFieldStateDefaults = (key: string) =>
-  ({ state: key === 'dateOfBirth' ? 'required' : 'optional' }) as const;
+  ({
+    state:
+      key === 'dateOfBirth'
+        ? 'required'
+        : [
+              'bloodGroup',
+              'licenseNumber',
+              'transponderNumber',
+              'vehiclePassNumber',
+            ].includes(key)
+          ? 'hidden'
+          : 'optional',
+  }) as const;
 /**
  * Stored configurations predate newer standard fields: a missing key means the default
  * state, so old organization and event configurations stay valid and keep working.
@@ -155,13 +171,6 @@ export const RegistrationFormConfigSchema =
         path: ['customFields'],
         message: 'Duplicate custom field key',
       });
-    if (config.fields.dateOfBirth?.state !== 'required')
-      ctx.addIssue({
-        code: 'custom',
-        path: ['fields', 'dateOfBirth'],
-        message:
-          'Date of birth is required for age and guardian eligibility checks',
-      });
   });
 export type RegistrationFormConfig = z.infer<
   typeof RegistrationFormConfigSchema
@@ -188,16 +197,6 @@ export const RegistrationFormConfigPatchSchema = registrationFormConfigObject
           message: 'Duplicate custom field key',
         });
     }
-    if (
-      config.fields?.dateOfBirth &&
-      config.fields.dateOfBirth.state !== 'required'
-    )
-      ctx.addIssue({
-        code: 'custom',
-        path: ['fields', 'dateOfBirth'],
-        message:
-          'Date of birth is required for age and guardian eligibility checks',
-      });
   });
 export type RegistrationFormConfigPatch = z.infer<
   typeof RegistrationFormConfigPatchSchema

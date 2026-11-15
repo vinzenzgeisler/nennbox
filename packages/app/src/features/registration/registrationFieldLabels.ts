@@ -2,6 +2,8 @@
 export const registrationFieldLabels: Record<string, string> = {
   dateOfBirth: 'Geburtsdatum',
   phone: 'Telefon',
+  bloodGroup: 'Blutgruppe',
+  licenseNumber: 'Lizenznummer',
   street: 'Straße',
   postalCode: 'PLZ',
   city: 'Ort',
@@ -16,6 +18,8 @@ export const registrationFieldLabels: Record<string, string> = {
   year: 'Baujahr',
   displacement: 'Hubraum',
   cylinders: 'Zylinder',
+  transponderNumber: 'Transponder-Nr.',
+  vehiclePassNumber: 'Fahrzeugpass-Nr.',
   owner: 'Besitzer',
   history: 'Fahrzeughistorie',
   vehicleImage: 'Fahrzeugbild',

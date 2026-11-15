@@ -21,6 +21,8 @@ const contactPayload = (
   config: Config,
 ) => ({
   phone: asked(config, 'phone') ? nullIfEmpty(values.phone) : null,
+  bloodGroup: asked(config, 'bloodGroup') ? nullIfEmpty(values.bloodGroup) : null,
+  licenseNumber: asked(config, 'licenseNumber') ? nullIfEmpty(values.licenseNumber) : null,
   street: asked(config, 'street') ? nullIfEmpty(values.street) : null,
   postalCode: asked(config, 'postalCode')
     ? nullIfEmpty(values.postalCode)
@@ -85,7 +87,7 @@ export function createRegistrationActions(
     setError('');
     if (
       payload!.registrationSettings.minimumAge !== null &&
-      age < payload!.registrationSettings.minimumAge
+      (!values.dateOfBirth || age < payload!.registrationSettings.minimumAge)
     ) {
       setError(t.minAge);
       return;
@@ -115,7 +117,9 @@ export function createRegistrationActions(
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
-        dateOfBirth: values.dateOfBirth,
+        dateOfBirth: asked(payload!.registrationFormConfig, 'dateOfBirth')
+          ? nullIfEmpty(values.dateOfBirth)
+          : null,
         ...(asked(payload!.registrationFormConfig, 'country') && values.country
           ? { country: values.country }
           : {}),
@@ -161,6 +165,10 @@ export function createRegistrationActions(
             )
               ? numberOrNull(item.displacementCc)
               : null,
+            transponderNumber: asked(payload!.registrationFormConfig, 'transponderNumber')
+              ? nullIfEmpty(item.transponderNumber ?? '') : null,
+            vehiclePassNumber: asked(payload!.registrationFormConfig, 'vehiclePassNumber')
+              ? nullIfEmpty(item.vehiclePassNumber ?? '') : null,
             cylinders: asked(payload!.registrationFormConfig, 'cylinders')
               ? numberOrNull(item.cylinders)
               : null,

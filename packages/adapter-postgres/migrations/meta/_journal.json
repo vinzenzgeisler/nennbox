@@ -239,6 +239,13 @@
       "when": 1794422200001,
       "tag": "0033_organizer_settings",
       "breakpoints": false
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794422200002,
+      "tag": "0034_registration_standard_fields",
+      "breakpoints": false
     }
   ]
 }

@@ -22,6 +22,8 @@ const postalCode = optionalText(20).refine(
 /** Driver contact data of one registration. Which of them are asked is the form configuration's decision. */
 export const registrationContactShape = {
   phone,
+  bloodGroup: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-']).nullable().optional(),
+  licenseNumber: optionalText(100),
   street: optionalText(200),
   postalCode,
   city: optionalText(100),
@@ -49,6 +51,8 @@ export const RegistrationContactFieldsSchema = z
 export const registrationVehicleDetailsShape = {
   displacementCc: z.number().int().min(1).max(20000).nullable().optional(),
   cylinders: z.number().int().min(1).max(24).nullable().optional(),
+  transponderNumber: optionalText(100),
+  vehiclePassNumber: optionalText(100),
   ownerName: optionalText(200),
   history: optionalText(4000),
 };

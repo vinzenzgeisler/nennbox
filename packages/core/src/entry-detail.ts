@@ -34,6 +34,8 @@ export interface AdminEntryDriver {
   email: string | null;
   emailVerified: boolean;
   phone?: string | null;
+  bloodGroup?: string | null;
+  licenseNumber?: string | null;
   street?: string | null;
   postalCode?: string | null;
   city?: string | null;
@@ -55,6 +57,8 @@ export interface AdminEntryVehicle {
   vehicleType?: string | null;
   displacementCc?: number | null;
   cylinders?: number | null;
+  transponderNumber?: string | null;
+  vehiclePassNumber?: string | null;
   ownerName?: string | null;
   history?: string | null;
 }
@@ -98,6 +102,8 @@ export interface EntryDriverPatch {
   dateOfBirth?: string | null;
   country?: string | null;
   phone?: string | null;
+  bloodGroup?: string | null;
+  licenseNumber?: string | null;
   street?: string | null;
   postalCode?: string | null;
   city?: string | null;
@@ -113,6 +119,8 @@ export interface EntryVehiclePatch {
   registration?: string | null;
   displacementCc?: number | null;
   cylinders?: number | null;
+  transponderNumber?: string | null;
+  vehiclePassNumber?: string | null;
   ownerName?: string | null;
   history?: string | null;
 }

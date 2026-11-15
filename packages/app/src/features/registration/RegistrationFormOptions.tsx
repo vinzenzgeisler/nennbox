@@ -13,35 +13,29 @@ export function RegistrationFormOptions({
   fieldLabels: Record<string, string>;
 }) {
   return (
-    <FormSection title="Felder · Pflicht, freiwillig oder aus">
+    <FormSection title="Formularfelder">
       <DataTable headers={['Feld', 'Einstellung']}>
         {Object.entries(config.fields).map(([key, field]) => (
           <tr key={key}>
             <th scope="row">{fieldLabels[key] ?? key}</th>
             <td>
-              {key === 'dateOfBirth' ? (
-                'Pflicht · für Alters- und Erziehungsberechtigtenprüfung'
-              ) : (
-                <SelectField
-                  label={`${fieldLabels[key] ?? key} · Einstellung`}
-                  value={field.state}
-                  onChange={(e) =>
-                    updateConfig((x) => ({
-                      ...x,
-                      fields: {
-                        ...x.fields,
-                        [key]: {
-                          state: e.target.value as typeof field.state,
-                        },
-                      },
-                    }))
-                  }
-                >
-                  <option value="required">Pflicht</option>
-                  <option value="optional">Freiwillig</option>
-                  <option value="hidden">Aus</option>
-                </SelectField>
-              )}
+              <SelectField
+                label={`${fieldLabels[key] ?? key} · Einstellung`}
+                value={field.state}
+                onChange={(e) =>
+                  updateConfig((x) => ({
+                    ...x,
+                    fields: {
+                      ...x.fields,
+                      [key]: { state: e.target.value as typeof field.state },
+                    },
+                  }))
+                }
+              >
+                <option value="required">Pflicht</option>
+                <option value="optional">Freiwillig</option>
+                <option value="hidden">Aus</option>
+              </SelectField>
             </td>
           </tr>
         ))}

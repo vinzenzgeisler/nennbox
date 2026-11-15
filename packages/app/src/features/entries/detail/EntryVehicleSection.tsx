@@ -191,6 +191,8 @@ export function EntryVehicleSection({
             <FieldItem label="Zylinder">
               <Value>{vehicle.cylinders}</Value>
             </FieldItem>
+            <FieldItem label="Transponder-Nr."><Value>{vehicle.transponderNumber}</Value></FieldItem>
+            <FieldItem label="Fahrzeugpass-Nr."><Value>{vehicle.vehiclePassNumber}</Value></FieldItem>
             <FieldItem label="Besitzer">
               <Value>{vehicle.ownerName}</Value>
             </FieldItem>

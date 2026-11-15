@@ -8,14 +8,19 @@ import { RegistrationFormConfigPatchSchema } from '@racepilot/contracts';
 export type RegistrationFieldState = 'required' | 'optional' | 'hidden';
 
 export const registrationDetailFieldKeys = [
+  'dateOfBirth',
   'phone',
   'street',
   'postalCode',
   'city',
   'emergencyContact',
+  'bloodGroup',
+  'licenseNumber',
   'publicationPreference',
   'displacement',
   'cylinders',
+  'transponderNumber',
+  'vehiclePassNumber',
   'owner',
   'history',
 ] as const;
@@ -40,14 +45,19 @@ export function resolveRegistrationFieldStates(
   const organizationFields = parse(organization);
   const eventFields = parse(event);
   const resolved: RegistrationFieldStates = {
+    dateOfBirth: 'required',
     phone: 'optional',
     street: 'optional',
     postalCode: 'optional',
     city: 'optional',
     emergencyContact: 'optional',
+    bloodGroup: 'hidden',
+    licenseNumber: 'hidden',
     publicationPreference: 'optional',
     displacement: 'optional',
     cylinders: 'optional',
+    transponderNumber: 'hidden',
+    vehiclePassNumber: 'hidden',
     owner: 'optional',
     history: 'optional',
   };
@@ -55,12 +65,24 @@ export function resolveRegistrationFieldStates(
     resolved[key] =
       eventFields?.[key]?.state ??
       organizationFields?.[key]?.state ??
-      'optional';
+      (key === 'dateOfBirth'
+        ? 'required'
+        : [
+              'bloodGroup',
+              'licenseNumber',
+              'transponderNumber',
+              'vehiclePassNumber',
+            ].includes(key)
+          ? 'hidden'
+          : 'optional');
   return resolved;
 }
 
 export interface RegistrationDetailsInput {
+  dateOfBirth?: string | null | undefined;
   phone?: string | null | undefined;
+  bloodGroup?: string | null | undefined;
+  licenseNumber?: string | null | undefined;
   street?: string | null | undefined;
   postalCode?: string | null | undefined;
   city?: string | null | undefined;
@@ -71,6 +93,8 @@ export interface RegistrationDetailsInput {
 export interface VehicleDetailsInput {
   displacementCc?: number | null | undefined;
   cylinders?: number | null | undefined;
+  transponderNumber?: string | null | undefined;
+  vehiclePassNumber?: string | null | undefined;
   ownerName?: string | null | undefined;
   history?: string | null | undefined;
 }
@@ -96,7 +120,10 @@ export function registrationContactMatches(
   states: RegistrationFieldStates,
 ): boolean {
   return (
+    check(states.dateOfBirth, [input.dateOfBirth], false) &&
     check(states.phone, [input.phone], false) &&
+    check(states.bloodGroup, [input.bloodGroup], false) &&
+    check(states.licenseNumber, [input.licenseNumber], false) &&
     check(states.street, [input.street], false) &&
     check(states.postalCode, [input.postalCode], false) &&
     check(states.city, [input.city], false) &&
@@ -116,6 +143,8 @@ export function registrationVehicleDetailsMatch(
   return (
     check(states.displacement, [input.displacementCc], false) &&
     check(states.cylinders, [input.cylinders], false) &&
+    check(states.transponderNumber, [input.transponderNumber], false) &&
+    check(states.vehiclePassNumber, [input.vehiclePassNumber], false) &&
     check(states.owner, [input.ownerName], false) &&
     check(states.history, [input.history], false)
   );

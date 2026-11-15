@@ -6,6 +6,8 @@ import type {
 export function mapRegistrationContactDetails(input: RegistrationDetailsInput) {
   return {
     phone: input.phone ?? null,
+    bloodGroup: input.bloodGroup ?? null,
+    licenseNumber: input.licenseNumber ?? null,
     street: input.street ?? null,
     postalCode: input.postalCode ?? null,
     city: input.city ?? null,
@@ -19,6 +21,8 @@ export function mapRegistrationVehicleDetails(input: VehicleDetailsInput) {
   return {
     displacementCc: input.displacementCc ?? null,
     cylinders: input.cylinders ?? null,
+    transponderNumber: input.transponderNumber ?? null,
+    vehiclePassNumber: input.vehiclePassNumber ?? null,
     ownerName: input.ownerName ?? null,
     history: input.history ?? null,
   };

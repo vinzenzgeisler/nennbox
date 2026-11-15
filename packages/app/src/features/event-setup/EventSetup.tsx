@@ -4,6 +4,7 @@ import { Banner } from '@racepilot/ui';
 import type { SetupEvent } from './eventSetupApi.js';
 import { loadRecipient } from './eventRecipientApi.js';
 import { useEventSetup } from './useEventSetup.js';
+import { RegistrationFormSettings } from '../registration/RegistrationFormSettings.js';
 import { EventSetupForm } from './EventSetupForm.js';
 import './EventSetup.css';
 
@@ -13,6 +14,7 @@ const sections = [
   { id: 'event-setup-terms', label: 'Teilnahmebedingungen' },
   { id: 'event-setup-organizer', label: 'Veranstalter und Zahlung' },
   { id: 'event-setup-arrival', label: 'Anreise und Fahrerlager' },
+  { id: 'event-setup-form-fields', label: 'Formularfelder' },
   { id: 'event-setup-actions', label: 'Nennung öffnen' },
 ];
 
@@ -86,6 +88,20 @@ export function EventSetup({
             onClearRecipient={setup.clearRecipient}
             onSubmit={submit}
           />
+          <section id="event-setup-form-fields" className="event-setup-section">
+            {setup.draft.id ? (
+              <RegistrationFormSettings
+                key={setup.draft.id}
+                eventId={setup.draft.id}
+                embedded
+              />
+            ) : (
+              <p>
+                Veranstaltung zuerst als Entwurf speichern, dann Formularfelder
+                festlegen.
+              </p>
+            )}
+          </section>
           {setup.message && (
             <Banner tone={setup.link ? 'success' : 'warning'}>
               {setup.message}

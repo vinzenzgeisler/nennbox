@@ -15,15 +15,24 @@ import {
   RegistrationFeatureOptions,
   RegistrationFormOptions,
 } from './RegistrationFormOptions.js';
+import { RegistrationFieldsPreview } from './RegistrationFieldsPreview.js';
 import { registrationFieldLabels } from './registrationFieldLabels.js';
 
-export function RegistrationFormSettings({ eventId }: { eventId: string }) {
+export function RegistrationFormSettings({
+  eventId,
+  embedded = false,
+}: {
+  eventId: string;
+  embedded?: boolean;
+}) {
   const [config, setConfig] = useState<RegistrationFormConfig>(
     defaultRegistrationFormConfig,
   );
   const [organizationConfig, setOrganizationConfig] =
     useState<RegistrationFormConfig>(defaultRegistrationFormConfig);
-  const [scope, setScope] = useState<'organization' | 'event'>('organization');
+  const [scope, setScope] = useState<'organization' | 'event'>(
+    eventId ? 'event' : 'organization',
+  );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [loaded, setLoaded] = useState(false);
@@ -118,11 +127,26 @@ export function RegistrationFormSettings({ eventId }: { eventId: string }) {
         scope === 'organization'
           ? '/admin/organization/registration-form-config'
           : `/admin/events/${encodeURIComponent(eventId)}/registration-form-config`;
+      const toSave =
+        scope === 'event'
+          ? {
+              ...activeConfig,
+              fields: Object.fromEntries(
+                Object.entries(activeConfig.fields).filter(
+                  ([key, field]) =>
+                    field.state !==
+                    organizationConfig.fields[
+                      key as keyof typeof organizationConfig.fields
+                    ].state,
+                ),
+              ),
+            }
+          : activeConfig;
       const response = await adminFetch(path, {
         method: 'PUT',
         credentials: 'same-origin',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(activeConfig),
+        body: JSON.stringify(toSave),
       });
       if (!response.ok) throw new Error();
       setMessage('Einstellungen gespeichert.');
@@ -190,27 +214,34 @@ export function RegistrationFormSettings({ eventId }: { eventId: string }) {
             Veranstaltung · überschreibt Organisation
           </option>
         </SelectField>
-        <RegistrationAppearance
-          activeConfig={activeConfig}
-          updateConfig={updateConfig}
-          change={change}
-          upload={upload}
-        />
+        {!embedded && (
+          <RegistrationAppearance
+            activeConfig={activeConfig}
+            updateConfig={updateConfig}
+            change={change}
+            upload={upload}
+          />
+        )}
         <RegistrationFormOptions
           config={activeConfig}
           updateConfig={updateConfig}
           fieldLabels={registrationFieldLabels}
         />
-        <RegistrationCustomFields
-          activeConfig={activeConfig}
-          updateConfig={updateConfig}
-          updateCustomField={updateCustomField}
-          change={change}
-        />
-        <RegistrationFeatureOptions
-          config={activeConfig}
-          updateConfig={updateConfig}
-        />
+        <RegistrationFieldsPreview config={activeConfig} />
+        {!embedded && (
+          <RegistrationCustomFields
+            activeConfig={activeConfig}
+            updateConfig={updateConfig}
+            updateCustomField={updateCustomField}
+            change={change}
+          />
+        )}
+        {!embedded && (
+          <RegistrationFeatureOptions
+            config={activeConfig}
+            updateConfig={updateConfig}
+          />
+        )}
         <div>
           <Button type="button" disabled={busy} onClick={() => void save()}>
             {busy ? 'Wird gespeichert …' : 'Änderungen speichern'}
