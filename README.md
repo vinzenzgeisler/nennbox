@@ -75,6 +75,8 @@ Local development PostgreSQL is available through `docker compose -f compose.dev
 
 ### NENNBOX jetzt lokal nutzen (Community Alpha)
 
+Eine eigenständige Anleitung für Selbstbetrieb, Backup/Restore und Upgrade steht im [Self-Hosting-Quickstart](docs/self-hosting/quickstart.md).
+
 **Voraussetzungen:** Git, **Node.js 24**, **npm 11** (siehe `packageManager`),
 **Docker mit Compose v2** und eine Bash-Umgebung (Linux, macOS oder WSL2).
 Docker muss laufen und für deinen Benutzer erreichbar sein. Internetzugang wird

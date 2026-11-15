@@ -53,7 +53,7 @@ Teilnahmebedingungen oder personenbezogenen Daten.
 Das Bildfeld ist in der Einrichtung nicht konfiguriert; die API dafür steht in der
 [Formularkonfiguration](../architecture/public-registration.md). Der
 automatisierte reale Browserablauf steht im
-[Community-E2E-Test](../../packages/app/e2e/community.smoke.spec.ts); dort sind
+[Community-E2E-Test](../../packages/app/e2e/alpha-flow.spec.ts); dort sind
 verbleibende UI-Lücken ausdrücklich als `fixme` markiert.
 
 ## Fehler beim Start

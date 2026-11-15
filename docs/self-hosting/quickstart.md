@@ -1,0 +1,101 @@
+# NENNBOX Community: Selbstbetrieb-Kurzanleitung
+
+Diese Anleitung startet den lokalen Community-Stack aus einem frischen Checkout.
+Sie ist eine Entwicklungs-/Evaluierungsinstallation (HTTP, lokaler Keycloak und
+Mailpit), keine gehärtete öffentliche Produktionsumgebung. Benötigt werden Git,
+Node.js 24, npm 11, Docker mit Compose v2 und Bash.
+
+## Start
+
+```bash
+git clone https://github.com/vinzenzgeisler/racepilot.git
+cd racepilot
+git switch main
+git pull --ff-only
+bash scripts/community-up.sh
+```
+
+Beim ersten Start erzeugt das Skript lokale OIDC-Zugangsdaten, bereitet Keycloak
+und PostgreSQL vor, migriert die Datenbank automatisch, baut die Pakete und startet
+API, Worker, App und Mailpit. Es legt die Community-Organisation sowie den ersten
+Admin anhand des OIDC-Bootstrap-Selectors an; es ist kein Datenbankzugriff nötig.
+Lass das Terminal geöffnet.
+
+| Dienst | Adresse |
+| --- | --- |
+| Admin-App | <http://127.0.0.1:5173/app> |
+| Mailpit (Test-E-Mails) | <http://127.0.0.1:8025> |
+| API Health | <http://127.0.0.1:3000/health> |
+| Keycloak | <http://127.0.0.1:8080> |
+
+Melde dich in der App mit der im Terminal gezeigten E-Mail-Adresse (Standard
+`admin@nennbox.local`) und dem automatisch erzeugten Passwort an. Falls benötigt,
+kann es in einem zweiten Terminal aus `.community-local/config.json` mit
+`node scripts/community-config.mjs --password` angezeigt werden. Die Datei enthält
+Zugangsdaten und darf nicht weitergegeben werden.
+
+## Veranstaltung und erste Nennung
+
+1. In der Admin-App **Einrichten** öffnen, Name und Zeitraum angeben, mindestens
+eine Klasse und Startgeld festlegen und Teilnahmebedingungen ergänzen.
+2. **Speichern und Nennung öffnen** wählen und den öffentlichen Link öffnen.
+3. Das Teilnehmerformular mit Testdaten absenden. Die Bestätigungsmail erscheint
+   in Mailpit; den darin enthaltenen Link öffnen.
+4. In der Admin-App die Veranstaltung auswählen, Nennung öffnen, Unterlagen prüfen
+   und Zulassung sowie Zahlung erfassen. Der Verlauf dokumentiert die Änderungen.
+
+Alle Daten sind lokal; verwende keine echten personenbezogenen Daten in dieser
+Testinstallation. Dienste lauschen auf Loopback. Die OIDC-URLs erwarten
+`127.0.0.1`, nicht `localhost`.
+
+## Stoppen und fortsetzen
+
+Im Terminal mit dem laufenden Stack `Ctrl+C` drücken. PostgreSQL- und
+Keycloak-Volumes sowie `.community-local/` bleiben erhalten. Für den nächsten Start
+im Checkout erneut `bash scripts/community-up.sh` ausführen.
+
+## Backup und Wiederherstellung (Grundlagen)
+
+Vor einem Backup den Stack mit `Ctrl+C` stoppen. Starte nur PostgreSQL für den
+Dump und führe die folgenden Befehle aus dem Checkout aus:
+
+```bash
+docker compose --env-file .community-local/compose.env -f compose.community.dev.yaml up -d --wait postgres
+mkdir -p backups
+docker compose --env-file .community-local/compose.env -f compose.community.dev.yaml exec -T postgres pg_dump -U racepilot -d racepilot --format=custom > backups/community.dump
+tar -czf backups/community-local.tar.gz .community-local
+```
+
+Datenbankdump und `.community-local` enthalten zusammengehörige sensible Daten.
+Bewahre sie verschlüsselt und zugriffsbeschränkt auf. Für eine Wiederherstellung
+auf derselben Compose-Installation zuerst die Container anhalten, dann den Dump
+in die bestehende Datenbank zurückspielen (PostgreSQL muss laufen):
+
+```bash
+docker compose --env-file .community-local/compose.env -f compose.community.dev.yaml up -d --wait postgres
+docker compose --env-file .community-local/compose.env -f compose.community.dev.yaml exec -T postgres pg_restore -U racepilot -d racepilot --clean --if-exists < backups/community.dump
+```
+
+`pg_restore --clean` ersetzt Objekte der Zieldatenbank. Es ist nicht für das
+Zusammenführen mit einer bestehenden Installation gedacht. Für einen vollständigen
+Wiederanlauf müssen außerdem die zugehörigen Compose-Volumes (PostgreSQL und
+Keycloak) und `.community-local/` verfügbar sein; stelle diese nicht durch
+unkoordinierte Einzelstände wieder her.
+
+## Upgrade
+
+Vor dem Upgrade Backup wie oben erstellen. Im Checkout:
+
+```bash
+git pull --ff-only origin main
+bash scripts/community-up.sh
+```
+
+Der Start baut den aktuellen Quellstand und führt Datenbankmigrationen aus.
+Bewahre den vorherigen Commit sowie ein passendes Backup bis zur erfolgreichen
+Funktionsprüfung auf. Bei Problemen Stack stoppen und nur mit einem konsistenten
+Backup wiederherstellen; ein Downgrade von Schemaänderungen wird nicht zugesichert.
+
+Weitere Hinweise zur lokalen Nutzung stehen im
+[Community-Leitfaden](../getting-started/community-local.md); der vollständige
+Browser-Abnahmenachweis liegt in [`alpha-flow.spec.ts`](../../packages/app/e2e/alpha-flow.spec.ts).
