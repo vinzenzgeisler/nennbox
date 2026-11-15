@@ -4,7 +4,6 @@ import {
   draftFromType,
   newDraft,
   toTypeRequest,
-  prefixError,
 } from './documentTypeModel.js';
 
 describe('event document settings', () => {
@@ -64,7 +63,5 @@ describe('event document settings', () => {
     expect(
       documentTypeErrors([{ ...newDraft(), name: '', active: false }]),
     ).toEqual(['']);
-    expect(prefixError('ABC-1')).toMatch(/Buchstaben/);
-    expect(prefixError('BERG2027')).toBe('');
   });
 });

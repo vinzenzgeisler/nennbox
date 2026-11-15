@@ -114,6 +114,7 @@ export function createArtifactTask(deps: {
           vehicle: 'Vehicle',
           class: 'Class',
           startNumber: 'Start number',
+          orgaCode: 'Orga code',
           status: 'Status',
           price: 'Price (minor units)',
         };
@@ -135,6 +136,8 @@ export function createArtifactTask(deps: {
               return row.class;
             case 'startNumber':
               return row.startNumber;
+            case 'orgaCode':
+              return row.orgaCode;
             case 'status':
               return row.status;
             case 'price':

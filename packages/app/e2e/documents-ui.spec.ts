@@ -34,9 +34,13 @@ test('Admin reviews and rejects real documents; list and preview refresh', async
   await page.getByRole('searchbox', { name: 'Suche' }).fill('Anna Beispiel');
   const row = page.getByRole('row').filter({ hasText: 'Anna Beispiel' });
   await expect(row).toContainText('Unterlagen 2/2', { timeout: 90_000 });
+  await expect(row.locator('.nb-entry-list-orga')).toHaveText(
+    /^[0-9A-HJKMNP-TV-Z]{5}$/,
+  );
   await row.locator('button[data-entry-action]').click();
   const preview = page.getByRole('complementary', { name: 'Nennungsvorschau' });
   await expect(preview).toContainText('Hochgeladen');
+  await expect(preview).toContainText(/Orga-Code [0-9A-HJKMNP-TV-Z]{5}/);
   await preview.getByRole('button', { name: 'Vollständig öffnen' }).click();
   const detail = page.getByRole('region', {
     name: 'Nennung im Detail',
@@ -108,7 +112,7 @@ test('Bergpreis documents match the A7/A4 reference at three widths', async ({
     name: 'Nennung im Detail',
     exact: true,
   });
-  await expect(detail).toContainText('Orga-Code');
+  await expect(detail).toContainText(/Orga-Code [0-9A-HJKMNP-TV-Z]{5}/);
   await expect(documentRow(page, 'Fahrerlizenz')).toContainText('Geprüft');
   await expect(documentRow(page, 'Fahrzeugschein')).toContainText('Fehlt');
   for (const [width, height] of [
@@ -126,16 +130,14 @@ test('Bergpreis documents match the A7/A4 reference at three widths', async ({
   }
 });
 
-test('Admin configures document activation and Orga-Code prefix persistently', async ({
-  page,
-}) => {
+test('Admin configures document activation persistently', async ({ page }) => {
   test.setTimeout(180_000);
   await signIn(page);
   await page
     .getByRole('button', { name: 'Einstellungen', exact: true })
     .click();
   const settings = page.getByRole('region', {
-    name: 'Unterlagen und Orga-Code',
+    name: 'Nennungsunterlagen',
   });
   await expect(settings).toBeVisible();
   const type = settings.getByRole('group', { name: 'Unterlage 2' });
@@ -143,9 +145,6 @@ test('Admin configures document activation and Orga-Code prefix persistently', a
     'Fahrzeugschein',
   );
   await type.getByRole('checkbox', { name: 'Aktiv' }).uncheck();
-  const prefix = settings.getByRole('textbox', { name: 'Präfix' });
-  const originalPrefix = await prefix.inputValue();
-  await prefix.fill('BERG2027');
   await settings.getByRole('button', { name: 'Unterlagen speichern' }).click();
   await expect(settings.getByRole('status')).toContainText('gespeichert');
   await page.getByRole('button', { name: 'Nennungen', exact: true }).click();
@@ -169,14 +168,10 @@ test('Admin configures document activation and Orga-Code prefix persistently', a
       .getByRole('group', { name: 'Unterlage 2' })
       .getByRole('checkbox', { name: 'Aktiv' }),
   ).not.toBeChecked();
-  await expect(settings.getByRole('textbox', { name: 'Präfix' })).toHaveValue(
-    'BERG2027',
-  );
   await settings
     .getByRole('group', { name: 'Unterlage 2' })
     .getByRole('checkbox', { name: 'Aktiv' })
     .check();
-  await settings.getByRole('textbox', { name: 'Präfix' }).fill(originalPrefix);
   await settings.getByRole('button', { name: 'Unterlagen speichern' }).click();
   await expect(settings.getByRole('status')).toContainText('gespeichert');
 });

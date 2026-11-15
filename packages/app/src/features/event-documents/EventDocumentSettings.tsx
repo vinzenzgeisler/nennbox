@@ -34,7 +34,8 @@ export function EventDocumentSettings({ eventId }: { eventId: string }) {
       <Stack gap={4}>
         <PageHeader
           id="event-documents-title"
-          title="Unterlagen und Orga-Code"
+          title="Nennungsunterlagen"
+          description="Orga-Codes werden automatisch kurz und NENNBOX-weit eindeutig vergeben."
         />
         <FormSection
           title="Nennungsunterlagen"
@@ -96,22 +97,6 @@ export function EventDocumentSettings({ eventId }: { eventId: string }) {
             Unterlage hinzufügen
           </Button>
         </FormSection>
-        <FormSection
-          title="Orga-Code"
-          description="Der Präfix gilt für neu vergebene Orga-Codes; bestehende Codes bleiben unverändert."
-        >
-          <TextInput
-            label="Präfix"
-            value={settings.prefix}
-            maxLength={12}
-            hint="Bis zu 12 Buchstaben oder Ziffern. Leer verwendet das Veranstaltungskürzel."
-            disabled={settings.saving}
-            onChange={(event) => settings.setPrefix(event.target.value)}
-          />
-          {settings.prefixProblem && (
-            <Banner tone="error">{settings.prefixProblem}</Banner>
-          )}
-        </FormSection>
         <div>
           <Button
             type="button"
@@ -122,9 +107,7 @@ export function EventDocumentSettings({ eventId }: { eventId: string }) {
           </Button>
         </div>
         {settings.message && <Banner tone="error">{settings.message}</Banner>}
-        {settings.saved && (
-          <p role="status">Unterlagen und Orga-Code gespeichert.</p>
-        )}
+        {settings.saved && <p role="status">Unterlagen gespeichert.</p>}
       </Stack>
     </section>
   );

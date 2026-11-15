@@ -10,6 +10,7 @@ export interface EntryExportRow {
   readonly vehicle: string;
   readonly class: string;
   readonly startNumber: string | null;
+  readonly orgaCode: string;
   readonly status: EntryAcceptanceStatus;
   readonly priceCents: number | null;
 }

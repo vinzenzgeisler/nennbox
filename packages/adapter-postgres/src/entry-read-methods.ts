@@ -7,6 +7,7 @@ import type { Database } from './database.js';
 import type { EntryRepository } from '@racepilot/core';
 import { attachAdminEntryDetails } from './entry-admin-details.js';
 import { projectEntryRows } from './entry-projection.js';
+import { normalizeOrgaCode } from '@racepilot/core';
 
 export function createEntryReadMethods(
   db: Database,
@@ -65,7 +66,10 @@ export function createEntryReadMethods(
           predicates.push(
             anyOf(
               ilike(entries.requestedStartNumber, pattern),
-              ilike(entries.orgaCode, pattern),
+              ilike(
+                entries.orgaCode,
+                `%${normalizeOrgaCode(token).replace(/[\\%_]/g, '\\$&')}%`,
+              ),
               sql`${entries.id}::text ilike ${pattern}`,
               ilike(people.firstName, pattern),
               ilike(people.lastName, pattern),

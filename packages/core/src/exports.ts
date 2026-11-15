@@ -1,11 +1,18 @@
 export type EntryExportField =
-  'driver' | 'vehicle' | 'class' | 'startNumber' | 'status' | 'price';
+  | 'driver'
+  | 'vehicle'
+  | 'class'
+  | 'startNumber'
+  | 'orgaCode'
+  | 'status'
+  | 'price';
 
 export const entryExportFields: readonly EntryExportField[] = [
   'driver',
   'vehicle',
   'class',
   'startNumber',
+  'orgaCode',
   'status',
   'price',
 ];
