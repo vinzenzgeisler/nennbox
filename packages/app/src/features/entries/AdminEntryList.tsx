@@ -1,6 +1,12 @@
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import type { EntryResponse as Entry } from '@racepilot/contracts';
-import { DataTable, SelectionBar, Tabs, WorkspaceSplit } from '@racepilot/ui';
+import {
+  DataTable,
+  SelectionBar,
+  TabList,
+  TabPanel,
+  WorkspaceSplit,
+} from '@racepilot/ui';
 import type {
   ApiState,
   EntryQuery,
@@ -135,13 +141,14 @@ export function AdminEntryList(props: Props) {
     </>
   );
   const tabs = [
-    { id: 'all', label: `Alle ${countAll}`, content },
+    { id: 'all', label: 'Alle', count: countAll },
     ...(workflow?.statuses ?? []).map((status) => ({
       id: status.key,
-      label: `${status.labels.de} ${counts[status.key] ?? 0}`,
-      content,
+      label: status.labels.de,
+      count: counts[status.key] ?? 0,
     })),
   ];
+  const selectedTab = draft.acceptanceStatus || 'all';
   return (
     <WorkspaceSplit
       previewLabel="Nennungsvorschau"
@@ -154,20 +161,27 @@ export function AdminEntryList(props: Props) {
           setDraft={setDraft}
           changeSort={changeSort}
           classes={classes}
+          tabs={
+            <TabList
+              tabs={tabs}
+              selected={selectedTab}
+              label="Nennungsstatus"
+              onChange={(id) =>
+                setDraft((value) => ({
+                  ...value,
+                  acceptanceStatus: id === 'all' ? '' : id,
+                }))
+              }
+            />
+          }
         />
       }
     >
-      <Tabs
-        tabs={tabs}
-        selected={draft.acceptanceStatus || 'all'}
-        label="Nennungsstatus"
-        onChange={(id) =>
-          setDraft((value) => ({
-            ...value,
-            acceptanceStatus: id === 'all' ? '' : id,
-          }))
-        }
-      />
+      <TabPanel
+        id={tabs.some((tab) => tab.id === selectedTab) ? selectedTab : 'all'}
+      >
+        {content}
+      </TabPanel>
       {selectedIds.size > 0 && (
         <SelectionBar
           label="Massenaktionen"

@@ -81,14 +81,18 @@ export function EntryListRow({
               }}
             >
               <strong>{name}</strong>
-              <small>{vehicle}</small>
-              {hints}
+              <span className="nb-entry-list-meta">
+                <small>{vehicle}</small>
+                {hints}
+              </span>
             </button>
           ) : (
             <span>
               <strong>{name}</strong>
-              <small>{vehicle}</small>
-              {hints}
+              <span className="nb-entry-list-meta">
+                <small>{vehicle}</small>
+                {hints}
+              </span>
             </span>
           )}
         </div>

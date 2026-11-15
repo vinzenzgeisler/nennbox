@@ -8,8 +8,8 @@
 }
 .nb-entry-list-row td {
   height: 64px;
-  padding: 4px var(--space-2);
-  border-bottom: 1px solid var(--color-line);
+  padding: 6px var(--space-2);
+  border-bottom: 1px solid var(--color-sage);
   vertical-align: middle;
 }
 .nb-entry-list-person {
@@ -39,30 +39,53 @@
   flex: none;
   place-items: center;
   width: 48px;
-  height: 40px;
+  height: 48px;
   object-fit: cover;
   background: var(--color-sage);
   color: var(--color-graphite);
 }
-.nb-entry-list-person span:last-child {
+.nb-entry-list-person > span:last-child {
   display: grid;
   min-width: 0;
+}
+.nb-entry-list-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.nb-entry-list-meta > small {
+  min-width: 0;
+}
+/* Hints such as "Unterlagen 1/2" read as a quiet suffix to the vehicle line, not as a second chip row. */
+.nb-entry-list-meta .nb-hint {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-graphite);
+  font: 400 12px/1.3 var(--font-plex);
+  letter-spacing: normal;
+  white-space: nowrap;
 }
 .nb-entry-list-person strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: var(--text-heading-4);
+  font: 600 14px/1.3 var(--font-plex);
 }
 .nb-entry-list-person small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--color-graphite);
-  font: var(--text-label);
+  font: 400 12px/1.3 var(--font-plex);
+}
+.nb-entry-list-row td[data-priority='2'] {
+  font-size: 13px;
 }
 .nb-entry-list-number {
-  font: 700 24px/1 var(--font-archivo);
+  font: 900 20px/1 var(--font-archivo);
   font-stretch: condensed;
   font-variation-settings: 'wdth' 75;
 }

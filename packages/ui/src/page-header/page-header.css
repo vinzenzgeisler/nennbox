@@ -1,9 +1,11 @@
 .nb-page-header {
   display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4);
+  align-content: center;
+  box-sizing: border-box;
+  min-height: 65px;
+  padding: 0 var(--space-8);
   background: var(--color-white);
-  border-bottom: 2px solid var(--color-ink);
+  border-bottom: 1px solid var(--color-ink);
 }
 .nb-page-header > p {
   margin: 0;
@@ -14,23 +16,41 @@
 }
 .nb-page-header > div {
   display: flex;
-  align-items: end;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  padding-block: var(--space-3);
+}
+.nb-page-header > div > div:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
 }
 .nb-page-header h1 {
   margin: 0;
-  color: var(--color-green);
-  font: var(--text-app-h1);
+  color: var(--color-ink);
+  font: 800 28px/1.1 var(--font-archivo);
+  letter-spacing: var(--type-h2-tracking);
 }
 .nb-page-header div p {
-  margin: var(--space-2) 0 0;
+  margin: 0;
   color: var(--color-graphite);
+  font: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
 }
 .nb-page-header-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+@media (width < 768px) {
+  .nb-page-header {
+    padding: 0 var(--space-4);
+  }
+  .nb-page-header > div > div:first-child {
+    display: block;
+  }
 }
 @media (max-width: 600px) {
   .nb-page-header > div {

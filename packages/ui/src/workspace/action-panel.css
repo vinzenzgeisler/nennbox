@@ -10,6 +10,11 @@
   font: var(--text-label);
   text-transform: uppercase;
 }
+.nb-document-list h3 {
+  color: var(--color-graphite);
+  font-weight: 400;
+  letter-spacing: var(--tracking-label);
+}
 .nb-action-panel p {
   margin: 0 0 var(--space-3);
   color: var(--color-graphite);

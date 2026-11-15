@@ -5,17 +5,20 @@ export function FilterBar({
   actions,
   activeFilters,
   onRemoveFilter,
+  tabs,
   ...props
 }: React.HTMLAttributes<HTMLElement> & {
   label: string;
   actions?: React.ReactNode;
+  /** Status tabs; they sit on the bar below the fields, as in the A7 reference. */
+  tabs?: React.ReactNode;
   activeFilters?: Array<{ id: string; label: string; removeLabel: string }>;
   onRemoveFilter?: (id: string) => void;
 }) {
   return (
     <section
       {...props}
-      className={`nb-filter-bar ${props.className ?? ''}`}
+      className={`nb-filter-bar${tabs ? ' has-tabs' : ''} ${props.className ?? ''}`}
       aria-label={label}
     >
       <div>{children}</div>
@@ -35,6 +38,7 @@ export function FilterBar({
           ))}
         </div>
       )}
+      {tabs && <div className="nb-filter-bar-tabs">{tabs}</div>}
     </section>
   );
 }

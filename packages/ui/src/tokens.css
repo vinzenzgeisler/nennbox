@@ -6,6 +6,9 @@
   --brand-action: var(--color-green);
   --overlay-sidebar-hover: rgb(245 244 238 / 10%);
   --overlay-sidebar-border: rgb(245 244 238 / 28%);
+  --color-sidebar-line: #3c5e51;
+  --color-sidebar-muted: #a9bbb1;
+  --color-ink-soft: #3a4440;
   --weight-semibold: 600;
   --weight-bold: 700;
   --color-green: #193b30;

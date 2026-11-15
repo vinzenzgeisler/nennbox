@@ -180,14 +180,16 @@ export function EntryPreview({
               Vollständig öffnen
             </Button>
           </div>
-          <KeyboardHintBar
-            items={[
-              { keys: '↑ ↓', label: 'wechseln' },
-              { keys: 'Enter', label: 'öffnen' },
-              { keys: 'Esc', label: 'schließen' },
-            ]}
-          />
         </div>
+      }
+      hints={
+        <KeyboardHintBar
+          items={[
+            { keys: '↑ ↓', label: 'wechseln' },
+            { keys: 'Enter', label: 'öffnen' },
+            { keys: 'Esc', label: 'schließen' },
+          ]}
+        />
       }
     >
       <DocumentList
