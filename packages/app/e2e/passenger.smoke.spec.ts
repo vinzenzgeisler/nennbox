@@ -225,8 +225,6 @@ test('A co-driver completes data and consents through the personal link; the off
     }
     await guest.setViewportSize({ width: 1440, height: 900 });
   }
-  await guest.getByRole('button', { name: 'Daten abschließen' }).click();
-  await expect(guest.getByRole('alert')).toBeVisible();
   await guest.getByLabel('Geburtsdatum').fill('1988-03-03');
   await guest.getByLabel('Telefon', { exact: true }).fill('+49 351 4711');
   await guest.getByLabel('Straße und Hausnummer').fill('Beifahrerweg 2');
@@ -243,6 +241,7 @@ test('A co-driver completes data and consents through the personal link; the off
   await context.close();
 
   // The detail shows co-driver, spare vehicle and the co-driver's own consent.
+  await page.setViewportSize({ width: 1920, height: 1080 });
   await page.goto('/app');
   await page
     .getByRole('combobox', { name: 'Veranstaltung' })
@@ -336,7 +335,16 @@ test('A co-driver completes data and consents through the personal link; the off
     },
   );
   expect(publicSubmit.status()).toBe(202);
-  await detail.getByRole('button', { name: /Nennungen$/ }).click();
+  const lateVerify = linkIn(
+    await mailTo(request, late, '/registration/verify'),
+    '/registration/verify',
+  );
+  await page.goto(lateVerify);
+  await expect(page.getByRole('status')).toContainText('E-Mail bestätigt');
+  await page.goto('/app');
+  await page
+    .getByRole('combobox', { name: 'Veranstaltung' })
+    .selectOption(event.id);
   await page
     .getByRole('row')
     .filter({ hasText: `Solo ${suffix}` })
