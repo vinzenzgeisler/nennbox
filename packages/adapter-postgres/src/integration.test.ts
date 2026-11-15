@@ -1746,6 +1746,9 @@ describe.skipIf(!url)('PostgreSQL integration', () => {
         eventClass: { code: 'A', name: 'A', vehicleType: 'car' },
         startNumber: 'A-01',
         customAnswers: [],
+        passengerMode: 'none',
+        passenger: null,
+        spareVehicle: null,
       });
       expect(await adminEntries.getById(ctxA, foreignEntryId!)).toBeNull();
       const byDriverName = await adminEntries.listAdmin!(ctxA, {

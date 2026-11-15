@@ -7,7 +7,11 @@ import {
   Textarea,
 } from '@racepilot/ui';
 import type { FormEvent } from 'react';
-import type { SetupDraft, VehicleType } from './eventSetupApi.js';
+import type {
+  PassengerMode,
+  SetupDraft,
+  VehicleType,
+} from './eventSetupApi.js';
 
 const vehicleTypes: Array<{ value: VehicleType; label: string }> = [
   { value: 'car', label: 'Auto' },
@@ -177,6 +181,19 @@ export function EventSetupForm({
                       {type.label}
                     </option>
                   ))}
+                </SelectField>
+                <SelectField
+                  label="Beifahrer"
+                  value={item.passengerMode ?? 'optional'}
+                  onChange={(event) =>
+                    updateClass(index, {
+                      passengerMode: event.target.value as PassengerMode,
+                    })
+                  }
+                >
+                  <option value="optional">Optional</option>
+                  <option value="required">Pflicht</option>
+                  <option value="none">Nein</option>
                 </SelectField>
                 <TextInput
                   required

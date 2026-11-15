@@ -1,4 +1,5 @@
 import type {
+  PassengerMode,
   StandardRegistrationForm,
   RegistrationSettings,
   RegistrationFormConfig,
@@ -27,6 +28,7 @@ export type FormPayload = {
     code: string;
     vehicleType: string;
     closed: boolean;
+    passengerMode: PassengerMode;
   }>;
   consents: Array<{
     key: string;
@@ -50,6 +52,15 @@ export type VehicleEntry = {
   cylinders: string;
   ownerName: string;
   history: string;
+  passengerEnabled: boolean;
+  passengerFirstName: string;
+  passengerLastName: string;
+  passengerEmail: string;
+  spareVehicleEnabled: boolean;
+  spareVehicleMake: string;
+  spareVehicleModel: string;
+  spareVehicleYear: string;
+  spareVehicleRegistration: string;
 };
 export const emptyVehicle = (): VehicleEntry => ({
   classId: '',
@@ -62,6 +73,15 @@ export const emptyVehicle = (): VehicleEntry => ({
   cylinders: '',
   ownerName: '',
   history: '',
+  passengerEnabled: false,
+  passengerFirstName: '',
+  passengerLastName: '',
+  passengerEmail: '',
+  spareVehicleEnabled: false,
+  spareVehicleMake: '',
+  spareVehicleModel: '',
+  spareVehicleYear: '',
+  spareVehicleRegistration: '',
 });
 export type DriverContact = {
   phone: string;
@@ -114,110 +134,22 @@ export function estimateRegistrationTotal(
   }
   return Number.isSafeInteger(total) ? total : null;
 }
-export const translations = {
-  de: {
-    loading: 'Anmeldeformular wird geladen …',
-    loadError: 'Das Formular ist momentan nicht verfügbar.',
-    previous: 'Zurück',
-    next: 'Weiter',
-    submit: 'Nennung absenden',
-    sending: 'Wird gesendet …',
-    retry: 'Bitte prüfe deine Angaben und versuche es erneut.',
-    minAge: 'Das Mindestalter dieser Organisation ist noch nicht erreicht.',
-    consentUnavailable:
-      'Die Anmeldung ist nicht verfügbar, weil für diese Veranstaltung kein Einwilligungstext hinterlegt ist.',
-    submitted:
-      'Die Nennung wurde angenommen. Bitte bestätige die E-Mail-Adresse über den zugesandten Link.',
-    guardianName: 'Name der erziehungsberechtigten Person',
-    guardianEmail: 'E-Mail der erziehungsberechtigten Person',
-    addVehicle: 'Weiteres Fahrzeug hinzufügen',
-    remove: 'Entfernen',
-    class: 'Klasse',
-    make: 'Hersteller',
-    model: 'Modell',
-    year: 'Baujahr',
-    registration: 'Kennzeichen',
-    consent: 'Ich stimme zu',
-    emailError: 'Bitte gib eine gültige E-Mail-Adresse ein.',
-    phone: 'Telefon',
-    phoneHint:
-      'Hilft dem Streckensprecher, dich am Veranstaltungstag zu erreichen.',
-    optionalHint: 'Optional',
-    country: 'Land',
-    countryNotGiven: 'Bitte auswählen',
-    germany: 'Deutschland',
-    austria: 'Österreich',
-    switzerland: 'Schweiz',
-    street: 'Straße und Hausnummer',
-    postalCode: 'PLZ',
-    city: 'Ort',
-    address: 'Adresse',
-    aboutYou: 'Über dich',
-    emergencyContact: 'Notfallkontakt',
-    emergencyContactName: 'Name',
-    emergencyContactPhone: 'Telefon',
-    publicationPreference: 'Veröffentlichung',
-    publicationNotGiven: 'Keine Angabe',
-    publicationNameVisible: 'Name sichtbar',
-    publicationInitials: 'Nur Initialen',
-    publicationHidden: 'Nicht veröffentlichen',
-    displacement: 'Hubraum (cm³)',
-    cylinders: 'Zylinder',
-    owner: 'Besitzer',
-    history: 'Fahrzeughistorie',
-  },
-  en: {
-    loading: 'Loading registration form …',
-    loadError: 'The form is currently unavailable.',
-    previous: 'Back',
-    next: 'Continue',
-    submit: 'Submit registration',
-    sending: 'Sending …',
-    retry: 'Check your details and try again.',
-    minAge:
-      'The driver does not meet the organization’s minimum age requirement.',
-    consentUnavailable:
-      'Registration is not available because this event has no published consent text.',
-    submitted:
-      'Your registration was accepted. Please verify your email using the link we sent.',
-    guardianName: 'Parent or guardian name',
-    guardianEmail: 'Parent or guardian email',
-    addVehicle: 'Add another vehicle',
-    remove: 'Remove',
-    class: 'Class',
-    make: 'Make',
-    model: 'Model',
-    year: 'Year',
-    registration: 'Registration',
-    consent: 'I agree',
-    emailError: 'Enter a valid email address.',
-    phone: 'Phone',
-    phoneHint: 'Helps the event announcer reach you on the day.',
-    optionalHint: 'Optional',
-    country: 'Country',
-    countryNotGiven: 'Select country',
-    germany: 'Germany',
-    austria: 'Austria',
-    switzerland: 'Switzerland',
-    street: 'Street and number',
-    postalCode: 'Postal code',
-    city: 'City',
-    address: 'Address',
-    aboutYou: 'About you',
-    emergencyContact: 'Emergency contact',
-    emergencyContactName: 'Name',
-    emergencyContactPhone: 'Phone',
-    publicationPreference: 'Publication',
-    publicationNotGiven: 'No preference',
-    publicationNameVisible: 'Name visible',
-    publicationInitials: 'Initials only',
-    publicationHidden: 'Do not publish',
-    displacement: 'Displacement (cc)',
-    cylinders: 'Cylinders',
-    owner: 'Owner',
-    history: 'Vehicle history',
-  },
-} as const;
+export { translations } from './registrationTranslations.js';
+
+/** What a start entry may add: a co-driver where the class takes one, a spare vehicle where the event offers it. */
+export function vehicleExtras(
+  payload: Pick<FormPayload, 'classes' | 'registrationFormConfig'>,
+  classId: string,
+) {
+  const mode: PassengerMode = payload.registrationFormConfig.features.passenger
+    ? (payload.classes.find((item) => item.id === classId)?.passengerMode ??
+      'none')
+    : 'none';
+  return {
+    passengerMode: mode,
+    spareVehicle: payload.registrationFormConfig.features.spareVehicle,
+  };
+}
 
 export function getAge(dob: string, on: string): number {
   if (!dob || !on) return 100;
@@ -231,4 +163,19 @@ export function getAge(dob: string, on: string): number {
   )
     age--;
   return age;
+}
+
+/** What one start entry actually carries: the class decides on the co-driver, the event on the spare vehicle. */
+export function entryExtras(
+  payload: Pick<FormPayload, 'classes' | 'registrationFormConfig'>,
+  vehicle: VehicleEntry,
+) {
+  const extras = vehicleExtras(payload, vehicle.classId);
+  return {
+    ...extras,
+    hasPassenger:
+      extras.passengerMode === 'required' ||
+      (extras.passengerMode === 'optional' && vehicle.passengerEnabled),
+    hasSpareVehicle: extras.spareVehicle && vehicle.spareVehicleEnabled,
+  };
 }

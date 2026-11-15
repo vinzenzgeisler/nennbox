@@ -2,14 +2,16 @@ import type { RequestContext } from '@racepilot/core';
 import { groupEmailVerifications } from './schema/public-registration.js';
 import { eq, and } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
-import { entries, entryAuditEvents } from './schema/entries.js';
+import { entries } from './schema/entries.js';
+import { entryAuditEvents } from './schema/entry-audit.js';
 import { assertEntryTransition } from '@racepilot/core';
 import type { PublicRegistrationDependencies } from './registration-public-types.js';
+import { issueRegistrationPassengerLinks } from './passenger-registration-links.js';
 
 export function createRegistrationVerificationMethods(
   dependencies: PublicRegistrationDependencies,
 ) {
-  const { db, hashToken } = dependencies;
+  const { db, hashToken, canonicalOrigin } = dependencies;
   return {
     verify: async (ctx: RequestContext, token: string) =>
       db.transaction(async (tx) => {
@@ -89,6 +91,10 @@ export function createRegistrationVerificationMethods(
               workflowRevisionId: updated[0]!.workflowRevisionId!,
             });
         }
+        await issueRegistrationPassengerLinks(db, tx, ctx, {
+          canonicalOrigin,
+          registrationGroupId: verification.registrationGroupId,
+        });
         return groupEntries.length > 0;
       }),
   };

@@ -1,9 +1,8 @@
+import { registrationGroups, entries } from './schema/entries.js';
 import {
-  registrationGroups,
-  entries,
   entryAuditEvents,
   entryDataAuditEvents,
-} from './schema/entries.js';
+} from './schema/entry-audit.js';
 import {
   entryAdminActionAuditEvents,
   entryNotes,
@@ -20,6 +19,7 @@ import {
   invoicePaymentAuditEvents,
 } from './schema/billing.js';
 import { emailOutbox } from './mail-schema.js';
+import { loadPassengerHistory } from './passenger-history.js';
 import type { Database } from './database.js';
 import type { RequestContext } from '@racepilot/core';
 
@@ -36,6 +36,7 @@ export async function loadEntryAdminHistory(
     dataAudits,
     actionAudits,
     notes,
+    passengerHistory,
   ] = await Promise.all([
     db
       .select()
@@ -159,28 +160,22 @@ export async function loadEntryAdminHistory(
           inArray(entryNotes.entryId, ids),
         ),
       ),
+    loadPassengerHistory(db, ctx, ids),
   ]);
+  type Item = {
+    id: string;
+    kind: 'entry' | 'status' | 'payment' | 'email';
+    label: string;
+    actor: string;
+    detail: string;
+  };
   const historyByEntry = new Map<
     string,
-    Array<{
-      id: string;
-      kind: 'entry' | 'status' | 'payment' | 'email';
-      label: string;
-      actor: string;
-      occurredAt: string;
-      detail: string;
-    }>
+    Array<Item & { occurredAt: string }>
   >();
   const appendHistory = (
     entryId: string,
-    item: {
-      id: string;
-      kind: 'entry' | 'status' | 'payment' | 'email';
-      label: string;
-      actor: string;
-      occurredAt: Date | string;
-      detail: string;
-    },
+    item: Item & { occurredAt: Date | string },
   ) => {
     const list = historyByEntry.get(entryId) ?? [];
     list.push({ ...item, occurredAt: new Date(item.occurredAt).toISOString() });
@@ -249,6 +244,8 @@ export async function loadEntryAdminHistory(
       occurredAt: row.sentAt ?? row.createdAt,
       detail: row.recipient,
     });
+  for (const { entryId, ...item } of passengerHistory)
+    appendHistory(entryId, { ...item, kind: 'entry' });
   await resolveActorNames(db, ctx, historyByEntry);
   for (const items of historyByEntry.values())
     items.sort((left, right) =>
