@@ -1,6 +1,31 @@
-import { expect, test, type APIRequestContext } from '@playwright/test';
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Page,
+} from '@playwright/test';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
+
+const shotDir = process.env.PASSENGER_SCREENSHOT_DIR;
+/** Visual-review mode: full-page screenshots at the three design widths, then the viewport is restored. */
+async function shoot(page: Page, name: string) {
+  if (!shotDir) return;
+  mkdirSync(shotDir, { recursive: true });
+  const original = page.viewportSize();
+  for (const [width, height] of [
+    [1920, 1080],
+    [1440, 900],
+    [390, 844],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    await page.screenshot({
+      path: `${shotDir}/${name}-${width}.png`,
+      fullPage: true,
+    });
+  }
+  if (original) await page.setViewportSize(original);
+}
 
 const mailpitBaseUrl =
   process.env.RACEPILOT_MAILPIT_URL ??
@@ -171,10 +196,12 @@ test('A co-driver completes data and consents through the personal link; the off
   await page.getByLabel('Ersatzfahrzeug erfassen').check();
   await page.getByLabel('Hersteller Ersatzfahrzeug').fill('Fiat');
   await page.getByLabel('Modell Ersatzfahrzeug').fill('131 Abarth');
+  await shoot(page, 'form-startmeldungen');
   await page
     .getByRole('button', { name: 'Weiter zur Prüfung', exact: true })
     .click();
   await expect(page.getByText(`Bruno Beifahrer ${suffix}`)).toBeVisible();
+  await shoot(page, 'form-pruefung');
   await page.getByRole('checkbox').check();
   const submitted = page.waitForResponse(
     (response) =>
@@ -209,22 +236,7 @@ test('A co-driver completes data and consents through the personal link; the off
   // Only what concerns this co-driver: the driver's mail address is not part of the page.
   await expect(guest.locator('body')).not.toContainText(driverMail);
   await expect(guest.getByLabel('Vorname')).toHaveValue('Bruno');
-  const shots = process.env.PASSENGER_SCREENSHOT_DIR;
-  if (shots) {
-    mkdirSync(shots, { recursive: true });
-    for (const [width, height] of [
-      [1920, 1080],
-      [1440, 900],
-      [390, 844],
-    ] as const) {
-      await guest.setViewportSize({ width, height });
-      await guest.screenshot({
-        path: `${shots}/link-${width}.png`,
-        fullPage: true,
-      });
-    }
-    await guest.setViewportSize({ width: 1440, height: 900 });
-  }
+  await shoot(guest, 'link');
   await guest.getByLabel('Geburtsdatum').fill('1988-03-03');
   await guest.getByLabel('Telefon', { exact: true }).fill('+49 351 4711');
   await guest.getByLabel('Straße und Hausnummer').fill('Beifahrerweg 2');
@@ -282,6 +294,7 @@ test('A co-driver completes data and consents through the personal link; the off
   await expect(
     detail.getByRole('region', { name: 'Einwilligungen', exact: true }),
   ).toContainText('participation');
+  await shoot(page, 'detail-beifahrer-vollstaendig');
   // A completed co-driver leaves no link action; the spare vehicle took no capacity (capacity is 1).
   await expect(
     detail.getByRole('button', { name: 'Persönlichen Link erstellen' }),
@@ -359,10 +372,12 @@ test('A co-driver completes data and consents through the personal link; the off
     exact: true,
   });
   await expect(lateDetail.getByText('nicht angegeben').first()).toBeVisible();
+  await shoot(page, 'detail-ohne-beifahrer');
   await lateDetail
     .getByRole('button', { name: 'Beifahrer nachmelden' })
     .click();
   const dialog = page.getByRole('dialog');
+  await shoot(page, 'dialog-nachmelden');
   await dialog.getByLabel('Vorname').fill('Nico');
   await dialog.getByLabel('Nachname').fill('Nachgemeldet');
   await dialog.getByRole('button', { name: 'Beifahrer eintragen' }).click();
@@ -383,6 +398,7 @@ test('A co-driver completes data and consents through the personal link; the off
     .getByLabel('Link')
     .inputValue();
   expect(created).toContain('/passenger?token=');
+  await shoot(page, 'dialog-link');
   await page
     .getByRole('dialog')
     .getByRole('button', { name: 'Schließen', exact: true })

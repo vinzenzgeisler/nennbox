@@ -3,7 +3,6 @@ import {
   Banner,
   Button,
   Checkbox,
-  DateInput,
   Field,
   FormGrid,
   FormWide,
@@ -18,6 +17,7 @@ import {
   translations,
   type DriverContact,
 } from '../registration/RegistrationDomain.js';
+import { passengerBrandStyle } from './passengerBrand.js';
 import { passengerWords } from './passengerWords.js';
 
 type State =
@@ -187,97 +187,114 @@ function PassengerForm({
   }
 
   return (
-    <main className="registration-container">
-      <form className="registration-form" onSubmit={submit}>
-        <h1 id="passenger-title">{words.title}</h1>
-        <p className="registration-step-description">
-          {words.intro(view.driverName, view.className)} · {view.eventName}
-        </p>
-        <fieldset>
-          <legend>{words.legend}</legend>
-          <FormGrid variant="registration">
-            <Field
-              label={words.firstName}
-              required
-              maxLength={100}
-              value={person.firstName}
-              onChange={(event) =>
-                setPerson({ ...person, firstName: event.target.value })
-              }
-            />
-            <Field
-              label={words.lastName}
-              required
-              maxLength={100}
-              value={person.lastName}
-              onChange={(event) =>
-                setPerson({ ...person, lastName: event.target.value })
-              }
-            />
-            <Field
-              label={words.email}
-              type="email"
-              maxLength={254}
-              value={person.email}
-              onChange={(event) =>
-                setPerson({ ...person, email: event.target.value })
-              }
-            />
-            <DateInput
-              label={words.dateOfBirth}
-              required
-              value={person.dateOfBirth}
-              onChange={(event) =>
-                setPerson({ ...person, dateOfBirth: event.target.value })
-              }
-            />
-            <FormWide>
-              <Field
-                label={translations[language].phone}
-                type="tel"
-                maxLength={40}
-                value={contact.phone}
-                onChange={(event) =>
-                  setContact({ ...contact, phone: event.target.value })
-                }
-              />
-            </FormWide>
-          </FormGrid>
-          <RegistrationContactFields
-            config={defaultRegistrationFormConfig}
-            values={contact}
-            onChange={(patch) => setContact({ ...contact, ...patch })}
-            t={translations[language]}
-          />
-        </fieldset>
-        {terms.length > 0 && (
-          <fieldset>
-            <legend>{words.confirmations}</legend>
-            <div className="consent-list">
-              {terms.map((term) => (
-                <Checkbox
-                  key={termId(term)}
-                  label={`${term.required ? words.required : words.optional} · ${term.text} (${words.agree})`}
-                  aria-required={term.required}
-                  checked={accepted[termId(term)] ?? false}
+    <section
+      className="registration"
+      aria-labelledby="passenger-title"
+      style={passengerBrandStyle}
+    >
+      <header className="registration-header">
+        <div className="registration-header-inner">
+          <div className="registration-header-copy">
+            <p className="registration-organization-name">{view.eventName}</p>
+            <h1 id="passenger-title">{words.title}</h1>
+            <p>{words.intro(view.driverName, view.className)}</p>
+          </div>
+        </div>
+      </header>
+      <main className="registration-container">
+        <div className="registration-layout">
+          <form className="registration-form" onSubmit={submit}>
+            <fieldset>
+              <legend>{words.legend}</legend>
+              <FormGrid variant="registration">
+                <Field
+                  label={words.firstName}
+                  required
+                  maxLength={100}
+                  value={person.firstName}
                   onChange={(event) =>
-                    setAccepted((old) => ({
-                      ...old,
-                      [termId(term)]: event.target.checked,
-                    }))
+                    setPerson({ ...person, firstName: event.target.value })
                   }
                 />
-              ))}
+                <Field
+                  label={words.lastName}
+                  required
+                  maxLength={100}
+                  value={person.lastName}
+                  onChange={(event) =>
+                    setPerson({ ...person, lastName: event.target.value })
+                  }
+                />
+                <Field
+                  label={words.email}
+                  type="email"
+                  maxLength={254}
+                  value={person.email}
+                  onChange={(event) =>
+                    setPerson({ ...person, email: event.target.value })
+                  }
+                />
+                <Field
+                  type="date"
+                  label={words.dateOfBirth}
+                  required
+                  value={person.dateOfBirth}
+                  onChange={(event) =>
+                    setPerson({ ...person, dateOfBirth: event.target.value })
+                  }
+                />
+                <FormWide>
+                  <Field
+                    label={translations[language].phone}
+                    type="tel"
+                    maxLength={40}
+                    value={contact.phone}
+                    onChange={(event) =>
+                      setContact({ ...contact, phone: event.target.value })
+                    }
+                  />
+                </FormWide>
+              </FormGrid>
+              <RegistrationContactFields
+                config={defaultRegistrationFormConfig}
+                values={contact}
+                onChange={(patch) => setContact({ ...contact, ...patch })}
+                t={translations[language]}
+              />
+              {terms.length > 0 && (
+                <div
+                  className="consent-list"
+                  role="group"
+                  aria-label={words.confirmations}
+                >
+                  {terms.map((term) => (
+                    <Checkbox
+                      key={termId(term)}
+                      label={`${term.required ? words.required : words.optional} · ${term.text} (${words.agree})`}
+                      aria-required={term.required}
+                      checked={accepted[termId(term)] ?? false}
+                      onChange={(event) =>
+                        setAccepted((old) => ({
+                          ...old,
+                          [termId(term)]: event.target.checked,
+                        }))
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+            </fieldset>
+            {error && <Banner tone="error">{error}</Banner>}
+            <div className="registration-footer">
+              <div className="registration-actions">
+                <Button type="submit" disabled={sending}>
+                  {sending ? words.sending : words.submit}
+                </Button>
+              </div>
             </div>
-          </fieldset>
-        )}
-        {error && <Banner tone="error">{error}</Banner>}
-        <div>
-          <Button type="submit" disabled={sending}>
-            {sending ? words.sending : words.submit}
-          </Button>
+          </form>
         </div>
-      </form>
-    </main>
+      </main>
+    </section>
   );
 }
