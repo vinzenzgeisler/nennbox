@@ -563,6 +563,7 @@
     "registrationContactMatches",
     "registrationDetailFieldKeys",
     "registrationFeatureEnabled",
+    "registrationStartNumberMatches",
     "registrationVehicleDetailsMatch",
     "renderEntryCsv",
     "renderMessageTemplate",
