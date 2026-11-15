@@ -134,7 +134,7 @@
 @media (width < 768px) {
   .nb-entry-list-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
     gap: var(--space-1) var(--space-2);
     min-height: 76px;
     height: auto;
@@ -156,22 +156,25 @@
     display: none;
   }
   .nb-entry-list-row td:first-child {
-    grid-column: 1;
+    grid-column: 1 / 4;
     grid-row: 1;
   }
   .nb-entry-list-row td[data-priority='1']:has(.nb-entry-list-number) {
-    grid-column: 2;
+    grid-column: 4;
     grid-row: 1;
     text-align: end;
   }
   .nb-entry-list-row td[data-column='status'] {
     grid-column: 1;
     grid-row: 2;
+    margin-inline-start: 60px;
   }
   .nb-entry-list-row td[data-column='payment'] {
     grid-column: 2;
     grid-row: 2;
-    text-align: end;
+  }
+  .nb-entry-list-number {
+    font: 700 28px/1 var(--font-plex);
   }
   .nb-entry-list-person {
     gap: var(--space-3);

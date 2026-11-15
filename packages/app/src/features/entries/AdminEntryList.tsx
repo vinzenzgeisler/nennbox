@@ -2,6 +2,7 @@ import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import type { EntryResponse as Entry } from '@racepilot/contracts';
 import {
   DataTable,
+  Pagination,
   SelectionBar,
   TabList,
   TabPanel,
@@ -14,7 +15,6 @@ import type {
 } from './AdminEntriesModel.js';
 import { AdminEntryRow } from './AdminEntryRow.js';
 import { AdminEntryFilters } from './AdminEntryFilters.js';
-import { AdminEntryPagination } from './AdminEntryPagination.js';
 import { AdminEntryListStatus } from './AdminEntryListStatus.js';
 
 type Selection = { eventId: string; ids: Set<string> };
@@ -131,12 +131,17 @@ export function AdminEntryList(props: Props) {
           </tr>
         )}
       </DataTable>
-      <AdminEntryPagination
+      <Pagination
         page={page}
-        totalPages={totalPages}
-        apiState={apiState}
-        clearSelection={clearSelection}
-        setPage={setPage}
+        pageCount={totalPages}
+        previousLabel="Zurück"
+        nextLabel="Weiter"
+        pageLabel={(current, count) => `Seite ${current} von ${count}`}
+        onPageChange={(next) => {
+          if (apiState === 'loading') return;
+          clearSelection();
+          setPage(next);
+        }}
       />
     </>
   );

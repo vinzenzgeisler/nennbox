@@ -365,9 +365,11 @@ describe('AdminApplication event switch and detail access', () => {
     expect(container.querySelector('.nb-preview-panel')?.textContent).toContain(
       'Zugelassen',
     );
-    expect(container.querySelector('.nb-preview-panel')?.textContent).toContain(
-      'Keine weitere Statusaktion verfügbar.',
-    );
+    expect(
+      [...container.querySelectorAll('.nb-preview-actions button')].map(
+        (button) => button.textContent,
+      ),
+    ).toEqual(['Nachricht', 'Vollständig öffnen']);
     expect(container.querySelector('.nb-preview-hint')).toBeNull();
     await click(byText('Vollständig öffnen'));
     const detail = container.querySelector('.nb-detail')!;
@@ -398,7 +400,7 @@ describe('AdminApplication event switch and detail access', () => {
     ];
     await mount();
 
-    expect(textOf()).toContain('Keine weitere Statusaktion verfügbar.');
+    expect(container.querySelector('.nb-preview-hint')).toBeNull();
     expect(
       [...container.querySelectorAll('.nb-preview-actions button')].some(
         (button) => button.textContent?.includes('Als abgesagt markieren'),
