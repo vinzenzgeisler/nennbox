@@ -14,6 +14,7 @@ export {
   RegistrationFormConfigPatchSchema,
   defaultRegistrationFormConfig,
   mergeRegistrationFormConfig,
+  registrationFieldDefaultState,
 } from './registration-config.js';
 export type {
   RegistrationBranding,
@@ -107,7 +108,10 @@ export type {
   MessageCampaignRecord,
   MessageAttachmentRecord,
 } from './messages.js';
-export { RegistrationContactFieldsSchema } from './registration-details.js';
+export {
+  BLOOD_GROUPS,
+  RegistrationContactFieldsSchema,
+} from './registration-details.js';
 
 export {
   ENTRY_DOCUMENT_MAX_BYTES,

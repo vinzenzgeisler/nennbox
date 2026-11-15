@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  registrationBirthDateMatches,
   registrationContactMatches,
   registrationVehicleDetailsMatch,
   resolveRegistrationFieldStates,
@@ -92,5 +93,69 @@ describe('registration field states', () => {
         }),
       ),
     ).toBe(true);
+  });
+
+  it('keeps the newer standard fields hidden and the birth date required until configured', () => {
+    expect(resolveRegistrationFieldStates(null, null)).toMatchObject({
+      dateOfBirth: 'required',
+      bloodGroup: 'hidden',
+      licenseNumber: 'hidden',
+      transponderNumber: 'hidden',
+      vehiclePassNumber: 'hidden',
+      phone: 'optional',
+    });
+    expect(
+      resolveRegistrationFieldStates(
+        { fields: { bloodGroup: { state: 'required' } } },
+        { fields: { bloodGroup: { state: 'optional' } } },
+      ).bloodGroup,
+    ).toBe('optional');
+  });
+
+  it('checks blood group, licence, transponder and vehicle pass against their state', () => {
+    expect(
+      registrationContactMatches({}, states({ bloodGroup: 'required' })),
+    ).toBe(false);
+    expect(
+      registrationContactMatches(
+        { bloodGroup: '0-', licenseNumber: 'L-1' },
+        states({ bloodGroup: 'required', licenseNumber: 'required' }),
+      ),
+    ).toBe(true);
+    expect(registrationContactMatches({ bloodGroup: 'A+' }, states())).toBe(
+      false,
+    );
+    expect(registrationContactMatches({ licenseNumber: 'L-1' }, states())).toBe(
+      false,
+    );
+    expect(
+      registrationVehicleDetailsMatch(
+        { transponderNumber: 'T-9' },
+        states({ transponderNumber: 'optional' }),
+      ),
+    ).toBe(true);
+    expect(
+      registrationVehicleDetailsMatch({ transponderNumber: 'T-9' }, states()),
+    ).toBe(false);
+    expect(
+      registrationVehicleDetailsMatch(
+        {},
+        states({ vehiclePassNumber: 'required' }),
+      ),
+    ).toBe(false);
+  });
+
+  it('applies the field state to the date of birth', () => {
+    expect(registrationBirthDateMatches(undefined, states())).toBe(false);
+    expect(registrationBirthDateMatches('1990-01-01', states())).toBe(true);
+    expect(
+      registrationBirthDateMatches(null, states({ dateOfBirth: 'optional' })),
+    ).toBe(true);
+    expect(
+      registrationBirthDateMatches(
+        '1990-01-01',
+        states({ dateOfBirth: 'hidden' }),
+      ),
+    ).toBe(false);
   });
 });

@@ -1,6 +1,18 @@
 import { z } from 'zod';
 import { PublicationPreferenceSchema } from './entries.js';
 
+/** ABO/Rh blood groups accepted in the registration form and the admin detail. */
+export const BLOOD_GROUPS = [
+  'A+',
+  'A-',
+  'B+',
+  'B-',
+  'AB+',
+  'AB-',
+  '0+',
+  '0-',
+] as const;
+
 /** Empty input counts as "not given"; the form sends null, older clients may send "". */
 const optionalText = (max: number) =>
   z
@@ -22,7 +34,7 @@ const postalCode = optionalText(20).refine(
 /** Driver contact data of one registration. Which of them are asked is the form configuration's decision. */
 export const registrationContactShape = {
   phone,
-  bloodGroup: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-']).nullable().optional(),
+  bloodGroup: z.enum(BLOOD_GROUPS).nullable().optional(),
   licenseNumber: optionalText(100),
   street: optionalText(200),
   postalCode,

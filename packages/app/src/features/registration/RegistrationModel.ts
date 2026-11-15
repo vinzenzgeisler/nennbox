@@ -13,11 +13,22 @@ export function deriveRegistration(
   const { step, values, locale, vehicles, setVehicles } = state;
   const steps = payload.form.steps.map((step) => ({
     ...step,
-    fields: step.fields.filter((field) =>
-      field.key !== 'dateOfBirth' || payload.registrationFormConfig.fields.dateOfBirth.state !== 'hidden',
-    ).map((field) => field.key === 'dateOfBirth'
-      ? { ...field, required: payload.registrationFormConfig.fields.dateOfBirth.state === 'required' }
-      : field),
+    fields: step.fields
+      .filter(
+        (field) =>
+          field.key !== 'dateOfBirth' ||
+          payload.registrationFormConfig.fields.dateOfBirth.state !== 'hidden',
+      )
+      .map((field) =>
+        field.key === 'dateOfBirth'
+          ? {
+              ...field,
+              required:
+                payload.registrationFormConfig.fields.dateOfBirth.state ===
+                'required',
+            }
+          : field,
+      ),
   }));
   const currentStep = steps[step];
   const contrastColors = deriveAccessibleBrandColors(

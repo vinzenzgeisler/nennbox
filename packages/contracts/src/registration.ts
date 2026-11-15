@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { RegistrationCustomFieldAnswersSchema } from './registration-config.js';
 import {
+  BLOOD_GROUPS,
   RegistrationContactFieldsSchema,
   registrationVehicleDetailsShape,
 } from './registration-details.js';
@@ -159,7 +160,7 @@ export const RegistrationDraftSchema = z
     guardianEmail: z.string().max(254),
     // Added later: drafts saved before these fields existed still resume.
     phone: z.string().max(40).default(''),
-    bloodGroup: z.enum(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-', '']).default(''),
+    bloodGroup: z.enum([...BLOOD_GROUPS, '']).default(''),
     licenseNumber: z.string().max(100).default(''),
     street: z.string().max(200).default(''),
     postalCode: z.string().max(20).default(''),

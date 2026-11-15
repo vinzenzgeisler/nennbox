@@ -112,20 +112,26 @@ export const RegistrationCustomFieldAnswersSchema = z.record(
       .strict(),
   ]),
 );
-const registrationFieldStateDefaults = (key: string) =>
-  ({
-    state:
-      key === 'dateOfBirth'
-        ? 'required'
-        : [
-              'bloodGroup',
-              'licenseNumber',
-              'transponderNumber',
-              'vehiclePassNumber',
-            ].includes(key)
-          ? 'hidden'
-          : 'optional',
-  }) as const;
+/**
+ * Fields added after the first form release stay hidden until an organization or event
+ * enables them, so existing forms do not change; date of birth stays required unless
+ * explicitly relaxed, because age and guardian checks depend on it.
+ */
+const hiddenByDefault: readonly string[] = [
+  'bloodGroup',
+  'licenseNumber',
+  'transponderNumber',
+  'vehiclePassNumber',
+];
+export const registrationFieldDefaultState = (key: string) =>
+  key === 'dateOfBirth'
+    ? 'required'
+    : hiddenByDefault.includes(key)
+      ? 'hidden'
+      : 'optional';
+const registrationFieldStateDefaults = (key: string) => ({
+  state: registrationFieldDefaultState(key),
+});
 /**
  * Stored configurations predate newer standard fields: a missing key means the default
  * state, so old organization and event configurations stay valid and keep working.

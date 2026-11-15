@@ -37,14 +37,17 @@ export async function resolveRegistrationParticipant(args: {
     ? new Date(`${payload.person.dateOfBirth}T00:00:00.000Z`)
     : null;
   const eventStart = new Date(`${event.startsOn}T00:00:00.000Z`);
-  if ((dob && (!Number.isFinite(dob.getTime()) || dob > eventStart)) ||
-      (!dob && settings.minimumAge !== null))
+  if (
+    (dob && (!Number.isFinite(dob.getTime()) || dob > eventStart)) ||
+    (!dob && settings.minimumAge !== null)
+  )
     throw new RegistrationUnavailable('invalid-participant');
   let age = dob ? eventStart.getUTCFullYear() - dob.getUTCFullYear() : null;
   if (
-    dob && (eventStart.getUTCMonth() < dob.getUTCMonth() ||
-    (eventStart.getUTCMonth() === dob.getUTCMonth() &&
-      eventStart.getUTCDate() < dob.getUTCDate()))
+    dob &&
+    (eventStart.getUTCMonth() < dob.getUTCMonth() ||
+      (eventStart.getUTCMonth() === dob.getUTCMonth() &&
+        eventStart.getUTCDate() < dob.getUTCDate()))
   )
     age!--;
   if (settings.minimumAge !== null && age !== null && age < settings.minimumAge)
@@ -129,20 +132,22 @@ export async function resolveRegistrationParticipant(args: {
     throw new RegistrationUnavailable('shared-email-disallowed');
   let personId = samePerson?.id;
   if (!personId) {
-    const sameBirthDate = payload.person.dateOfBirth ? await tx
-      .select({
-        id: people.id,
-        firstName: people.firstName,
-        lastName: people.lastName,
-      })
-      .from(people)
-      .where(
-        and(
-          eq(people.organizationId, ctx.organizationId),
-          eq(people.dateOfBirth, payload.person.dateOfBirth),
-          sql`${people.deletedAt} is null`,
-        ),
-      ) : [];
+    const sameBirthDate = payload.person.dateOfBirth
+      ? await tx
+          .select({
+            id: people.id,
+            firstName: people.firstName,
+            lastName: people.lastName,
+          })
+          .from(people)
+          .where(
+            and(
+              eq(people.organizationId, ctx.organizationId),
+              eq(people.dateOfBirth, payload.person.dateOfBirth),
+              sql`${people.deletedAt} is null`,
+            ),
+          )
+      : [];
     if (
       sameBirthDate.some(
         (person) =>

@@ -21,8 +21,12 @@ const contactPayload = (
   config: Config,
 ) => ({
   phone: asked(config, 'phone') ? nullIfEmpty(values.phone) : null,
-  bloodGroup: asked(config, 'bloodGroup') ? nullIfEmpty(values.bloodGroup) : null,
-  licenseNumber: asked(config, 'licenseNumber') ? nullIfEmpty(values.licenseNumber) : null,
+  bloodGroup: asked(config, 'bloodGroup')
+    ? nullIfEmpty(values.bloodGroup)
+    : null,
+  licenseNumber: asked(config, 'licenseNumber')
+    ? nullIfEmpty(values.licenseNumber)
+    : null,
   street: asked(config, 'street') ? nullIfEmpty(values.street) : null,
   postalCode: asked(config, 'postalCode')
     ? nullIfEmpty(values.postalCode)
@@ -165,10 +169,18 @@ export function createRegistrationActions(
             )
               ? numberOrNull(item.displacementCc)
               : null,
-            transponderNumber: asked(payload!.registrationFormConfig, 'transponderNumber')
-              ? nullIfEmpty(item.transponderNumber ?? '') : null,
-            vehiclePassNumber: asked(payload!.registrationFormConfig, 'vehiclePassNumber')
-              ? nullIfEmpty(item.vehiclePassNumber ?? '') : null,
+            transponderNumber: asked(
+              payload!.registrationFormConfig,
+              'transponderNumber',
+            )
+              ? nullIfEmpty(item.transponderNumber ?? '')
+              : null,
+            vehiclePassNumber: asked(
+              payload!.registrationFormConfig,
+              'vehiclePassNumber',
+            )
+              ? nullIfEmpty(item.vehiclePassNumber ?? '')
+              : null,
             cylinders: asked(payload!.registrationFormConfig, 'cylinders')
               ? numberOrNull(item.cylinders)
               : null,

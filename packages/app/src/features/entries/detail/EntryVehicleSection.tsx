@@ -48,6 +48,8 @@ export function EntryVehicleSection({
       registration: vehicle.registration ?? '',
       displacementCc: vehicle.displacementCc?.toString() ?? '',
       cylinders: vehicle.cylinders?.toString() ?? '',
+      transponderNumber: vehicle.transponderNumber ?? '',
+      vehiclePassNumber: vehicle.vehiclePassNumber ?? '',
       ownerName: vehicle.ownerName ?? '',
       history: vehicle.history ?? '',
     });
@@ -72,6 +74,8 @@ export function EntryVehicleSection({
       registration: text('registration'),
       displacementCc: number('displacementCc'),
       cylinders: number('cylinders'),
+      transponderNumber: text('transponderNumber'),
+      vehiclePassNumber: text('vehiclePassNumber'),
       ownerName: text('ownerName'),
       history: text('history'),
     };
@@ -82,6 +86,8 @@ export function EntryVehicleSection({
       registration: vehicle.registration ?? null,
       displacementCc: vehicle.displacementCc ?? null,
       cylinders: vehicle.cylinders ?? null,
+      transponderNumber: vehicle.transponderNumber ?? null,
+      vehiclePassNumber: vehicle.vehiclePassNumber ?? null,
       ownerName: vehicle.ownerName ?? null,
       history: vehicle.history ?? null,
     };
@@ -135,6 +141,14 @@ export function EntryVehicleSection({
                   label="Zylinder"
                   inputMode="numeric"
                   {...bind('cylinders')}
+                />
+                <TextInput
+                  label="Transponder-Nr."
+                  {...bind('transponderNumber')}
+                />
+                <TextInput
+                  label="Fahrzeugpass-Nr."
+                  {...bind('vehiclePassNumber')}
                 />
                 <TextInput label="Besitzer" {...bind('ownerName')} />
                 <FormWide>
@@ -191,8 +205,12 @@ export function EntryVehicleSection({
             <FieldItem label="Zylinder">
               <Value>{vehicle.cylinders}</Value>
             </FieldItem>
-            <FieldItem label="Transponder-Nr."><Value>{vehicle.transponderNumber}</Value></FieldItem>
-            <FieldItem label="Fahrzeugpass-Nr."><Value>{vehicle.vehiclePassNumber}</Value></FieldItem>
+            <FieldItem label="Transponder-Nr.">
+              <Value>{vehicle.transponderNumber}</Value>
+            </FieldItem>
+            <FieldItem label="Fahrzeugpass-Nr.">
+              <Value>{vehicle.vehiclePassNumber}</Value>
+            </FieldItem>
             <FieldItem label="Besitzer">
               <Value>{vehicle.ownerName}</Value>
             </FieldItem>

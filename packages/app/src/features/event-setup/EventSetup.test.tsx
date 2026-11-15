@@ -2,6 +2,7 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { defaultRegistrationFormConfig } from '@racepilot/contracts';
 import { adminFetch } from '../../auth.js';
 import { EventSetup } from './EventSetup.js';
 
@@ -156,6 +157,8 @@ describe('event setup', () => {
       if (url.endsWith('/classes')) return json([]);
       if (url.endsWith('/pricing')) return json([]);
       if (url.endsWith('/consents')) return json({ terms: [] });
+      if (url.endsWith('/registration-form-config'))
+        return json({ config: defaultRegistrationFormConfig });
       throw new Error(`Unexpected request: ${url}`);
     });
 

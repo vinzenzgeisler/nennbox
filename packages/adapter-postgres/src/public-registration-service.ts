@@ -16,6 +16,7 @@ import {
   resolveCanonicalOrigin,
   ProviderError,
   RegistrationUnavailable,
+  registrationBirthDateMatches,
   registrationContactMatches,
   registrationVehicleDetailsMatch,
   registrationFeatureEnabled,
@@ -169,6 +170,10 @@ export function createPublicRegistrationService(
           formConfig,
         );
         if (
+          !registrationBirthDateMatches(
+            payload.person.dateOfBirth,
+            fieldStates,
+          ) ||
           !registrationContactMatches(payload.person, fieldStates) ||
           payload.entries.some(
             (entry) =>

@@ -3,7 +3,10 @@
  * Shared by the delivered form and the server-side check, so what the form asks for and
  * what the server accepts cannot drift apart.
  */
-import { RegistrationFormConfigPatchSchema } from '@racepilot/contracts';
+import {
+  RegistrationFormConfigPatchSchema,
+  registrationFieldDefaultState,
+} from '@racepilot/contracts';
 
 export type RegistrationFieldState = 'required' | 'optional' | 'hidden';
 
@@ -33,7 +36,7 @@ export type RegistrationFieldStates = Record<
 
 type StoredConfig = unknown;
 
-/** A key missing from an older stored configuration means the default: optional. */
+/** A key missing from an older stored configuration means that field's default state. */
 export function resolveRegistrationFieldStates(
   organization: StoredConfig,
   event: StoredConfig,
@@ -44,42 +47,16 @@ export function resolveRegistrationFieldStates(
   };
   const organizationFields = parse(organization);
   const eventFields = parse(event);
-  const resolved: RegistrationFieldStates = {
-    dateOfBirth: 'required',
-    phone: 'optional',
-    street: 'optional',
-    postalCode: 'optional',
-    city: 'optional',
-    emergencyContact: 'optional',
-    bloodGroup: 'hidden',
-    licenseNumber: 'hidden',
-    publicationPreference: 'optional',
-    displacement: 'optional',
-    cylinders: 'optional',
-    transponderNumber: 'hidden',
-    vehiclePassNumber: 'hidden',
-    owner: 'optional',
-    history: 'optional',
-  };
+  const resolved = {} as RegistrationFieldStates;
   for (const key of registrationDetailFieldKeys)
     resolved[key] =
       eventFields?.[key]?.state ??
       organizationFields?.[key]?.state ??
-      (key === 'dateOfBirth'
-        ? 'required'
-        : [
-              'bloodGroup',
-              'licenseNumber',
-              'transponderNumber',
-              'vehiclePassNumber',
-            ].includes(key)
-          ? 'hidden'
-          : 'optional');
+      registrationFieldDefaultState(key);
   return resolved;
 }
 
 export interface RegistrationDetailsInput {
-  dateOfBirth?: string | null | undefined;
   phone?: string | null | undefined;
   bloodGroup?: string | null | undefined;
   licenseNumber?: string | null | undefined;
@@ -120,7 +97,6 @@ export function registrationContactMatches(
   states: RegistrationFieldStates,
 ): boolean {
   return (
-    check(states.dateOfBirth, [input.dateOfBirth], false) &&
     check(states.phone, [input.phone], false) &&
     check(states.bloodGroup, [input.bloodGroup], false) &&
     check(states.licenseNumber, [input.licenseNumber], false) &&
@@ -134,6 +110,14 @@ export function registrationContactMatches(
     ) &&
     check(states.publicationPreference, [input.publicationPreference], false)
   );
+}
+
+/** Date of birth is a person field; it follows the same required/hidden rules as the contact data. */
+export function registrationBirthDateMatches(
+  dateOfBirth: string | null | undefined,
+  states: RegistrationFieldStates,
+): boolean {
+  return check(states.dateOfBirth, [dateOfBirth], false);
 }
 
 export function registrationVehicleDetailsMatch(

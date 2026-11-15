@@ -157,11 +157,13 @@ export interface PublicRegistrationPayload {
     firstName: string;
     lastName: string;
     email: string;
-    dateOfBirth: string;
+    dateOfBirth?: string | null | undefined;
     country?: string | undefined;
     guardianName?: string | undefined;
     guardianEmail?: string | undefined;
     phone?: string | null | undefined;
+    bloodGroup?: string | null | undefined;
+    licenseNumber?: string | null | undefined;
     street?: string | null | undefined;
     postalCode?: string | null | undefined;
     city?: string | null | undefined;
@@ -170,10 +172,12 @@ export interface PublicRegistrationPayload {
     publicationPreference?:
       'name_visible' | 'initials' | 'hidden' | null | undefined;
   };
-  customAnswers?: Record<
-    string,
-    string | boolean | { objectId: string; uploadToken: string }
-  >;
+  customAnswers?:
+    | Record<
+        string,
+        string | boolean | { objectId: string; uploadToken: string }
+      >
+    | undefined;
   entries: Array<{
     classId: string;
     requestedStartNumber?: string | null | undefined;
@@ -184,6 +188,8 @@ export interface PublicRegistrationPayload {
       registration: string | null;
       displacementCc?: number | null | undefined;
       cylinders?: number | null | undefined;
+      transponderNumber?: string | null | undefined;
+      vehiclePassNumber?: string | null | undefined;
       ownerName?: string | null | undefined;
       history?: string | null | undefined;
     };
