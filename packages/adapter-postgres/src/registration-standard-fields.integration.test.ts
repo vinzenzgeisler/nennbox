@@ -123,13 +123,20 @@ describe.skipIf(!url)('typed standard fields', () => {
         target: Awaited<ReturnType<typeof mkEvent>>,
         personPatch: Record<string, unknown> = {},
         vehiclePatch: Record<string, unknown> = {},
+        entryPatch: { requestedStartNumber?: string | null } = {},
       ) => ({
         submissionId: crypto.randomUUID(),
         formVersion: '1.0' as const,
         language: 'de' as const,
         eventSlug: target.event.slug,
         person: person(personPatch),
-        entries: [{ classId: target.klass.id, vehicle: vehicle(vehiclePatch) }],
+        entries: [
+          {
+            classId: target.klass.id,
+            vehicle: vehicle(vehiclePatch),
+            ...entryPatch,
+          },
+        ],
         consents: [
           {
             key: 'participation',
@@ -168,6 +175,8 @@ describe.skipIf(!url)('typed standard fields', () => {
       const relaxed = await mkEvent(orgA.id, 'relaxed', {
         fields: {
           bloodGroup: { state: 'optional' },
+          country: { state: 'hidden' },
+          requestedStartNumber: { state: 'hidden' },
           dateOfBirth: { state: 'hidden' },
           licenseNumber: { state: 'hidden' },
           transponderNumber: { state: 'required' },
@@ -243,6 +252,23 @@ describe.skipIf(!url)('typed standard fields', () => {
             relaxed,
             { licenseNumber: null },
             { vehiclePassNumber: null },
+          ),
+        ],
+        [
+          'country hidden but given',
+          request(
+            relaxed,
+            { dateOfBirth: null, country: 'DE', licenseNumber: null },
+            { transponderNumber: 'T-77', vehiclePassNumber: null },
+          ),
+        ],
+        [
+          'requested number hidden but given',
+          request(
+            relaxed,
+            { dateOfBirth: null, licenseNumber: null },
+            { transponderNumber: 'T-77', vehiclePassNumber: null },
+            { requestedStartNumber: '42' },
           ),
         ],
         [

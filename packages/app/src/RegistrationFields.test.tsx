@@ -422,6 +422,46 @@ describe('public registration contact and vehicle fields', () => {
     });
   });
 
+  it('follows country and requested start number states in the public form', async () => {
+    await mount(
+      form({
+        country: { state: 'required' },
+        requestedStartNumber: { state: 'required' },
+      }),
+      draftWith({ country: '' }),
+      'en',
+    );
+    expect(control('Country')?.required).toBe(true);
+    await press('Continue to entries');
+    expect(control('Country')).toBeDefined();
+    await fill('Country', 'DE');
+    await press('Continue to entries');
+    expect(control('Requested number')?.required).toBe(true);
+    act(() => root?.unmount());
+    container.remove();
+    const submissions = await mount(
+      form({
+        country: { state: 'hidden' },
+        requestedStartNumber: { state: 'hidden' },
+      }),
+      draftWith({
+        country: 'DE',
+        vehicles: [{ ...draftWith().vehicles[0]!, requestedStartNumber: '42' }],
+      }),
+    );
+    expect(control('Land')).toBeUndefined();
+    await press('Weiter zu Startmeldungen');
+    expect(control('Wunsch-Startnummer')).toBeUndefined();
+    await press('Weiter zur Prüfung');
+    await press('Nennung absenden');
+    const sent = submissions[0] as {
+      person: Record<string, unknown>;
+      entries: Array<Record<string, unknown>>;
+    };
+    expect(sent.person.country).toBeUndefined();
+    expect(sent.entries[0]!.requestedStartNumber).toBeNull();
+  });
+
   it('follows the birth date state: optional is not required, hidden is not asked or sent', async () => {
     await mount(form({ dateOfBirth: { state: 'optional' } }), draftWith());
     expect(control('Geburtsdatum')?.required).toBe(false);

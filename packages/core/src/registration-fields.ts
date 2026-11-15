@@ -13,6 +13,7 @@ export type RegistrationFieldState = 'required' | 'optional' | 'hidden';
 export const registrationDetailFieldKeys = [
   'dateOfBirth',
   'phone',
+  'country',
   'street',
   'postalCode',
   'city',
@@ -20,6 +21,7 @@ export const registrationDetailFieldKeys = [
   'bloodGroup',
   'licenseNumber',
   'publicationPreference',
+  'requestedStartNumber',
   'displacement',
   'cylinders',
   'transponderNumber',
@@ -58,6 +60,7 @@ export function resolveRegistrationFieldStates(
 
 export interface RegistrationDetailsInput {
   phone?: string | null | undefined;
+  country?: string | null | undefined;
   bloodGroup?: string | null | undefined;
   licenseNumber?: string | null | undefined;
   street?: string | null | undefined;
@@ -98,6 +101,7 @@ export function registrationContactMatches(
 ): boolean {
   return (
     check(states.phone, [input.phone], false) &&
+    check(states.country, [input.country], false) &&
     check(states.bloodGroup, [input.bloodGroup], false) &&
     check(states.licenseNumber, [input.licenseNumber], false) &&
     check(states.street, [input.street], false) &&
@@ -132,4 +136,12 @@ export function registrationVehicleDetailsMatch(
     check(states.owner, [input.ownerName], false) &&
     check(states.history, [input.history], false)
   );
+}
+
+/** Start number follows the same event/organization state as the displayed field. */
+export function registrationStartNumberMatches(
+  number: string | null | undefined,
+  states: RegistrationFieldStates,
+): boolean {
+  return check(states.requestedStartNumber, [number], false);
 }

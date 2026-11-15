@@ -140,7 +140,12 @@ export function createRegistrationActions(
         const extras = entryExtras(payload!, item);
         return {
           classId: item.classId,
-          requestedStartNumber: item.requestedStartNumber || null,
+          requestedStartNumber: asked(
+            payload!.registrationFormConfig,
+            'requestedStartNumber',
+          )
+            ? item.requestedStartNumber || null
+            : null,
           passenger: extras.hasPassenger
             ? {
                 firstName: item.passengerFirstName,

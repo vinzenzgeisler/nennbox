@@ -34,6 +34,7 @@ export function RegistrationFieldsPreview({
   });
   const [birthDate, setBirthDate] = useState('');
   const [vehicle, setVehicle] = useState(emptyVehicle);
+  const [requestedNumber, setRequestedNumber] = useState('');
   const t = translations.de;
   return (
     <FormSection title="Live-Vorschau · Nennformular" variant="registration">
@@ -79,6 +80,14 @@ export function RegistrationFieldsPreview({
         />
       </FormSection>
       <FormSection title="Fahrzeug" variant="registration">
+        {fieldState(config, 'requestedStartNumber') !== 'hidden' && (
+          <Field
+            label="Wunsch-Startnummer"
+            required={fieldState(config, 'requestedStartNumber') === 'required'}
+            value={requestedNumber}
+            onChange={(event) => setRequestedNumber(event.target.value)}
+          />
+        )}
         <RegistrationVehicleDetailFields
           config={config}
           vehicle={vehicle}

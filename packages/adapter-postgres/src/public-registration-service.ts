@@ -19,6 +19,7 @@ import {
   registrationBirthDateMatches,
   registrationContactMatches,
   registrationVehicleDetailsMatch,
+  registrationStartNumberMatches,
   registrationFeatureEnabled,
   resolveRegistrationFieldStates,
 } from '@racepilot/core';
@@ -151,20 +152,6 @@ export function createPublicRegistrationService(
             false
         )
           throw new RegistrationUnavailable('multiple-entries-disabled');
-        const eventNumberState = (
-          (formConfig.fields ?? {}) as Record<string, Record<string, unknown>>
-        ).requestedStartNumber?.state;
-        const orgNumberState = (
-          (orgFormConfig?.fields ?? {}) as Record<
-            string,
-            Record<string, unknown>
-          >
-        ).requestedStartNumber?.state;
-        if (
-          (eventNumberState ?? orgNumberState) === 'hidden' &&
-          payload.entries.some((entry) => entry.requestedStartNumber)
-        )
-          throw new RegistrationUnavailable('requested-start-number-hidden');
         const fieldStates = resolveRegistrationFieldStates(
           orgFormConfig,
           formConfig,
@@ -177,7 +164,10 @@ export function createPublicRegistrationService(
           !registrationContactMatches(payload.person, fieldStates) ||
           payload.entries.some(
             (entry) =>
-              !registrationVehicleDetailsMatch(entry.vehicle, fieldStates),
+              !registrationStartNumberMatches(
+                entry.requestedStartNumber,
+                fieldStates,
+              ) || !registrationVehicleDetailsMatch(entry.vehicle, fieldStates),
           )
         )
           throw new RegistrationUnavailable('invalid-participant');

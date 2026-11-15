@@ -3,6 +3,7 @@ import {
   registrationBirthDateMatches,
   registrationContactMatches,
   registrationVehicleDetailsMatch,
+  registrationStartNumberMatches,
   resolveRegistrationFieldStates,
   type RegistrationFieldStates,
 } from './registration-fields.js';
@@ -141,6 +142,42 @@ describe('registration field states', () => {
       registrationVehicleDetailsMatch(
         {},
         states({ vehiclePassNumber: 'required' }),
+      ),
+    ).toBe(false);
+  });
+
+  it('enforces the country and requested number states that the editor exposes', () => {
+    expect(
+      registrationContactMatches({}, states({ country: 'required' })),
+    ).toBe(false);
+    expect(
+      registrationContactMatches(
+        { country: 'DE' },
+        states({ country: 'required' }),
+      ),
+    ).toBe(true);
+    expect(
+      registrationContactMatches(
+        { country: 'DE' },
+        states({ country: 'hidden' }),
+      ),
+    ).toBe(false);
+    expect(
+      registrationStartNumberMatches(
+        null,
+        states({ requestedStartNumber: 'required' }),
+      ),
+    ).toBe(false);
+    expect(
+      registrationStartNumberMatches(
+        '42',
+        states({ requestedStartNumber: 'required' }),
+      ),
+    ).toBe(true);
+    expect(
+      registrationStartNumberMatches(
+        '42',
+        states({ requestedStartNumber: 'hidden' }),
       ),
     ).toBe(false);
   });
