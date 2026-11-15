@@ -129,10 +129,18 @@ save rotates it, and resume consumes it transactionally once. The raw token is
 put in a URL fragment (not sent as an HTTP request target) and the UI removes it
 from browser history before calling the resume API. Save and resume derive
 organization/event scope server-side and use generic outcomes to avoid
-email/event enumeration. The current registration record requires date of birth
-for age/guardian policy checks; F1 marks it configurable. Until the existing
-person/age domain invariant is redesigned, the UI keeps this core field
-required, rather than creating registrations with unverified age eligibility.
+email/event enumeration. Standard driver and vehicle fields use the same typed `hidden`, `optional`, or
+`required` state in the delivered form and the server-side submission check.
+Missing keys in older stored configurations retain their prior behavior: date
+of birth remains required, while fields introduced later (blood group, licence
+number, transponder number, and vehicle pass number) remain hidden. Event fields
+override organization defaults per key. Blood group accepts only A+, A-, B+,
+B-, AB+, AB-, 0+, and 0-. Registration-scoped contact values stay on the
+registration group, not the organization-wide person; transponder and vehicle
+pass numbers stay with the reported vehicle. Draft save/resume carries these
+values. An optional or hidden date of birth may be omitted; when supplied, the
+existing age and guardian checks still apply. Organization minimum-age policies
+reject a submission without a date of birth.
 
 Custom form fields are configured as event overrides or organization defaults
 with stable keys, localized labels, and schema-checked type-specific options.

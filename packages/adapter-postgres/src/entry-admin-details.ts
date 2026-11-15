@@ -213,8 +213,12 @@ export async function attachAdminEntryDetails(
           email: driver?.email ?? null,
           emailVerified: driver?.emailVerified === 'verified',
           phone: context?.phone ?? null,
-          bloodGroup: context?.bloodGroup ?? null,
-          licenseNumber: context?.licenseNumber ?? null,
+          ...(item.formSnapshotVersion || context?.bloodGroup
+            ? { bloodGroup: context?.bloodGroup ?? null }
+            : {}),
+          ...(item.formSnapshotVersion || context?.licenseNumber
+            ? { licenseNumber: context?.licenseNumber ?? null }
+            : {}),
           street: context?.street ?? null,
           postalCode: context?.postalCode ?? null,
           city: context?.city ?? null,
@@ -233,8 +237,12 @@ export async function attachAdminEntryDetails(
           vehicleType: vehicle?.vehicleType ?? null,
           displacementCc: vehicle?.displacementCc ?? null,
           cylinders: vehicle?.cylinders ?? null,
-          transponderNumber: vehicle?.transponderNumber ?? null,
-          vehiclePassNumber: vehicle?.vehiclePassNumber ?? null,
+          ...(item.formSnapshotVersion || vehicle?.transponderNumber
+            ? { transponderNumber: vehicle?.transponderNumber ?? null }
+            : {}),
+          ...(item.formSnapshotVersion || vehicle?.vehiclePassNumber
+            ? { vehiclePassNumber: vehicle?.vehiclePassNumber ?? null }
+            : {}),
           ownerName: vehicle?.ownerName ?? null,
           history: vehicle?.history ?? null,
         },

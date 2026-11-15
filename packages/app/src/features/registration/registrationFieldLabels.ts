@@ -11,7 +11,7 @@ export const registrationFieldLabels: Record<string, string> = {
   emergencyContact: 'Notfallkontakt',
   publicationPreference: 'Veröffentlichung',
   biography: 'Sportlicher Werdegang',
-  organizer_notes: 'Hinweise an den Veranstalter',
+  organizerNotes: 'Hinweise an den Veranstalter',
   requestedStartNumber: 'Wunsch-Startnummer',
   make: 'Hersteller',
   model: 'Modell',

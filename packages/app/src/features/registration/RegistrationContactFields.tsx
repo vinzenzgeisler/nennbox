@@ -5,6 +5,7 @@ import {
   FormWide,
   SelectField,
 } from '@racepilot/ui';
+import { BLOOD_GROUPS } from '@racepilot/contracts';
 import type { RegistrationFormConfig } from '@racepilot/contracts';
 import {
   fieldState,
@@ -88,7 +89,7 @@ export function RegistrationContactFields({
           onChange={(event) => set('bloodGroup')(event.target.value)}
         >
           <option value="">{t.countryNotGiven}</option>
-          {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'].map((group) => (
+          {BLOOD_GROUPS.map((group) => (
             <option key={group} value={group}>
               {group}
             </option>
