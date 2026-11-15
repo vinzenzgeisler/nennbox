@@ -28,14 +28,26 @@ export const EventSchema = z
     slug: z.string(),
     orgaCodePrefix: z.string().nullable().optional(),
     name: z.string(),
+    organizerName: z.string().max(160).nullable().optional(),
+    organizerAddress: z.string().max(1000).nullable().optional(),
+    arrivalNotes: z.string().max(10000).nullable().optional(),
+    paddockNotes: z.string().max(10000).nullable().optional(),
     startsOn: z.string(),
     endsOn: z.string(),
     status: EventStatusSchema,
-    registrationOpensAt: z.string().datetime({ offset: true }).nullable(),
-    registrationClosesAt: z.string().datetime({ offset: true }).nullable(),
-    openedAt: z.string().datetime({ offset: true }).nullable(),
-    closedAt: z.string().datetime({ offset: true }).nullable(),
-    archivedAt: z.string().datetime({ offset: true }).nullable(),
+    registrationOpensAt: z
+      .string()
+      .datetime({ offset: true })
+      .nullable()
+      .optional(),
+    registrationClosesAt: z
+      .string()
+      .datetime({ offset: true })
+      .nullable()
+      .optional(),
+    openedAt: z.string().datetime({ offset: true }).nullable().optional(),
+    closedAt: z.string().datetime({ offset: true }).nullable().optional(),
+    archivedAt: z.string().datetime({ offset: true }).nullable().optional(),
   })
   .strict();
 export const CreateEventRequest = z
@@ -48,6 +60,10 @@ export const CreateEventRequest = z
       .nullable()
       .optional(),
     name: z.string(),
+    organizerName: z.string().max(160).nullable().optional(),
+    organizerAddress: z.string().max(1000).nullable().optional(),
+    arrivalNotes: z.string().max(10000).nullable().optional(),
+    paddockNotes: z.string().max(10000).nullable().optional(),
     startsOn: z.string(),
     endsOn: z.string(),
     registrationOpensAt: z

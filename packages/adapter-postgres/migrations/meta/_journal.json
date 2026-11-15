@@ -232,6 +232,13 @@
       "when": 1794422200000,
       "tag": "0032_passenger_spare_vehicle",
       "breakpoints": false
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794422200001,
+      "tag": "0033_organizer_settings",
+      "breakpoints": false
     }
   ]
 }

@@ -912,6 +912,72 @@ describe.skipIf(!databaseUrl)(
       ).toMatchObject({ recipient: { accountName: 'Club A' } });
     });
 
+    it('isolates organizer notes and recipient edits through the product composition', async () => {
+      const a = tenants.a;
+      const b = tenants.b;
+      const eventId = seed.eventId;
+      expectStatus(
+        await call(a, 'PATCH', `/admin/events/${eventId}`, {
+          organizerName: 'Club A Event',
+          organizerAddress: 'A Straße 1',
+          arrivalNotes: 'Anfahrt Tor A',
+          paddockNotes: 'Fahrerlager A',
+        }),
+        200,
+      );
+      expectStatus(
+        await call(a, 'PUT', '/admin/organization/payment-recipient', {
+          accountName: 'Club A',
+          address: 'A Straße 1',
+          iban: 'DE89370400440532013000',
+        }),
+        200,
+      );
+      expect(
+        (await call(a, 'GET', `/admin/events/${eventId}`)).body,
+      ).toMatchObject({
+        organizerName: 'Club A Event',
+        arrivalNotes: 'Anfahrt Tor A',
+      });
+      expect((await call(b, 'GET', `/admin/events/${eventId}`)).status).toBe(
+        404,
+      );
+      expect(
+        (await call(b, 'GET', '/admin/organization/payment-recipient')).body,
+      ).toEqual({ recipient: null });
+      expectStatus(
+        await call(b, 'PUT', '/admin/organization/payment-recipient', {
+          accountName: 'Club B',
+          iban: 'DE89370400440532013000',
+        }),
+        200,
+      );
+      expectStatus(
+        await call(b, 'DELETE', '/admin/organization/payment-recipient'),
+        200,
+      );
+      expect(
+        (await call(b, 'GET', '/admin/organization/payment-recipient')).body,
+      ).toEqual({ recipient: null });
+      expect(
+        (await call(a, 'GET', '/admin/organization/payment-recipient')).body,
+      ).toMatchObject({
+        recipient: { accountName: 'Club A', address: 'A Straße 1' },
+      });
+      const publicForm = await call(
+        a,
+        'GET',
+        `/public/organizations/${a.id}/events/${seed.slug}/registration/form`,
+      );
+      expect(publicForm.status).toBe(200);
+      expect(publicForm.body).toMatchObject({
+        event: { arrivalNotes: 'Anfahrt Tor A', paddockNotes: 'Fahrerlager A' },
+      });
+      expect(JSON.stringify(publicForm.body)).not.toContain(
+        'DE89370400440532013000',
+      );
+    });
+
     it('scopes public routes and slugs to the organization of the host', async () => {
       const { slug } = seed;
       const a = tenants.a;

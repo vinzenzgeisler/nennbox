@@ -23,13 +23,19 @@ import { eq, and } from 'drizzle-orm';
 
 import { sql } from 'drizzle-orm';
 
-export function createEventRepository(db: Database): EventRepository {
-  const mapEvent = (row: typeof events.$inferSelect): Event => ({
+function mapEvent(row: typeof events.$inferSelect): Event {
+  return {
     id: row.id,
     organizationId: organizationId(row.organizationId),
     slug: row.slug,
     orgaCodePrefix: row.orgaCodePrefix,
     name: row.name,
+    ...(row.organizerName !== null ? { organizerName: row.organizerName } : {}),
+    ...(row.organizerAddress !== null
+      ? { organizerAddress: row.organizerAddress }
+      : {}),
+    ...(row.arrivalNotes !== null ? { arrivalNotes: row.arrivalNotes } : {}),
+    ...(row.paddockNotes !== null ? { paddockNotes: row.paddockNotes } : {}),
     startsOn: row.startsOn,
     endsOn: row.endsOn,
     status: row.status as EventStatus,
@@ -38,7 +44,10 @@ export function createEventRepository(db: Database): EventRepository {
     openedAt: row.openedAt?.toISOString() ?? null,
     closedAt: row.closedAt?.toISOString() ?? null,
     archivedAt: row.archivedAt?.toISOString() ?? null,
-  });
+  };
+}
+
+export function createEventRepository(db: Database): EventRepository {
   return {
     listByOrganization: async (ctx) =>
       (
@@ -108,6 +117,18 @@ export function createEventRepository(db: Database): EventRepository {
               }
             : {}),
           ...(patch.name !== undefined ? { name: patch.name } : {}),
+          ...(patch.organizerName !== undefined
+            ? { organizerName: patch.organizerName }
+            : {}),
+          ...(patch.organizerAddress !== undefined
+            ? { organizerAddress: patch.organizerAddress }
+            : {}),
+          ...(patch.arrivalNotes !== undefined
+            ? { arrivalNotes: patch.arrivalNotes }
+            : {}),
+          ...(patch.paddockNotes !== undefined
+            ? { paddockNotes: patch.paddockNotes }
+            : {}),
           ...(patch.startsOn !== undefined ? { startsOn: patch.startsOn } : {}),
           ...(patch.endsOn !== undefined ? { endsOn: patch.endsOn } : {}),
           ...('registrationOpensAt' in patch
@@ -207,20 +228,6 @@ export function createEventClassRepository(db: Database): EventClassRepository {
 }
 
 export function createEventSetupRepository(db: Database): EventSetupRepository {
-  const mapEvent = (row: typeof events.$inferSelect): Event => ({
-    id: row.id,
-    organizationId: organizationId(row.organizationId),
-    slug: row.slug,
-    name: row.name,
-    startsOn: row.startsOn,
-    endsOn: row.endsOn,
-    status: row.status as EventStatus,
-    registrationOpensAt: row.registrationOpensAt?.toISOString() ?? null,
-    registrationClosesAt: row.registrationClosesAt?.toISOString() ?? null,
-    openedAt: row.openedAt?.toISOString() ?? null,
-    closedAt: row.closedAt?.toISOString() ?? null,
-    archivedAt: row.archivedAt?.toISOString() ?? null,
-  });
   return {
     createSetup: async (ctx, input: EventSetupInput) =>
       db.transaction(async (tx) => {

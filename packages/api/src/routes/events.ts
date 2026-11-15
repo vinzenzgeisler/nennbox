@@ -71,11 +71,15 @@ export function registerEventsRoutes(context: ApiRoutesContext): void {
     const guard = await requireMember(c.req.raw);
     if (!guard.ok) return c.json({ error: guard.error }, guard.status);
     const context = guard.context;
+    const parsed = CreateEventRequest.partial()
+      .strict()
+      .safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
     try {
       const result = await updateEvent(
         context,
         c.req.param('eventId'),
-        await c.req.json(),
+        parsed.data as import('@racepilot/core').EventPatch,
         { events: deps.events },
       );
       return result

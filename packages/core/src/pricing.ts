@@ -138,6 +138,7 @@ export function validateIban(value: string): boolean {
 
 export interface PaymentRecipient {
   readonly accountName: string;
+  readonly address?: string | null;
   readonly iban: string;
   readonly bic?: string | null;
 }
@@ -148,6 +149,7 @@ export function validatePaymentRecipient(
   if (
     !input.accountName.trim() ||
     input.accountName.length > 70 ||
+    (input.address != null && input.address.length > 1000) ||
     !validateIban(input.iban) ||
     (input.bic != null &&
       !/^[A-Z0-9]{8}(?:[A-Z0-9]{3})?$/.test(input.bic.toUpperCase()))
@@ -155,6 +157,7 @@ export function validatePaymentRecipient(
     throw new Error('Invalid bank recipient');
   return Object.freeze({
     accountName: input.accountName.trim(),
+    address: input.address?.trim() || null,
     iban: input.iban.replace(/\s+/g, '').toUpperCase(),
     bic: input.bic?.toUpperCase() ?? null,
   });

@@ -65,6 +65,11 @@ export function registerEventSetupRoute(apiContext: ApiRoutesContext): void {
         {
           event: {
             slug: parsed.data.event.slug,
+            organizerName: parsed.data.event.organizerName ?? null,
+            organizerAddress: parsed.data.event.organizerAddress ?? null,
+            arrivalNotes: parsed.data.event.arrivalNotes ?? null,
+            paddockNotes: parsed.data.event.paddockNotes ?? null,
+
             name: parsed.data.event.name,
             startsOn: parsed.data.event.startsOn,
             endsOn: parsed.data.event.endsOn,

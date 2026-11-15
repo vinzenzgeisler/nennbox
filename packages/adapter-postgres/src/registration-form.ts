@@ -88,6 +88,10 @@ export function createRegistrationFormMethods(
           id: event.id,
           slug: event.slug,
           name: event.name,
+          organizerName: event.organizerName,
+          organizerAddress: event.organizerAddress,
+          arrivalNotes: event.arrivalNotes,
+          paddockNotes: event.paddockNotes,
           startsOn: event.startsOn,
           registrationClosesAt:
             event.registrationClosesAt?.toISOString() ?? null,

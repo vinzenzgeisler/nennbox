@@ -22,6 +22,7 @@ export function registerPaymentsRoutes(context: ApiRoutesContext): void {
     const parsed = z
       .object({
         accountName: z.string().trim().min(1).max(70),
+        address: z.string().max(1000).nullable().optional(),
         iban: z.string().min(15).max(34),
         bic: z.string().max(11).nullable().optional(),
       })
@@ -34,6 +35,7 @@ export function registerPaymentsRoutes(context: ApiRoutesContext): void {
           context,
           {
             accountName: parsed.data.accountName,
+            address: parsed.data.address ?? null,
             iban: parsed.data.iban,
             ...(parsed.data.bic !== undefined ? { bic: parsed.data.bic } : {}),
           },
@@ -43,6 +45,14 @@ export function registerPaymentsRoutes(context: ApiRoutesContext): void {
     } catch {
       return c.json({ error: 'Invalid payment recipient' }, 400);
     }
+  });
+  app.delete('/admin/organization/payment-recipient', async (c) => {
+    const guard = await requireMember(c.req.raw, 'organization:update');
+    if (!guard.ok) return c.json({ error: guard.error }, guard.status);
+    if (!deps.paymentRecipients.delete)
+      return c.json({ error: 'Unavailable' }, 503);
+    await deps.paymentRecipients.delete(guard.context);
+    return c.json({ recipient: null });
   });
   app.post('/admin/invoices/:invoiceId/payments', async (c) => {
     const guard = await requireMember(c.req.raw, 'payment:write');

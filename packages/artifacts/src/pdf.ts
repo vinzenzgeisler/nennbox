@@ -111,6 +111,19 @@ export async function createEntryConfirmationPdf(
       if (input.paymentRecipient) {
         text('Empfänger: ' + input.paymentRecipient.accountName, 48, 472);
         text('IBAN: ' + input.paymentRecipient.iban, 48, 454);
+        const address = input.paymentRecipient.address
+          ?.trim()
+          .replace(/\s+/g, ' ');
+        const addressLines = address?.match(/.{1,50}/g) ?? [];
+        for (const [index, line] of addressLines.entries())
+          text(line, 48, 436 - index * 16, 10);
+        if (input.paymentRecipient.bic)
+          text(
+            'BIC: ' + input.paymentRecipient.bic,
+            48,
+            436 - addressLines.length * 16,
+            10,
+          );
       }
       const qr = await QRCode.toBuffer(instruction, {
         type: 'png',
@@ -119,8 +132,8 @@ export async function createEntryConfirmationPdf(
         scale: 4,
       });
       const image = await document.embedPng(qr);
-      page.drawImage(image, { x: 48, y: 330, width: 132, height: 132 });
-      text('GiroCode', 48, 312, 10);
+      page.drawImage(image, { x: 408, y: 330, width: 132, height: 132 });
+      text('GiroCode', 408, 312, 10);
     }
   }
   if (input.branding.contactEmail) text(input.branding.contactEmail, 48, 45, 9);

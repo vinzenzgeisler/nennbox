@@ -58,6 +58,7 @@ export const organizationPaymentRecipients = pgTable(
       .primaryKey()
       .references(() => organizations.id, { onDelete: 'cascade' }),
     accountName: text('account_name').notNull(),
+    address: text('address'),
     iban: text('iban').notNull(),
     bic: text('bic'),
     updatedAt: timestamp('updated_at', { withTimezone: true })

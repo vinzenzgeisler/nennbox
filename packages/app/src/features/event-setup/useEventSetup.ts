@@ -3,10 +3,9 @@ import { initialState, reduceEventSetup } from './eventSetupState.js';
 import { createEventSetup } from './createEventSetup.js';
 import {
   listClasses,
+  loadEvent,
   listPricing,
   listEvents,
-  loadEvent,
-  loadTerms,
   openEvent,
   saveClass,
   saveEvent,
@@ -15,6 +14,9 @@ import {
   type SetupDraft,
   type SetupEvent,
 } from './eventSetupApi.js';
+import { saveRecipient } from './eventRecipientApi.js';
+import { loadSetupDraft } from './loadSetupDraft.js';
+import { useRecipientClear } from './useRecipientClear.js';
 
 export function useEventSetup(onCreated: (event: SetupEvent) => void) {
   const [state, dispatch] = useReducer(
@@ -67,51 +69,13 @@ export function useEventSetup(onCreated: (event: SetupEvent) => void) {
       setMessage('');
       setLink('');
       try {
-        const [event, classes, pricing, consents] = await Promise.all([
-          loadEvent(id, controller.signal),
-          listClasses(id, controller.signal),
-          listPricing(id, controller.signal),
-          loadTerms(id, controller.signal),
-        ]);
-        if (generation.current !== requestGeneration) return;
-        setCurrentStep(
-          classes.length === 0
-            ? 1
-            : pricing.length < classes.length
-              ? 2
-              : consents.terms?.length
-                ? 4
-                : 3,
+        const { draft: loadedDraft, step } = await loadSetupDraft(
+          id,
+          controller.signal,
         );
-        setDraft({
-          id: event.id,
-          name: event.name,
-          slug: event.slug,
-          startsOn: event.startsOn.slice(0, 10),
-          endsOn: event.endsOn.slice(0, 10),
-          classes: classes.map((item) => {
-            const rule = pricing.find((price) => price.classId === item.id);
-            return {
-              id: item.id,
-              name: item.name,
-              code: item.code,
-              vehicleType: item.vehicleType,
-              maxParticipants: item.maxParticipants,
-              closed: item.closed,
-              passengerMode: item.passengerMode,
-              additionalEntryAdjustmentCents:
-                rule?.additionalEntryAdjustmentCents ?? 0,
-              earlyBirdDeadline: rule?.earlyBirdDeadline ?? null,
-              earlyBirdDiscountCents: rule?.earlyBirdDiscountCents ?? 0,
-              fee: ((rule?.baseCents ?? 0) / 100).toFixed(2),
-            };
-          }),
-          terms:
-            consents.terms?.find(
-              (term) => term.key === 'participation' && term.language === 'de',
-            )?.text ?? '',
-          consentTerms: consents.terms ?? [],
-        });
+        if (generation.current !== requestGeneration) return;
+        setCurrentStep(step);
+        setDraft(loadedDraft);
       } catch (error) {
         if (generation.current === requestGeneration) throw error;
       } finally {
@@ -169,6 +133,13 @@ export function useEventSetup(onCreated: (event: SetupEvent) => void) {
           throw error;
         }
         setDraft((current) => ({ ...current, id: stored.id }));
+        if (draft.accountName.trim() || draft.iban.trim()) {
+          if (!draft.accountName.trim() || !draft.iban.trim())
+            throw new Error(
+              'Für eine Bankverbindung sind Kontoinhaber und IBAN erforderlich.',
+            );
+          await saveRecipient(draft);
+        }
         if (!draft.id) {
           setCurrentStep(4);
           let finalEvent = stored;
@@ -277,7 +248,16 @@ export function useEventSetup(onCreated: (event: SetupEvent) => void) {
     ],
   );
 
+  const clearRecipient = useRecipientClear(
+    lock,
+    loading,
+    setBusy,
+    setDraft,
+    setMessage,
+  );
+
   return {
+    clearRecipient,
     draft,
     setDraft,
     events,
