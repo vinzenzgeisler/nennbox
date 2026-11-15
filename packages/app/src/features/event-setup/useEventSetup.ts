@@ -102,6 +102,21 @@ export function useEventSetup(onCreated: (event: SetupEvent) => void) {
     async (form: HTMLFormElement, open: boolean) => {
       if (lock.current || loading.current) return;
       if (!form.reportValidity()) return;
+      const recipientTouched = [
+        draft.accountName,
+        draft.recipientAddress,
+        draft.iban,
+        draft.bic,
+      ].some((value) => value.trim());
+      if (
+        recipientTouched &&
+        (!draft.accountName.trim() || !draft.iban.trim())
+      ) {
+        setMessage(
+          'Für eine Bankverbindung sind Kontoinhaber und IBAN erforderlich.',
+        );
+        return;
+      }
       lock.current = true;
       setBusy(true);
       setMessage('');
@@ -133,13 +148,7 @@ export function useEventSetup(onCreated: (event: SetupEvent) => void) {
           throw error;
         }
         setDraft((current) => ({ ...current, id: stored.id }));
-        if (draft.accountName.trim() || draft.iban.trim()) {
-          if (!draft.accountName.trim() || !draft.iban.trim())
-            throw new Error(
-              'Für eine Bankverbindung sind Kontoinhaber und IBAN erforderlich.',
-            );
-          await saveRecipient(draft);
-        }
+        if (recipientTouched) await saveRecipient(draft);
         if (!draft.id) {
           setCurrentStep(4);
           let finalEvent = stored;
