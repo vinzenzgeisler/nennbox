@@ -183,8 +183,8 @@ export async function attachAdminEntryDetails(
     const group = groupById.get(item.registrationGroupId);
     return effectivePassengerMode(
       registrationFeatureEnabled(
-        group?.organizationConfig as never,
-        group?.eventConfig as never,
+        group?.organizationConfig,
+        group?.eventConfig,
         'passenger',
       ),
       (classMode ?? 'none') as PassengerMode,

@@ -12,17 +12,27 @@ export const passengerModes: readonly PassengerMode[] = [
   'required',
 ];
 
-type FormConfig = { features?: Record<string, unknown> } | null | undefined;
+function featureSetting(
+  config: unknown,
+  feature: 'passenger' | 'spareVehicle',
+) {
+  if (!config || typeof config !== 'object' || !('features' in config))
+    return undefined;
+  const features = config.features;
+  if (!features || typeof features !== 'object' || Array.isArray(features))
+    return undefined;
+  return (features as Record<string, unknown>)[feature];
+}
 
 /** An event's setting wins over the organization's; both default to "not offered". */
 export function registrationFeatureEnabled(
-  organizationConfig: FormConfig,
-  eventConfig: FormConfig,
+  organizationConfig: unknown,
+  eventConfig: unknown,
   feature: 'passenger' | 'spareVehicle',
 ): boolean {
   return (
-    (eventConfig?.features?.[feature] ??
-      organizationConfig?.features?.[feature]) === true
+    (featureSetting(eventConfig, feature) ??
+      featureSetting(organizationConfig, feature)) === true
   );
 }
 

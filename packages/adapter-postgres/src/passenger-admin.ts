@@ -74,8 +74,8 @@ export async function loadPassengerEntry(
   if (!row) return null;
   const mode: PassengerMode = effectivePassengerMode(
     registrationFeatureEnabled(
-      row.organizationConfig as never,
-      row.eventConfig as never,
+      row.organizationConfig,
+      row.eventConfig,
       'passenger',
     ),
     row.classMode as PassengerMode,

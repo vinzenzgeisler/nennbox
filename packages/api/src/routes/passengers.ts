@@ -113,7 +113,7 @@ export function registerPassengerPublicRoutes(
     const context = await resolvePublicContext(c.req.raw);
     if (!context) return c.json({ error: 'Link unavailable' }, 404);
     const blocked = await limited(
-      c as never,
+      c,
       context.organizationId,
       'passenger-link',
       30,
@@ -134,7 +134,7 @@ export function registerPassengerPublicRoutes(
     const context = await resolvePublicContext(c.req.raw);
     if (!context) return c.json({ error: 'Link unavailable' }, 404);
     const blocked = await limited(
-      c as never,
+      c,
       context.organizationId,
       'passenger-complete',
       10,
