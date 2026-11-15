@@ -35,12 +35,12 @@ test('Admin reviews and rejects real documents; list and preview refresh', async
   const row = page.getByRole('row').filter({ hasText: 'Anna Beispiel' });
   await expect(row).toContainText('Unterlagen 2/2', { timeout: 90_000 });
   await expect(row.locator('.nb-entry-list-orga')).toHaveText(
-    /^[0-9A-HJKMNP-TV-Z]{5}$/,
+    /^[2-9A-HJKMNP-TV-Z]{5}$/,
   );
   await row.locator('button[data-entry-action]').click();
   const preview = page.getByRole('complementary', { name: 'Nennungsvorschau' });
   await expect(preview).toContainText('Hochgeladen');
-  await expect(preview).toContainText(/Orga-Code [0-9A-HJKMNP-TV-Z]{5}/);
+  await expect(preview).toContainText(/Orga-Code [2-9A-HJKMNP-TV-Z]{5}/);
   await preview.getByRole('button', { name: 'Vollständig öffnen' }).click();
   const detail = page.getByRole('region', {
     name: 'Nennung im Detail',
@@ -112,7 +112,7 @@ test('Bergpreis documents match the A7/A4 reference at three widths', async ({
     name: 'Nennung im Detail',
     exact: true,
   });
-  await expect(detail).toContainText(/Orga-Code [0-9A-HJKMNP-TV-Z]{5}/);
+  await expect(detail).toContainText(/Orga-Code [2-9A-HJKMNP-TV-Z]{5}/);
   await expect(documentRow(page, 'Fahrerlizenz')).toContainText('Geprüft');
   await expect(documentRow(page, 'Fahrzeugschein')).toContainText('Fehlt');
   for (const [width, height] of [

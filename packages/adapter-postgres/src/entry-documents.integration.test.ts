@@ -141,7 +141,7 @@ describe.skipIf(!url)(
         const allCodes = [...codes, tenantB.entry.orgaCode];
         expect(new Set(allCodes).size).toBe(allCodes.length);
         expect(
-          codes.every((code) => /^[0-9A-HJKMNP-TV-Z]{5}$/.test(code)),
+          codes.every((code) => /^[2-9A-HJKMNP-TV-Z]{5}$/.test(code)),
         ).toBe(true);
 
         const repository = createEntryDocumentsRepository(db);

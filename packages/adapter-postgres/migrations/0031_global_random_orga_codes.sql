@@ -7,13 +7,17 @@ DECLARE
 BEGIN
   FOR entry_row IN SELECT id FROM entry ORDER BY created_at, id LOOP
     LOOP
+      WITH bytes AS MATERIALIZED (
+        SELECT position,
+          get_byte(decode(md5(gen_random_uuid()::text), 'hex'), position - 1) AS value
+        FROM generate_series(1, 5) AS positions(position)
+      )
       SELECT string_agg(
-        substr('0123456789ABCDEFGHJKMNPQRSTVWXYZ',
-          (get_byte(decode(md5(gen_random_uuid()::text), 'hex'), position - 1) & 31) + 1, 1),
-        '' ORDER BY position
-      ) INTO candidate
-      FROM generate_series(1, 5) AS positions(position);
-      EXIT WHEN NOT EXISTS (
+        CASE WHEN value < 240 THEN
+          substr('23456789ABCDEFGHJKMNPQRSTVWXYZ', (value % 30) + 1, 1)
+        END, '' ORDER BY position
+      ) INTO candidate FROM bytes;
+      EXIT WHEN length(candidate) = 5 AND NOT EXISTS (
         SELECT 1 FROM entry WHERE orga_code = candidate
       );
     END LOOP;

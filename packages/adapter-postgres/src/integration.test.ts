@@ -1803,7 +1803,7 @@ describe.skipIf(!url)('PostgreSQL integration', () => {
         vehicle: 'X Y',
         class: 'A',
         priceCents: 12500,
-        orgaCode: expect.stringMatching(/^[0-9A-HJKMNP-TV-Z]{5}$/),
+        orgaCode: expect.stringMatching(/^[2-9A-HJKMNP-TV-Z]{5}$/),
       });
       expect(
         await createEntryExportRepository(db).listByEvent(
@@ -2851,7 +2851,7 @@ describe.skipIf(!url)('pricing and invoice isolation', () => {
       expect(
         String(outbox.variables.orgaCodes ?? '')
           .split(', ')
-          .every((code) => /^[0-9A-HJKMNP-TV-Z]{5}$/.test(code)),
+          .every((code) => /^[2-9A-HJKMNP-TV-Z]{5}$/.test(code)),
       ).toBe(true);
       const verificationUrl = outbox.variables.verificationUrl!;
       const token = new URL(verificationUrl).searchParams.get('token')!;
