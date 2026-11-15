@@ -54,32 +54,41 @@ const demoStatusConfig = {
   })),
 };
 
-export async function ensureDemoEvent(db: Db, ctx: DemoContext) {
+export async function ensureDemoEvent(
+  db: Db,
+  ctx: DemoContext,
+  options: {
+    organizationName?: string;
+    eventSlug?: string;
+    eventName?: string;
+  } = {},
+) {
   const organizationRepo = createOrganizationRepository(db);
   const organization = await organizationRepo.getById(ctx);
-  if (
-    organization &&
-    (!organization.contactEmail ||
-      organization.contactEmail === 'veranstalter@example.invalid' ||
-      organization.name === 'NENNBOX')
-  )
-    await organizationRepo.update(ctx, {
-      ...(organization.name === 'NENNBOX'
-        ? { name: 'Beispielverein e. V.' }
-        : {}),
-      ...(!organization.contactEmail ||
+  if (organization) {
+    const name =
+      options.organizationName ??
+      (organization.name === 'NENNBOX' ? 'Beispielverein e. V.' : undefined);
+    const contactEmail =
+      !organization.contactEmail ||
       organization.contactEmail === 'veranstalter@example.invalid'
-        ? { contactEmail: 'nennung@beispiel.test' }
-        : {}),
-    });
+        ? 'nennung@beispiel.test'
+        : undefined;
+    if (name || contactEmail)
+      await organizationRepo.update(ctx, {
+        ...(name ? { name } : {}),
+        ...(contactEmail ? { contactEmail } : {}),
+      });
+  }
   const eventRepo = createEventRepository(db);
   let event = (await eventRepo.listByOrganization(ctx)).find(
-    (item) => item.slug === 'historischer-bergpreis-2027',
+    (item) =>
+      item.slug === (options.eventSlug ?? 'historischer-bergpreis-2027'),
   );
   if (!event) {
     event = await eventRepo.create(ctx, {
-      slug: 'historischer-bergpreis-2027',
-      name: 'Historischer Bergpreis 2027',
+      slug: options.eventSlug ?? 'historischer-bergpreis-2027',
+      name: options.eventName ?? 'Historischer Bergpreis 2027',
       startsOn: '2027-05-22',
       endsOn: '2027-05-23',
       registrationOpensAt: '2026-11-01T00:00:00+01:00',
