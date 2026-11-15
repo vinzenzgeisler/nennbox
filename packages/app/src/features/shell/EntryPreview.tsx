@@ -73,21 +73,17 @@ export function EntryPreview({
       )
       .map((item) =>
         item.key === 'payment'
-          ? 'die Zahlung'
+          ? 'Zahlung'
           : item.key === 'technical_inspection'
-            ? 'die technische Abnahme'
-            : 'der Haftverzicht',
+            ? 'Abnahme'
+            : 'Haftverzicht',
       ) ?? [];
   const missing = [
     ...missingDimensions,
     ...uploadLines(entry)
       .filter((line) => line.required && line.status === 'missing')
-      .map((line) => `die Unterlage „${line.label}“`),
+      .map((line) => line.label),
   ];
-  const missingText =
-    missing.length > 1
-      ? `${missing.slice(0, -1).join(', ')} und ${missing.at(-1)}`
-      : missing[0];
   const documents =
     details?.customAnswers
       .filter((answer) => answer.fileDownloadUrl)
@@ -161,15 +157,14 @@ export function EntryPreview({
               disabled={busy}
               onClick={() => void onNextAction(nextStatus)}
             >
-              {next.label.de}
+              {nextStatus === 'accepted' ? 'Zulassen' : next.label.de}
             </Button>
           )}
-          {!canAdvance && <p>Keine weitere Statusaktion verfügbar.</p>}
-          {canAdvance && canAcceptNext && nextStatus && (
+          {canAdvance && canAcceptNext && nextStatus && missing.length > 0 && (
             <p className="nb-preview-hint">
-              {missing.length
-                ? `Es ${missing.length > 1 ? 'fehlen' : 'fehlt'} noch ${missingText}. Nach dem Zulassen springt die Vorschau zur nächsten offenen Nennung.`
-                : 'Nach dem Zulassen springt die Vorschau zur nächsten offenen Nennung.'}
+              {missing.length === 1
+                ? `${missing[0]} fehlt noch. Du kannst trotzdem zulassen.`
+                : `${missing.join(', ')} fehlen noch. Du kannst trotzdem zulassen.`}
             </p>
           )}
           <div className="nb-preview-secondary-actions">

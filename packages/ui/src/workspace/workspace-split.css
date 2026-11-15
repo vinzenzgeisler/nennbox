@@ -90,6 +90,15 @@
   }
 }
 @media (width < 768px) {
+  .nb-admin-workspace:has(.nb-workspace-split) .nb-page-header {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
   .nb-workspace-split-content {
     padding: 0;
   }

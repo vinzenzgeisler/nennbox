@@ -10,6 +10,7 @@
   gap: 4px;
   box-sizing: border-box;
   height: 38px;
+  min-height: 38px;
   padding: 9px var(--space-3) 7px 14px;
   line-height: 18px;
   border: 0;
@@ -41,4 +42,10 @@
 }
 .nb-filter-bar .nb-tab-list {
   border-bottom: 0;
+}
+
+@media (width < 768px) {
+  .nb-tab-list [role='tab'] {
+    min-height: 44px;
+  }
 }

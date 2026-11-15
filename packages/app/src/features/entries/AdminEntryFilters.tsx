@@ -38,6 +38,7 @@ export function AdminEntryFilters({
   return (
     <FilterBar
       label="Nennungen filtern"
+      mobileToggleLabel="Suche & Filter"
       tabs={tabs}
       activeFilters={activeFilters}
       onRemoveFilter={(id) => setDraft((value) => ({ ...value, [id]: '' }))}

@@ -155,11 +155,19 @@
   }
   .nb-admin-mobile-event-picker {
     display: block;
-    padding: var(--space-3);
+    padding: var(--space-3) var(--space-4);
     background: var(--color-green);
   }
+  .nb-admin-mobile-event-picker > strong {
+    display: block;
+    color: var(--color-white);
+    font: 700 20px/1.15 var(--font-archivo);
+  }
   .nb-admin-mobile-event-picker .nb-admin-event-picker select {
-    background: transparent;
+    min-height: 28px;
+    padding-left: 0;
+    border: 0;
+    background-color: transparent;
     color: var(--color-white);
   }
   .nb-admin-mobile-nav {
