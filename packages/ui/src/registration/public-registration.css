@@ -129,6 +129,13 @@
   font: var(--text-label);
   opacity: 0.8;
 }
+.registration-header-meta .registration-meta-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+  font: var(--text-body);
+  opacity: 1;
+}
 .registration-header-meta a {
   color: inherit;
   text-decoration-color: currentColor;

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { Banner } from '@racepilot/ui';
 import type { SetupEvent } from './eventSetupApi.js';
+import { loadRecipient } from './eventRecipientApi.js';
 import { useEventSetup } from './useEventSetup.js';
 import { EventSetupForm } from './EventSetupForm.js';
 import './EventSetup.css';
@@ -10,6 +11,8 @@ const sections = [
   { id: 'event-setup-event', label: 'Veranstaltung' },
   { id: 'event-setup-classes', label: 'Klassen und Startgeld' },
   { id: 'event-setup-terms', label: 'Teilnahmebedingungen' },
+  { id: 'event-setup-organizer', label: 'Veranstalter und Zahlung' },
+  { id: 'event-setup-arrival', label: 'Anreise und Fahrerlager' },
   { id: 'event-setup-actions', label: 'Nennung öffnen' },
 ];
 
@@ -19,10 +22,26 @@ export function EventSetup({
   onCreated: (event: SetupEvent) => void;
 }) {
   const setup = useEventSetup(onCreated);
-  const { refreshEvents } = setup;
+  const { refreshEvents, setDraft } = setup;
   useEffect(() => {
     void refreshEvents().catch(() => undefined);
-  }, [refreshEvents]);
+    void loadRecipient()
+      .then(({ recipient }) => {
+        if (!recipient) return;
+        setDraft((current) =>
+          current.accountName || current.iban
+            ? current
+            : {
+                ...current,
+                accountName: recipient.accountName,
+                recipientAddress: recipient.address ?? '',
+                iban: recipient.iban,
+                bic: recipient.bic ?? '',
+              },
+        );
+      })
+      .catch(() => undefined);
+  }, [refreshEvents, setDraft]);
 
   const submit = (event: FormEvent<HTMLFormElement>, open: boolean) => {
     event.preventDefault();
@@ -64,6 +83,7 @@ export function EventSetup({
               })
             }
             onReset={setup.reset}
+            onClearRecipient={setup.clearRecipient}
             onSubmit={submit}
           />
           {setup.message && (

@@ -73,6 +73,7 @@ export async function issueInvoice(
 
 export interface PaymentRecipientRepository {
   get(ctx: RequestContext): Promise<PaymentRecipient | null>;
+  delete?(ctx: RequestContext): Promise<void>;
   set(
     ctx: RequestContext,
     recipient: PaymentRecipient,

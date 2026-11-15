@@ -7,6 +7,7 @@ import {
   Textarea,
 } from '@racepilot/ui';
 import type { FormEvent } from 'react';
+import { EventOrganizerFields } from './EventOrganizerFields.js';
 import type {
   PassengerMode,
   SetupDraft,
@@ -27,6 +28,7 @@ export function EventSetupForm({
   busy,
   onResume,
   onReset,
+  onClearRecipient,
   onSubmit,
 }: {
   draft: SetupDraft;
@@ -35,6 +37,7 @@ export function EventSetupForm({
   busy: boolean;
   onResume: (id: string) => void;
   onReset: () => void;
+  onClearRecipient: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>, open: boolean) => void;
 }) {
   const updateClass = (
@@ -52,7 +55,7 @@ export function EventSetupForm({
     <>
       <div>
         <SelectField
-          label="Gespeicherten Entwurf fortsetzen"
+          label="Gespeicherte Veranstaltung bearbeiten"
           value={draft.id ?? ''}
           disabled={busy}
           onChange={(event) => {
@@ -62,13 +65,11 @@ export function EventSetupForm({
           }}
         >
           <option value="">Neue Veranstaltung einrichten</option>
-          {events
-            .filter((event) => event.status === 'draft')
-            .map((event) => (
-              <option key={event.id} value={event.id}>
-                {event.name}
-              </option>
-            ))}
+          {events.map((event) => (
+            <option key={event.id} value={event.id}>
+              {event.name}
+            </option>
+          ))}
         </SelectField>
       </div>
       <form
@@ -262,6 +263,12 @@ export function EventSetupForm({
             />
           </FormSection>
         </section>
+        <EventOrganizerFields
+          draft={draft}
+          setDraft={setDraft}
+          busy={busy}
+          onClearRecipient={onClearRecipient}
+        />
         <div id="event-setup-actions" className="event-setup-actions">
           <Button type="submit" variant="secondary" size={40} disabled={busy}>
             Entwurf speichern

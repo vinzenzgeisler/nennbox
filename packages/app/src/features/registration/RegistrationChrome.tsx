@@ -111,6 +111,36 @@ export function RegistrationHeader({
               </a>
             </p>
           )}
+          {(payload.event.organizerName || payload.event.organizerAddress) && (
+            <p>
+              <span>{locale === 'de' ? 'Veranstalter' : 'Organizer'}</span>
+              <span className="registration-meta-value">
+                {payload.event.organizerName || payload.organization.name}
+                {payload.event.organizerAddress && (
+                  <>
+                    <br />
+                    {payload.event.organizerAddress}
+                  </>
+                )}
+              </span>
+            </p>
+          )}
+          {payload.event.arrivalNotes && (
+            <p>
+              <span>{locale === 'de' ? 'Anreise' : 'Arrival'}</span>
+              <span className="registration-meta-value">
+                {payload.event.arrivalNotes}
+              </span>
+            </p>
+          )}
+          {payload.event.paddockNotes && (
+            <p>
+              <span>{locale === 'de' ? 'Fahrerlager' : 'Paddock'}</span>
+              <span className="registration-meta-value">
+                {payload.event.paddockNotes}
+              </span>
+            </p>
+          )}
         </div>
       </div>
     </header>

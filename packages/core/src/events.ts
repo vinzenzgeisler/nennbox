@@ -31,6 +31,10 @@ export interface Event {
   slug: string;
   orgaCodePrefix?: string | null;
   name: string;
+  organizerName?: string | null;
+  organizerAddress?: string | null;
+  arrivalNotes?: string | null;
+  paddockNotes?: string | null;
   startsOn: string;
   endsOn: string;
   status: EventStatus;
@@ -47,6 +51,10 @@ export interface EventInput {
   slug: string;
   orgaCodePrefix?: string | null;
   name: string;
+  organizerName?: string | null;
+  organizerAddress?: string | null;
+  arrivalNotes?: string | null;
+  paddockNotes?: string | null;
   startsOn: string;
   endsOn: string;
   registrationOpensAt?: string | null;
@@ -175,6 +183,20 @@ export function validateEventInput(
   input: EventInput | EventPatch,
   partial = false,
 ): void {
+  for (const [key, max] of [
+    ['organizerName', 160],
+    ['organizerAddress', 1000],
+    ['arrivalNotes', 10000],
+    ['paddockNotes', 10000],
+  ] as const) {
+    const value = input[key];
+    if (
+      value !== undefined &&
+      value !== null &&
+      (typeof value !== 'string' || value.length > max)
+    )
+      throw new Error('Invalid event information');
+  }
   if (
     input.orgaCodePrefix !== undefined &&
     input.orgaCodePrefix !== null &&

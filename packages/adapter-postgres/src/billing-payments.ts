@@ -165,6 +165,13 @@ export function createPaymentRecipientRepository(
   db: Database,
 ): PaymentRecipientRepository {
   return {
+    delete: async (ctx) => {
+      await db
+        .delete(organizationPaymentRecipients)
+        .where(
+          eq(organizationPaymentRecipients.organizationId, ctx.organizationId),
+        );
+    },
     get: async (ctx) => {
       const [row] = await db
         .select()
@@ -173,7 +180,12 @@ export function createPaymentRecipientRepository(
           eq(organizationPaymentRecipients.organizationId, ctx.organizationId),
         );
       return row
-        ? { accountName: row.accountName, iban: row.iban, bic: row.bic }
+        ? {
+            accountName: row.accountName,
+            address: row.address,
+            iban: row.iban,
+            bic: row.bic,
+          }
         : null;
     },
     set: async (ctx, recipient: PaymentRecipient) => {
@@ -182,6 +194,7 @@ export function createPaymentRecipientRepository(
         .values({
           organizationId: ctx.organizationId,
           accountName: recipient.accountName,
+          address: recipient.address ?? null,
           iban: recipient.iban,
           bic: recipient.bic ?? null,
         })
@@ -189,13 +202,19 @@ export function createPaymentRecipientRepository(
           target: organizationPaymentRecipients.organizationId,
           set: {
             accountName: recipient.accountName,
+            address: recipient.address ?? null,
             iban: recipient.iban,
             bic: recipient.bic ?? null,
             updatedAt: new Date(),
           },
         })
         .returning();
-      return { accountName: row!.accountName, iban: row!.iban, bic: row!.bic };
+      return {
+        accountName: row!.accountName,
+        address: row!.address,
+        iban: row!.iban,
+        bic: row!.bic,
+      };
     },
   };
 }

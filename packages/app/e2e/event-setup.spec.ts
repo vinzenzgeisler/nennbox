@@ -30,6 +30,39 @@ test('admin creates a class, terms and opens its public registration in the UI',
   await page.getByLabel('Fahrzeugtyp').selectOption('motorcycle');
   await page.getByLabel('Startgeld in Euro').fill('25,50');
   await page.getByLabel('Text der Bedingungen').fill(terms);
+  await page.getByLabel('Veranstaltername').fill(`MSC ${suffix}`);
+  await page
+    .getByLabel('Veranstalteranschrift')
+    .fill('Rennweg 1, 12345 Berlin');
+  await page.getByLabel('Name des Zahlungsempfängers').fill(`MSC ${suffix}`);
+  await page
+    .getByLabel('Anschrift des Zahlungsempfängers')
+    .fill('Rennweg 1, 12345 Berlin');
+  await page.getByLabel('IBAN').fill('DE89370400440532013000');
+  await page.getByLabel('BIC (optional)').fill('COBADEFFXXX');
+  await page.getByLabel('Anreisehinweise').fill(`Anreise Tor ${suffix}`);
+  await page.getByLabel('Fahrerlagerhinweise').fill(`Fahrerlager ${suffix}`);
+  const verificationDir = process.env.DESIGN_VERIFICATION_DIR;
+  if (verificationDir) {
+    for (const [width, height] of [
+      [1920, 1080],
+      [1440, 900],
+      [390, 844],
+    ]) {
+      if (!width || !height) continue;
+      await page.setViewportSize({ width, height });
+      await page.evaluate(() => {
+        (document.activeElement as HTMLElement | null)?.blur();
+        window.scrollTo(0, 0);
+      });
+      await page.screenshot({
+        path: `${verificationDir}/setup-${width}x${height}.png`,
+        fullPage: true,
+      });
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+  }
+
   await page
     .getByRole('button', { name: 'Speichern und Nennung öffnen' })
     .click();
@@ -45,8 +78,50 @@ test('admin creates a class, terms and opens its public registration in the UI',
   expect(url).toBeTruthy();
   if (!url) throw new Error('public registration link was not provided');
 
+  await page
+    .getByLabel('Gespeicherte Veranstaltung bearbeiten')
+    .selectOption({ label: name });
+  await expect(page.getByLabel('Veranstaltername')).toHaveValue(
+    `MSC ${suffix}`,
+  );
+  await expect(page.getByLabel('IBAN')).toHaveValue('DE89370400440532013000');
+  await expect(page.getByLabel('Anschrift des Zahlungsempfängers')).toHaveValue(
+    'Rennweg 1, 12345 Berlin',
+  );
+  await expect(page.getByLabel('BIC (optional)')).toHaveValue('COBADEFFXXX');
+  await expect(page.getByLabel('Veranstalteranschrift')).toHaveValue(
+    'Rennweg 1, 12345 Berlin',
+  );
+
+  await expect(page.getByLabel('Anreisehinweise')).toHaveValue(
+    `Anreise Tor ${suffix}`,
+  );
   await page.goto(url);
   await expect(page.getByRole('heading', { name })).toBeVisible();
+  await expect(page.getByText(`Anreise Tor ${suffix}`)).toBeVisible();
+  await expect(page.getByText('Rennweg 1, 12345 Berlin')).toBeVisible();
+  await expect(page.getByText(`Fahrerlager ${suffix}`)).toBeVisible();
+  await expect(page.getByText('DE89370400440532013000')).toHaveCount(0);
+  if (verificationDir) {
+    for (const [width, height] of [
+      [1920, 1080],
+      [1440, 900],
+      [390, 844],
+    ]) {
+      if (!width || !height) continue;
+      await page.setViewportSize({ width, height });
+      await page.evaluate(() => {
+        (document.activeElement as HTMLElement | null)?.blur();
+        window.scrollTo(0, 0);
+      });
+      await page.screenshot({
+        path: `${verificationDir}/public-${width}x${height}.png`,
+        fullPage: true,
+      });
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+  }
+
   await page.getByLabel('Vorname').fill(`UI${suffix}`);
   await page.getByLabel('Nachname').fill('Setup');
   await page

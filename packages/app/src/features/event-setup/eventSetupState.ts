@@ -7,6 +7,14 @@ const emptyDraft = (): SetupDraft => ({
   endsOn: '',
   classes: [{ name: '', code: '', fee: '', vehicleType: 'car' }],
   terms: '',
+  organizerName: '',
+  organizerAddress: '',
+  arrivalNotes: '',
+  paddockNotes: '',
+  accountName: '',
+  recipientAddress: '',
+  iban: '',
+  bic: '',
 });
 
 export type EventSetupState = {

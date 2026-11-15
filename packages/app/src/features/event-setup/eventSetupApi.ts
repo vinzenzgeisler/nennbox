@@ -7,6 +7,11 @@ export type SetupEvent = {
   slug: string;
   startsOn: string;
   endsOn: string;
+  organizerName?: string | null | undefined;
+  organizerAddress?: string | null | undefined;
+  arrivalNotes?: string | null | undefined;
+  paddockNotes?: string | null | undefined;
+
   status: 'draft' | 'open' | 'closed' | 'archived';
 };
 export type SetupClass = {
@@ -57,6 +62,14 @@ export type SetupDraft = {
   endsOn: string;
   classes: SetupClassDraft[];
   terms: string;
+  organizerName: string;
+  organizerAddress: string;
+  arrivalNotes: string;
+  paddockNotes: string;
+  accountName: string;
+  recipientAddress: string;
+  iban: string;
+  bic: string;
   consentTerms?: SetupConsent[];
 };
 export type EventOption = Pick<SetupEvent, 'id' | 'name' | 'slug' | 'status'>;
@@ -67,6 +80,10 @@ const SetupEventSchema = z.object({
   startsOn: z.string(),
   endsOn: z.string(),
   status: z.enum(['draft', 'open', 'closed', 'archived']),
+  organizerName: z.string().nullable().optional(),
+  organizerAddress: z.string().nullable().optional(),
+  arrivalNotes: z.string().nullable().optional(),
+  paddockNotes: z.string().nullable().optional(),
 });
 const EventOptionSchema = SetupEventSchema.pick({
   id: true,
@@ -90,14 +107,6 @@ const SetupPriceSchema = z.object({
   additionalEntryAdjustmentCents: z.number(),
   earlyBirdDeadline: z.string().nullable(),
   earlyBirdDiscountCents: z.number(),
-});
-const SetupConsentSchema = z.object({
-  key: z.string(),
-  version: z.string(),
-  language: z.enum(['de', 'en']),
-  text: z.string(),
-  hash: z.string(),
-  required: z.boolean(),
 });
 
 class HttpError extends Error {
@@ -158,6 +167,10 @@ export const saveEvent = (draft: SetupDraft) =>
             slug: draft.slug.trim(),
             startsOn: draft.startsOn,
             endsOn: draft.endsOn,
+            organizerName: draft.organizerName.trim() || null,
+            organizerAddress: draft.organizerAddress.trim() || null,
+            arrivalNotes: draft.arrivalNotes.trim() || null,
+            paddockNotes: draft.paddockNotes.trim() || null,
           }),
         },
       )
@@ -168,6 +181,10 @@ export const saveEvent = (draft: SetupDraft) =>
           slug: draft.slug.trim(),
           startsOn: draft.startsOn,
           endsOn: draft.endsOn,
+          organizerName: draft.organizerName.trim() || null,
+          organizerAddress: draft.organizerAddress.trim() || null,
+          arrivalNotes: draft.arrivalNotes.trim() || null,
+          paddockNotes: draft.paddockNotes.trim() || null,
         }),
       });
 export const listClasses = (eventId: string, signal?: AbortSignal) =>
@@ -222,58 +239,7 @@ export const savePricing = (
       }),
     },
   );
-export const loadTerms = (eventId: string, signal?: AbortSignal) =>
-  request<{ terms?: SetupConsent[] }>(
-    `/admin/events/${encodeURIComponent(eventId)}/consents`,
-    z
-      .object({ terms: z.array(SetupConsentSchema).optional() })
-      .transform(({ terms }) => ({ terms: terms ?? [] })),
-    signal ? { signal } : undefined,
-  );
-export const saveTerms = async (
-  eventId: string,
-  terms: string,
-  existing: SetupConsent[],
-) => {
-  const text = terms.trim();
-  const current = existing.find(
-    (term) => term.key === 'participation' && term.language === 'de',
-  );
-  if (current?.text === text || (!current && !text)) return;
-  const hash = [
-    ...new Uint8Array(
-      await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)),
-    ),
-  ]
-    .map((value) => value.toString(16).padStart(2, '0'))
-    .join('');
-  return request(
-    `/admin/events/${encodeURIComponent(eventId)}/consents`,
-    z.object({ terms: z.array(SetupConsentSchema) }),
-    {
-      method: 'PUT',
-      body: JSON.stringify({
-        terms: [
-          ...existing.filter(
-            (term) => !(term.key === 'participation' && term.language === 'de'),
-          ),
-          ...(text
-            ? [
-                {
-                  key: 'participation',
-                  version: nextTermVersion(current?.version),
-                  language: 'de',
-                  text,
-                  hash,
-                  required: current?.required ?? true,
-                },
-              ]
-            : []),
-        ],
-      }),
-    },
-  );
-};
+export { loadTerms, saveTerms } from './eventSetupTermsApi.js';
 export const openEvent = (eventId: string) =>
   request(
     `/admin/events/${encodeURIComponent(eventId)}/transitions`,
@@ -283,9 +249,3 @@ export const openEvent = (eventId: string) =>
       body: JSON.stringify({ status: 'open' }),
     },
   );
-
-function nextTermVersion(version: string | undefined): string {
-  if (!version) return '1';
-  const match = /^(.*?)(\d+)$/.exec(version);
-  return match ? `${match[1]}${Number(match[2]) + 1}` : `${version}.1`;
-}

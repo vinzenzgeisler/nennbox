@@ -11,6 +11,10 @@ export type FormPayload = {
     id: string;
     slug: string;
     name: string;
+    organizerName: string | null;
+    organizerAddress: string | null;
+    arrivalNotes: string | null;
+    paddockNotes: string | null;
     startsOn: string;
     registrationClosesAt: string | null;
   };
