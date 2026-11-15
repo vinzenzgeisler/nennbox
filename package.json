@@ -22,7 +22,7 @@
     "check:max-lines": "node scripts/check-max-lines.mjs",
     "check:public-exports": "node scripts/check-public-exports.mjs",
     "lint:styles": "stylelint 'packages/app/src/**/*.css' --config stylelint.config.mjs",
-    "community:demo-seed": "tsx scripts/community-demo-seed.ts"
+    "community:demo-seed": "tsx scripts/community-demo-seed-cli.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
