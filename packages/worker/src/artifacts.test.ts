@@ -10,7 +10,7 @@ const job = {
   eventId: event,
   kind: 'entries_csv' as const,
   registrationGroupId: null,
-  fields: ['driver', 'status'],
+  fields: ['driver', 'orgaCode', 'status'],
   filters: {},
   delimiter: ';' as const,
   expiresAt: null,
@@ -106,6 +106,7 @@ describe('artifact worker', () => {
             vehicle: 'Car',
             class: 'GT',
             startNumber: null,
+            orgaCode: '4K7QZ',
             status: 'accepted',
             priceCents: null,
           },
@@ -142,6 +143,8 @@ describe('artifact worker', () => {
     const csv = new TextDecoder().decode(stored);
     expect(Array.from(stored?.slice(0, 3) ?? [])).toEqual([0xef, 0xbb, 0xbf]);
     expect(csv).toContain(';');
+    expect(csv).toContain('Orga code');
+    expect(csv).toContain('4K7QZ');
     expect(csv).toContain("'=1+1");
   });
 });

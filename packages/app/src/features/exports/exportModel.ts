@@ -12,6 +12,7 @@ export const FIELD_LABELS: Record<ExportField, string> = {
   vehicle: 'Fahrzeug',
   class: 'Klasse',
   startNumber: 'Startnummer',
+  orgaCode: 'Orga-Code',
   status: 'Status',
   price: 'Preis',
 };

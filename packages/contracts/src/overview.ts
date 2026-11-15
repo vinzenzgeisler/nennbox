@@ -50,6 +50,7 @@ export const EXPORT_FIELDS = [
   'vehicle',
   'class',
   'startNumber',
+  'orgaCode',
   'status',
   'price',
 ] as const;

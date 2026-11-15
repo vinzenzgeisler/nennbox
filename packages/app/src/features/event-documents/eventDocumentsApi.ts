@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import {
   EntryDocumentTypeSchema,
-  EventResponse,
   type EntryDocumentType,
 } from '@racepilot/contracts';
 import { adminFetch } from '../../auth.js';
@@ -43,28 +42,19 @@ async function call<T extends z.ZodType>(
 
 export type EventDocumentSettings = {
   types: EntryDocumentType[];
-  orgaCodePrefix: string;
 };
 
 export async function loadEventDocumentSettings(
   eventId: string,
   signal: AbortSignal,
 ): Promise<EventDocumentSettings> {
-  const [types, event] = await Promise.all([
-    call(
-      `${eventPath(eventId)}/entry-document-types`,
-      TypesResponse,
-      'Die Unterlagen konnten nicht geladen werden.',
-      { signal },
-    ),
-    call(
-      eventPath(eventId),
-      EventResponse,
-      'Die Veranstaltung konnte nicht geladen werden.',
-      { signal },
-    ),
-  ]);
-  return { types: types.items, orgaCodePrefix: event.orgaCodePrefix ?? '' };
+  const types = await call(
+    `${eventPath(eventId)}/entry-document-types`,
+    TypesResponse,
+    'Die Unterlagen konnten nicht geladen werden.',
+    { signal },
+  );
+  return { types: types.items };
 }
 
 export const saveDocumentTypes = (
@@ -78,20 +68,3 @@ export const saveDocumentTypes = (
     'Die Unterlagen konnten nicht gespeichert werden.',
     { ...json('PUT', { types }), signal },
   ).then((response) => response.items);
-
-export const saveOrgaCodePrefix = (
-  eventId: string,
-  prefix: string,
-  signal: AbortSignal,
-) =>
-  call(
-    eventPath(eventId),
-    EventResponse,
-    'Der Orga-Code-Präfix konnte nicht gespeichert werden.',
-    {
-      ...json('PATCH', {
-        orgaCodePrefix: prefix ? prefix.toUpperCase() : null,
-      }),
-      signal,
-    },
-  ).then((event) => event.orgaCodePrefix ?? '');

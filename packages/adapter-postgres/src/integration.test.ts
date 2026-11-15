@@ -1,4 +1,4 @@
-import { staticCanonicalOrigin } from '@racepilot/core';
+import { staticCanonicalOrigin, generateOrgaCode } from '@racepilot/core';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { runMigrations } from 'graphile-worker';
 import {
@@ -1565,7 +1565,9 @@ describe.skipIf(!url)('PostgreSQL integration', () => {
         db
           .insert(entries)
           .values({
-            orgaCode: `TEST-${crypto.randomUUID()}`,
+            orgaCode: generateOrgaCode((length) =>
+              crypto.getRandomValues(new Uint8Array(length)),
+            ),
             organizationId: orgA!,
             eventId: eventA!.id,
             classId: clsId,
@@ -1801,6 +1803,7 @@ describe.skipIf(!url)('PostgreSQL integration', () => {
         vehicle: 'X Y',
         class: 'A',
         priceCents: 12500,
+        orgaCode: expect.stringMatching(/^[2-9A-HJKMNP-TV-Z]{5}$/),
       });
       expect(
         await createEntryExportRepository(db).listByEvent(
@@ -2845,7 +2848,11 @@ describe.skipIf(!url)('pricing and invoice isolation', () => {
           .from(emailOutbox)
           .where(eq(emailOutbox.organizationId, org!.id))
       )[0]!;
-      expect(outbox.variables.orgaCodes).toContain('-');
+      expect(
+        String(outbox.variables.orgaCodes ?? '')
+          .split(', ')
+          .every((code) => /^[2-9A-HJKMNP-TV-Z]{5}$/.test(code)),
+      ).toBe(true);
       const verificationUrl = outbox.variables.verificationUrl!;
       const token = new URL(verificationUrl).searchParams.get('token')!;
       expect(new URL(verificationUrl).origin).toBe(

@@ -1,4 +1,5 @@
 import type { Database } from './database.js';
+import { normalizeOrgaCode } from '@racepilot/core';
 
 import { people, vehicles, entries } from './schema/entries.js';
 import { eventClasses } from './schema/organization.js';
@@ -44,6 +45,10 @@ export function createEntryExportRepository(
           predicates.push(
             anyOf(
               ilike(entries.requestedStartNumber, pattern),
+              ilike(
+                entries.orgaCode,
+                `%${normalizeOrgaCode(token).replace(/[\\%_]/g, '\\$&')}%`,
+              ),
               sql`${entries.id}::text ilike ${pattern}`,
               ilike(people.firstName, pattern),
               ilike(people.lastName, pattern),
@@ -62,6 +67,7 @@ export function createEntryExportRepository(
           model: vehicles.model,
           className: eventClasses.name,
           startNumber: entries.requestedStartNumber,
+          orgaCode: entries.orgaCode,
           status: entries.acceptanceStatus,
           priceSnapshot: entries.priceSnapshot,
         })
@@ -94,6 +100,7 @@ export function createEntryExportRepository(
         vehicle: `${row.make} ${row.model}`,
         class: row.className,
         startNumber: row.startNumber,
+        orgaCode: row.orgaCode,
         status: row.status,
         priceCents: row.priceSnapshot?.totalCents ?? null,
       }));

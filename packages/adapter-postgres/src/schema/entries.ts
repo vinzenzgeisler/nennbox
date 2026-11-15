@@ -165,11 +165,7 @@ export const entries = pgTable(
   (t) => [
     unique('entry_org_id_unique').on(t.organizationId, t.id),
     unique('entry_org_event_id_unique').on(t.organizationId, t.eventId, t.id),
-    unique('entry_org_event_orga_code_unique').on(
-      t.organizationId,
-      t.eventId,
-      t.orgaCode,
-    ),
+    unique('entry_orga_code_unique').on(t.orgaCode),
     foreignKey({
       columns: [t.organizationId, t.eventId],
       foreignColumns: [events.organizationId, events.id],

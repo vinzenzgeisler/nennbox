@@ -3,12 +3,10 @@ import {
   EventDocumentsApiError,
   loadEventDocumentSettings,
   saveDocumentTypes,
-  saveOrgaCodePrefix,
 } from './eventDocumentsApi.js';
 import {
   documentTypeErrors,
   draftFromType,
-  prefixError,
   toTypeRequest,
   type DocumentTypeDraft,
 } from './documentTypeModel.js';
@@ -17,20 +15,16 @@ type Loaded = {
   eventId: string;
   state: 'loading' | 'ready' | 'error';
   types: DocumentTypeDraft[];
-  prefix: string;
-  savedPrefix: string;
   message: string;
 };
 const loading = (eventId: string): Loaded => ({
   eventId,
   state: 'loading',
   types: [],
-  prefix: '',
-  savedPrefix: '',
   message: '',
 });
 
-/** Loads the event's document types and Orga-Code prefix; the request ends when the event changes. */
+/** Loads document types; the request ends when the event changes. */
 export function useEventDocumentSettings(eventId: string) {
   const [data, setData] = useState<Loaded>(() => loading(eventId));
   const [saving, setSaving] = useState(false);
@@ -49,8 +43,6 @@ export function useEventDocumentSettings(eventId: string) {
           eventId,
           state: 'ready',
           types: settings.types.map(draftFromType),
-          prefix: settings.orgaCodePrefix,
-          savedPrefix: settings.orgaCodePrefix,
           message: '',
         });
       })
@@ -72,8 +64,7 @@ export function useEventDocumentSettings(eventId: string) {
   }, [eventId]);
   const current = data.eventId === eventId ? data : loading(eventId);
   const errors = documentTypeErrors(current.types);
-  const prefixProblem = prefixError(current.prefix);
-  const valid = !prefixProblem && errors.every((error) => !error);
+  const valid = errors.every((error) => !error);
   const change = useCallback((patch: Partial<Loaded>) => {
     setSaved(false);
     setData((value) => ({ ...value, ...patch, message: '' }));
@@ -85,14 +76,6 @@ export function useEventDocumentSettings(eventId: string) {
     setSaving(true);
     setSaved(false);
     try {
-      const prefix =
-        current.prefix === current.savedPrefix
-          ? current.savedPrefix
-          : await saveOrgaCodePrefix(
-              eventId,
-              current.prefix,
-              controller.signal,
-            );
       const types = await saveDocumentTypes(
         eventId,
         toTypeRequest(current.types),
@@ -102,8 +85,6 @@ export function useEventDocumentSettings(eventId: string) {
       setData((value) => ({
         ...value,
         types: types.map(draftFromType),
-        prefix,
-        savedPrefix: prefix,
         message: '',
       }));
       setSaved(true);
@@ -124,12 +105,10 @@ export function useEventDocumentSettings(eventId: string) {
   return {
     ...current,
     errors,
-    prefixProblem,
     saving,
     saved,
     valid,
     setTypes: (types: DocumentTypeDraft[]) => change({ types }),
-    setPrefix: (prefix: string) => change({ prefix }),
     save,
   };
 }

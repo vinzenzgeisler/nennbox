@@ -1,26 +1,51 @@
 import { describe, expect, it } from 'vitest';
-import { deriveOrgaCodePrefix, formatOrgaCode } from './orga-code.js';
+import {
+  findAvailableOrgaCode,
+  generateOrgaCode,
+  normalizeOrgaCode,
+  ORGA_CODE_ALPHABET,
+  ORGA_CODE_LENGTH,
+} from './orga-code.js';
 
 describe('orga-code rules', () => {
-  it('uses a configured prefix normalized to uppercase', () => {
+  it('generates five unambiguous characters from an injected random source', () => {
+    const code = generateOrgaCode((length) => new Uint8Array(length).fill(239));
+    expect(code).toBe('ZZZZZ');
+    expect(code).toHaveLength(ORGA_CODE_LENGTH);
     expect(
-      deriveOrgaCodePrefix({ orgaCodePrefix: ' race ', slug: 'other' }),
-    ).toBe('RACE');
+      [...code].every((character) => ORGA_CODE_ALPHABET.includes(character)),
+    ).toBe(true);
+    expect(ORGA_CODE_ALPHABET).not.toMatch(/[01OILU]/);
   });
 
-  it('derives a sanitized prefix from the event slug and falls back when empty', () => {
+  it('rejects out-of-range random bytes without bias', () => {
+    let batch = 0;
     expect(
-      deriveOrgaCodePrefix({ orgaCodePrefix: null, slug: 'race-2026!' }),
-    ).toBe('RACE2026');
-    expect(deriveOrgaCodePrefix({ orgaCodePrefix: null, slug: '---' })).toBe(
-      'NEN',
+      generateOrgaCode(
+        () =>
+          new Uint8Array(batch++ === 0 ? [255, 0, 1, 2, 3] : [4, 5, 6, 7, 8]),
+      ),
+    ).toBe('23456');
+  });
+
+  it('normalizes case and whitespace without inventing ambiguous characters', () => {
+    expect(normalizeOrgaCode(' ab 2 z ')).toBe('AB2Z');
+  });
+
+  it('retries collisions and stops after the configured bound', async () => {
+    const candidates = ['AAAAA', 'AAAAA', 'BBBBB'];
+    const code = await findAvailableOrgaCode(
+      async (candidate) => candidate === 'AAAAA',
+      () => candidates.shift()!,
+      3,
     );
-  });
-
-  it('formats uppercase base36 sequences with a five-character minimum width', () => {
-    expect(formatOrgaCode('RACE', 1)).toBe('RACE-00001');
-    expect(formatOrgaCode('RACE', 36)).toBe('RACE-00010');
-    expect(formatOrgaCode('RACE', 36 ** 5)).toBe('RACE-100000');
-    expect(() => formatOrgaCode('RACE', 0)).toThrow(RangeError);
+    expect(code).toBe('BBBBB');
+    await expect(
+      findAvailableOrgaCode(
+        async () => true,
+        () => 'AAAAA',
+        2,
+      ),
+    ).rejects.toThrow(/after retries/);
   });
 });

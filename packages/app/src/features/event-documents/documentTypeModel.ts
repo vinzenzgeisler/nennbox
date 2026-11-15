@@ -10,7 +10,6 @@ export type DocumentTypeDraft = {
   active: boolean;
 };
 
-export const ORGA_CODE_PREFIX = /^[A-Za-z0-9]{1,12}$/;
 export const MAX_DOCUMENT_TYPES = 30;
 
 export const draftFromType = (type: EntryDocumentType): DocumentTypeDraft => ({
@@ -85,8 +84,3 @@ export function toTypeRequest(
       };
     });
 }
-
-export const prefixError = (prefix: string) =>
-  prefix && !ORGA_CODE_PREFIX.test(prefix)
-    ? 'Höchstens 12 Zeichen, nur Buchstaben und Ziffern.'
-    : '';
