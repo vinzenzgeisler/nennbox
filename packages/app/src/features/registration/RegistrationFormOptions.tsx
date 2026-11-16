@@ -1,11 +1,13 @@
 import {
   Banner,
   Checkbox,
-  DataTable,
   FormSection,
-  SelectField,
+  SegmentedControl,
+  type SegmentedOption,
 } from '@racepilot/ui';
 import type { RegistrationFormConfig } from '@racepilot/contracts';
+
+type FieldState = RegistrationFormConfig['fields']['dateOfBirth']['state'];
 
 const fieldGroups: Array<{
   title: string;
@@ -40,6 +42,12 @@ const fieldGroups: Array<{
   },
 ];
 
+const stateOptions: Array<SegmentedOption<FieldState>> = [
+  { value: 'hidden', label: 'Aus' },
+  { value: 'optional', label: 'Freiwillig' },
+  { value: 'required', label: 'Pflicht' },
+];
+
 export function RegistrationFormOptions({
   config,
   updateConfig,
@@ -52,51 +60,41 @@ export function RegistrationFormOptions({
   fieldLabels: Record<string, string>;
 }) {
   return (
-    <FormSection title="Formularfelder">
+    <div className="field-settings">
       {fieldGroups.map((group) => (
-        <FormSection key={group.title} title={group.title}>
-          <DataTable headers={['Feld', 'Einstellung']}>
+        <section key={group.title} aria-label={group.title}>
+          <h3>{group.title}</h3>
+          <ul>
             {group.keys.map((key) => {
-              const field = config.fields[key];
+              const label = fieldLabels[key] ?? key;
               return (
-                <tr key={key}>
-                  <th scope="row">{fieldLabels[key] ?? key}</th>
-                  <td>
-                    <SelectField
-                      label={`${fieldLabels[key] ?? key} · Einstellung`}
-                      value={field.state}
-                      onChange={(e) =>
-                        updateConfig((x) => ({
-                          ...x,
-                          fields: {
-                            ...x.fields,
-                            [key]: {
-                              state: e.target.value as typeof field.state,
-                            },
-                          },
-                        }))
-                      }
-                    >
-                      <option value="required">Pflicht</option>
-                      <option value="optional">Freiwillig</option>
-                      <option value="hidden">Aus</option>
-                    </SelectField>
-                  </td>
-                </tr>
+                <li key={key}>
+                  <span>{label}</span>
+                  <SegmentedControl
+                    label={label}
+                    value={config.fields[key].state}
+                    options={stateOptions}
+                    onChange={(state) =>
+                      updateConfig((current) => ({
+                        ...current,
+                        fields: { ...current.fields, [key]: { state } },
+                      }))
+                    }
+                  />
+                </li>
               );
             })}
-          </DataTable>
-        </FormSection>
+          </ul>
+        </section>
       ))}
       {config.fields.dateOfBirth.state !== 'required' && (
         <Banner tone="warning">
-          Ohne Pflicht-Geburtsdatum prüft NENNBOX Alter und
-          Erziehungsberechtigte nur, wenn Teilnehmende ein Geburtsdatum angeben.
-          Ein Mindestalter der Organisation lehnt Nennungen ohne Geburtsdatum
-          ab.
+          Alter und Erziehungsberechtigte werden nur geprüft, wenn ein
+          Geburtsdatum angegeben wird. Ein Mindestalter der Organisation lehnt
+          Nennungen ohne Geburtsdatum ab.
         </Banner>
       )}
-    </FormSection>
+    </div>
   );
 }
 

@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Banner } from '@racepilot/ui';
+import { Banner, EmptyState } from '@racepilot/ui';
 import type { SetupEvent } from './eventSetupApi.js';
 import { loadRecipient } from './eventRecipientApi.js';
 import { useEventSetup } from './useEventSetup.js';
@@ -8,14 +8,24 @@ import { RegistrationFormSettings } from '../registration/RegistrationFormSettin
 import { EventSetupForm } from './EventSetupForm.js';
 import './EventSetup.css';
 
-const sections = [
-  { id: 'event-setup-event', label: 'Veranstaltung' },
-  { id: 'event-setup-classes', label: 'Klassen und Startgeld' },
-  { id: 'event-setup-terms', label: 'Teilnahmebedingungen' },
-  { id: 'event-setup-organizer', label: 'Veranstalter und Zahlung' },
-  { id: 'event-setup-arrival', label: 'Anreise und Fahrerlager' },
-  { id: 'event-setup-form-fields', label: 'Formularfelder' },
-  { id: 'event-setup-actions', label: 'Nennung öffnen' },
+type SetupView = 'event' | 'fields';
+
+const sections: Array<{ id: string; label: string; view: SetupView }> = [
+  { id: 'event-setup-event', label: 'Veranstaltung', view: 'event' },
+  { id: 'event-setup-classes', label: 'Klassen und Startgeld', view: 'event' },
+  { id: 'event-setup-terms', label: 'Teilnahmebedingungen', view: 'event' },
+  {
+    id: 'event-setup-organizer',
+    label: 'Veranstalter und Zahlung',
+    view: 'event',
+  },
+  {
+    id: 'event-setup-arrival',
+    label: 'Anreise und Fahrerlager',
+    view: 'event',
+  },
+  { id: 'event-setup-form-fields', label: 'Formularfelder', view: 'fields' },
+  { id: 'event-setup-actions', label: 'Nennung öffnen', view: 'event' },
 ];
 
 export function EventSetup({
@@ -24,6 +34,13 @@ export function EventSetup({
   onCreated: (event: SetupEvent) => void;
 }) {
   const setup = useEventSetup(onCreated);
+  const [view, setView] = useState<SetupView>('event');
+  const target = useRef('');
+  useEffect(() => {
+    if (target.current)
+      document.getElementById(target.current)?.scrollIntoView();
+    target.current = '';
+  }, [view]);
   const { refreshEvents, setDraft } = setup;
   useEffect(() => {
     void refreshEvents().catch(() => undefined);
@@ -52,12 +69,28 @@ export function EventSetup({
   };
 
   return (
-    <section className="event-setup" aria-label="Veranstaltung einrichten">
+    <section
+      className={`event-setup${view === 'fields' ? ' is-fields' : ''}`}
+      aria-label="Veranstaltung einrichten"
+    >
       <div className="event-setup-layout">
         <nav className="event-setup-nav" aria-label="Abschnittsnavigation">
           <p className="event-setup-nav-title">Einrichtung</p>
           {sections.map((section, index) => (
-            <a key={section.id} href={`#${section.id}`}>
+            <a
+              key={section.id}
+              href={`#${section.id}`}
+              aria-current={section.view === 'fields' && view === 'fields'}
+              onClick={(event) => {
+                event.preventDefault();
+                if (section.view === view) {
+                  document.getElementById(section.id)?.scrollIntoView();
+                  return;
+                }
+                target.current = section.id;
+                setView(section.view);
+              }}
+            >
               <span aria-hidden="true">
                 {String(index + 1).padStart(2, '0')}
               </span>
@@ -66,57 +99,65 @@ export function EventSetup({
           ))}
         </nav>
         <div className="event-setup-main">
-          <p className="event-setup-intro">
-            Veranstaltungsdaten, Klassen und Teilnahmebedingungen an einem Ort
-            einrichten. Vor dem Öffnen prüfen wir die Pflichtangaben.
-          </p>
-          <EventSetupForm
-            draft={setup.draft}
-            setDraft={setup.setDraft}
-            events={setup.events}
-            busy={setup.busy}
-            onResume={(id) =>
-              void setup.resume(id).catch((error: unknown) => {
-                setup.setMessage(
-                  error instanceof Error
-                    ? error.message
-                    : 'Entwurf konnte nicht geladen werden.',
-                );
-              })
-            }
-            onReset={setup.reset}
-            onClearRecipient={setup.clearRecipient}
-            onSubmit={submit}
-          />
-          <section id="event-setup-form-fields" className="event-setup-section">
-            {setup.draft.id ? (
-              <RegistrationFormSettings
-                key={setup.draft.id}
-                eventId={setup.draft.id}
-                embedded
-              />
-            ) : (
-              <p>
-                Veranstaltung zuerst als Entwurf speichern, dann Formularfelder
-                festlegen.
+          <div hidden={view !== 'event'}>
+            <p className="event-setup-intro">
+              Veranstaltungsdaten, Klassen und Teilnahmebedingungen an einem Ort
+              einrichten. Vor dem Öffnen prüfen wir die Pflichtangaben.
+            </p>
+            <EventSetupForm
+              draft={setup.draft}
+              setDraft={setup.setDraft}
+              events={setup.events}
+              busy={setup.busy}
+              onResume={(id) =>
+                void setup.resume(id).catch((error: unknown) => {
+                  setup.setMessage(
+                    error instanceof Error
+                      ? error.message
+                      : 'Entwurf konnte nicht geladen werden.',
+                  );
+                })
+              }
+              onReset={setup.reset}
+              onClearRecipient={setup.clearRecipient}
+              onSubmit={submit}
+            />
+            {setup.message && (
+              <Banner tone={setup.link ? 'success' : 'warning'}>
+                {setup.message}
+              </Banner>
+            )}
+            {setup.link && (
+              <p className="event-setup-public-link">
+                Öffentliche Nennung:{' '}
+                <a href={setup.link} target="_blank" rel="noreferrer">
+                  {setup.link}
+                </a>
               </p>
             )}
-          </section>
-          {setup.message && (
-            <Banner tone={setup.link ? 'success' : 'warning'}>
-              {setup.message}
-            </Banner>
-          )}
-          {setup.link && (
-            <p className="event-setup-public-link">
-              Öffentliche Nennung:{' '}
-              <a href={setup.link} target="_blank" rel="noreferrer">
-                {setup.link}
-              </a>
-            </p>
+          </div>
+          {view === 'fields' && (
+            <section id="event-setup-form-fields">
+              {setup.draft.id ? (
+                <RegistrationFormSettings
+                  key={setup.draft.id}
+                  eventId={setup.draft.id}
+                  embedded
+                />
+              ) : (
+                <EmptyState
+                  title="Formularfelder"
+                  description="Speichere die Veranstaltung zuerst als Entwurf, dann legst du hier die Formularfelder fest."
+                />
+              )}
+            </section>
           )}
         </div>
-        <aside className="event-setup-aside" aria-label="Hilfe und Vorschau">
+        <aside
+          className="event-setup-aside"
+          aria-label="Hilfe und Vorschau"
+          hidden={view !== 'event'}
+        >
           <section
             className="event-setup-help"
             aria-labelledby="event-setup-help-title"

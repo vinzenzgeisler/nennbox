@@ -666,6 +666,8 @@
     "RailAction",
     "RailNote",
     "ReasonDialog",
+    "SegmentedControl",
+    "SegmentedOption",
     "SelectField",
     "SelectionBar",
     "Signet",

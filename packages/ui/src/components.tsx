@@ -2,6 +2,7 @@ export * from './button/Button.js';
 export * from './status/StatusLabel.js';
 export * from './field/Field.js';
 export * from './choice/Choice.js';
+export * from './segmented-control/SegmentedControl.js';
 export * from './icon/Icon.js';
 export * from './technical/TechnicalLabel.js';
 export * from './steps/Steps.js';

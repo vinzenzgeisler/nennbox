@@ -37,14 +37,15 @@ export function RegistrationFieldsPreview({
   const [requestedNumber, setRequestedNumber] = useState('');
   const t = translations.de;
   return (
-    <FormSection title="Live-Vorschau · Nennformular" variant="registration">
-      <p>
-        So sehen Teilnehmende die konfigurierten Standardfelder. Eingaben hier
-        werden nicht gespeichert.
+    <section
+      className="registration field-preview"
+      aria-labelledby="field-preview-title"
+    >
+      <h2 id="field-preview-title">Live-Vorschau · Nennformular</h2>
+      <p className="field-preview-note">
+        So sehen Teilnehmende die Felder. Eingaben werden nicht gespeichert.
       </p>
       <FormSection title="Fahrer" variant="registration">
-        <Field label="Vorname" value="" readOnly />
-        <Field label="Nachname" value="" readOnly />
         {fieldState(config, 'dateOfBirth') !== 'hidden' && (
           <Field
             label="Geburtsdatum"
@@ -97,6 +98,6 @@ export function RegistrationFieldsPreview({
           t={t}
         />
       </FormSection>
-    </FormSection>
+    </section>
   );
 }

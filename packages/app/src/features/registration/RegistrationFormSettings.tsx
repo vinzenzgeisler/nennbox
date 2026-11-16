@@ -1,6 +1,7 @@
 import { adminFetch } from '../../auth.js';
 import { Button, PageHeader, SelectField, Stack } from '@racepilot/ui';
 import { useEffect, useState, type ChangeEvent } from 'react';
+import './RegistrationFormSettings.css';
 import {
   defaultRegistrationFormConfig,
   mergeRegistrationFormConfig,
@@ -197,23 +198,34 @@ export function RegistrationFormSettings({
         <p role="status">Einstellungen werden geladen …</p>
       </section>
     );
+  const saveBar = (
+    <div className="registration-settings-save">
+      <Button type="button" disabled={busy} onClick={() => void save()}>
+        {busy ? 'Wird gespeichert …' : 'Änderungen speichern'}
+      </Button>
+      {message && <p role="status">{message}</p>}
+    </div>
+  );
   return (
-    <section aria-labelledby="registration-admin-title">
+    <section
+      aria-labelledby="registration-admin-title"
+      className="registration-settings"
+    >
       <Stack gap={4}>
-        <PageHeader
-          id="registration-admin-title"
-          title="Nennformular · Erscheinungsbild und Felder"
-        />
-        <SelectField
-          label="Geltungsbereich"
-          value={scope}
-          onChange={(e) => setScope(e.target.value as typeof scope)}
-        >
-          <option value="organization">Organisation</option>
-          <option value="event" disabled={!eventId}>
-            Veranstaltung · überschreibt Organisation
-          </option>
-        </SelectField>
+        {embedded ? (
+          <header className="registration-settings-head">
+            <h2 id="registration-admin-title">Formularfelder</h2>
+            <p>
+              Lege fest, welche Angaben Teilnehmende machen. Die Vorschau zeigt
+              das Formular so, wie es ausgeliefert wird.
+            </p>
+          </header>
+        ) : (
+          <PageHeader
+            id="registration-admin-title"
+            title="Nennformular · Erscheinungsbild und Felder"
+          />
+        )}
         {!embedded && (
           <RegistrationAppearance
             activeConfig={activeConfig}
@@ -222,12 +234,27 @@ export function RegistrationFormSettings({
             upload={upload}
           />
         )}
-        <RegistrationFormOptions
-          config={activeConfig}
-          updateConfig={updateConfig}
-          fieldLabels={registrationFieldLabels}
-        />
-        <RegistrationFieldsPreview config={activeConfig} />
+        <div className="registration-settings-body">
+          <div className="registration-settings-fields">
+            <SelectField
+              label="Geltungsbereich"
+              value={scope}
+              onChange={(e) => setScope(e.target.value as typeof scope)}
+            >
+              <option value="organization">Organisation</option>
+              <option value="event" disabled={!eventId}>
+                Veranstaltung · überschreibt Organisation
+              </option>
+            </SelectField>
+            <RegistrationFormOptions
+              config={activeConfig}
+              updateConfig={updateConfig}
+              fieldLabels={registrationFieldLabels}
+            />
+            {embedded && saveBar}
+          </div>
+          <RegistrationFieldsPreview config={activeConfig} />
+        </div>
         {!embedded && (
           <RegistrationCustomFields
             activeConfig={activeConfig}
@@ -242,12 +269,7 @@ export function RegistrationFormSettings({
             updateConfig={updateConfig}
           />
         )}
-        <div>
-          <Button type="button" disabled={busy} onClick={() => void save()}>
-            {busy ? 'Wird gespeichert …' : 'Änderungen speichern'}
-          </Button>
-        </div>
-        {message && <p role="status">{message}</p>}
+        {!embedded && saveBar}
       </Stack>
     </section>
   );

@@ -98,10 +98,20 @@ test('admin creates a class, terms and opens its public registration in the UI',
   );
   // Configure the standard field in Einrichten. The live preview uses the
   // same participant field component and updates before the change is saved.
-  await page.getByLabel('Blutgruppe · Einstellung').selectOption('required');
+  await page
+    .getByRole('navigation', { name: 'Abschnittsnavigation' })
+    .getByRole('link', { name: 'Formularfelder' })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Formularfelder' }),
+  ).toBeVisible();
+  await page
+    .getByRole('radiogroup', { name: 'Blutgruppe' })
+    .getByRole('radio', { name: 'Pflicht' })
+    .check();
   await expect(
     page
-      .getByRole('group', { name: 'Live-Vorschau · Nennformular' })
+      .getByRole('region', { name: 'Live-Vorschau · Nennformular' })
       .getByLabel('Blutgruppe'),
   ).toHaveAttribute('required', '');
   await page.getByRole('button', { name: 'Änderungen speichern' }).click();
@@ -115,6 +125,7 @@ test('admin creates a class, terms and opens its public registration in the UI',
       [390, 844],
     ]) {
       await page.setViewportSize({ width, height });
+      await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({
         path: `${verificationDir}/fields-setup-${width}.png`,
         fullPage: true,
@@ -199,11 +210,18 @@ test('admin creates a class, terms and opens its public registration in the UI',
       [390, 844],
     ]) {
       await page.setViewportSize({ width, height });
-      // The admin shell closes an open detail when its responsive layout changes.
-      if (!(await detail.isVisible()))
-        await row.locator('button[data-entry-action]').click();
-      await expect(detail).toBeVisible();
-      await expect(detail).toContainText('0-');
+      // The shell closes an open detail while its layout settles, and docked
+      // widths open the preview first; open the detail again until it stays.
+      await expect(async () => {
+        if (!(await detail.isVisible())) {
+          const full = page.getByRole('button', { name: 'Vollständig öffnen' });
+          if (await full.isVisible()) await full.click();
+          else await row.locator('button[data-entry-action]').click();
+        }
+        await expect(detail).toContainText('0-', { timeout: 1_000 });
+        await page.waitForTimeout(400);
+        await expect(detail).toContainText('0-', { timeout: 1_000 });
+      }).toPass();
       await page.screenshot({
         path: `${verificationDir}/fields-detail-${width}.png`,
         fullPage: true,

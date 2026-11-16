@@ -53,6 +53,19 @@
   max-width: var(--event-form-width);
 }
 
+.event-setup.is-fields .event-setup-layout {
+  grid-template-columns: minmax(132px, 184px) minmax(0, 1fr);
+}
+
+.event-setup.is-fields .event-setup-main {
+  max-width: none;
+}
+
+.event-setup-nav a[aria-current='true'] {
+  border-bottom-color: var(--color-ink);
+  box-shadow: 0 1px 0 var(--color-ink);
+}
+
 .event-setup-intro {
   margin: 0 0 var(--space-4);
   max-width: 64ch;
@@ -149,6 +162,10 @@
     grid-template-columns: minmax(120px, 150px) minmax(0, 720px);
   }
 
+  .event-setup.is-fields .event-setup-layout {
+    grid-template-columns: minmax(120px, 150px) minmax(0, 1fr);
+  }
+
   .event-setup-aside {
     grid-column: 2;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -156,7 +173,8 @@
 }
 
 @media (width < 768px) {
-  .event-setup-layout {
+  .event-setup-layout,
+  .event-setup.is-fields .event-setup-layout {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
   }
@@ -191,4 +209,8 @@
   .event-setup-actions {
     display: grid;
   }
+}
+
+.event-setup-aside[hidden] {
+  display: none;
 }

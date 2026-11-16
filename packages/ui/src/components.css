@@ -2,6 +2,7 @@
 @import url('./status/status.css');
 @import url('./field/field.css');
 @import url('./choice/choice.css');
+@import url('./segmented-control/segmented-control.css');
 @import url('./icon/icon.css');
 @import url('./technical/technical.css');
 @import url('./steps/steps.css');
