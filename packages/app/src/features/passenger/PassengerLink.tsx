@@ -112,6 +112,8 @@ function PassengerForm({
   });
   const [contact, setContact] = useState<DriverContact>({
     phone: asText(passenger.phone),
+    bloodGroup: '',
+    licenseNumber: '',
     country: asText(passenger.country),
     street: asText(passenger.street),
     postalCode: asText(passenger.postalCode),

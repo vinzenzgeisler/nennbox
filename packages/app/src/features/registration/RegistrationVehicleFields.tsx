@@ -154,6 +154,10 @@ export function RegistrationVehicleFields({
                     locale === 'de' ? 'Wunsch-Startnummer' : 'Requested number'
                   }
                   maxLength={16}
+                  required={
+                    payload.registrationFormConfig.fields.requestedStartNumber
+                      .state === 'required'
+                  }
                   value={item.requestedStartNumber}
                   {...(item.requestedStartNumber
                     ? {

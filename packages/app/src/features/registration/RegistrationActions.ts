@@ -6,36 +6,11 @@ import {
 } from '@racepilot/contracts';
 import type { RegistrationModel } from './RegistrationModel.js';
 import {
-  fieldState,
   nullIfEmpty,
   numberOrNull,
   entryExtras,
 } from './RegistrationDomain.js';
-
-type Config = RegistrationModel['payload']['registrationFormConfig'];
-/** A field the event no longer asks for is never sent, even if an older draft still holds a value. */
-const asked = (config: Config, key: keyof Config['fields']) =>
-  fieldState(config, key) !== 'hidden';
-const contactPayload = (
-  values: RegistrationModel['values'],
-  config: Config,
-) => ({
-  phone: asked(config, 'phone') ? nullIfEmpty(values.phone) : null,
-  street: asked(config, 'street') ? nullIfEmpty(values.street) : null,
-  postalCode: asked(config, 'postalCode')
-    ? nullIfEmpty(values.postalCode)
-    : null,
-  city: asked(config, 'city') ? nullIfEmpty(values.city) : null,
-  emergencyContactName: asked(config, 'emergencyContact')
-    ? nullIfEmpty(values.emergencyContactName)
-    : null,
-  emergencyContactPhone: asked(config, 'emergencyContact')
-    ? nullIfEmpty(values.emergencyContactPhone)
-    : null,
-  publicationPreference: asked(config, 'publicationPreference')
-    ? values.publicationPreference || null
-    : null,
-});
+import { asked, contactPayload } from './RegistrationPayloadFields.js';
 
 export function createRegistrationActions(
   model: RegistrationModel,
@@ -85,7 +60,7 @@ export function createRegistrationActions(
     setError('');
     if (
       payload!.registrationSettings.minimumAge !== null &&
-      age < payload!.registrationSettings.minimumAge
+      (!values.dateOfBirth || age < payload!.registrationSettings.minimumAge)
     ) {
       setError(t.minAge);
       return;
@@ -115,7 +90,9 @@ export function createRegistrationActions(
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
-        dateOfBirth: values.dateOfBirth,
+        dateOfBirth: asked(payload!.registrationFormConfig, 'dateOfBirth')
+          ? nullIfEmpty(values.dateOfBirth)
+          : null,
         ...(asked(payload!.registrationFormConfig, 'country') && values.country
           ? { country: values.country }
           : {}),
@@ -132,7 +109,12 @@ export function createRegistrationActions(
         const extras = entryExtras(payload!, item);
         return {
           classId: item.classId,
-          requestedStartNumber: item.requestedStartNumber || null,
+          requestedStartNumber: asked(
+            payload!.registrationFormConfig,
+            'requestedStartNumber',
+          )
+            ? item.requestedStartNumber || null
+            : null,
           passenger: extras.hasPassenger
             ? {
                 firstName: item.passengerFirstName,
@@ -160,6 +142,18 @@ export function createRegistrationActions(
               'displacement',
             )
               ? numberOrNull(item.displacementCc)
+              : null,
+            transponderNumber: asked(
+              payload!.registrationFormConfig,
+              'transponderNumber',
+            )
+              ? nullIfEmpty(item.transponderNumber ?? '')
+              : null,
+            vehiclePassNumber: asked(
+              payload!.registrationFormConfig,
+              'vehiclePassNumber',
+            )
+              ? nullIfEmpty(item.vehiclePassNumber ?? '')
               : null,
             cylinders: asked(payload!.registrationFormConfig, 'cylinders')
               ? numberOrNull(item.cylinders)

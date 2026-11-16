@@ -74,6 +74,8 @@ export const EntryResponse = z
             email: z.string().nullable(),
             emailVerified: z.boolean(),
             phone: z.string().nullable().optional(),
+            bloodGroup: z.string().nullable().optional(),
+            licenseNumber: z.string().nullable().optional(),
             street: z.string().nullable().optional(),
             postalCode: z.string().nullable().optional(),
             city: z.string().nullable().optional(),
@@ -95,6 +97,8 @@ export const EntryResponse = z
             vehicleType: z.string().nullable().optional(),
             displacementCc: z.number().int().nullable().optional(),
             cylinders: z.number().int().nullable().optional(),
+            transponderNumber: z.string().nullable().optional(),
+            vehiclePassNumber: z.string().nullable().optional(),
             ownerName: z.string().nullable().optional(),
             history: z.string().nullable().optional(),
           })

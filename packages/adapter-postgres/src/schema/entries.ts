@@ -57,6 +57,8 @@ export const vehicles = pgTable(
     vehicleType: text('vehicle_type'),
     displacementCc: integer('displacement_cc'),
     cylinders: integer('cylinders'),
+    transponderNumber: text('transponder_number'),
+    vehiclePassNumber: text('vehicle_pass_number'),
     ownerName: text('owner_name'),
     history: text('history'),
     createdAt: timestamp('created_at', { withTimezone: true })
@@ -89,6 +91,8 @@ export const registrationGroups = pgTable(
     guardianName: text('guardian_name'),
     guardianEmail: text('guardian_email'),
     phone: text('phone'),
+    bloodGroup: text('blood_group'),
+    licenseNumber: text('license_number'),
     street: text('street'),
     postalCode: text('postal_code'),
     city: text('city'),

@@ -26,6 +26,8 @@ export const registrationFieldKeys = [
   'city',
   'country',
   'emergencyContact',
+  'bloodGroup',
+  'licenseNumber',
   'publicationPreference',
   'biography',
   'organizerNotes',
@@ -35,6 +37,8 @@ export const registrationFieldKeys = [
   'year',
   'displacement',
   'cylinders',
+  'transponderNumber',
+  'vehiclePassNumber',
   'owner',
   'history',
   'vehicleImage',
@@ -108,8 +112,26 @@ export const RegistrationCustomFieldAnswersSchema = z.record(
       .strict(),
   ]),
 );
-const registrationFieldStateDefaults = (key: string) =>
-  ({ state: key === 'dateOfBirth' ? 'required' : 'optional' }) as const;
+/**
+ * Fields added after the first form release stay hidden until an organization or event
+ * enables them, so existing forms do not change; date of birth stays required unless
+ * explicitly relaxed, because age and guardian checks depend on it.
+ */
+const hiddenByDefault: readonly string[] = [
+  'bloodGroup',
+  'licenseNumber',
+  'transponderNumber',
+  'vehiclePassNumber',
+];
+export const registrationFieldDefaultState = (key: string) =>
+  key === 'dateOfBirth'
+    ? 'required'
+    : hiddenByDefault.includes(key)
+      ? 'hidden'
+      : 'optional';
+const registrationFieldStateDefaults = (key: string) => ({
+  state: registrationFieldDefaultState(key),
+});
 /**
  * Stored configurations predate newer standard fields: a missing key means the default
  * state, so old organization and event configurations stay valid and keep working.
@@ -155,13 +177,6 @@ export const RegistrationFormConfigSchema =
         path: ['customFields'],
         message: 'Duplicate custom field key',
       });
-    if (config.fields.dateOfBirth?.state !== 'required')
-      ctx.addIssue({
-        code: 'custom',
-        path: ['fields', 'dateOfBirth'],
-        message:
-          'Date of birth is required for age and guardian eligibility checks',
-      });
   });
 export type RegistrationFormConfig = z.infer<
   typeof RegistrationFormConfigSchema
@@ -188,16 +203,6 @@ export const RegistrationFormConfigPatchSchema = registrationFormConfigObject
           message: 'Duplicate custom field key',
         });
     }
-    if (
-      config.fields?.dateOfBirth &&
-      config.fields.dateOfBirth.state !== 'required'
-    )
-      ctx.addIssue({
-        code: 'custom',
-        path: ['fields', 'dateOfBirth'],
-        message:
-          'Date of birth is required for age and guardian eligibility checks',
-      });
   });
 export type RegistrationFormConfigPatch = z.infer<
   typeof RegistrationFormConfigPatchSchema

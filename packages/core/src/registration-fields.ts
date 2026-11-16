@@ -3,19 +3,29 @@
  * Shared by the delivered form and the server-side check, so what the form asks for and
  * what the server accepts cannot drift apart.
  */
-import { RegistrationFormConfigPatchSchema } from '@racepilot/contracts';
+import {
+  RegistrationFormConfigPatchSchema,
+  registrationFieldDefaultState,
+} from '@racepilot/contracts';
 
 export type RegistrationFieldState = 'required' | 'optional' | 'hidden';
 
 export const registrationDetailFieldKeys = [
+  'dateOfBirth',
   'phone',
+  'country',
   'street',
   'postalCode',
   'city',
   'emergencyContact',
+  'bloodGroup',
+  'licenseNumber',
   'publicationPreference',
+  'requestedStartNumber',
   'displacement',
   'cylinders',
+  'transponderNumber',
+  'vehiclePassNumber',
   'owner',
   'history',
 ] as const;
@@ -28,7 +38,7 @@ export type RegistrationFieldStates = Record<
 
 type StoredConfig = unknown;
 
-/** A key missing from an older stored configuration means the default: optional. */
+/** A key missing from an older stored configuration means that field's default state. */
 export function resolveRegistrationFieldStates(
   organization: StoredConfig,
   event: StoredConfig,
@@ -39,28 +49,20 @@ export function resolveRegistrationFieldStates(
   };
   const organizationFields = parse(organization);
   const eventFields = parse(event);
-  const resolved: RegistrationFieldStates = {
-    phone: 'optional',
-    street: 'optional',
-    postalCode: 'optional',
-    city: 'optional',
-    emergencyContact: 'optional',
-    publicationPreference: 'optional',
-    displacement: 'optional',
-    cylinders: 'optional',
-    owner: 'optional',
-    history: 'optional',
-  };
+  const resolved = {} as RegistrationFieldStates;
   for (const key of registrationDetailFieldKeys)
     resolved[key] =
       eventFields?.[key]?.state ??
       organizationFields?.[key]?.state ??
-      'optional';
+      registrationFieldDefaultState(key);
   return resolved;
 }
 
 export interface RegistrationDetailsInput {
   phone?: string | null | undefined;
+  country?: string | null | undefined;
+  bloodGroup?: string | null | undefined;
+  licenseNumber?: string | null | undefined;
   street?: string | null | undefined;
   postalCode?: string | null | undefined;
   city?: string | null | undefined;
@@ -71,6 +73,8 @@ export interface RegistrationDetailsInput {
 export interface VehicleDetailsInput {
   displacementCc?: number | null | undefined;
   cylinders?: number | null | undefined;
+  transponderNumber?: string | null | undefined;
+  vehiclePassNumber?: string | null | undefined;
   ownerName?: string | null | undefined;
   history?: string | null | undefined;
 }
@@ -97,6 +101,9 @@ export function registrationContactMatches(
 ): boolean {
   return (
     check(states.phone, [input.phone], false) &&
+    check(states.country, [input.country], false) &&
+    check(states.bloodGroup, [input.bloodGroup], false) &&
+    check(states.licenseNumber, [input.licenseNumber], false) &&
     check(states.street, [input.street], false) &&
     check(states.postalCode, [input.postalCode], false) &&
     check(states.city, [input.city], false) &&
@@ -109,6 +116,14 @@ export function registrationContactMatches(
   );
 }
 
+/** Date of birth is a person field; it follows the same required/hidden rules as the contact data. */
+export function registrationBirthDateMatches(
+  dateOfBirth: string | null | undefined,
+  states: RegistrationFieldStates,
+): boolean {
+  return check(states.dateOfBirth, [dateOfBirth], false);
+}
+
 export function registrationVehicleDetailsMatch(
   input: VehicleDetailsInput,
   states: RegistrationFieldStates,
@@ -116,7 +131,17 @@ export function registrationVehicleDetailsMatch(
   return (
     check(states.displacement, [input.displacementCc], false) &&
     check(states.cylinders, [input.cylinders], false) &&
+    check(states.transponderNumber, [input.transponderNumber], false) &&
+    check(states.vehiclePassNumber, [input.vehiclePassNumber], false) &&
     check(states.owner, [input.ownerName], false) &&
     check(states.history, [input.history], false)
   );
+}
+
+/** Start number follows the same event/organization state as the displayed field. */
+export function registrationStartNumberMatches(
+  number: string | null | undefined,
+  states: RegistrationFieldStates,
+): boolean {
+  return check(states.requestedStartNumber, [number], false);
 }

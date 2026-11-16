@@ -40,6 +40,8 @@ export function useRegistrationState({
       initialDraft?.country ??
       (defaultLocale.toLowerCase().startsWith('de') ? 'DE' : ''),
     phone: initialDraft?.phone ?? '',
+    bloodGroup: String(initialDraft?.bloodGroup ?? ''),
+    licenseNumber: initialDraft?.licenseNumber ?? '',
     street: initialDraft?.street ?? '',
     postalCode: initialDraft?.postalCode ?? '',
     city: initialDraft?.city ?? '',

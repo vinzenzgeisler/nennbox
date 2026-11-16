@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  registrationBirthDateMatches,
   registrationContactMatches,
   registrationVehicleDetailsMatch,
+  registrationStartNumberMatches,
   resolveRegistrationFieldStates,
   type RegistrationFieldStates,
 } from './registration-fields.js';
@@ -92,5 +94,105 @@ describe('registration field states', () => {
         }),
       ),
     ).toBe(true);
+  });
+
+  it('keeps the newer standard fields hidden and the birth date required until configured', () => {
+    expect(resolveRegistrationFieldStates(null, null)).toMatchObject({
+      dateOfBirth: 'required',
+      bloodGroup: 'hidden',
+      licenseNumber: 'hidden',
+      transponderNumber: 'hidden',
+      vehiclePassNumber: 'hidden',
+      phone: 'optional',
+    });
+    expect(
+      resolveRegistrationFieldStates(
+        { fields: { bloodGroup: { state: 'required' } } },
+        { fields: { bloodGroup: { state: 'optional' } } },
+      ).bloodGroup,
+    ).toBe('optional');
+  });
+
+  it('checks blood group, licence, transponder and vehicle pass against their state', () => {
+    expect(
+      registrationContactMatches({}, states({ bloodGroup: 'required' })),
+    ).toBe(false);
+    expect(
+      registrationContactMatches(
+        { bloodGroup: '0-', licenseNumber: 'L-1' },
+        states({ bloodGroup: 'required', licenseNumber: 'required' }),
+      ),
+    ).toBe(true);
+    expect(registrationContactMatches({ bloodGroup: 'A+' }, states())).toBe(
+      false,
+    );
+    expect(registrationContactMatches({ licenseNumber: 'L-1' }, states())).toBe(
+      false,
+    );
+    expect(
+      registrationVehicleDetailsMatch(
+        { transponderNumber: 'T-9' },
+        states({ transponderNumber: 'optional' }),
+      ),
+    ).toBe(true);
+    expect(
+      registrationVehicleDetailsMatch({ transponderNumber: 'T-9' }, states()),
+    ).toBe(false);
+    expect(
+      registrationVehicleDetailsMatch(
+        {},
+        states({ vehiclePassNumber: 'required' }),
+      ),
+    ).toBe(false);
+  });
+
+  it('enforces the country and requested number states that the editor exposes', () => {
+    expect(
+      registrationContactMatches({}, states({ country: 'required' })),
+    ).toBe(false);
+    expect(
+      registrationContactMatches(
+        { country: 'DE' },
+        states({ country: 'required' }),
+      ),
+    ).toBe(true);
+    expect(
+      registrationContactMatches(
+        { country: 'DE' },
+        states({ country: 'hidden' }),
+      ),
+    ).toBe(false);
+    expect(
+      registrationStartNumberMatches(
+        null,
+        states({ requestedStartNumber: 'required' }),
+      ),
+    ).toBe(false);
+    expect(
+      registrationStartNumberMatches(
+        '42',
+        states({ requestedStartNumber: 'required' }),
+      ),
+    ).toBe(true);
+    expect(
+      registrationStartNumberMatches(
+        '42',
+        states({ requestedStartNumber: 'hidden' }),
+      ),
+    ).toBe(false);
+  });
+
+  it('applies the field state to the date of birth', () => {
+    expect(registrationBirthDateMatches(undefined, states())).toBe(false);
+    expect(registrationBirthDateMatches('1990-01-01', states())).toBe(true);
+    expect(
+      registrationBirthDateMatches(null, states({ dateOfBirth: 'optional' })),
+    ).toBe(true);
+    expect(
+      registrationBirthDateMatches(
+        '1990-01-01',
+        states({ dateOfBirth: 'hidden' }),
+      ),
+    ).toBe(false);
   });
 });

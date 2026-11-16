@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BLOOD_GROUPS,
   defaultRegistrationFormConfig,
   PublicRegistrationRequestSchema,
   RegistrationContactFieldsSchema,
@@ -118,6 +119,116 @@ describe('shared emergency contact schema', () => {
       PublicRegistrationRequestSchema.safeParse(
         request({ emergencyContactPhone: '+49 12345' }),
       ).success,
+    ).toBe(false);
+  });
+});
+
+describe('typed standard fields', () => {
+  it('accepts exactly the eight blood groups and rejects anything else', () => {
+    expect(BLOOD_GROUPS).toEqual([
+      'A+',
+      'A-',
+      'B+',
+      'B-',
+      'AB+',
+      'AB-',
+      '0+',
+      '0-',
+    ]);
+    for (const bloodGroup of BLOOD_GROUPS)
+      expect(
+        PublicRegistrationRequestSchema.safeParse(request({ bloodGroup }))
+          .success,
+        bloodGroup,
+      ).toBe(true);
+    for (const bloodGroup of ['O+', 'a+', 'AB', 'C-', '+', ' A+'])
+      expect(
+        PublicRegistrationRequestSchema.safeParse(request({ bloodGroup }))
+          .success,
+        bloodGroup,
+      ).toBe(false);
+  });
+
+  it('normalizes licence, transponder and vehicle pass numbers and bounds their length', () => {
+    const parsed = PublicRegistrationRequestSchema.parse(
+      request(
+        { licenseNumber: ' DMSB-4711 ' },
+        { transponderNumber: ' T-9 ', vehiclePassNumber: '' },
+      ),
+    );
+    expect(parsed.person.licenseNumber).toBe('DMSB-4711');
+    expect(parsed.entries[0]!.vehicle).toMatchObject({
+      transponderNumber: 'T-9',
+      vehiclePassNumber: null,
+    });
+    expect(
+      PublicRegistrationRequestSchema.safeParse(
+        request({ licenseNumber: 'x'.repeat(101) }),
+      ).success,
+    ).toBe(false);
+    expect(
+      PublicRegistrationRequestSchema.safeParse(
+        request({}, { vehiclePassNumber: 'x'.repeat(101) }),
+      ).success,
+    ).toBe(false);
+  });
+
+  it('lets the date of birth be absent in the request; the field state decides if that is allowed', () => {
+    const { dateOfBirth: _omitted, ...person } = request().person;
+    void _omitted;
+    expect(
+      PublicRegistrationRequestSchema.safeParse({ ...request(), person })
+        .success,
+    ).toBe(true);
+    expect(
+      PublicRegistrationRequestSchema.safeParse(
+        request({ dateOfBirth: 'not-a-date' }),
+      ).success,
+    ).toBe(false);
+  });
+
+  it('keeps old forms unchanged: new fields hidden, birth date required, all states configurable', () => {
+    expect(
+      Object.fromEntries(
+        [
+          'dateOfBirth',
+          'bloodGroup',
+          'licenseNumber',
+          'transponderNumber',
+          'vehiclePassNumber',
+          'phone',
+        ].map((key) => [
+          key,
+          defaultRegistrationFormConfig.fields[
+            key as keyof typeof defaultRegistrationFormConfig.fields
+          ].state,
+        ]),
+      ),
+    ).toEqual({
+      dateOfBirth: 'required',
+      bloodGroup: 'hidden',
+      licenseNumber: 'hidden',
+      transponderNumber: 'hidden',
+      vehiclePassNumber: 'hidden',
+      phone: 'optional',
+    });
+    for (const state of ['hidden', 'optional', 'required'])
+      expect(
+        RegistrationFormConfigPatchSchema.safeParse({
+          fields: {
+            dateOfBirth: { state },
+            bloodGroup: { state },
+            licenseNumber: { state },
+            transponderNumber: { state },
+            vehiclePassNumber: { state },
+          },
+        }).success,
+        state,
+      ).toBe(true);
+    expect(
+      RegistrationFormConfigPatchSchema.safeParse({
+        fields: { bloodGroup: { state: 'maybe' } },
+      }).success,
     ).toBe(false);
   });
 });

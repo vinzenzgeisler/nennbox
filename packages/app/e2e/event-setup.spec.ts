@@ -96,6 +96,43 @@ test('admin creates a class, terms and opens its public registration in the UI',
   await expect(page.getByLabel('Anreisehinweise')).toHaveValue(
     `Anreise Tor ${suffix}`,
   );
+  // Configure the standard field in Einrichten. The live preview uses the
+  // same participant field component and updates before the change is saved.
+  await page
+    .getByRole('navigation', { name: 'Abschnittsnavigation' })
+    .getByRole('link', { name: 'Formularfelder' })
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Formularfelder' }),
+  ).toBeVisible();
+  await page
+    .getByRole('radiogroup', { name: 'Blutgruppe' })
+    .getByRole('radio', { name: 'Pflicht' })
+    .check();
+  await expect(
+    page
+      .getByRole('region', { name: 'Live-Vorschau · Nennformular' })
+      .getByLabel('Blutgruppe'),
+  ).toHaveAttribute('required', '');
+  await page.getByRole('button', { name: 'Änderungen speichern' }).click();
+  await expect(page.getByRole('status')).toContainText(
+    'Einstellungen gespeichert.',
+  );
+  if (verificationDir) {
+    for (const [width, height] of [
+      [1920, 1080],
+      [1440, 900],
+      [390, 844],
+    ]) {
+      await page.setViewportSize({ width, height });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.screenshot({
+        path: `${verificationDir}/fields-setup-${width}.png`,
+        fullPage: true,
+      });
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+  }
   await page.goto(url);
   await expect(page.getByRole('heading', { name })).toBeVisible();
   await expect(page.getByText(`Anreise Tor ${suffix}`)).toBeVisible();
@@ -129,6 +166,10 @@ test('admin creates a class, terms and opens its public registration in the UI',
     .fill(`participant-${suffix}@example.test`);
   await page.getByLabel('Geburtsdatum').fill('1990-12-10');
   await page.getByLabel('Telefon', { exact: true }).fill('+49 151 1234567');
+  await expect(page.getByLabel('Blutgruppe')).toHaveAttribute('required', '');
+  await page.getByRole('button', { name: 'Weiter zu Startmeldungen' }).click();
+  await expect(page.getByLabel('Blutgruppe')).toBeVisible();
+  await page.getByLabel('Blutgruppe').selectOption('0-');
   await page.getByRole('button', { name: 'Weiter zu Startmeldungen' }).click();
   await page.getByLabel('Klasse').selectOption({ label: 'Motorrad (MOTO)' });
   await page.getByLabel('Hersteller').fill('Honda');
@@ -149,4 +190,42 @@ test('admin creates a class, terms and opens its public registration in the UI',
   await expect(page.getByRole('status')).toContainText(
     'Die Nennung wurde angenommen.',
   );
+  await page.goto('/app');
+  await page
+    .getByRole('combobox', { name: 'Veranstaltung' })
+    .selectOption({ label: name });
+  const row = page.getByRole('row').filter({ hasText: `UI${suffix} Setup` });
+  await expect(row).toBeVisible();
+  await row.locator('button[data-entry-action]').click();
+  const detail = page.getByRole('region', {
+    name: 'Nennung im Detail',
+    exact: true,
+  });
+  await expect(detail).toBeVisible();
+  await expect(detail).toContainText('0-');
+  if (verificationDir) {
+    for (const [width, height] of [
+      [1920, 1080],
+      [1440, 900],
+      [390, 844],
+    ]) {
+      await page.setViewportSize({ width, height });
+      // The shell closes an open detail while its layout settles, and docked
+      // widths open the preview first; open the detail again until it stays.
+      await expect(async () => {
+        if (!(await detail.isVisible())) {
+          const full = page.getByRole('button', { name: 'Vollständig öffnen' });
+          if (await full.isVisible()) await full.click();
+          else await row.locator('button[data-entry-action]').click();
+        }
+        await expect(detail).toContainText('0-', { timeout: 1_000 });
+        await page.waitForTimeout(400);
+        await expect(detail).toContainText('0-', { timeout: 1_000 });
+      }).toPass();
+      await page.screenshot({
+        path: `${verificationDir}/fields-detail-${width}.png`,
+        fullPage: true,
+      });
+    }
+  }
 });

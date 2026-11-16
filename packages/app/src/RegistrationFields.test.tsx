@@ -148,6 +148,8 @@ const draftWith = (
   guardianName: '',
   guardianEmail: '',
   phone: '',
+  bloodGroup: '',
+  licenseNumber: '',
   street: '',
   postalCode: '',
   city: '',
@@ -164,6 +166,8 @@ const draftWith = (
       requestedStartNumber: '',
       displacementCc: '',
       cylinders: '',
+      transponderNumber: '',
+      vehiclePassNumber: '',
       ownerName: '',
       history: '',
       passengerEnabled: false,
@@ -294,5 +298,186 @@ describe('public registration contact and vehicle fields', () => {
     expect(control('Hersteller')?.value).toBe('NSU');
     await press('Weiter zur Prüfung');
     expect(container.textContent).toContain('Kawasaki');
+  });
+
+  it('keeps the newer standard fields hidden on a form that never configured them', async () => {
+    await mount(form({}), draftWith());
+    expect(control('Blutgruppe')).toBeUndefined();
+    expect(control('Lizenznummer')).toBeUndefined();
+    expect(control('Geburtsdatum')?.required).toBe(true);
+    await press('Weiter zu Startmeldungen');
+    expect(control('Transponder-Nr.')).toBeUndefined();
+    expect(control('Fahrzeugpass-Nr.')).toBeUndefined();
+  });
+
+  it('asks blood group, licence, transponder and vehicle pass as configured, in German and English', async () => {
+    await mount(
+      form({
+        bloodGroup: { state: 'required' },
+        licenseNumber: { state: 'optional' },
+        transponderNumber: { state: 'required' },
+        vehiclePassNumber: { state: 'optional' },
+      }),
+      draftWith(),
+    );
+    const blood = control('Blutgruppe') as HTMLSelectElement;
+    expect(blood.required).toBe(true);
+    expect([...blood.options].map((option) => option.value)).toEqual([
+      '',
+      'A+',
+      'A-',
+      'B+',
+      'B-',
+      'AB+',
+      'AB-',
+      '0+',
+      '0-',
+    ]);
+    expect(control('Lizenznummer')?.required).toBe(false);
+    await fill('Blutgruppe', '0-');
+    await press('Weiter zu Startmeldungen');
+    expect(control('Transponder-Nr.')?.required).toBe(true);
+    expect(control('Fahrzeugpass-Nr.')?.required).toBe(false);
+    act(() => root?.unmount());
+    container.remove();
+    await mount(
+      form({
+        bloodGroup: { state: 'optional' },
+        licenseNumber: { state: 'required' },
+        transponderNumber: { state: 'optional' },
+      }),
+      undefined,
+      'en',
+    );
+    expect(control('Blood group')?.required).toBe(false);
+    expect(control('Licence number')?.required).toBe(true);
+  });
+
+  it('sends the new fields as entered and never when the event hides them', async () => {
+    const asked = await mount(
+      form({
+        bloodGroup: { state: 'required' },
+        licenseNumber: { state: 'required' },
+        transponderNumber: { state: 'required' },
+        vehiclePassNumber: { state: 'required' },
+      }),
+      draftWith({
+        bloodGroup: 'AB-',
+        licenseNumber: 'DMSB-4711',
+        vehicles: [
+          {
+            ...draftWith().vehicles[0]!,
+            transponderNumber: 'T-9',
+            vehiclePassNumber: 'FP-123',
+          },
+        ],
+      }),
+    );
+    await press('Weiter zu Startmeldungen');
+    await press('Weiter zur Prüfung');
+    await press('Nennung absenden');
+    const sent = asked[0] as {
+      person: Record<string, unknown>;
+      entries: Array<{ vehicle: Record<string, unknown> }>;
+    };
+    expect(sent.person).toMatchObject({
+      bloodGroup: 'AB-',
+      licenseNumber: 'DMSB-4711',
+    });
+    expect(sent.entries[0]!.vehicle).toMatchObject({
+      transponderNumber: 'T-9',
+      vehiclePassNumber: 'FP-123',
+    });
+    act(() => root?.unmount());
+    container.remove();
+    // An old draft still holds values for fields that this event does not ask for.
+    const hidden = await mount(
+      form({}),
+      draftWith({
+        bloodGroup: 'A+',
+        licenseNumber: 'old',
+        vehicles: [
+          {
+            ...draftWith().vehicles[0]!,
+            transponderNumber: 'old',
+            vehiclePassNumber: 'old',
+          },
+        ],
+      }),
+    );
+    await press('Weiter zu Startmeldungen');
+    await press('Weiter zur Prüfung');
+    await press('Nennung absenden');
+    const sentHidden = hidden[0] as {
+      person: Record<string, unknown>;
+      entries: Array<{ vehicle: Record<string, unknown> }>;
+    };
+    expect(sentHidden.person).toMatchObject({
+      bloodGroup: null,
+      licenseNumber: null,
+    });
+    expect(sentHidden.entries[0]!.vehicle).toMatchObject({
+      transponderNumber: null,
+      vehiclePassNumber: null,
+    });
+  });
+
+  it('follows country and requested start number states in the public form', async () => {
+    await mount(
+      form({
+        country: { state: 'required' },
+        requestedStartNumber: { state: 'required' },
+      }),
+      draftWith({ country: '' }),
+      'en',
+    );
+    expect(control('Country')?.required).toBe(true);
+    await press('Continue to entries');
+    expect(control('Country')).toBeDefined();
+    await fill('Country', 'DE');
+    await press('Continue to entries');
+    expect(control('Requested number')?.required).toBe(true);
+    act(() => root?.unmount());
+    container.remove();
+    const submissions = await mount(
+      form({
+        country: { state: 'hidden' },
+        requestedStartNumber: { state: 'hidden' },
+      }),
+      draftWith({
+        country: 'DE',
+        vehicles: [{ ...draftWith().vehicles[0]!, requestedStartNumber: '42' }],
+      }),
+    );
+    expect(control('Land')).toBeUndefined();
+    await press('Weiter zu Startmeldungen');
+    expect(control('Wunsch-Startnummer')).toBeUndefined();
+    await press('Weiter zur Prüfung');
+    await press('Nennung absenden');
+    const sent = submissions[0] as {
+      person: Record<string, unknown>;
+      entries: Array<Record<string, unknown>>;
+    };
+    expect(sent.person.country).toBeUndefined();
+    expect(sent.entries[0]!.requestedStartNumber).toBeNull();
+  });
+
+  it('follows the birth date state: optional is not required, hidden is not asked or sent', async () => {
+    await mount(form({ dateOfBirth: { state: 'optional' } }), draftWith());
+    expect(control('Geburtsdatum')?.required).toBe(false);
+    act(() => root?.unmount());
+    container.remove();
+    const submissions = await mount(
+      form({ dateOfBirth: { state: 'hidden' } }),
+      draftWith({ dateOfBirth: '' }),
+    );
+    expect(control('Geburtsdatum')).toBeUndefined();
+    await press('Weiter zu Startmeldungen');
+    await press('Weiter zur Prüfung');
+    await press('Nennung absenden');
+    expect(
+      (submissions[0] as { person: Record<string, unknown> }).person
+        .dateOfBirth,
+    ).toBeNull();
   });
 });

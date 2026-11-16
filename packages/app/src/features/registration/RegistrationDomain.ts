@@ -54,6 +54,8 @@ export type VehicleEntry = {
   requestedStartNumber: string;
   displacementCc: string;
   cylinders: string;
+  transponderNumber?: string;
+  vehiclePassNumber?: string;
   ownerName: string;
   history: string;
   passengerEnabled: boolean;
@@ -75,6 +77,8 @@ export const emptyVehicle = (): VehicleEntry => ({
   requestedStartNumber: '',
   displacementCc: '',
   cylinders: '',
+  transponderNumber: '',
+  vehiclePassNumber: '',
   ownerName: '',
   history: '',
   passengerEnabled: false,
@@ -89,6 +93,8 @@ export const emptyVehicle = (): VehicleEntry => ({
 });
 export type DriverContact = {
   phone: string;
+  bloodGroup: string;
+  licenseNumber: string;
   country: string;
   street: string;
   postalCode: string;

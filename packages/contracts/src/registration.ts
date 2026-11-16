@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { RegistrationCustomFieldAnswersSchema } from './registration-config.js';
 import {
+  BLOOD_GROUPS,
   RegistrationContactFieldsSchema,
   registrationVehicleDetailsShape,
 } from './registration-details.js';
@@ -94,7 +95,7 @@ export const PublicRegistrationRequestSchema = z
       firstName: z.string().trim().min(1).max(100),
       lastName: z.string().trim().min(1).max(100),
       email: z.string().email().max(254),
-      dateOfBirth: z.string().date(),
+      dateOfBirth: z.string().date().nullable().optional(),
       country: z
         .string()
         .regex(/^[A-Z]{2}$/)
@@ -159,6 +160,8 @@ export const RegistrationDraftSchema = z
     guardianEmail: z.string().max(254),
     // Added later: drafts saved before these fields existed still resume.
     phone: z.string().max(40).default(''),
+    bloodGroup: z.enum([...BLOOD_GROUPS, '']).default(''),
+    licenseNumber: z.string().max(100).default(''),
     street: z.string().max(200).default(''),
     postalCode: z.string().max(20).default(''),
     city: z.string().max(100).default(''),
@@ -179,6 +182,8 @@ export const RegistrationDraftSchema = z
             requestedStartNumber: z.string().max(64),
             displacementCc: z.string().max(5).default(''),
             cylinders: z.string().max(2).default(''),
+            transponderNumber: z.string().max(100).default(''),
+            vehiclePassNumber: z.string().max(100).default(''),
             ownerName: z.string().max(200).default(''),
             history: z.string().max(4000).default(''),
             passengerEnabled: z.boolean().default(false),

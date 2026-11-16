@@ -2,6 +2,7 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { defaultRegistrationFormConfig } from '@racepilot/contracts';
 import { adminFetch } from '../../auth.js';
 import { EventSetup } from './EventSetup.js';
 
@@ -103,6 +104,31 @@ describe('event setup', () => {
     vi.unstubAllGlobals();
   });
 
+  it('shows the form fields as their own view instead of below the event form', async () => {
+    vi.mocked(adminFetch).mockImplementation(async (input) =>
+      String(input) === '/admin/events' ? json([]) : json({ recipient: null }),
+    );
+    Element.prototype.scrollIntoView = vi.fn();
+    await render();
+    const eventView = required(
+      container.querySelector('form'),
+      'event form',
+    ).parentElement;
+    expect(eventView?.hidden).toBe(false);
+    expect(container.querySelector('#event-setup-form-fields')).toBeNull();
+
+    const link = [...container.querySelectorAll<HTMLElement>('nav a')].find(
+      (anchor) => anchor.textContent?.includes('Formularfelder'),
+    );
+    await act(async () => required(link, 'Formularfelder link').click());
+
+    expect(eventView?.hidden).toBe(true);
+    expect(
+      container.querySelectorAll('#event-setup-form-fields h2'),
+    ).toHaveLength(1);
+    expect(container.textContent).toContain('zuerst als Entwurf');
+  });
+
   it('does not bind a selected event id when loading the draft fails', async () => {
     vi.mocked(adminFetch).mockImplementation(async (input, init) => {
       const url = String(input);
@@ -156,6 +182,8 @@ describe('event setup', () => {
       if (url.endsWith('/classes')) return json([]);
       if (url.endsWith('/pricing')) return json([]);
       if (url.endsWith('/consents')) return json({ terms: [] });
+      if (url.endsWith('/registration-form-config'))
+        return json({ config: defaultRegistrationFormConfig });
       throw new Error(`Unexpected request: ${url}`);
     });
 

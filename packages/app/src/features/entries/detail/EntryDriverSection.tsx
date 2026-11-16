@@ -15,6 +15,7 @@ import {
   TextInput,
 } from '@racepilot/ui';
 import type { EntryResponse as Entry } from '@racepilot/contracts';
+import { BLOOD_GROUPS } from '@racepilot/contracts';
 import type { EntryDriverUpdateRequest } from '@racepilot/contracts';
 import {
   COUNTRY_CODES,
@@ -51,6 +52,8 @@ export function EntryDriverSection({
       dateOfBirth: driver.dateOfBirth ?? '',
       country: driver.country ?? '',
       phone: driver.phone ?? '',
+      bloodGroup: driver.bloodGroup ?? '',
+      licenseNumber: driver.licenseNumber ?? '',
       street: driver.street ?? '',
       postalCode: driver.postalCode ?? '',
       city: driver.city ?? '',
@@ -74,6 +77,8 @@ export function EntryDriverSection({
       dateOfBirth: text('dateOfBirth'),
       country: text('country'),
       phone: text('phone'),
+      bloodGroup: text('bloodGroup') as EntryDriverUpdateRequest['bloodGroup'],
+      licenseNumber: text('licenseNumber'),
       street: text('street'),
       postalCode: text('postalCode'),
       city: text('city'),
@@ -90,6 +95,8 @@ export function EntryDriverSection({
       dateOfBirth: driver.dateOfBirth ?? null,
       country: driver.country ?? null,
       phone: driver.phone ?? null,
+      bloodGroup: driver.bloodGroup ?? null,
+      licenseNumber: driver.licenseNumber ?? null,
       street: driver.street ?? null,
       postalCode: driver.postalCode ?? null,
       city: driver.city ?? null,
@@ -157,6 +164,15 @@ export function EntryDriverSection({
               ))}
             </SelectField>
             <TextInput label="Telefon" type="tel" {...bind('phone')} />
+            <SelectField label="Blutgruppe" {...bind('bloodGroup')}>
+              <option value="">{NOT_GIVEN}</option>
+              {BLOOD_GROUPS.map((group) => (
+                <option key={group} value={group}>
+                  {group}
+                </option>
+              ))}
+            </SelectField>
+            <TextInput label="Lizenznummer" {...bind('licenseNumber')} />
             <TextInput label="Straße und Nr." {...bind('street')} />
             <TextInput label="PLZ" {...bind('postalCode')} />
             <TextInput label="Ort" {...bind('city')} />
@@ -230,6 +246,12 @@ export function EntryDriverSection({
           </FieldItem>
           <FieldItem label="E-Mail">
             <Value>{driver.email}</Value>
+          </FieldItem>
+          <FieldItem label="Blutgruppe">
+            <Value>{driver.bloodGroup}</Value>
+          </FieldItem>
+          <FieldItem label="Lizenznummer">
+            <Value>{driver.licenseNumber}</Value>
           </FieldItem>
           <FieldItem label="Telefon">
             <Value>{driver.phone}</Value>

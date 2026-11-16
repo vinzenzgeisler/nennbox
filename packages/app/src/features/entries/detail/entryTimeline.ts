@@ -10,6 +10,8 @@ const FIELD_NAMES: Record<string, string> = {
   dateOfBirth: 'Geburtsdatum',
   country: 'Land',
   phone: 'Telefon',
+  bloodGroup: 'Blutgruppe',
+  licenseNumber: 'Lizenznummer',
   street: 'Straße',
   postalCode: 'PLZ',
   city: 'Ort',
@@ -23,6 +25,8 @@ const FIELD_NAMES: Record<string, string> = {
   vehicleType: 'Fahrzeugtyp',
   displacementCc: 'Hubraum',
   cylinders: 'Zylinder',
+  transponderNumber: 'Transponder-Nr.',
+  vehiclePassNumber: 'Fahrzeugpass-Nr.',
   ownerName: 'Besitzer',
   history: 'Fahrzeughistorie',
 };

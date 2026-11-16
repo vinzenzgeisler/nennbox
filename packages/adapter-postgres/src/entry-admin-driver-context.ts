@@ -5,6 +5,8 @@ import { entries, registrationGroups } from './schema/entries.js';
 
 export type DriverContext = {
   phone: string | null;
+  bloodGroup: string | null;
+  licenseNumber: string | null;
   street: string | null;
   postalCode: string | null;
   city: string | null;
@@ -29,6 +31,8 @@ export async function loadDriverContexts(
     .select({
       entryId: entries.id,
       phone: registrationGroups.phone,
+      bloodGroup: registrationGroups.bloodGroup,
+      licenseNumber: registrationGroups.licenseNumber,
       street: registrationGroups.street,
       postalCode: registrationGroups.postalCode,
       city: registrationGroups.city,

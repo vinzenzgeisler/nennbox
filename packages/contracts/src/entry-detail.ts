@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { PublicationPreferenceSchema } from './entries.js';
+import { BLOOD_GROUPS } from './registration-details.js';
 
 const optionalText = (max: number) =>
   z
@@ -18,6 +19,8 @@ export const EntryDriverUpdateRequest = z
       .regex(/^[A-Z]{2}$/)
       .nullable(),
     phone: optionalText(40),
+    bloodGroup: z.enum(BLOOD_GROUPS).nullable(),
+    licenseNumber: optionalText(100),
     street: optionalText(200),
     postalCode: optionalText(20),
     city: optionalText(100),
@@ -36,6 +39,8 @@ export const EntryVehicleUpdateRequest = z
     registration: optionalText(64),
     displacementCc: z.number().int().min(1).max(20000).nullable(),
     cylinders: z.number().int().min(1).max(24).nullable(),
+    transponderNumber: optionalText(100),
+    vehiclePassNumber: optionalText(100),
     ownerName: optionalText(200),
     history: optionalText(4000),
   })

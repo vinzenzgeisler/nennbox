@@ -11,7 +11,25 @@ export function deriveRegistration(
   payload: FormPayload,
 ) {
   const { step, values, locale, vehicles, setVehicles } = state;
-  const steps = payload.form.steps;
+  const steps = payload.form.steps.map((step) => ({
+    ...step,
+    fields: step.fields
+      .filter(
+        (field) =>
+          field.key !== 'dateOfBirth' ||
+          payload.registrationFormConfig.fields.dateOfBirth.state !== 'hidden',
+      )
+      .map((field) =>
+        field.key === 'dateOfBirth'
+          ? {
+              ...field,
+              required:
+                payload.registrationFormConfig.fields.dateOfBirth.state ===
+                'required',
+            }
+          : field,
+      ),
+  }));
   const currentStep = steps[step];
   const contrastColors = deriveAccessibleBrandColors(
     payload.registrationFormConfig.branding.primaryColor,
@@ -19,6 +37,7 @@ export function deriveRegistration(
   );
   const age = getAge(values.dateOfBirth, payload.event.startsOn);
   const guardianRequired =
+    Boolean(values.dateOfBirth) &&
     age < payload.registrationSettings.guardianRequiredBelowAge;
   const estimatedTotal = estimateRegistrationTotal(vehicles, payload.pricing);
   const registrationCloseDate = payload.event.registrationClosesAt
