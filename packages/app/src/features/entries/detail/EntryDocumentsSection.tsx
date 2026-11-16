@@ -65,18 +65,13 @@ export function EntryDocumentsSection({
     })),
     ...projection
       .filter(
-        (item) =>
-          (item.key === 'technical_inspection' || item.key === 'waiver') &&
-          item.meaning !== 'not_relevant',
+        (item) => item.key === 'waiver' && item.meaning !== 'not_relevant',
       )
       .map((item) => {
         const action = dimensionAction(item);
         return {
           id: item.key,
-          label:
-            item.key === 'waiver'
-              ? 'Haftverzicht Fahrer'
-              : 'Technische Abnahme',
+          label: 'Haftverzicht Fahrer',
           emphasis: item.meaning === 'missing',
           status: <StatusLabel status={item.meaning} label={item.label.de} />,
           action: action ? (

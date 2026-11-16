@@ -23,6 +23,15 @@
   gap: var(--space-4) var(--space-6);
   margin: 0;
 }
+/* Read-only values: two columns on a phone, three from tablet up. */
+.nb-field-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (width >= 768px) {
+  .nb-field-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
 .nb-field-item {
   min-width: 0;
 }

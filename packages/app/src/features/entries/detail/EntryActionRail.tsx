@@ -111,23 +111,21 @@ export function EntryActionRail({
   const canLinkPassenger = entry.availableActions?.includes('passenger:link');
   return (
     <>
-      <NextStep
-        label="Nächster Schritt"
-        action={
-          primary ? (
+      {primary && (
+        <NextStep
+          label="Nächster Schritt"
+          action={
             <NextStepButton disabled={busy} onClick={() => onStatus(primary)}>
               {primary.label}
             </NextStepButton>
-          ) : undefined
-        }
-        hint={
-          primary
-            ? missing
+          }
+          hint={
+            missing
               ? `Es fehlt noch ${missing}. Du kannst trotzdem fortfahren; die Nennung bleibt dann als unvollständig markiert.`
-              : 'Die Entscheidung wird im Verlauf protokolliert.'
-            : 'Keine weitere Statusaktion verfügbar.'
-        }
-      />
+              : undefined
+          }
+        />
+      )}
       {onSite.length > 0 && (
         <ActionGroup title="Vor Ort">
           {onSite.map((action) => (

@@ -87,7 +87,6 @@ export function EntryConfirmation({
   }
   return (
     <DetailSection title="Nennbestätigung">
-      <p>PDF der Nennbestätigung für diese Anmeldung.</p>
       {error && <p role="alert">{error}</p>}
       {job?.status === 'running' && <p role="status">PDF wird erstellt …</p>}
       {job?.status === 'failed' && (

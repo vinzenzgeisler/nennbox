@@ -10,15 +10,17 @@
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
-/* Paging is secondary to the list: no frame until the control is hovered or focused. */
-.nb-pagination .nb-button:enabled {
+/* Paging is secondary to the list: text only, hover and focus underline instead of frame and fill. */
+.nb-pagination .nb-button {
+  background: transparent;
   outline-color: transparent;
+}
+.nb-pagination .nb-button::before {
+  display: none;
 }
 .nb-pagination .nb-button:enabled:hover,
 .nb-pagination .nb-button:enabled:focus-visible {
-  outline-color: var(--color-green);
-}
-.nb-pagination .nb-button:disabled {
   background: transparent;
-  outline-color: transparent;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }

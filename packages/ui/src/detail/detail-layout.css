@@ -38,3 +38,30 @@
     border-left: 1px solid var(--color-line);
   }
 }
+/* Narrow: the next step is pinned above the bottom navigation; the other groups follow the content. */
+@media (width < 768px) {
+  .nb-detail-rail {
+    display: contents;
+  }
+  .nb-detail-rail > section {
+    padding: var(--space-4);
+    border-top: 1px solid var(--color-line);
+    background: var(--color-ivory);
+  }
+  .nb-detail-rail > .nb-next-step {
+    position: sticky;
+    z-index: 5;
+    bottom: var(--mobile-nav-height);
+    padding-block: var(--space-3);
+    background: var(--color-white);
+  }
+  .nb-detail-rail > .nb-rail-note {
+    margin: 0;
+    padding: var(--space-4);
+    background: var(--color-ivory);
+  }
+  .nb-next-step .nb-rail-label,
+  .nb-next-step p {
+    display: none;
+  }
+}
