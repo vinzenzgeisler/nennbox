@@ -99,7 +99,16 @@ export function AdminNavigation({
         </nav>
         {user && <div className="nb-admin-nav-user">{user}</div>}
       </aside>
-      <div className="nb-admin-mobile-event-picker">{eventPicker}</div>
+      <div className="nb-admin-mobile-event-picker">
+        <strong>
+          {
+            groups
+              .flatMap((group) => group.items)
+              .find((entry) => entry.id === current)?.label
+          }
+        </strong>
+        {eventPicker}
+      </div>
       <nav className="nb-admin-mobile-nav" aria-label={ariaLabel}>
         {items.map((entry) => item(entry, true))}
       </nav>

@@ -250,7 +250,8 @@ export function AdminApplication() {
             }}
             onCloseDetail={() => {
               setDetailOpen(false);
-              setPreviewOpen(true);
+              // A6 mobile returns to the list; only the wide workspace reopens its inline preview.
+              setPreviewOpen(previewViewport);
             }}
             onMessage={openMessages}
             onSelectionChange={handleSelectionChange}

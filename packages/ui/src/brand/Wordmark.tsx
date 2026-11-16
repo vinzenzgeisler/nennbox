@@ -19,11 +19,17 @@ const palettes: Record<BrandVariant, { background: string; mark: string }> = {
 export function Wordmark({
   variant = 'standard',
   className,
+  signetSize = '1.7cap',
+  tracking = '0.03em',
   ...props
-}: { variant?: BrandVariant; className?: string } & Omit<
-  HTMLAttributes<HTMLSpanElement>,
-  'color'
->) {
+}: {
+  variant?: BrandVariant;
+  className?: string;
+  /** CSS length of the signet; defaults to the brand-book ratio to the cap height. */
+  signetSize?: string;
+  /** Letter spacing of the word. */
+  tracking?: string;
+} & Omit<HTMLAttributes<HTMLSpanElement>, 'color'>) {
   const palette = palettes[variant];
   return (
     <span
@@ -46,8 +52,8 @@ export function Wordmark({
     >
       <Signet
         style={{
-          width: '1.7cap',
-          height: '1.7cap',
+          width: signetSize,
+          height: signetSize,
           fill: variant === 'on-green' ? 'var(--color-mint)' : 'currentColor',
           flex: 'none',
         }}
@@ -55,7 +61,7 @@ export function Wordmark({
       <span
         style={{
           color: variant === 'on-green' ? 'var(--color-ivory)' : palette.mark,
-          letterSpacing: '0.03em',
+          letterSpacing: tracking,
           lineHeight: 1,
         }}
       >

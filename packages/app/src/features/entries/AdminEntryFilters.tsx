@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { FilterBar, SelectField, TextInput } from '@racepilot/ui';
 import type { EntryQuery } from './AdminEntriesModel.js';
 
@@ -7,11 +7,13 @@ export function AdminEntryFilters({
   setDraft,
   changeSort,
   classes,
+  tabs,
 }: {
   draft: EntryQuery;
   setDraft: Dispatch<SetStateAction<EntryQuery>>;
   changeSort: (sort: string, direction?: string) => void;
   classes: Array<{ id: string; name: string }>;
+  tabs?: ReactNode;
 }) {
   const activeFilters = [
     ...(draft.classId
@@ -35,8 +37,9 @@ export function AdminEntryFilters({
   ];
   return (
     <FilterBar
-      className="nb-entry-filters"
       label="Nennungen filtern"
+      mobileToggleLabel="Suche & Filter"
+      tabs={tabs}
       activeFilters={activeFilters}
       onRemoveFilter={(id) => setDraft((value) => ({ ...value, [id]: '' }))}
     >

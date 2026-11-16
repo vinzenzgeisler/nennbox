@@ -8,8 +8,8 @@
 }
 .nb-entry-list-row td {
   height: 64px;
-  padding: 4px var(--space-2);
-  border-bottom: 1px solid var(--color-line);
+  padding: 6px var(--space-2);
+  border-bottom: 1px solid var(--color-sage);
   vertical-align: middle;
 }
 .nb-entry-list-person {
@@ -39,30 +39,53 @@
   flex: none;
   place-items: center;
   width: 48px;
-  height: 40px;
+  height: 48px;
   object-fit: cover;
   background: var(--color-sage);
   color: var(--color-graphite);
 }
-.nb-entry-list-person span:last-child {
+.nb-entry-list-person > span:last-child {
   display: grid;
   min-width: 0;
+}
+.nb-entry-list-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.nb-entry-list-meta > small {
+  min-width: 0;
+}
+/* Hints such as "Unterlagen 1/2" read as a quiet suffix to the vehicle line, not as a second chip row. */
+.nb-entry-list-meta .nb-hint {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-graphite);
+  font: 400 12px/1.3 var(--font-plex);
+  letter-spacing: normal;
+  white-space: nowrap;
 }
 .nb-entry-list-person strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: var(--text-heading-4);
+  font: 600 14px/1.3 var(--font-plex);
 }
 .nb-entry-list-person small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--color-graphite);
-  font: var(--text-label);
+  font: 400 12px/1.3 var(--font-plex);
+}
+.nb-entry-list-row td[data-priority='2'] {
+  font-size: 13px;
 }
 .nb-entry-list-number {
-  font: 700 24px/1 var(--font-archivo);
+  font: 900 20px/1 var(--font-archivo);
   font-stretch: condensed;
   font-variation-settings: 'wdth' 75;
 }
@@ -111,12 +134,12 @@
 @media (width < 768px) {
   .nb-entry-list-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
     gap: var(--space-1) var(--space-2);
     min-height: 76px;
     height: auto;
     margin: 0;
-    padding: var(--space-2);
+    padding: var(--space-1) var(--space-4);
     border: 0;
     border-bottom: 1px solid var(--color-line);
   }
@@ -126,35 +149,50 @@
     padding: 0;
     border: 0;
   }
+  .nb-entry-list-row td[data-column='actions'],
   .nb-entry-list-row td[data-priority='2'],
   .nb-entry-list-row td[data-priority='3'],
   .nb-entry-list-row td[data-priority='4'] {
     display: none;
   }
   .nb-entry-list-row td:first-child {
-    grid-column: 1;
+    grid-column: 1 / 4;
     grid-row: 1;
   }
   .nb-entry-list-row td[data-priority='1']:has(.nb-entry-list-number) {
-    grid-column: 2;
+    grid-column: 4;
     grid-row: 1;
     text-align: end;
   }
   .nb-entry-list-row td[data-column='status'] {
     grid-column: 1;
     grid-row: 2;
+    margin-inline-start: 60px;
   }
   .nb-entry-list-row td[data-column='payment'] {
     grid-column: 2;
     grid-row: 2;
-    text-align: end;
+  }
+  .nb-entry-list-number {
+    font: 700 28px/1 var(--font-plex);
   }
   .nb-entry-list-person {
+    gap: var(--space-3);
     min-width: 0;
+  }
+  .nb-entry-list-document-label,
+  .nb-entry-list-row td[data-column='payment'] .nb-status-empty {
+    display: none;
   }
   .nb-entry-list-person img,
   .nb-entry-list-image-empty {
-    width: 64px;
+    width: 48px;
     height: 48px;
+  }
+}
+
+@media (width >= 1680px) {
+  .nb-entry-list-document-count {
+    display: none;
   }
 }

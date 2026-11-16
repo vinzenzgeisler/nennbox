@@ -674,6 +674,8 @@
     "Steps",
     "Switch",
     "TabItem",
+    "TabList",
+    "TabPanel",
     "Tabs",
     "TechnicalLabel",
     "TextInput",

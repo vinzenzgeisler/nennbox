@@ -78,6 +78,7 @@ export function AdminEntryRow({
           {entry.documentProjection &&
             entry.documentProjection.requiredCount > 0 && (
               <span
+                className="nb-entry-list-document-count"
                 title={uploadLines(entry)
                   .map(
                     (line) =>
@@ -85,7 +86,12 @@ export function AdminEntryRow({
                   )
                   .join(' · ')}
               >
-                <HintLabel>{`Unterlagen ${entry.documentProjection.uploadedRequiredCount}/${entry.documentProjection.requiredCount}`}</HintLabel>
+                <HintLabel>
+                  <span className="nb-entry-list-document-label">
+                    Unterlagen{' '}
+                  </span>
+                  {`${entry.documentProjection.uploadedRequiredCount}/${entry.documentProjection.requiredCount}`}
+                </HintLabel>
               </span>
             )}
         </>

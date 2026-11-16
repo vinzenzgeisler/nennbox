@@ -159,7 +159,9 @@ export function AppShell({
     <AdminWorkspace
       navigation={
         <AdminNavigation
-          brand={<Wordmark variant="on-green" />}
+          brand={
+            <Wordmark variant="on-green" signetSize="20px" tracking="0.04em" />
+          }
           ariaLabel="Hauptnavigation"
           eventLabel="Veranstaltung"
           eventPlaceholder="Veranstaltung wählen"
@@ -208,9 +210,6 @@ export function AppShell({
       header={
         detailOpen && currentView === 'entries' ? null : (
           <PageHeader
-            className={
-              currentView === 'entries' ? 'nb-entry-page-header' : undefined
-            }
             title={VIEW_TITLES[currentView]}
             description={
               currentView === 'entries' && closeDate
