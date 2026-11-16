@@ -27,6 +27,12 @@
   opacity: 0;
   transform: translateY(-50%);
 }
+/* The selection box sits in the row gutter so it never covers the photo. */
+@media (width >= 768px) {
+  .nb-entry-list-select {
+    left: calc(var(--space-6) * -1);
+  }
+}
 .nb-entry-list-row:hover .nb-entry-list-select,
 .nb-entry-list-row:focus-within .nb-entry-list-select,
 .nb-entry-list-row:has(.nb-entry-list-select input:checked)
@@ -180,7 +186,7 @@
     gap: var(--space-3);
     min-width: 0;
   }
-  .nb-entry-list-document-label,
+  .nb-entry-list-document-count,
   .nb-entry-list-row td[data-column='payment'] .nb-status-empty {
     display: none;
   }

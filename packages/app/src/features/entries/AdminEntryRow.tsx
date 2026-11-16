@@ -8,6 +8,7 @@ import {
   StatusLabel,
 } from '@racepilot/ui';
 import type { WorkflowView } from './AdminEntriesModel.js';
+import { dimensionStatus } from './dimensionStatus.js';
 import { EntryStatusBadge } from './EntryStatusBadge.js';
 import { documentStatusView, uploadLines } from './documents/documentLines.js';
 type Selection = { eventId: string; ids: Set<string> };
@@ -24,7 +25,9 @@ function Dimension({
   return dimension ? (
     <StatusLabel
       status={
-        dimension.meaning === 'not_relevant' ? 'empty' : dimension.meaning
+        dimension.meaning === 'not_relevant'
+          ? 'empty'
+          : dimensionStatus(keyName, dimension.meaning)
       }
       label={dimension.label.de}
     />
@@ -54,7 +57,7 @@ export function AdminEntryRow({
   const details = entry.adminDetails;
   const name = details?.driver.name ?? 'Name nicht verfügbar';
   const vehicle = details
-    ? `${details.vehicle.make} ${details.vehicle.model}${details.vehicle.registration ? ` · ${details.vehicle.registration}` : ''}`
+    ? `${details.vehicle.make} ${details.vehicle.model}${entry.orgaCode ? ` · ${entry.orgaCode}` : ''}`
     : 'Fahrzeug nicht verfügbar';
   return (
     <EntryListRow

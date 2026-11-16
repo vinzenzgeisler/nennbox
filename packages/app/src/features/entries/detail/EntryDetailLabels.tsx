@@ -1,6 +1,7 @@
 import { HintLabel, StatusLabel } from '@racepilot/ui';
 import type { EntryResponse as Entry } from '@racepilot/contracts';
 import type { WorkflowView } from '../AdminEntriesModel.js';
+import { dimensionStatus } from '../dimensionStatus.js';
 import { statusMeaning } from '../EntryStatusBadge.js';
 import { dimensionLabel } from './entryDetailModel.js';
 
@@ -39,9 +40,7 @@ export function EntryDetailLabels({
                       (status) => status.key === item.value,
                     )?.category ?? '',
                   )
-                : item.key === 'payment' && item.meaning === 'not_relevant'
-                  ? 'empty'
-                  : item.meaning
+                : dimensionStatus(item.key, item.meaning)
             }
             label={dimensionLabel(item)}
           />

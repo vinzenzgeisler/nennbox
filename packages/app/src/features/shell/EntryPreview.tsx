@@ -1,3 +1,4 @@
+import { dimensionStatus } from '../entries/dimensionStatus.js';
 import type {
   EntryResponse as Entry,
   EntryWorkflowCategory,
@@ -103,7 +104,11 @@ export function EntryPreview({
         label: STATUS_DOCUMENT_LABELS[item.key],
         status: (
           <StatusLabel
-            status={item.meaning === 'not_relevant' ? 'empty' : item.meaning}
+            status={
+              item.meaning === 'not_relevant'
+                ? 'empty'
+                : dimensionStatus(item.key, item.meaning)
+            }
             label={item.label.de}
           />
         ),
