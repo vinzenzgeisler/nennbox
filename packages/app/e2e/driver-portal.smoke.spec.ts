@@ -241,11 +241,7 @@ test('driver requests a Mailpit link, uploads a document, and the office sees it
     name: 'Nennung im Detail',
     exact: true,
   });
-  if (!(await detail.isVisible()))
-    await page
-      .getByRole('complementary', { name: 'Nennungsvorschau' })
-      .getByRole('button', { name: 'Vollständig öffnen' })
-      .click();
+  await expect(detail).toBeVisible();
   const documents = detail.getByRole('region', {
     name: 'Unterlagen und Zahlung',
   });
