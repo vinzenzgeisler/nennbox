@@ -33,7 +33,8 @@ export function createRegistrationUploadCleanupTask(deps: {
         BATCH_SIZE,
         CLAIM_LEASE_MS,
       );
-      for (const object of pending) {
+      for (let index = 0; index < pending.length; index += 1) {
+        const object = pending[index]!;
         try {
           // Adapters derive the physical key from organizationId; never accept a
           // caller-supplied storage path or operate across tenant prefixes.
@@ -43,7 +44,18 @@ export function createRegistrationUploadCleanupTask(deps: {
           );
           await repository.complete(object.organizationId, object.objectId);
         } catch (error) {
-          await repository.release(object.organizationId, object.objectId);
+          // Free the unprocessed leases too; the next scheduled run should not
+          // have to wait for the lease timeout after a transient provider error.
+          await Promise.allSettled(
+            pending
+              .slice(index)
+              .map((candidate) =>
+                repository.release(
+                  candidate.organizationId,
+                  candidate.objectId,
+                ),
+              ),
+          );
           throw error;
         }
       }
