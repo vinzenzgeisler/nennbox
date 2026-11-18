@@ -13,12 +13,17 @@ const uploadBodyLimit = bodyLimit({
   onError: (c) => c.json({ error: 'Upload too large' }, 413),
 });
 
-/** Bounds buffered API bodies while allowing the existing 6 MB upload cap plus multipart overhead. */
+// Keep this list explicit: suffix checks miss valid routes such as message attachments.
+const UPLOAD_ROUTES = [
+  /^\/admin\/entries\/[^/]+\/documents$/,
+  /^\/admin\/organization\/registration-assets$/,
+  /^\/public\/organizations\/[^/]+\/events\/[^/]+\/registration\/custom-fields\/[^/]+\/upload$/,
+  /^\/admin\/events\/[^/]+\/messages\/attachments$/,
+];
+
+/** Bounds buffered API bodies while allowing uploads up to 6 MB plus multipart overhead. */
 export const requestBodyLimit: MiddlewareHandler = (c, next) => {
-  const path = c.req.path;
   const isUpload =
-    path.endsWith('/upload') ||
-    path.endsWith('/registration-assets') ||
-    path.endsWith('/documents');
+    c.req.method === 'POST' && UPLOAD_ROUTES.some((route) => route.test(c.req.path));
   return (isUpload ? uploadBodyLimit : apiBodyLimit)(c, next);
 };
