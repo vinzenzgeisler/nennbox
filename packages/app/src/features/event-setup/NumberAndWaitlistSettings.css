@@ -67,9 +67,13 @@
   max-width: 28rem;
 }
 
-.nb-number-table td:nth-child(2),
-.nb-number-table td:nth-child(3) {
+.nb-number-ranges .nb-number-table td:nth-child(2),
+.nb-number-ranges .nb-number-table td:nth-child(3) {
   width: 6.5rem;
+}
+
+.nb-class-capacities .nb-number-table td:nth-child(2) {
+  width: 10rem;
 }
 
 .nb-waitlist-settings {
@@ -97,8 +101,9 @@
 }
 
 @media (width < 768px) {
-  .nb-number-table td:nth-child(2),
-  .nb-number-table td:nth-child(3) {
+  .nb-number-ranges .nb-number-table td:nth-child(2),
+  .nb-number-ranges .nb-number-table td:nth-child(3),
+  .nb-class-capacities .nb-number-table td:nth-child(2) {
     width: auto;
   }
 
