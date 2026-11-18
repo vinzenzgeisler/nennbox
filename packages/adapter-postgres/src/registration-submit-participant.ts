@@ -1,9 +1,14 @@
 import type { RequestContext } from '@racepilot/core';
 import { RegistrationUnavailable } from '@racepilot/core';
-import { normalizeEmail } from '@racepilot/core';
+import {
+  normalizeEmail,
+  normalizeRequestedStartNumber,
+  availableStartNumbers,
+} from '@racepilot/core';
 import { eq, and, inArray, sql } from 'drizzle-orm';
 import { people, entries } from './schema/entries.js';
 import { eventClasses } from './schema/organization.js';
+import { startNumberRanges } from './schema/start-numbers.js';
 import type {
   RegistrationSubmissionEvent,
   RegistrationSubmissionSettings,
@@ -25,6 +30,7 @@ export async function resolveRegistrationParticipant(args: {
   needsGuardian: boolean;
   uniqueClassIds: string[];
   waitlistEntryIndexes: number[];
+  automaticStartNumbers: Array<string | null>;
 }> {
   const { tx, ctx, event, payload, settings } = args;
   const emailNormalized = normalizeEmail(payload.person.email);
@@ -81,6 +87,85 @@ export async function resolveRegistrationParticipant(args: {
     classes.some((eventClass) => eventClass.closed)
   )
     throw new RegistrationUnavailable('class-unavailable');
+  const numberRanges = await tx
+    .select()
+    .from(startNumberRanges)
+    .where(
+      and(
+        eq(startNumberRanges.organizationId, ctx.organizationId),
+        eq(startNumberRanges.eventId, event.id),
+      ),
+    );
+  const automaticStartNumbers = Array<string | null>(
+    payload.entries.length,
+  ).fill(null);
+  const hasAutomaticRange = numberRanges.some(
+    (range) => range.assignmentMode === 'automatic',
+  );
+  if (hasAutomaticRange)
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.organizationId}:start-numbers:${event.id}`}, 0))`,
+    );
+  const assignedRows = await tx
+    .select({ number: entries.requestedStartNumber })
+    .from(entries)
+    .where(
+      and(
+        eq(entries.organizationId, ctx.organizationId),
+        eq(entries.eventId, event.id),
+        sql`${entries.deletedAt} is null`,
+        sql`${entries.acceptanceStatus} <> 'withdrawn'`,
+      ),
+    );
+  const usedNumbers = assignedRows.flatMap((row) =>
+    row.number ? [row.number] : [],
+  );
+  for (const [index, submitted] of payload.entries.entries()) {
+    const classRanges = numberRanges.filter(
+      (range) => range.classId === submitted.classId,
+    );
+    const applicableRanges = (
+      classRanges.length
+        ? classRanges
+        : numberRanges.filter((range) => range.classId === null)
+    ).sort((a, b) => a.rangeFrom - b.rangeFrom);
+    const mode = applicableRanges[0]?.assignmentMode;
+    const requested = normalizeRequestedStartNumber(
+      submitted.requestedStartNumber,
+    );
+    if (mode === 'automatic') {
+      if (requested) throw new RegistrationUnavailable('class-unavailable');
+      let assigned: string | undefined;
+      for (const range of applicableRanges) {
+        assigned = availableStartNumbers(
+          {
+            from: range.rangeFrom,
+            to: range.rangeTo,
+            reserved: range.reservedNumbers,
+            classId: range.classId,
+          },
+          usedNumbers,
+        )[0];
+        if (assigned) break;
+      }
+      if (!assigned) throw new RegistrationUnavailable('class-unavailable');
+      automaticStartNumbers[index] = assigned;
+      usedNumbers.push(assigned);
+    } else if (
+      requested &&
+      applicableRanges.length &&
+      !applicableRanges.some(
+        (range) =>
+          range.assignmentMode === 'driver_choice' &&
+          /^\d+$/.test(requested) &&
+          Number(requested) >= range.rangeFrom &&
+          Number(requested) <= range.rangeTo &&
+          !range.reservedNumbers.includes(Number(requested)),
+      )
+    ) {
+      throw new RegistrationUnavailable('class-unavailable');
+    } else if (requested) usedNumbers.push(requested);
+  }
   const waitlistEntryIndexes: number[] = [];
   for (const eventClass of classes) {
     const count = await tx
@@ -92,7 +177,8 @@ export async function resolveRegistrationParticipant(args: {
           eq(entries.eventId, event.id),
           eq(entries.classId, eventClass.id),
           sql`${entries.deletedAt} is null`,
-          sql`${entries.acceptanceStatus} not in ('withdrawn','waitlisted')`,
+          sql`${entries.acceptanceStatus} <> 'withdrawn'`,
+          sql`(${entries.acceptanceStatus} <> 'waitlisted' or ${entries.waitlistConfirmationDeadline} > now())`,
         ),
       );
     if (eventClass.maxParticipants !== null) {
@@ -175,5 +261,11 @@ export async function resolveRegistrationParticipant(args: {
       .returning({ id: people.id });
     personId = person!.id;
   }
-  return { personId, needsGuardian, uniqueClassIds, waitlistEntryIndexes };
+  return {
+    personId,
+    needsGuardian,
+    uniqueClassIds,
+    waitlistEntryIndexes,
+    automaticStartNumbers,
+  };
 }

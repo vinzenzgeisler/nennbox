@@ -110,4 +110,33 @@ export function registerStartNumberRoutes({
       );
     }
   });
+
+  app.post(
+    '/admin/events/:eventId/classes/:classId/waitlist/next',
+    async (c) => {
+      const guard = await requireMember(c.req.raw, 'entry:write');
+      if (!guard.ok) return c.json({ error: guard.error }, guard.status);
+      if (!deps.startNumbers) return c.json({ error: 'Unavailable' }, 404);
+      const ids = z
+        .object({ eventId: z.string().uuid(), classId: z.string().uuid() })
+        .safeParse({
+          eventId: c.req.param('eventId'),
+          classId: c.req.param('classId'),
+        });
+      if (!ids.success) return c.json({ error: 'Invalid event or class' }, 400);
+      try {
+        const offer = await deps.startNumbers.promoteNext(
+          guard.context,
+          ids.data.eventId,
+          ids.data.classId,
+          false,
+        );
+        return offer
+          ? c.json(offer)
+          : c.json({ error: 'No place or no waitlist entry' }, 409);
+      } catch {
+        return c.json({ error: 'Unable to promote waitlist entry' }, 409);
+      }
+    },
+  );
 }

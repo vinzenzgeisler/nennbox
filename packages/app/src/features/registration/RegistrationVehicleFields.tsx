@@ -148,60 +148,67 @@ export function RegistrationVehicleFields({
                 ))}
               </SelectField>
               {payload.registrationFormConfig.fields.requestedStartNumber
-                .state !== 'hidden' && (
-                <Field
-                  label={
-                    locale === 'de' ? 'Wunsch-Startnummer' : 'Requested number'
-                  }
-                  maxLength={16}
-                  required={
-                    payload.registrationFormConfig.fields.requestedStartNumber
-                      .state === 'required'
-                  }
-                  value={item.requestedStartNumber}
-                  {...(item.requestedStartNumber
-                    ? {
-                        hint:
-                          numberAvailability[index] === true
-                            ? locale === 'de'
-                              ? 'Startnummer ist frei'
-                              : 'Number is available'
-                            : numberAvailability[index] === false
+                .state !== 'hidden' &&
+                (payload.startNumberModes?.[item.classId] ??
+                  'driver_choice') === 'driver_choice' && (
+                  <Field
+                    label={
+                      locale === 'de'
+                        ? 'Wunsch-Startnummer'
+                        : 'Requested number'
+                    }
+                    maxLength={16}
+                    required={
+                      payload.registrationFormConfig.fields.requestedStartNumber
+                        .state === 'required'
+                    }
+                    value={item.requestedStartNumber}
+                    {...(item.requestedStartNumber
+                      ? {
+                          hint:
+                            numberAvailability[index] === true
                               ? locale === 'de'
-                                ? 'Startnummer ist bereits vergeben'
-                                : 'Number is already taken'
-                              : locale === 'de'
-                                ? 'Startnummer wird geprüft …'
-                                : 'Checking number …',
-                      }
-                    : {})}
-                  onChange={(e) => {
-                    const requestedStartNumber = e.target.value;
-                    numberLookupRef.current[index] = requestedStartNumber;
-                    setVehicle(index, { requestedStartNumber });
-                    setNumberAvailability((old) => ({ ...old, [index]: null }));
-                    if (requestedStartNumber.trim())
-                      void fetch(
-                        `/public/organizations/${encodeURIComponent(organizationId)}/events/${encodeURIComponent(eventSlug)}/registration/start-number?number=${encodeURIComponent(requestedStartNumber)}`,
-                      )
-                        .then((response) =>
-                          response.ok ? response.json() : null,
+                                ? 'Startnummer ist frei'
+                                : 'Number is available'
+                              : numberAvailability[index] === false
+                                ? locale === 'de'
+                                  ? 'Startnummer ist bereits vergeben'
+                                  : 'Number is already taken'
+                                : locale === 'de'
+                                  ? 'Startnummer wird geprüft …'
+                                  : 'Checking number …',
+                        }
+                      : {})}
+                    onChange={(e) => {
+                      const requestedStartNumber = e.target.value;
+                      numberLookupRef.current[index] = requestedStartNumber;
+                      setVehicle(index, { requestedStartNumber });
+                      setNumberAvailability((old) => ({
+                        ...old,
+                        [index]: null,
+                      }));
+                      if (requestedStartNumber.trim())
+                        void fetch(
+                          `/public/organizations/${encodeURIComponent(organizationId)}/events/${encodeURIComponent(eventSlug)}/registration/start-number?number=${encodeURIComponent(requestedStartNumber)}`,
                         )
-                        .then((body: { available?: boolean } | null) => {
-                          if (
-                            body &&
-                            numberLookupRef.current[index] ===
-                              requestedStartNumber
+                          .then((response) =>
+                            response.ok ? response.json() : null,
                           )
-                            setNumberAvailability((old) => ({
-                              ...old,
-                              [index]: body.available === true,
-                            }));
-                        })
-                        .catch(() => undefined);
-                  }}
-                />
-              )}
+                          .then((body: { available?: boolean } | null) => {
+                            if (
+                              body &&
+                              numberLookupRef.current[index] ===
+                                requestedStartNumber
+                            )
+                              setNumberAvailability((old) => ({
+                                ...old,
+                                [index]: body.available === true,
+                              }));
+                          })
+                          .catch(() => undefined);
+                    }}
+                  />
+                )}
               <Field
                 label={t.make}
                 required

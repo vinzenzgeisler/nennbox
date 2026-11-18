@@ -77,7 +77,12 @@ const { taskList } = createProductWorker({
 const runner = await run({
   connectionString: databaseUrl,
   taskList,
-  ...(storage ? { crontab: '*/5 * * * * registration_upload_cleanup' } : {}),
+  ...(storage
+    ? {
+        crontab:
+          '*/5 * * * * registration_upload_cleanup\n* * * * * waitlist_deadlines',
+      }
+    : { crontab: '* * * * * waitlist_deadlines' }),
 });
 const stop = async () => {
   await runner.stop();

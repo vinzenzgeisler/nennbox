@@ -234,6 +234,7 @@ export function createPublicRegistrationService(
           needsGuardian,
           uniqueClassIds,
           waitlistEntryIndexes,
+          automaticStartNumbers,
         } = await resolveRegistrationParticipant({
           tx,
           ctx,
@@ -270,6 +271,7 @@ export function createPublicRegistrationService(
           personId,
           uniqueClassIds,
           waitlistEntryIndexes,
+          automaticStartNumbers,
           selectedTerms,
           features: {
             passenger: registrationFeatureEnabled(

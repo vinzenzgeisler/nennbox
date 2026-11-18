@@ -9,6 +9,7 @@ import { projectEntryRows } from './entry-projection.js';
 import type { Database } from './database.js';
 import type { EntryRepository } from '@racepilot/core';
 import { attachAdminEntryDetails } from './entry-admin-details.js';
+import { offerWaitlistSeat } from './waitlist-offer.js';
 
 export function createEntryTransitionMethod(
   db: Database,
@@ -58,6 +59,21 @@ export function createEntryTransitionMethod(
             workflow?.workflowRevisionId ?? row.workflowRevisionId!,
           ...(workflow ? { statusCategory: workflow.statusCategory } : {}),
         });
+        if (
+          transition === 'acceptance' &&
+          (toStatus === 'withdrawn' ||
+            toStatus === 'rejected' ||
+            workflow?.statusCategory === 'withdrawn' ||
+            workflow?.statusCategory === 'rejected')
+        ) {
+          await offerWaitlistSeat({
+            tx,
+            ctx,
+            eventId: row.eventId,
+            classId: row.classId,
+            automatic: true,
+          });
+        }
         if (transition === 'acceptance' && workflow?.notification) {
           const [recipient] = await tx
             .select({

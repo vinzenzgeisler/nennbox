@@ -72,6 +72,48 @@ test('admin creates a class, terms and opens its public registration in the UI',
       hasText: 'Veranstaltung gespeichert und Nennung geöffnet.',
     }),
   ).toBeVisible();
+  const numberSettings = page.getByRole('region', {
+    name: 'Startnummern & Warteliste',
+  });
+  await expect(numberSettings).toBeVisible();
+  await numberSettings
+    .getByRole('button', { name: 'Nummernbereich hinzufügen' })
+    .click();
+  await numberSettings
+    .getByLabel('Gilt für')
+    .selectOption({ label: 'Motorrad' });
+  await numberSettings.getByLabel('Von').fill('10');
+  await numberSettings.getByLabel('Bis').fill('20');
+  await numberSettings.getByLabel('Reserviert (Komma-getrennt)').fill('10');
+  await numberSettings.getByLabel('Vergabe').selectOption('driver_choice');
+  await numberSettings
+    .getByLabel('Bei freiem Platz automatisch nachrücken lassen')
+    .check();
+  await numberSettings.getByLabel('Bestätigungsfrist (Stunden)').fill('24');
+  await numberSettings
+    .getByRole('button', { name: 'Einstellungen speichern' })
+    .click();
+  await expect(numberSettings.getByRole('status')).toContainText(
+    'Einstellungen gespeichert.',
+  );
+  if (verificationDir) {
+    for (const [width, height] of [
+      [1920, 1080],
+      [1440, 900],
+      [390, 844],
+    ]) {
+      await page.setViewportSize({ width, height });
+      await page.evaluate(() => {
+        (document.activeElement as HTMLElement | null)?.blur();
+        window.scrollTo(0, 0);
+      });
+      await page.screenshot({
+        path: `${verificationDir}/numbers-waitlist-${width}x${height}.png`,
+        fullPage: true,
+      });
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+  }
   const publicLink = page.getByRole('link', { name: /\/events\/.*\/register/ });
   await expect(publicLink).toBeVisible();
   const url = await publicLink.getAttribute('href');
@@ -115,9 +157,11 @@ test('admin creates a class, terms and opens its public registration in the UI',
       .getByLabel('Blutgruppe'),
   ).toHaveAttribute('required', '');
   await page.getByRole('button', { name: 'Änderungen speichern' }).click();
-  await expect(page.getByRole('status')).toContainText(
-    'Einstellungen gespeichert.',
-  );
+  await expect(
+    page
+      .getByRole('region', { name: 'Veranstaltung einrichten' })
+      .getByRole('status'),
+  ).toContainText('Einstellungen gespeichert.');
   if (verificationDir) {
     for (const [width, height] of [
       [1920, 1080],
@@ -172,6 +216,8 @@ test('admin creates a class, terms and opens its public registration in the UI',
   await page.getByLabel('Blutgruppe').selectOption('0-');
   await page.getByRole('button', { name: 'Weiter zu Startmeldungen' }).click();
   await page.getByLabel('Klasse').selectOption({ label: 'Motorrad (MOTO)' });
+  await expect(page.getByLabel('Wunsch-Startnummer')).toBeVisible();
+  await page.getByLabel('Wunsch-Startnummer').fill('11');
   await page.getByLabel('Hersteller').fill('Honda');
   await page.getByLabel('Modell').fill('CB500');
   await page.getByRole('button', { name: 'Weiter zur Prüfung' }).click();

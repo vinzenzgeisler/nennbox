@@ -6,6 +6,7 @@ import {
   type StartNumberMode,
 } from '@racepilot/core';
 import { entries } from './schema/entries.js';
+import { offerWaitlistSeat } from './waitlist-offer.js';
 import {
   startNumberRanges,
   eventWaitlistSettings,
@@ -82,6 +83,17 @@ export function createStartNumberService(db: Database): StartNumberService {
           )
             throw new Error('invalid-range');
         }
+        for (let index = 0; index < ranges.length; index += 1) {
+          const left = ranges[index]!;
+          for (const right of ranges.slice(index + 1)) {
+            if (left.classId !== right.classId) continue;
+            if (
+              left.mode !== right.mode ||
+              (left.from <= right.to && right.from <= left.to)
+            )
+              throw new Error('overlapping-range');
+          }
+        }
         await tx
           .delete(startNumberRanges)
           .where(
@@ -137,7 +149,7 @@ export function createStartNumberService(db: Database): StartNumberService {
               eq(entries.eventId, eventId),
               isNull(entries.requestedStartNumber),
               isNull(entries.deletedAt),
-              ne(entries.acceptanceStatus, 'withdrawn'),
+              eq(entries.acceptanceStatus, 'accepted'),
             ),
           )
           .orderBy(asc(entries.createdAt), asc(entries.id))
@@ -198,6 +210,26 @@ export function createStartNumberService(db: Database): StartNumberService {
         }
         return result;
       }),
+    promoteNext: async (ctx, eventId, classId, automatic = true) =>
+      db.transaction(async (tx) => {
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.organizationId}:waitlist:${eventId}:${classId}`}, 0))`,
+        );
+        const offer = await offerWaitlistSeat({
+          tx,
+          ctx,
+          eventId,
+          classId,
+          automatic,
+        });
+        return offer
+          ? {
+              entryId: offer.entryId,
+              position: offer.position,
+              deadline: offer.deadline.toISOString(),
+            }
+          : null;
+      }),
     assign: async (ctx, eventId, entryId, startNumber) =>
       db.transaction(async (tx) => {
         await tx.execute(
@@ -227,14 +259,21 @@ export function createStartNumberService(db: Database): StartNumberService {
                 sql`(${startNumberRanges.classId} = ${entry.classId} or ${startNumberRanges.classId} is null)`,
               ),
             );
+          const classRanges = ranges.filter(
+            (range) => range.classId === entry.classId,
+          );
+          const applicable = classRanges.length
+            ? classRanges
+            : ranges.filter((range) => range.classId === null);
           if (
-            ranges.length &&
-            !ranges.some(
-              (range) =>
-                Number(startNumber) >= range.rangeFrom &&
-                Number(startNumber) <= range.rangeTo &&
-                !range.reservedNumbers.includes(Number(startNumber)),
-            )
+            applicable.length &&
+            (!/^\d+$/.test(startNumber) ||
+              !applicable.some(
+                (range) =>
+                  Number(startNumber) >= range.rangeFrom &&
+                  Number(startNumber) <= range.rangeTo &&
+                  !range.reservedNumbers.includes(Number(startNumber)),
+              ))
           )
             throw new Error('number-out-of-range');
         }

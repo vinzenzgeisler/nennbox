@@ -28,6 +28,12 @@ export interface StartNumberService {
     ctx: RequestContext,
     eventId: string,
   ): Promise<Array<{ entryId: string; startNumber: string }>>;
+  promoteNext(
+    ctx: RequestContext,
+    eventId: string,
+    classId: string,
+    automatic?: boolean,
+  ): Promise<{ entryId: string; position: number; deadline: string } | null>;
   assign(
     ctx: RequestContext,
     eventId: string,

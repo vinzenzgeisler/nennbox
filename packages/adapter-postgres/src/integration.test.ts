@@ -1688,6 +1688,8 @@ describe.skipIf(!url)('PostgreSQL integration', () => {
           'verificationStatus',
           'acceptanceStatus',
           'requestedStartNumber',
+          'waitlistPosition',
+          'waitlistConfirmationDeadline',
           'priceSnapshotVersion',
           'formSnapshotVersion',
           'priceSnapshot',
