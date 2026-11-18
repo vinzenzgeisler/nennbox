@@ -10,7 +10,7 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "@hono/node-server": "2.1.5",
+    "@hono/node-server": "^2.1.9",
     "@racepilot/adapter-local-storage": "*",
     "@racepilot/adapter-oidc": "*",
     "@racepilot/adapter-postgres": "*",
@@ -18,7 +18,7 @@
     "@racepilot/artifacts": "*",
     "@racepilot/contracts": "*",
     "@racepilot/core": "*",
-    "hono": "4.13.14",
+    "hono": "^4.13.19",
     "pdf-lib": "^1.17.1",
     "proxy-addr": "^2.0.8",
     "saxes": "^6.0.0",
