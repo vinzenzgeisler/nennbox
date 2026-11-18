@@ -52,9 +52,9 @@ export async function seedDemoDocuments(
   if (!storageRoot) return;
   const storage = createLocalObjectStorage(storageRoot);
   const cases = [
-    { name: 'Tom Probe', uploads: [{ key: 'fahrerlizenz', review: true }] },
+    { name: 'Thomas Berger', uploads: [{ key: 'fahrerlizenz', review: true }] },
     {
-      name: 'Anna Beispiel',
+      name: 'Anja Richter',
       uploads: [
         { key: 'fahrerlizenz', review: false },
         { key: 'fahrzeugschein', review: false },
