@@ -126,6 +126,33 @@ describe('api entry', () => {
       }),
     ).toThrow(/OIDC_ISSUER_URL/);
   });
+  it('sets restrictive API security headers and HSTS only for HTTPS', async () => {
+    const app = createApp(
+      testDeps({
+        config: { deploymentMode: 'community', organizationId: 'org' },
+        organizations: { getById: async () => null, update: async () => null },
+        events: {
+          listByOrganization: async () => [],
+          getById: async () => null,
+        },
+      }),
+    );
+    const http = await app.request('/health');
+    expect(http.headers.get('content-security-policy')).toContain(
+      "default-src 'none'",
+    );
+    expect(http.headers.get('content-security-policy')).toContain(
+      "frame-ancestors 'none'",
+    );
+    expect(http.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(http.headers.get('referrer-policy')).toBe('no-referrer');
+    expect(http.headers.get('x-frame-options')).toBe('DENY');
+    expect(http.headers.get('strict-transport-security')).toBeNull();
+    const https = await app.request('https://api.example.test/health');
+    expect(https.headers.get('strict-transport-security')).toBe(
+      'max-age=31536000; includeSubDomains',
+    );
+  });
   it('exposes only the public OIDC web-client settings', async () => {
     const app = createApp(
       testDeps({
