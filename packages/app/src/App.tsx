@@ -1,3 +1,4 @@
+import { DriverPortal } from './features/driver-portal/DriverPortal.js';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   RuntimeBootstrapResponse,
@@ -75,6 +76,15 @@ export function App({ renderContribution }: AppProps = {}) {
     return (
       <main className="shell">
         <RegistrationVerification locale={config.locale} />
+      </main>
+    );
+  const driverPortalMatch = window.location.pathname.match(
+    /^\/events\/([^/]+)\/my-entry\/?$/,
+  );
+  if (driverPortalMatch)
+    return (
+      <main className="shell registration-shell">
+        <DriverPortal eventSlug={decodeURIComponent(driverPortalMatch[1]!)} />
       </main>
     );
   if (window.location.pathname === '/passenger')

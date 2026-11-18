@@ -1,3 +1,4 @@
+import { registerDriverPortalRoutes } from './routes/driver-portal.js';
 import { Hono } from 'hono';
 import { requestBodyLimit } from './request-body-limit.js';
 import { createContextResolvers } from './context-resolvers.js';
@@ -99,6 +100,7 @@ export function createApp(deps: ApiDeps) {
   if (registration) {
     registerPublicRegistrationRoutes(routes, registration);
     registerPassengerPublicRoutes(routes, registration);
+    registerDriverPortalRoutes(routes, registration);
     registerPublicFormRoute(routes, registration.service);
     registerRegistrationResumeRoutes(routes, registration);
   } else registerPublicEventFormRoute(routes);

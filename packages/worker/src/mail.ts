@@ -26,6 +26,7 @@ export const mailTemplateContracts = {
   ],
   'message-campaign': ['subject', 'body'],
   'passenger-link': ['recipientName', 'driverName', 'eventName', 'linkUrl'],
+  'driver-portal-link': ['recipientName', 'eventName', 'linkUrl'],
 } as const;
 export type MailTemplateKey = keyof typeof mailTemplateContracts;
 export type MailLocale = 'de' | 'en';
@@ -109,6 +110,18 @@ const defaultCopy: Record<MailTemplateKey, Record<MailLocale, MailTemplate>> = {
       subject: 'Your details as co-driver: {{eventName}}',
       text: 'Hello {{recipientName}}, {{driverName}} named you as co-driver for {{eventName}}. Please complete your details and consents with your personal link: {{linkUrl}} The link expires and can only be used once.',
       html: '<p>Hello {{recipientName}},</p><p>{{driverName}} named you as co-driver for {{eventName}}. Please complete your details and consents:</p><p><a href="{{linkUrl}}">Complete details</a></p><p>The link expires and can only be used once.</p>',
+    },
+  },
+  'driver-portal-link': {
+    de: {
+      subject: 'Deine Nennung: {{eventName}}',
+      text: 'Hallo {{recipientName}}, dein persönlicher Link zu deiner Nennung: {{linkUrl}} Der Link gilt 30 Minuten und kann nur einmal verwendet werden.',
+      html: '<p>Hallo {{recipientName}},</p><p><a href="{{linkUrl}}">Meine Nennung öffnen</a></p><p>Der Link gilt 30 Minuten und kann nur einmal verwendet werden.</p>',
+    },
+    en: {
+      subject: 'Your entry: {{eventName}}',
+      text: 'Hello {{recipientName}}, your personal entry link: {{linkUrl}} This link is valid for 30 minutes and can be used once.',
+      html: '<p>Hello {{recipientName}},</p><p><a href="{{linkUrl}}">Open my entry</a></p><p>This link is valid for 30 minutes and can be used once.</p>',
     },
   },
   rejected: {
@@ -363,6 +376,7 @@ export function createMailOutboxTask(deps: {
       verification: 'verificationUrl',
       'registration-resume': 'resumeUrl',
       'passenger-link': 'linkUrl',
+      'driver-portal-link': 'linkUrl',
     }[row.templateKey as string];
     if (linkVariable) {
       const variableName = linkVariable;

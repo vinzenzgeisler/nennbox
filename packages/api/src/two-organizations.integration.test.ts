@@ -1,11 +1,14 @@
 import { createHash } from 'node:crypto';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, ne } from 'drizzle-orm';
 import { runMigrations } from 'graphile-worker';
 import type { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { defaultRegistrationFormConfig } from '@racepilot/contracts';
 import {
   createDatabase,
+  driverPortalLinks,
+  driverPortalSessions,
+  entries,
   emailOutbox,
   events,
   getOrganizationMailConfiguration,
@@ -1074,6 +1077,417 @@ describe.skipIf(!databaseUrl)(
           (await call(a, 'GET', `/public/events/${a.id}/${slug}`)).body,
         ),
       ).toContain('Rallye A');
+    });
+
+    it('isolates and expires driver-portal links and exposes uploads to the office', async () => {
+      const a = tenants.a;
+      const b = tenants.b;
+      // The public verification flow has already proven the contact address; seed that state here.
+      await db
+        .update(entries)
+        .set({ verificationStatus: 'verified' })
+        .where(
+          and(
+            eq(entries.organizationId, a.id),
+            eq(entries.registrationGroupId, seed.groupId),
+          ),
+        );
+      const request = async (
+        tenant: Tenant,
+        method: string,
+        path: string,
+        body?: unknown,
+        cookie?: string,
+        form?: FormData,
+      ) =>
+        app.request(
+          path,
+          {
+            method,
+            headers: {
+              'x-test-tenant': tenant.id,
+              ...(cookie ? { cookie } : {}),
+              ...(body === undefined
+                ? {}
+                : { 'content-type': 'application/json' }),
+            },
+            ...(form
+              ? { body: form }
+              : body === undefined
+                ? {}
+                : { body: JSON.stringify(body) }),
+          },
+          remote,
+        );
+      // A different registration group in the same event must stay out of this session.
+      const otherEmail = `other+${seed.slug}@example.test`;
+      expectStatus(
+        await call(
+          a,
+          'POST',
+          `/public/organizations/${a.id}/events/${seed.slug}/registration/submissions`,
+          {
+            submissionId: crypto.randomUUID(),
+            formVersion: '1.0',
+            language: 'de',
+            eventSlug: seed.slug,
+            person: {
+              firstName: 'Other',
+              lastName: 'Driver',
+              email: otherEmail,
+              dateOfBirth: '1991-01-01',
+            },
+            entries: [
+              {
+                classId: seed.classId,
+                vehicle: {
+                  make: 'Audi',
+                  model: 'Quattro',
+                  year: 1984,
+                  registration: null,
+                },
+              },
+            ],
+            consents: [
+              {
+                key: 'participation',
+                version: '1',
+                hash: sha(termText),
+                accepted: true,
+              },
+            ],
+          },
+        ),
+        202,
+      );
+      const [foreign] = await db
+        .select({ id: entries.id })
+        .from(entries)
+        .where(
+          and(
+            eq(entries.organizationId, a.id),
+            eq(entries.eventId, seed.eventId),
+            ne(entries.registrationGroupId, seed.groupId),
+          ),
+        )
+        .limit(1);
+      expect(foreign).toBeTruthy();
+      const [sourceEntry] = await db
+        .select()
+        .from(entries)
+        .where(eq(entries.id, seed.entryId))
+        .limit(1);
+      expect(sourceEntry).toBeTruthy();
+      const [doubleStarter] = await db
+        .insert(entries)
+        .values({
+          ...sourceEntry!,
+          id: crypto.randomUUID(),
+          createdAt: new Date(),
+          orgaCode: `DS-${crypto.randomUUID()}`,
+          requestedStartNumber: null,
+          statusHints: { ...sourceEntry!.statusHints, double_starter: true },
+        })
+        .returning({ id: entries.id });
+      expect(doubleStarter).toBeTruthy();
+      const targetEmail = `ada+${seed.slug}@example.test`;
+      expect(
+        (
+          await request(a, 'POST', '/public/driver-portal/request', {
+            eventSlug: seed.slug,
+            email: 'unknown@example.test',
+          })
+        ).status,
+      ).toBe(200);
+      expect(
+        (
+          await request(a, 'POST', '/public/driver-portal/request', {
+            eventSlug: seed.slug,
+            email: targetEmail,
+          })
+        ).status,
+      ).toBe(200);
+      const links = await db
+        .select()
+        .from(emailOutbox)
+        .where(
+          and(
+            eq(emailOutbox.organizationId, a.id),
+            eq(emailOutbox.templateKey, 'driver-portal-link'),
+          ),
+        );
+      expect(links).toHaveLength(1);
+      expect(links[0]?.recipient).toBe(targetEmail);
+      const linkUrl = String(links[0]?.variables.linkUrl);
+      expect(linkUrl.startsWith(a.origin)).toBe(true);
+      const token = new URLSearchParams(new URL(linkUrl).hash.slice(1)).get(
+        'token',
+      )!;
+      expect(token).toMatch(/^[A-Za-z0-9_-]{40,64}$/);
+      expect(
+        (
+          await db
+            .select()
+            .from(driverPortalLinks)
+            .where(eq(driverPortalLinks.organizationId, a.id))
+        )[0]?.tokenHash,
+      ).not.toBe(token);
+      expect(
+        (await request(b, 'POST', '/public/driver-portal/redeem', { token }))
+          .status,
+      ).toBe(404);
+      const redeemed = await request(
+        a,
+        'POST',
+        '/public/driver-portal/redeem',
+        { token },
+      );
+      expect(redeemed.status).toBe(200);
+      expect(
+        (await request(a, 'POST', '/public/driver-portal/redeem', { token }))
+          .status,
+      ).toBe(404);
+      const cookie = redeemed.headers.get('set-cookie')?.split(';')[0] ?? '';
+      expect(cookie).toContain('driver_portal_session=');
+      expect(
+        (await request(b, 'GET', '/public/driver-portal', undefined, cookie))
+          .status,
+      ).toBe(404);
+      const view = await request(
+        a,
+        'GET',
+        '/public/driver-portal',
+        undefined,
+        cookie,
+      );
+      expect(view.status).toBe(200);
+      expect(
+        ((await view.json()) as { entries: Array<{ id: string }> }).entries.map(
+          (entry) => entry.id,
+        ),
+      ).toEqual(expect.arrayContaining([seed.entryId, doubleStarter!.id]));
+      const sessionHash = sha(cookie.split('=')[1]!);
+      const [storedSession] = await db
+        .select()
+        .from(driverPortalSessions)
+        .where(eq(driverPortalSessions.tokenHash, sessionHash));
+      expect(storedSession).toBeTruthy();
+      await db
+        .update(driverPortalSessions)
+        .set({ expiresAt: new Date(0) })
+        .where(eq(driverPortalSessions.id, storedSession!.id));
+      expect(
+        (await request(a, 'GET', '/public/driver-portal', undefined, cookie))
+          .status,
+      ).toBe(404);
+      await db
+        .update(driverPortalSessions)
+        .set({ expiresAt: storedSession!.expiresAt })
+        .where(eq(driverPortalSessions.id, storedSession!.id));
+      expect(
+        (await request(a, 'GET', '/public/driver-portal', undefined, cookie))
+          .status,
+      ).toBe(200);
+      const foreignId = foreign!.id;
+      expect(
+        (
+          await request(
+            a,
+            'PATCH',
+            `/public/driver-portal/entries/${foreignId}`,
+            { fields: { phone: '123' } },
+            cookie,
+          )
+        ).status,
+      ).toBe(404);
+      expect(
+        (
+          await request(
+            a,
+            'POST',
+            `/public/driver-portal/entries/${foreignId}/withdraw`,
+            { confirmed: true },
+            cookie,
+          )
+        ).status,
+      ).toBe(404);
+      expect(
+        (
+          await request(
+            a,
+            'PATCH',
+            `/public/driver-portal/entries/${seed.entryId}`,
+            { fields: { phone: '123' } },
+            cookie,
+          )
+        ).status,
+      ).toBe(404);
+      expect(
+        (
+          await call(
+            a,
+            'PUT',
+            `/admin/events/${seed.eventId}/driver-portal-fields`,
+            { fields: ['phone'] },
+          )
+        ).status,
+      ).toBe(200);
+      expect(
+        (
+          await request(
+            a,
+            'PATCH',
+            `/public/driver-portal/entries/${seed.entryId}`,
+            { fields: { phone: '123' } },
+            cookie,
+          )
+        ).status,
+      ).toBe(200);
+      expect(
+        (
+          await request(
+            a,
+            'PATCH',
+            `/public/driver-portal/entries/${seed.entryId}`,
+            { fields: { city: 'Elsewhere' } },
+            cookie,
+          )
+        ).status,
+      ).toBe(404);
+      const uploaded = await request(
+        a,
+        'POST',
+        `/public/driver-portal/entries/${seed.entryId}/documents`,
+        undefined,
+        cookie,
+        licenseForm(),
+      );
+      expect(uploaded.status).toBe(201);
+      const admin = expectStatus(
+        await call(a, 'GET', `/admin/entries/${seed.entryId}/documents`),
+        200,
+      );
+      expect(JSON.stringify(admin)).toContain('driver-portal');
+      expect(
+        (
+          await request(a, 'POST', '/public/driver-portal/request', {
+            eventSlug: seed.slug,
+            email: targetEmail,
+          })
+        ).status,
+      ).toBe(200);
+      const recent = await db
+        .select()
+        .from(driverPortalLinks)
+        .where(eq(driverPortalLinks.organizationId, a.id));
+      const last = recent.find(
+        (row) => row.consumedAt === null && row.revokedAt === null,
+      );
+      expect(last).toBeTruthy();
+      await db
+        .update(driverPortalLinks)
+        .set({ expiresAt: new Date(0) })
+        .where(eq(driverPortalLinks.id, last!.id));
+      const newerMail = await db
+        .select()
+        .from(emailOutbox)
+        .where(
+          and(
+            eq(emailOutbox.organizationId, a.id),
+            eq(emailOutbox.idempotencyKey, `driver-portal-link:${last!.id}`),
+          ),
+        );
+      const lastToken = new URLSearchParams(
+        new URL(String(newerMail[0]?.variables.linkUrl)).hash.slice(1),
+      ).get('token');
+      expect(
+        (
+          await request(a, 'POST', '/public/driver-portal/redeem', {
+            token: lastToken,
+          })
+        ).status,
+      ).toBe(404);
+      expect(
+        (
+          await request(
+            a,
+            'POST',
+            `/public/driver-portal/entries/${seed.entryId}/withdraw`,
+            { confirmed: false },
+            cookie,
+          )
+        ).status,
+      ).toBe(400);
+      expect(
+        (
+          await request(
+            a,
+            'POST',
+            `/public/driver-portal/entries/${seed.entryId}/withdraw`,
+            { confirmed: true },
+            cookie,
+          )
+        ).status,
+      ).toBe(200);
+      expect(
+        (await request(a, 'GET', '/public/driver-portal', undefined, cookie))
+          .status,
+      ).toBe(200);
+      expect(
+        (
+          await request(
+            a,
+            'POST',
+            `/public/driver-portal/entries/${doubleStarter!.id}/withdraw`,
+            { confirmed: true },
+            cookie,
+          )
+        ).status,
+      ).toBe(200);
+      expect(
+        (await request(a, 'GET', '/public/driver-portal', undefined, cookie))
+          .status,
+      ).toBe(404);
+      const portalMailCount = async () =>
+        (
+          await db
+            .select()
+            .from(emailOutbox)
+            .where(
+              and(
+                eq(emailOutbox.organizationId, a.id),
+                eq(emailOutbox.templateKey, 'driver-portal-link'),
+              ),
+            )
+        ).length;
+      const sentBefore = await portalMailCount();
+      expect(
+        (
+          await request(a, 'POST', '/public/driver-portal/request', {
+            eventSlug: seed.slug,
+            email: targetEmail,
+          })
+        ).status,
+      ).toBe(200);
+      expect(await portalMailCount()).toBe(sentBefore);
+      // The shared limiter protects requests regardless of whether the address exists.
+      for (let index = 0; index < 2; index++)
+        expect(
+          (
+            await request(a, 'POST', '/public/driver-portal/request', {
+              eventSlug: seed.slug,
+              email: 'unknown@example.test',
+            })
+          ).status,
+        ).toBe(200);
+      expect(
+        (
+          await request(a, 'POST', '/public/driver-portal/request', {
+            eventSlug: seed.slug,
+            email: 'unknown@example.test',
+          })
+        ).status,
+      ).toBe(429);
     });
 
     it('accepts the same requests from the owning organization (positive control)', async () => {

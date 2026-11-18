@@ -1,0 +1,256 @@
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Banner, Button, Dialog, Field, Wordmark } from '@racepilot/ui';
+import type { View } from './driverPortalTypes.js';
+import { DriverPortalReady } from './DriverPortalReady.js';
+import { passengerBrandStyle } from '../passenger/passengerBrand.js';
+import './driver-portal.css';
+
+const portalUrl = '/public/driver-portal';
+async function json(url: string, method = 'GET', body?: unknown) {
+  const response = await fetch(url, {
+    method,
+    credentials: 'same-origin',
+    cache: 'no-store',
+    ...(body === undefined
+      ? {}
+      : {
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        }),
+  });
+  if (!response.ok) throw new Error('Anfrage fehlgeschlagen');
+  return response.json();
+}
+
+export function DriverPortal({ eventSlug }: { eventSlug: string }) {
+  const [email, setEmail] = useState('');
+  const [phase, setPhase] = useState<
+    'loading' | 'request' | 'sent' | 'ready' | 'invalid'
+  >('loading');
+  const [view, setView] = useState<View | null>(null);
+  const [notice, setNotice] = useState('');
+  const [working, setWorking] = useState(false);
+  const [withdrawId, setWithdrawId] = useState<string | null>(null);
+  const redeemed = useRef<string | null>(null);
+  const refresh = async () => {
+    const data = (await json(portalUrl)) as View;
+    setView(data);
+    setPhase('ready');
+  };
+  useEffect(() => {
+    const openLink = () => {
+      const token = new URLSearchParams(location.hash.slice(1)).get('token');
+      if (!token) {
+        void Promise.resolve()
+          .then(refresh)
+          .catch(() => setPhase('request'));
+        return;
+      }
+      if (redeemed.current === token) return;
+      redeemed.current = token;
+      history.replaceState(
+        history.state,
+        '',
+        location.pathname + location.search,
+      );
+      void json(`${portalUrl}/redeem`, 'POST', { token })
+        .then(refresh)
+        .catch(() => setPhase('invalid'));
+    };
+    openLink();
+    window.addEventListener('hashchange', openLink);
+    return () => window.removeEventListener('hashchange', openLink);
+  }, []);
+  const request = async (event: FormEvent) => {
+    event.preventDefault();
+    setWorking(true);
+    try {
+      await json(`${portalUrl}/request`, 'POST', {
+        eventSlug,
+        email,
+        locale: 'de',
+      });
+      setPhase('sent');
+    } catch {
+      setNotice('Das hat nicht geklappt. Bitte versuche es später erneut.');
+    } finally {
+      setWorking(false);
+    }
+  };
+  const upload = async (entryId: string, typeKey: string, file: File) => {
+    setWorking(true);
+    setNotice('');
+    try {
+      const form = new FormData();
+      form.set('file', file);
+      form.set('typeKey', typeKey);
+      const response = await fetch(
+        `${portalUrl}/entries/${entryId}/documents`,
+        { method: 'POST', credentials: 'same-origin', body: form },
+      );
+      if (!response.ok) throw new Error();
+      await refresh();
+      setNotice(
+        'Unterlage hochgeladen. Der Veranstalter kann sie jetzt prüfen.',
+      );
+    } catch {
+      setNotice(
+        'Die Unterlage konnte nicht hochgeladen werden. Bitte PDF, JPG oder PNG bis 10 MB wählen.',
+      );
+    } finally {
+      setWorking(false);
+    }
+  };
+  const save = async (entryId: string, fields: Record<string, string>) => {
+    setWorking(true);
+    setNotice('');
+    try {
+      await json(`${portalUrl}/entries/${entryId}`, 'PATCH', { fields });
+      await refresh();
+      setNotice('Deine Angaben wurden gespeichert.');
+    } catch {
+      setNotice('Deine Angaben konnten nicht gespeichert werden.');
+    } finally {
+      setWorking(false);
+    }
+  };
+  const withdraw = async () => {
+    if (!withdrawId) return;
+    setWorking(true);
+    try {
+      await json(`${portalUrl}/entries/${withdrawId}/withdraw`, 'POST', {
+        confirmed: true,
+      });
+      try {
+        await refresh();
+      } catch {
+        setView(null);
+        setPhase('request');
+      }
+      setNotice('Die Nennung wurde zurückgezogen.');
+    } catch {
+      setNotice('Die Nennung konnte nicht zurückgezogen werden.');
+    } finally {
+      setWorking(false);
+      setWithdrawId(null);
+    }
+  };
+  return (
+    <div className="driver-portal" style={passengerBrandStyle}>
+      <div className="driver-portal-hero">
+        <header className="driver-portal-header">
+          <Wordmark variant="on-green" />
+          <span>MEINE NENNUNG</span>
+        </header>
+        <div className="driver-portal-intro">
+          <p className="driver-portal-eyebrow">DEINE VERANSTALTUNG</p>
+          {view && (
+            <p className="driver-portal-date">
+              {new Intl.DateTimeFormat('de-DE', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                timeZone: 'UTC',
+              }).format(new Date(`${view.startsOn}T00:00:00.000Z`))}
+            </p>
+          )}
+          <h1>{view?.eventName ?? 'Meine Nennung'}</h1>
+          <p>Alles Wichtige zu deiner Teilnahme an einem Ort.</p>
+        </div>
+      </div>
+      <div className="driver-portal-content">
+        {notice && (
+          <Banner
+            tone={
+              notice.includes('konnte') || notice.includes('nicht geklappt')
+                ? 'error'
+                : 'success'
+            }
+          >
+            {notice}
+          </Banner>
+        )}
+        {phase === 'loading' && (
+          <p role="status">Deine Nennung wird geladen …</p>
+        )}
+        {phase === 'invalid' && (
+          <Banner tone="warning" title="Link nicht mehr gültig">
+            Fordere bitte einen neuen Link an.
+            <Button variant="text" onClick={() => setPhase('request')}>
+              Neuen Link anfordern
+            </Button>
+          </Banner>
+        )}
+        {phase === 'sent' && (
+          <Banner tone="success" title="Bitte prüfe dein Postfach">
+            Falls zu dieser Adresse eine verifizierte Nennung vorliegt, erhältst
+            du jetzt einen Link. Er gilt 30 Minuten und kann einmal verwendet
+            werden.
+          </Banner>
+        )}
+        {phase === 'request' && (
+          <section className="driver-portal-panel">
+            <h2>Persönlichen Link anfordern</h2>
+            <p>
+              Gib die E-Mail-Adresse ein, mit der deine Nennung bestätigt wurde.
+              Wir senden dir einen sicheren Link.
+            </p>
+            <form onSubmit={(event) => void request(event)}>
+              <Field
+                label="E-Mail-Adresse"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+              <Button type="submit" disabled={working}>
+                Link per E-Mail erhalten
+              </Button>
+            </form>
+          </section>
+        )}
+        {phase === 'ready' && view && (
+          <DriverPortalReady
+            view={view}
+            working={working}
+            upload={upload}
+            save={save}
+            setWithdrawId={setWithdrawId}
+            onLogout={() => {
+              void json(`${portalUrl}/logout`, 'POST').finally(() => {
+                setView(null);
+                setPhase('request');
+              });
+            }}
+          />
+        )}
+      </div>
+      <Dialog
+        open={!!withdrawId}
+        title="Nennung wirklich zurückziehen?"
+        closeLabel="Schließen"
+        onClose={() => setWithdrawId(null)}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setWithdrawId(null)}>
+              Behalten
+            </Button>
+            <Button
+              variant="primary"
+              disabled={working}
+              onClick={() => void withdraw()}
+            >
+              Ja, zurückziehen
+            </Button>
+          </>
+        }
+      >
+        <p>
+          Diese Nennung wird als zurückgezogen markiert. Das lässt sich hier
+          nicht rückgängig machen.
+        </p>
+      </Dialog>
+    </div>
+  );
+}

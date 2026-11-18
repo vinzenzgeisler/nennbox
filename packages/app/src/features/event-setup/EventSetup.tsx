@@ -6,9 +6,10 @@ import { loadRecipient } from './eventRecipientApi.js';
 import { useEventSetup } from './useEventSetup.js';
 import { RegistrationFormSettings } from '../registration/RegistrationFormSettings.js';
 import { EventSetupForm } from './EventSetupForm.js';
+import { DriverPortalSettings } from './DriverPortalSettings.js';
 import './EventSetup.css';
 
-type SetupView = 'event' | 'fields';
+type SetupView = 'event' | 'fields' | 'portal';
 
 const sections: Array<{ id: string; label: string; view: SetupView }> = [
   { id: 'event-setup-event', label: 'Veranstaltung', view: 'event' },
@@ -25,6 +26,7 @@ const sections: Array<{ id: string; label: string; view: SetupView }> = [
     view: 'event',
   },
   { id: 'event-setup-form-fields', label: 'Formularfelder', view: 'fields' },
+  { id: 'event-setup-driver-portal', label: 'Fahrer-Portal', view: 'portal' },
   { id: 'event-setup-actions', label: 'Nennung öffnen', view: 'event' },
 ];
 
@@ -70,7 +72,7 @@ export function EventSetup({
 
   return (
     <section
-      className={`event-setup${view === 'fields' ? ' is-fields' : ''}`}
+      className={`event-setup${view !== 'event' ? ' is-fields' : ''}`}
       aria-label="Veranstaltung einrichten"
     >
       <div className="event-setup-layout">
@@ -136,6 +138,22 @@ export function EventSetup({
               </p>
             )}
           </div>
+          {view === 'portal' && (
+            <section id="event-setup-driver-portal">
+              {setup.draft.id ? (
+                <DriverPortalSettings
+                  key={setup.draft.id}
+                  eventId={setup.draft.id}
+                  slug={setup.draft.slug}
+                />
+              ) : (
+                <EmptyState
+                  title="Fahrer-Portal"
+                  description="Speichere die Veranstaltung zuerst als Entwurf, dann legst du die korrigierbaren Felder fest."
+                />
+              )}
+            </section>
+          )}
           {view === 'fields' && (
             <section id="event-setup-form-fields">
               {setup.draft.id ? (

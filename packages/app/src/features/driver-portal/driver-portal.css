@@ -1,0 +1,191 @@
+.driver-portal {
+  color: var(--color-ink);
+  min-height: 100vh;
+}
+
+.driver-portal-hero {
+  background: var(--brand-primary);
+  color: var(--brand-primary-text);
+}
+
+.driver-portal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: var(--registration-content-max);
+  margin-inline: auto;
+  padding: var(--space-5) clamp(var(--space-4), 4vw, var(--space-12));
+  border-bottom: var(--line-group) solid currentcolor;
+  font: var(--text-label);
+  letter-spacing: var(--tracking-label);
+}
+
+.driver-portal-content {
+  max-width: var(--registration-content-max);
+  margin: auto;
+  padding: var(--space-8) clamp(var(--space-4), 4vw, var(--space-12));
+}
+
+.driver-portal-intro {
+  max-width: var(--registration-content-max);
+  margin-inline: auto;
+  padding: var(--space-10) clamp(var(--space-4), 4vw, var(--space-12));
+}
+
+.driver-portal-intro h1 {
+  color: var(--brand-primary-text);
+  font: var(--text-registration-display);
+  max-width: 18ch;
+}
+
+.driver-portal-intro > p {
+  color: var(--brand-primary-text);
+  max-width: var(--registration-intro-max);
+}
+
+.driver-portal-date {
+  display: inline-flex;
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-mint);
+  color: var(--brand-primary);
+  font: var(--text-label);
+  text-transform: uppercase;
+}
+
+.driver-portal-eyebrow {
+  font: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  color: var(--brand-primary-text);
+  margin-bottom: var(--space-2);
+}
+
+.driver-portal-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(
+      var(--registration-summary-min),
+      1fr
+    );
+  gap: var(--space-6);
+  margin-top: var(--space-6);
+}
+
+.driver-portal-main,
+.driver-portal-side {
+  display: grid;
+  align-content: start;
+  gap: var(--space-6);
+}
+
+.driver-portal-panel {
+  background: var(--surface-panel);
+  border: var(--line-group) solid var(--color-line);
+  padding: var(--space-8);
+}
+
+.driver-portal-panel h2 {
+  margin: 0 0 var(--space-3);
+  font: var(--text-app-h2);
+}
+
+.driver-portal-panel h3 {
+  margin-top: var(--space-8);
+}
+
+.driver-portal-panel form {
+  display: grid;
+  gap: var(--space-4);
+  max-width: var(--width-form-max);
+}
+
+.driver-portal-entry-heading {
+  display: flex;
+  gap: var(--space-4);
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.driver-portal-status {
+  background: var(--color-sage);
+  color: var(--brand-primary);
+  font: var(--text-label);
+  padding: var(--space-2) var(--space-3);
+}
+
+.driver-portal-docs,
+.driver-portal-messages {
+  list-style: none;
+  padding: 0;
+  margin-bottom: var(--space-6);
+}
+
+.driver-portal-docs li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  padding-block: var(--space-4);
+  border-top: var(--line-group) solid var(--color-line);
+}
+
+.driver-portal-docs li div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.driver-portal-amount {
+  font: var(--text-app-h1);
+}
+
+.driver-portal-panel dl {
+  overflow-wrap: anywhere;
+}
+
+.driver-portal-panel dt {
+  font: var(--text-label);
+  margin-top: var(--space-4);
+}
+
+.driver-portal-panel dd {
+  margin-top: var(--space-1);
+  margin-inline: 0;
+}
+
+.driver-portal-messages li {
+  border-top: var(--line-group) solid var(--color-line);
+  padding-block: var(--space-4);
+}
+
+.driver-portal-messages p {
+  white-space: pre-wrap;
+}
+
+.driver-portal .nb-banner {
+  margin-bottom: var(--space-6);
+}
+
+.driver-portal .nb-banner a {
+  display: inline-block;
+  margin-left: var(--space-2);
+  font: var(--text-label);
+}
+
+@media (width <= 720px) {
+  .driver-portal-intro h1 {
+    font-size: var(--type-h1-size-mobile);
+  }
+
+  .driver-portal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .driver-portal-docs li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .driver-portal-panel {
+    padding: var(--space-5);
+  }
+}

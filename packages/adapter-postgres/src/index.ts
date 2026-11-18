@@ -87,3 +87,7 @@ export type { RegistrationUploadCleanupObject } from './registration-upload-clea
 export * from './schema/provider-payments.js';
 
 export { createCheckoutRepository } from './payment-checkouts.js';
+
+export { createDriverPortalRepository } from './driver-portal.js';
+export type { DriverPortalRepository } from './driver-portal.js';
+export * from './schema/driver-portal.js';
