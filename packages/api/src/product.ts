@@ -30,6 +30,7 @@ import {
   createPublicRegistrationService,
   createRegistrationFormConfigRepository,
   createRegistrationSettingsRepository,
+  createStartNumberService,
   createTimingRepository,
   type Database,
 } from '@racepilot/adapter-postgres';
@@ -172,6 +173,7 @@ export function createProductApi(options: ProductApiOptions): Hono {
     ...(objectStorage ? { objectStorage } : {}),
     classes: createEventClassRepository(db),
     registrationSettings: createRegistrationSettingsRepository(db),
+    startNumbers: createStartNumberService(db),
     registrationFormConfigs: createRegistrationFormConfigRepository(db),
     entryWorkflows: createEntryWorkflowRepository(db),
     entryStatusDimensions: createEntryStatusDimensionRepository(db),

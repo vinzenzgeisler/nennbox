@@ -24,6 +24,7 @@ export async function resolveRegistrationParticipant(args: {
   personId: string;
   needsGuardian: boolean;
   uniqueClassIds: string[];
+  waitlistEntryIndexes: number[];
 }> {
   const { tx, ctx, event, payload, settings } = args;
   const emailNormalized = normalizeEmail(payload.person.email);
@@ -80,6 +81,7 @@ export async function resolveRegistrationParticipant(args: {
     classes.some((eventClass) => eventClass.closed)
   )
     throw new RegistrationUnavailable('class-unavailable');
+  const waitlistEntryIndexes: number[] = [];
   for (const eventClass of classes) {
     const count = await tx
       .select({ count: sql<number>`count(*)::int` })
@@ -90,17 +92,18 @@ export async function resolveRegistrationParticipant(args: {
           eq(entries.eventId, event.id),
           eq(entries.classId, eventClass.id),
           sql`${entries.deletedAt} is null`,
-          sql`${entries.acceptanceStatus} <> 'withdrawn'`,
+          sql`${entries.acceptanceStatus} not in ('withdrawn','waitlisted')`,
         ),
       );
-    if (
-      eventClass.maxParticipants !== null &&
-      Number(count[0]?.count ?? 0) +
-        payload.entries.filter((entry) => entry.classId === eventClass.id)
-          .length >
-        eventClass.maxParticipants
-    )
-      throw new RegistrationUnavailable('capacity-exceeded');
+    if (eventClass.maxParticipants !== null) {
+      let occupied = Number(count[0]?.count ?? 0);
+      for (const [index, submitted] of payload.entries.entries()) {
+        if (submitted.classId !== eventClass.id) continue;
+        if (occupied >= eventClass.maxParticipants)
+          waitlistEntryIndexes.push(index);
+        else occupied += 1;
+      }
+    }
   }
   const emailOwners = await tx
     .select({
@@ -172,5 +175,5 @@ export async function resolveRegistrationParticipant(args: {
       .returning({ id: people.id });
     personId = person!.id;
   }
-  return { personId, needsGuardian, uniqueClassIds };
+  return { personId, needsGuardian, uniqueClassIds, waitlistEntryIndexes };
 }

@@ -153,6 +153,13 @@ export const entries = pgTable(
       .default({ double_starter: false, passenger: false, late_entry: false }),
     workflowRevisionId: uuid('workflow_revision_id'),
     requestedStartNumber: text('requested_start_number'),
+    waitlistPosition: integer('waitlist_position'),
+    waitlistConfirmationDeadline: timestamp('waitlist_confirmation_deadline', {
+      withTimezone: true,
+    }),
+    waitlistOfferSentAt: timestamp('waitlist_offer_sent_at', {
+      withTimezone: true,
+    }),
     orgaCode: text('orga_code').notNull(),
     priceSnapshotVersion: text('price_snapshot_version'),
     priceSnapshot: jsonb('price_snapshot').$type<

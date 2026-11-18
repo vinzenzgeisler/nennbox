@@ -1,4 +1,4 @@
-import { desc, eq, and, inArray } from 'drizzle-orm';
+import { desc, eq, and, inArray, sql } from 'drizzle-orm';
 import {
   RegistrationUnavailable,
   calculatePrice,
@@ -21,6 +21,7 @@ import { createEntryRepository } from './entry-repository.js';
 import { createInvoiceRepository } from './billing-invoices.js';
 import { enqueueMailOutbox } from './mail-outbox.js';
 import { entryPassengers } from './schema/passengers.js';
+import { placeEntryOnWaitlist } from './registration-submit-waitlist.js';
 import type { Database, TransactionDatabase } from './database.js';
 import type { PublicRegistrationPayload } from './registration-settings.js';
 import type { RegistrationSubmissionEvent } from './registration-submit-types.js';
@@ -40,6 +41,7 @@ export async function persistRegistrationSubmission(args: {
   groupId: string;
   personId: string;
   uniqueClassIds: string[];
+  waitlistEntryIndexes: number[];
   selectedTerms: NonNullable<RegistrationSubmissionEvent['consentTerms']>;
   /** What the event's form offers beyond the standard entry. */
   features: { passenger: boolean; spareVehicle: boolean };
@@ -59,6 +61,7 @@ export async function persistRegistrationSubmission(args: {
     groupId,
     personId,
     uniqueClassIds,
+    waitlistEntryIndexes,
     selectedTerms,
     features,
   } = args;
@@ -145,6 +148,8 @@ export async function persistRegistrationSubmission(args: {
   const entryRepo = createEntryRepository(db);
   const invoiceRepo = createInvoiceRepository(db);
   const entryIds: string[] = [];
+  let requestEntryIndex = 0;
+  const waitlistPositions = new Map<string, number>();
   for (const requestEntry of payload.entries) {
     const [vehicle] = await tx
       .insert(vehicles)
@@ -175,6 +180,7 @@ export async function persistRegistrationSubmission(args: {
             .returning({ id: vehicles.id })
         )[0]
       : undefined;
+    const entryIndex = requestEntryIndex++;
     const entry = await entryRepo.create!(
       ctx,
       {
@@ -194,6 +200,19 @@ export async function persistRegistrationSubmission(args: {
       tx,
     );
     entryIds.push(entry.id);
+    if (waitlistEntryIndexes.includes(entryIndex)) {
+      waitlistPositions.set(
+        requestEntry.classId,
+        await placeEntryOnWaitlist(
+          tx,
+          ctx,
+          event.id,
+          requestEntry.classId,
+          entry.id,
+          waitlistPositions.get(requestEntry.classId),
+        ),
+      );
+    }
     if (requestEntry.passenger)
       await tx.insert(entryPassengers).values({
         organizationId: ctx.organizationId,

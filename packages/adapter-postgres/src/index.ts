@@ -91,3 +91,6 @@ export { createCheckoutRepository } from './payment-checkouts.js';
 export { createDriverPortalRepository } from './driver-portal.js';
 export type { DriverPortalRepository } from './driver-portal.js';
 export * from './schema/driver-portal.js';
+
+export * from './schema/start-numbers.js';
+export { createStartNumberService } from './start-number-service.js';

@@ -229,14 +229,18 @@ export function createPublicRegistrationService(
           guardianRequiredBelowAge: 18,
           maximumClassesPerGroup: 8,
         };
-        const { personId, needsGuardian, uniqueClassIds } =
-          await resolveRegistrationParticipant({
-            tx,
-            ctx,
-            event,
-            payload,
-            settings,
-          });
+        const {
+          personId,
+          needsGuardian,
+          uniqueClassIds,
+          waitlistEntryIndexes,
+        } = await resolveRegistrationParticipant({
+          tx,
+          ctx,
+          event,
+          payload,
+          settings,
+        });
         const { groupId, selectedTerms } = await createRegistrationGroup({
           tx,
           ctx,
@@ -265,6 +269,7 @@ export function createPublicRegistrationService(
           groupId,
           personId,
           uniqueClassIds,
+          waitlistEntryIndexes,
           selectedTerms,
           features: {
             passenger: registrationFeatureEnabled(

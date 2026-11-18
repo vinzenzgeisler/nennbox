@@ -122,6 +122,7 @@ export interface RuntimeBootstrapConfig {
  * need one of them are registered only when it is present.
  */
 export interface EditionApiDeps {
+  startNumbers?: import('@racepilot/core').StartNumberService;
   /** Documents, exports, uploads, and message attachments need object storage. */
   objectStorage?: ObjectStorageProvider;
   publicRegistration?: PublicRegistrationModule;
