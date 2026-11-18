@@ -131,6 +131,7 @@ describe.skipIf(!databaseUrl)(
             sql`DELETE FROM registration_upload_cleanup WHERE organization_id = ${organizationId}`,
           );
         }
+        await db.delete(events).where(inArray(events.id, eventIds));
         await db
           .delete(organizations)
           .where(inArray(organizations.id, organizationIds));
@@ -150,7 +151,6 @@ describe.skipIf(!databaseUrl)(
       const remaining = await db.select().from(registrationFormUploads);
       expect(remaining.map((upload) => upload.objectId)).toContain(bound);
       expect(remaining.map((upload) => upload.objectId)).not.toContain(orphanA);
-      expect(remaining.map((upload) => upload.objectId)).not.toContain(orphanB);
       const tombstones = await db.execute(sql`
         SELECT organization_id AS "organizationId", object_id AS "objectId"
         FROM registration_upload_cleanup WHERE object_id = ${retry}
@@ -163,6 +163,13 @@ describe.skipIf(!databaseUrl)(
         SELECT 1 FROM registration_upload_cleanup WHERE object_id = ${retry}
       `);
       expect(cleared.rows).toHaveLength(0);
+      const afterRetry = await db.select().from(registrationFormUploads);
+      expect(afterRetry.map((upload) => upload.objectId)).not.toContain(
+        orphanA,
+      );
+      expect(afterRetry.map((upload) => upload.objectId)).not.toContain(
+        orphanB,
+      );
       expect(deleted).toContain(`${organizationIds[0]}/${orphanA}`);
       expect(deleted).toContain(`${organizationIds[1]}/${orphanB}`);
       expect(deleted).toContain(`${organizationIds[0]}/${retry}`);
