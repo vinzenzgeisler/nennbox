@@ -12,6 +12,7 @@ import {
   createCommunityObjectStorage,
 } from './community-providers.js';
 import { createProductApi } from './product.js';
+import { createStripePaymentProvider } from '@racepilot/adapter-stripe';
 
 const config = loadConfig(process.env);
 await migrate(config.DATABASE_URL);
@@ -25,6 +26,17 @@ const organization = await ensureCommunityOrganization(db, {
 const identity = await createCommunityIdentity(config);
 const objectStorage = createCommunityObjectStorage(config);
 const app = createProductApi({
+  ...(config.CANONICAL_BASE_URL
+    ? { paymentReturnOrigin: staticCanonicalOrigin(config.CANONICAL_BASE_URL) }
+    : {}),
+  ...(config.STRIPE_SECRET_KEY && config.STRIPE_WEBHOOK_SECRET
+    ? {
+        paymentProvider: createStripePaymentProvider({
+          secretKey: config.STRIPE_SECRET_KEY,
+          webhookSecret: config.STRIPE_WEBHOOK_SECRET,
+        }),
+      }
+    : {}),
   db,
   edition: {
     deploymentMode: 'community',

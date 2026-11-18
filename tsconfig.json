@@ -30,6 +30,9 @@
     },
     {
       "path": "./packages/adapter-s3"
+    },
+    {
+      "path": "./packages/adapter-stripe"
     }
   ]
 }

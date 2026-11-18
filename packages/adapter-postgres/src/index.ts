@@ -84,3 +84,6 @@ export { createPassengerAdminRepository } from './passenger-admin.js';
 export { createPassengerPublicRepository } from './passenger-public.js';
 export { createRegistrationUploadCleanupRepository } from './registration-upload-cleanup.js';
 export type { RegistrationUploadCleanupObject } from './registration-upload-cleanup.js';
+export * from './schema/provider-payments.js';
+
+export { createCheckoutRepository } from './payment-checkouts.js';

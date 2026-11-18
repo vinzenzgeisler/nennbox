@@ -253,6 +253,13 @@
       "when": 1794422200003,
       "tag": "0035_registration_upload_cleanup",
       "breakpoints": false
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794422200004,
+      "tag": "0036_provider_payments",
+      "breakpoints": false
     }
   ]
 }
