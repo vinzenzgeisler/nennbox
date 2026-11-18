@@ -90,3 +90,8 @@ export type {
   ProductWorkerEdition,
   ProductWorkerOptions,
 } from './product.js';
+
+export {
+  createRegistrationUploadCleanupTask,
+  parseRegistrationUploadRetentionDays,
+} from './registration-upload-cleanup.js';

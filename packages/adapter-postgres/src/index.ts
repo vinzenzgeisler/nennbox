@@ -82,3 +82,5 @@ export { createEntryAdminActionsRepository } from './entry-admin-actions.js';
 export * from './schema/entry-admin.js';
 export { createPassengerAdminRepository } from './passenger-admin.js';
 export { createPassengerPublicRepository } from './passenger-public.js';
+export { createRegistrationUploadCleanupRepository } from './registration-upload-cleanup.js';
+export type { RegistrationUploadCleanupObject } from './registration-upload-cleanup.js';

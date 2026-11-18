@@ -21,6 +21,7 @@ import { createArtifactTask } from './artifacts.js';
 import { composeWorkerTasks, type WorkerTaskHandler } from './index.js';
 import { createMailOutboxTask } from './mail.js';
 import { createModuleTasks } from './modules.js';
+import { createRegistrationUploadCleanupTask } from './registration-upload-cleanup.js';
 
 /** Jobs of the single server-configured organization only. */
 export interface CommunityWorkerEdition {
@@ -40,6 +41,8 @@ export interface ProductWorkerOptions {
   readonly edition: ProductWorkerEdition;
   /** Artifact (PDF, CSV) and message-attachment storage; without it those jobs are not registered. */
   readonly storage?: ObjectStorageProvider;
+  /** Retention for expired, unattached registration uploads (default: seven days). */
+  readonly registrationUploadRetentionDays?: number;
   /** Outbound mail; without it the mail outbox job is not registered. */
   readonly mail?: {
     readonly provider: MailProvider;
@@ -102,6 +105,18 @@ export function createProductWorker(
         }),
       }
     : {};
+  const registrationUploadCleanupTasks = storage
+    ? {
+        registration_upload_cleanup: createRegistrationUploadCleanupTask({
+          db,
+          storage,
+          ...(edition.deploymentMode === 'community'
+            ? { communityOrganizationId: edition.organizationId }
+            : {}),
+          retentionDays: options.registrationUploadRetentionDays ?? 7,
+        }),
+      }
+    : {};
   const mailTasks = mail
     ? {
         mail_outbox: createMailOutboxTask({
@@ -116,6 +131,11 @@ export function createProductWorker(
       }
     : {};
   return {
-    taskList: composeWorkerTasks(moduleTasks, artifactTasks, mailTasks),
+    taskList: composeWorkerTasks(
+      moduleTasks,
+      artifactTasks,
+      registrationUploadCleanupTasks,
+      mailTasks,
+    ),
   };
 }
