@@ -4,6 +4,13 @@ import {
   gradientImage,
   demoCreatedAt,
 } from './community-demo-data.js';
+import { demoEmail, demoProfile } from './community-demo-profiles.js';
+import {
+  seedDemoConversation,
+  enrichPassenger,
+  updateExistingDemoEntry,
+  ensureDemoVerificationTemplate,
+} from './community-demo-seed-enrichment.js';
 import { ensureDemoEvent } from './community-demo-setup.js';
 import { seedDemoDocuments } from './community-demo-documents.js';
 import { seedDemoMessages } from './community-demo-messages.js';
@@ -27,9 +34,6 @@ import {
   people,
   entries,
   registrationGroups,
-  vehicles,
-  emailTemplateVersions,
-  saveMailTemplateVersion,
 } from '@racepilot/adapter-postgres';
 
 type Db = Awaited<ReturnType<typeof createDatabase>>['db'];
@@ -47,26 +51,7 @@ export async function seedCommunityDemo(
     .where(eq(organizations.slug, options.organizationSlug));
   if (orgRows.length !== 1) throw new Error('Community organization mismatch');
   const org = orgRows[0]!;
-  const [verificationTemplate] = await db
-    .select({ id: emailTemplateVersions.id })
-    .from(emailTemplateVersions)
-    .where(
-      and(
-        eq(emailTemplateVersions.organizationId, org.id),
-        eq(emailTemplateVersions.templateKey, 'verification'),
-        eq(emailTemplateVersions.locale, 'de'),
-      ),
-    )
-    .limit(1);
-  if (!verificationTemplate)
-    await saveMailTemplateVersion(db, org.id, {
-      templateKey: 'verification',
-      version: 1,
-      locale: 'de',
-      subject: 'Bitte bestätige deine Nennung, {{recipientName}}',
-      text: 'Hallo {{recipientName}}, bestätige deine E-Mail-Adresse: {{verificationUrl}}',
-      html: '<p>Hallo {{recipientName}},</p><p><a href="{{verificationUrl}}">E-Mail-Adresse bestätigen</a></p>',
-    });
+  await ensureDemoVerificationTemplate(db, org.id);
   const ctx = {
     deploymentMode: options.deploymentMode ?? 'community',
     organizationId: organizationId(org.id),
@@ -106,12 +91,14 @@ export async function seedCommunityDemo(
     ] = row;
     const [firstName, ...lastParts] = fullName.split(' ');
     const lastName = lastParts.join(' ');
-    const email = `demo-${String(index + 1).padStart(3, '0')}@example.invalid`;
+    const email = demoEmail(index);
+    const profile = demoProfile(index, classCode, fullName);
     const existing = await db
       .select({
         id: entries.id,
         vehicleId: entries.vehicleId,
         registrationGroupId: entries.registrationGroupId,
+        driverPersonId: entries.driverPersonId,
       })
       .from(entries)
       .innerJoin(
@@ -125,7 +112,7 @@ export async function seedCommunityDemo(
         and(
           eq(entries.organizationId, org.id),
           eq(entries.eventId, event.id),
-          eq(people.emailNormalized, email),
+          sql`${people.emailNormalized} in (${email}, ${`demo-${String(index + 1).padStart(3, '0')}@example.invalid`})`,
         ),
       )
       .limit(1);
@@ -152,26 +139,24 @@ export async function seedCommunityDemo(
             ],
           });
     if (existing.length) {
-      await db
-        .update(entries)
-        .set({ createdAt: demoCreatedAt(index) })
-        .where(
-          and(
-            eq(entries.organizationId, org.id),
-            eq(entries.eventId, event.id),
-            eq(entries.id, existing[0]!.id),
-          ),
-        );
-      await db
-        .update(vehicles)
-        .set({ imageUrl: gradientImage(index) })
-        .where(
-          and(
-            eq(vehicles.organizationId, org.id),
-            eq(vehicles.id, existing[0]!.vehicleId),
-            sql`${vehicles.imageUrl} is null`,
-          ),
-        );
+      await updateExistingDemoEntry(
+        db,
+        org.id,
+        event.id,
+        existing[0]!,
+        index,
+        email,
+        profile,
+      );
+      await enrichPassenger(
+        db,
+        org.id,
+        event.id,
+        existing[0]!.id,
+        index,
+        fullName,
+      );
+      await seedDemoConversation(db, org.id, existing[0]!.id, index, fullName);
       await markNotRelevant({
         entryId: existing[0]!.id,
         registrationGroupId: existing[0]!.registrationGroupId,
@@ -204,6 +189,15 @@ export async function seedCommunityDemo(
         eventId: event.id,
         personId: person.id,
         contactEmail: email,
+        phone: profile.phone,
+        street: profile.street,
+        postalCode: profile.postalCode,
+        city: profile.city,
+        emergencyContactName: profile.emergencyContactName,
+        emergencyContactPhone: profile.emergencyContactPhone,
+        publicationPreference: profile.publicationPreference,
+        bloodGroup: profile.bloodGroup,
+        licenseNumber: profile.licenseNumber,
       })
       .returning();
     const entry = await entryRepo.create!(ctx, {
@@ -227,6 +221,8 @@ export async function seedCommunityDemo(
           eq(entries.id, entry.id),
         ),
       );
+    await enrichPassenger(db, org.id, event.id, entry.id, index, fullName);
+    await seedDemoConversation(db, org.id, entry.id, index, fullName);
     await transitionEntry(
       ctx,
       entry.id,

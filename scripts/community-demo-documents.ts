@@ -8,6 +8,7 @@ import {
 } from '@racepilot/adapter-postgres';
 import { createLocalObjectStorage } from '@racepilot/adapter-local-storage';
 import type { rows as demoRows } from './community-demo-data.js';
+import { demoEmail } from './community-demo-profiles.js';
 
 type Db = Awaited<ReturnType<typeof createDatabase>>['db'];
 type Context = Parameters<
@@ -51,9 +52,9 @@ export async function seedDemoDocuments(
   if (!storageRoot) return;
   const storage = createLocalObjectStorage(storageRoot);
   const cases = [
-    { name: 'Tom Probe', uploads: [{ key: 'fahrerlizenz', review: true }] },
+    { name: 'Thomas Berger', uploads: [{ key: 'fahrerlizenz', review: true }] },
     {
-      name: 'Anna Beispiel',
+      name: 'Anja Richter',
       uploads: [
         { key: 'fahrerlizenz', review: false },
         { key: 'fahrzeugschein', review: false },
@@ -63,7 +64,7 @@ export async function seedDemoDocuments(
   for (const item of cases) {
     const index = rows.findIndex((row) => row[0] === item.name);
     if (index < 0) continue;
-    const email = `demo-${String(index + 1).padStart(3, '0')}@example.invalid`;
+    const email = demoEmail(index);
     const [person] = await db
       .select({ id: people.id })
       .from(people)

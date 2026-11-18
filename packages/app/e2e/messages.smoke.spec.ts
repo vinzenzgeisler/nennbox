@@ -144,7 +144,7 @@ test('Admin filters recipients, sends a message, and sees Mailpit delivery and s
   await page.getByRole('button', { name: 'Nennungen', exact: true }).click();
   await page
     .getByRole('row')
-    .filter({ hasText: 'Anna Beispiel' })
+    .filter({ hasText: 'Anja Richter' })
     .getByRole('button')
     .first()
     .click();

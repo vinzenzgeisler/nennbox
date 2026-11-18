@@ -1,6 +1,6 @@
 const named = [
   [
-    'Piet Voorbeeld',
+    'Paul Hagedorn',
     'Yamaha',
     'R1',
     'M6',
@@ -12,7 +12,7 @@ const named = [
     '2HN8T',
   ],
   [
-    'Tom Probe',
+    'Thomas Berger',
     'Honda',
     'RS 250',
     'M4',
@@ -24,7 +24,7 @@ const named = [
     '4K7QZ',
   ],
   [
-    'Karel Ukázka',
+    'Karel Svoboda',
     'Škoda',
     '130 RS',
     'H1',
@@ -36,7 +36,7 @@ const named = [
     'D8R2M',
   ],
   [
-    'Anna Beispiel',
+    'Anja Richter',
     'BMW',
     '2002 ti',
     'H2',
@@ -48,7 +48,7 @@ const named = [
     'X1A7P',
   ],
   [
-    'Marta Przykład',
+    'Marta Zielińska',
     'Yamaha',
     'TZ 250',
     'M4',
@@ -60,7 +60,7 @@ const named = [
     'P3W9K',
   ],
   [
-    'Jonas Muster',
+    'Jonas Weber',
     'Suzuki',
     'GSX-R 750',
     'M6',
@@ -72,7 +72,7 @@ const named = [
     'M5V1X',
   ],
   [
-    'Lena Muster',
+    'Lena Hoffmann',
     'Opel',
     'Kadett C',
     'H2',
@@ -84,7 +84,7 @@ const named = [
     'Q6T4N',
   ],
   [
-    'Eva Probst',
+    'Eva Schneider',
     'Kawasaki',
     'ZXR 400',
     'M6',
@@ -96,7 +96,7 @@ const named = [
     'H9C3L',
   ],
   [
-    'Milan Vzor',
+    'Milan Dvořák',
     'Jawa',
     '350',
     'M4',
@@ -108,7 +108,7 @@ const named = [
     'K2D8E',
   ],
   [
-    'Sophie Exempel',
+    'Sophie Brandt',
     'Alpine',
     'A110',
     'H2',
@@ -120,7 +120,7 @@ const named = [
     'R7N2B',
   ],
   [
-    'Ole Probe',
+    'Ole Petersen',
     'NSU',
     'TT',
     'H1',
@@ -132,7 +132,7 @@ const named = [
     'T5G1Y',
   ],
   [
-    'Mia Beispiel',
+    'Mia König',
     'Ducati',
     '750 SS',
     'M6',
@@ -157,18 +157,18 @@ type Row = readonly [
   string,
 ];
 const firstNames = [
-  'Alex',
-  'Ben',
-  'Clara',
-  'David',
-  'Ella',
-  'Felix',
-  'Greta',
-  'Hanno',
-  'Ida',
-  'Jan',
+  'Miriam',
+  'Tobias',
+  'Katharina',
+  'Andreas',
+  'Nina',
+  'Matthias',
+  'Johanna',
+  'Stefan',
+  'Luisa',
+  'Markus',
 ];
-const lastNames = ['Demo', 'Testmann', 'Beispieler', 'Prober', 'Musterer'];
+const lastNames = ['Falkenberg', 'Hartmann', 'Keller', 'Neumann', 'Reuter'];
 const makes = [
   ['BMW', '2002'],
   ['Opel', 'Kadett C'],
@@ -194,6 +194,7 @@ const generated: Row[] = Array.from({ length: 50 }, (_, i) => {
   ];
 });
 export const rows: Row[] = [...named, ...generated];
+
 export const classes = [
   {
     code: 'H1',
