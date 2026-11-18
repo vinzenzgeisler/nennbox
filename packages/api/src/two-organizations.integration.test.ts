@@ -55,7 +55,7 @@ function memoryStorage(): ObjectStorageProvider {
   return {
     put: async ({ organizationId: org, body, contentType }) => {
       const objectId = crypto.randomUUID();
-      objects.set(`${org}/${objectId}`, { body, contentType });
+      objects.set(`organization/${org}/${objectId}`, { body, contentType });
       return {
         organizationId: org,
         objectId,
@@ -65,7 +65,7 @@ function memoryStorage(): ObjectStorageProvider {
       };
     },
     get: async (org, objectId) => {
-      const stored = objects.get(`${org}/${objectId}`);
+      const stored = objects.get(`organization/${org}/${objectId}`);
       return stored
         ? {
             ref: {
