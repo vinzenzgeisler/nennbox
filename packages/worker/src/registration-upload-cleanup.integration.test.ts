@@ -126,9 +126,11 @@ describe.skipIf(!databaseUrl)(
     afterAll(async () => {
       if (!db) return;
       try {
-        await db.execute(
-          sql`DELETE FROM registration_upload_cleanup WHERE organization_id = ANY(${organizationIds}::uuid[])`,
-        );
+        for (const organizationId of organizationIds) {
+          await db.execute(
+            sql`DELETE FROM registration_upload_cleanup WHERE organization_id = ${organizationId}`,
+          );
+        }
         await db
           .delete(organizations)
           .where(inArray(organizations.id, organizationIds));
