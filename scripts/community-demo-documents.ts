@@ -7,7 +7,8 @@ import {
   people,
 } from '@racepilot/adapter-postgres';
 import { createLocalObjectStorage } from '@racepilot/adapter-local-storage';
-import { demoEmail, type rows as demoRows } from './community-demo-data.js';
+import type { rows as demoRows } from './community-demo-data.js';
+import { demoEmail } from './community-demo-profiles.js';
 
 type Db = Awaited<ReturnType<typeof createDatabase>>['db'];
 type Context = Parameters<
