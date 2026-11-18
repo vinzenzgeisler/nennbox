@@ -132,8 +132,10 @@ export function createDriverPortalView(
         .limit(30);
       const [invoice] = await db
         .select({
+          invoiceId: invoices.id,
           status: invoices.status,
           totalCents: invoices.totalCents,
+          paidCents: sql<number>`coalesce((select sum(p.amount_cents) from invoice_payment p where p.organization_id = ${invoices.organizationId} and p.invoice_id = ${invoices.id}), 0)::int`,
           currency: invoices.currency,
           paymentReference: invoices.paymentReference,
         })
@@ -213,6 +215,7 @@ export function createDriverPortalView(
         payment: invoice
           ? {
               ...invoice,
+              paidCents: Number(invoice.paidCents),
               accountName: recipient?.accountName ?? null,
               iban: recipient?.iban ?? null,
               bic: recipient?.bic ?? null,

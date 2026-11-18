@@ -23,6 +23,8 @@ export type View = {
   payment: {
     status: string;
     totalCents: number;
+    paidCents: number;
+    onlinePayable: boolean;
     currency: string;
     paymentReference: string;
     accountName: string | null;

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { uploadEntryDocument, ENTRY_DOCUMENT_MAX_BYTES } from '@racepilot/core';
 import type { RequestContext } from '@racepilot/core';
+import { registerDriverPortalPaymentRoute } from './driver-portal-payment.js';
+import { onlinePaymentConfigured } from './invoice-checkout.js';
 import type {
   ApiRoutesContext,
   PublicRegistrationRouteDeps,
@@ -136,8 +138,20 @@ export function registerDriverPortalRoutes(
     const view = current
       ? await portal.view(current.context, current.token)
       : null;
-    return view ? c.json(view) : c.json({ error: 'Link unavailable' }, 404);
+    if (!view) return c.json({ error: 'Link unavailable' }, 404);
+    return c.json({
+      ...view,
+      payment: view.payment && {
+        ...view.payment,
+        onlinePayable:
+          onlinePaymentConfigured(deps) &&
+          view.payment.status !== 'paid' &&
+          view.payment.status !== 'cancelled' &&
+          view.payment.totalCents > view.payment.paidCents,
+      },
+    });
   });
+  registerDriverPortalPaymentRoute(routes, portal, access, sameOrigin);
   app.post('/public/driver-portal/logout', async (c) => {
     noStore(c);
     c.header(

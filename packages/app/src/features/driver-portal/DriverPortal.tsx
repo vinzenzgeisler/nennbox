@@ -28,7 +28,14 @@ export function DriverPortal({ eventSlug }: { eventSlug: string }) {
     'loading' | 'request' | 'sent' | 'ready' | 'invalid'
   >('loading');
   const [view, setView] = useState<View | null>(null);
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useState(() => {
+    const result = new URLSearchParams(location.search).get('payment');
+    if (result === 'success')
+      return 'Danke! Der Zahlungsstand wird aktualisiert, sobald die Zahlung bestätigt ist.';
+    return result === 'cancelled'
+      ? 'Die Zahlung wurde nicht abgeschlossen. Du kannst es jederzeit erneut versuchen.'
+      : '';
+  });
   const [working, setWorking] = useState(false);
   const [withdrawId, setWithdrawId] = useState<string | null>(null);
   const redeemed = useRef<string | null>(null);
@@ -61,6 +68,34 @@ export function DriverPortal({ eventSlug }: { eventSlug: string }) {
     window.addEventListener('hashchange', openLink);
     return () => window.removeEventListener('hashchange', openLink);
   }, []);
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (!params.has('payment')) return;
+    params.delete('payment');
+    const search = params.toString();
+    history.replaceState(
+      history.state,
+      '',
+      location.pathname + (search ? `?${search}` : '') + location.hash,
+    );
+  }, []);
+  const pay = async () => {
+    setWorking(true);
+    setNotice('');
+    try {
+      const { url } = (await json(
+        `${portalUrl}/payment/checkout`,
+        'POST',
+        {},
+      )) as {
+        url: string;
+      };
+      window.location.assign(url);
+    } catch {
+      setNotice('Die Online-Zahlung konnte nicht gestartet werden.');
+      setWorking(false);
+    }
+  };
   const request = async (event: FormEvent) => {
     event.preventDefault();
     setWorking(true);
@@ -162,7 +197,9 @@ export function DriverPortal({ eventSlug }: { eventSlug: string }) {
         {notice && (
           <Banner
             tone={
-              notice.includes('konnte') || notice.includes('nicht geklappt')
+              notice.includes('konnte') ||
+              notice.includes('nicht geklappt') ||
+              notice.includes('nicht abgeschlossen')
                 ? 'error'
                 : 'success'
             }
@@ -216,6 +253,7 @@ export function DriverPortal({ eventSlug }: { eventSlug: string }) {
             working={working}
             upload={upload}
             save={save}
+            pay={pay}
             setWithdrawId={setWithdrawId}
             onLogout={() => {
               void json(`${portalUrl}/logout`, 'POST').finally(() => {

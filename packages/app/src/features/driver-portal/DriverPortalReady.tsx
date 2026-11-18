@@ -22,6 +22,7 @@ export function DriverPortalReady({
   working,
   upload,
   save,
+  pay,
   setWithdrawId,
   onLogout,
 }: {
@@ -29,6 +30,7 @@ export function DriverPortalReady({
   working: boolean;
   upload: (entryId: string, typeKey: string, file: File) => Promise<void>;
   save: (entryId: string, fields: Record<string, string>) => Promise<void>;
+  pay: () => Promise<void>;
   setWithdrawId: (id: string) => void;
   onLogout: () => void;
 }) {
@@ -161,6 +163,22 @@ export function DriverPortalReady({
                   currency: view.payment.currency,
                 }).format(view.payment.totalCents / 100)}
               </p>
+              {view.payment.paidCents > 0 && view.payment.status !== 'paid' && (
+                <p>
+                  Noch offen:{' '}
+                  {new Intl.NumberFormat('de-DE', {
+                    style: 'currency',
+                    currency: view.payment.currency,
+                  }).format(
+                    (view.payment.totalCents - view.payment.paidCents) / 100,
+                  )}
+                </p>
+              )}
+              {view.payment.onlinePayable && (
+                <Button disabled={working} onClick={() => void pay()}>
+                  Jetzt bezahlen
+                </Button>
+              )}
               <dl>
                 <dt>Verwendungszweck</dt>
                 <dd>{view.payment.paymentReference}</dd>

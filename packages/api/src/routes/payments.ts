@@ -1,7 +1,7 @@
 import type { ApiRoutesContext } from './context.js';
 import { z } from 'zod';
+import { createInvoiceCheckout } from './invoice-checkout.js';
 import {
-  resolveCanonicalOrigin,
   recordInvoicePayment,
   correctInvoicePayment,
   updatePaymentRecipient,
@@ -123,46 +123,16 @@ export function registerPaymentProviderRoutes(context: ApiRoutesContext): void {
         requestContext.organizationId !== c.req.param('organizationId')
       )
         return c.json({ error: 'Not found' }, 404);
-      if (!deps.paymentReturnOrigin)
-        return c.json({ error: 'Unavailable' }, 503);
-      const origin = await resolveCanonicalOrigin(deps.paymentReturnOrigin, {
-        deploymentMode: requestContext.deploymentMode,
-        organizationId: requestContext.organizationId,
-      });
-      if (!origin) return c.json({ error: 'Unavailable' }, 503);
-      const invoice = await deps.checkoutRepository.get(
+      const result = await createInvoiceCheckout(
+        deps,
         requestContext,
         c.req.param('invoiceId'),
+        (slug) => `/events/${encodeURIComponent(slug)}/register`,
       );
-      if (
-        !invoice ||
-        invoice.status === 'cancelled' ||
-        invoice.status === 'paid' ||
-        invoice.totalCents <= invoice.paidCents
-      )
-        return c.json({ error: 'Not found' }, 404);
-      try {
-        const session = await deps.paymentProvider.createCheckoutSession({
-          organizationId: requestContext.organizationId,
-          invoiceId: invoice.id,
-          idempotencyKey: `checkout:${invoice.id}:${invoice.totalCents - invoice.paidCents}`,
-          amountCents: invoice.totalCents - invoice.paidCents,
-          currency: invoice.currency,
-          description: `Nennung ${invoice.eventSlug}`,
-          successUrl: `${origin}/events/${encodeURIComponent(invoice.eventSlug)}/register?payment=success`,
-          cancelUrl: `${origin}/events/${encodeURIComponent(invoice.eventSlug)}/register?payment=cancelled`,
-          paymentMethods: ['card', 'sepa_debit'],
-        });
-        await deps.checkoutRepository.createSession(
-          requestContext,
-          invoice.id,
-          session.id,
-          session.url,
-        );
-        return c.json({ url: session.url }, 201);
-      } catch {
-        return c.json({ error: 'Checkout unavailable' }, 503);
-      }
+      if (result.status === 201) return c.json({ url: result.url }, 201);
+      return result.status === 404
+        ? c.json({ error: 'Not found' }, 404)
+        : c.json({ error: 'Unavailable' }, 503);
     },
   );
 
