@@ -62,8 +62,12 @@ if (!existsSync(realmFile)) {
             standardFlowEnabled: true,
             directAccessGrantsEnabled: false,
             implicitFlowEnabled: false,
-            redirectUris: ['http://127.0.0.1:5173/auth/callback'],
-            webOrigins: ['http://127.0.0.1:5173'],
+            redirectUris: [
+              `${process.env.COMMUNITY_APP_URL ?? 'http://127.0.0.1:5173'}/auth/callback`,
+            ],
+            webOrigins: [
+              process.env.COMMUNITY_APP_URL ?? 'http://127.0.0.1:5173',
+            ],
             protocolMappers: [
               {
                 name: 'nennbox-api-audience',

@@ -6,7 +6,7 @@ project=${COMPOSE_PROJECT_NAME:-racepilot-community}
 [[ -f "$backup_dir/community.dump" && -f "$backup_dir/community-local.tar.gz" ]] || { echo 'Backup benötigt community.dump und community-local.tar.gz.' >&2; exit 1; }
 # Preserve the backup outside .community-local: restoring replaces the generated credentials/config.
 rm -rf .community-local
- tar -xzf "$backup_dir/community-local.tar.gz"
+tar -xzf "$backup_dir/community-local.tar.gz"
 compose=(docker compose --project-name "$project" --env-file .community-local/compose.env -f compose.community.dev.yaml)
 "${compose[@]}" down --volumes --remove-orphans
 "${compose[@]}" --profile prepare run --rm keycloak-prepare

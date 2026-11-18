@@ -65,7 +65,7 @@ zugriffsbeschränkt aufbewahrt werden. Vor dem Backup App und Worker mit `Ctrl+C
 beenden (PostgreSQL und Keycloak dürfen laufen):
 
 ```bash
-bash scripts/community-backup.sh [backup-verzeichnis]
+bash scripts/community-backup.sh backups/community-2026-11-18
 ```
 
 Für einen vollständigen Restore im selben Checkout/Projekt (Standardprojekt
@@ -74,16 +74,21 @@ entfernt, die lokalen Dateien aus dem Archiv wiederhergestellt, danach PostgreSQ
 Keycloak und der Realm neu angelegt und der Dump eingespielt:
 
 ```bash
-bash scripts/community-restore.sh [backup-verzeichnis]
+bash scripts/community-restore.sh backups/community-2026-11-18
 bash scripts/community-up.sh
 ```
 
 `pg_restore --clean --if-exists` ersetzt Datenbankobjekte; dies ist kein Merge in
 eine bestehende Datenbank. Der Restore löscht die Volumes des angegebenen Compose-
 Projekts. Für Isolation kann `COMPOSE_PROJECT_NAME` auf denselben eindeutigen Wert
-für Backup, Restore und Start gesetzt werden. Verwende niemals den Namen eines
-anderen laufenden Compose-Projekts. Danach in der App anmelden, die gespeicherte
-Veranstaltung/Nennung öffnen und den Upload aus den Unterlagen herunterladen.
+für Backup, Restore und Start gesetzt werden. Für alternative Host-Ports können
+`COMMUNITY_POSTGRES_PORT`, `COMMUNITY_KEYCLOAK_PORT`, `COMMUNITY_SMTP_PORT`,
+`COMMUNITY_MAILPIT_PORT`, `COMMUNITY_API_PORT` und `COMMUNITY_APP_PORT` gesetzt
+werden; bei abweichenden Ports müssen dieselben Werte und die passenden
+`COMMUNITY_KEYCLOAK_URL`/`COMMUNITY_APP_URL` für Backup, Restore und Start gelten.
+Verwende niemals den Namen eines anderen laufenden Compose-Projekts. Danach in der
+App anmelden, die gespeicherte Veranstaltung/Nennung öffnen und den Upload aus den
+Unterlagen herunterladen.
 
 
 ## Upgrade
