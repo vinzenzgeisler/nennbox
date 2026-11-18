@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { requestBodyLimit } from './request-body-limit.js';
 import { createContextResolvers } from './context-resolvers.js';
 import { createPublicRegistrationRouteDeps } from './registration-budget.js';
 import { installModules } from './modules.js';
@@ -48,6 +49,7 @@ function assertEditionWiring(deps: ApiDeps): void {
 export function createApp(deps: ApiDeps) {
   assertEditionWiring(deps);
   const app = new Hono();
+  app.use('*', requestBodyLimit);
   app.use('*', async (c, next) => {
     await next();
     c.header(
