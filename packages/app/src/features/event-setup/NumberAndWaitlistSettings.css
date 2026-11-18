@@ -1,91 +1,80 @@
 .nb-number-waitlist-settings {
   display: grid;
-  gap: var(--space-4);
-  max-width: 74rem;
+  gap: var(--space-5);
+  max-width: 62rem;
+  min-width: 0;
 }
 
-.nb-number-waitlist-settings header h2 {
-  margin: var(--space-1) 0;
-}
-
-.nb-waitlist-settings p {
-  grid-column: 1 / -1;
+.nb-number-waitlist-settings h2,
+.nb-number-waitlist-settings h3 {
   margin: 0;
-  color: var(--color-graphite);
 }
 
-.nb-class-capacities p {
-  margin: 0;
-  color: var(--color-graphite);
+.nb-number-waitlist-settings header {
+  display: grid;
+  gap: var(--space-2);
 }
 
+.nb-class-capacities p,
+.nb-waitlist-settings p,
 .nb-number-waitlist-settings header p {
+  margin: 0;
   max-width: 48rem;
   color: var(--color-graphite);
 }
 
-.nb-number-waitlist-eyebrow {
-  margin: 0;
-  font: var(--text-label);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-}
-
-.nb-number-range-list {
+.nb-class-capacities,
+.nb-number-ranges,
+.nb-waitlist-settings {
   display: grid;
-  gap: var(--space-2);
-}
-
-.nb-number-range {
-  display: grid;
-  grid-template-columns: 1.2fr 0.6fr 0.6fr 1fr 1.2fr auto;
-  gap: var(--space-2);
-  align-items: end;
-  padding: var(--space-3);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius);
-  background: var(--surface-panel);
-}
-
-.nb-number-range .nb-field,
-.nb-waitlist-settings .nb-field {
+  gap: var(--space-3);
+  justify-items: start;
   min-width: 0;
+  padding-block-start: var(--space-4);
+  border-top: 1px solid var(--color-line);
 }
 
-.nb-number-range input,
-.nb-number-range select,
-.nb-waitlist-settings input[type='number'] {
+.nb-number-table {
+  width: 100%;
   min-width: 0;
-  min-height: var(--target-min);
-  padding: var(--space-2);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius);
-  background: var(--surface-panel);
-  color: var(--color-ink);
-  font: inherit;
+  max-width: 100%;
 }
 
-.nb-number-range-remove,
-.nb-number-range-add {
-  color: var(--color-ink);
+.nb-number-table .nb-field {
+  position: relative;
 }
 
-.nb-number-range-remove {
-  color: var(--color-graphite);
+/* Labels stay in the accessibility tree; the table header names the column. */
+.nb-number-table .nb-field > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.nb-number-table td,
+.nb-number-table th[scope='row'] {
+  padding: var(--space-1) var(--space-2);
+}
+
+.nb-number-table th[scope='row'] {
+  border-bottom: 1px solid var(--color-line);
+}
+
+.nb-class-capacities .nb-number-table {
+  max-width: 28rem;
+}
+
+.nb-number-table td:nth-child(2),
+.nb-number-table td:nth-child(3) {
+  width: 6.5rem;
 }
 
 .nb-waitlist-settings {
-  display: grid;
-  grid-template-columns: 1fr minmax(12rem, 18rem);
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-radius: var(--radius);
-  background: var(--color-sage);
-}
-
-.nb-waitlist-settings h3 {
-  grid-column: 1 / -1;
-  margin: 0;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: stretch;
 }
 
 .nb-waitlist-settings .nb-waitlist-toggle {
@@ -94,49 +83,31 @@
   gap: var(--space-2);
 }
 
-.nb-number-waitlist-settings footer {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-3);
+.nb-waitlist-settings .nb-field {
+  width: 14rem;
 }
 
-@media (width <= 760px) {
-  .nb-number-range {
-    grid-template-columns: 1fr 1fr;
+.nb-number-waitlist-settings footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block-start: var(--space-4);
+  border-top: 1px solid var(--color-line);
+}
+
+@media (width < 768px) {
+  .nb-number-table td:nth-child(2),
+  .nb-number-table td:nth-child(3) {
+    width: auto;
   }
 
-  .nb-number-range .nb-field:first-child,
-  .nb-number-range .nb-field:nth-child(4),
-  .nb-number-range .nb-field:nth-child(5) {
-    grid-column: 1 / -1;
-  }
-
-  .nb-number-range-remove {
-    justify-self: start;
-  }
-
-  .nb-waitlist-settings {
-    grid-template-columns: 1fr;
+  .nb-number-ranges .nb-table {
+    min-width: 46rem;
   }
 
   .nb-number-waitlist-settings footer {
     flex-direction: column;
+    align-items: stretch;
   }
-}
-
-.nb-class-capacities {
-  display: grid;
-  gap: var(--space-3);
-  padding-block: var(--space-3);
-  border-block: 1px solid var(--color-line);
-}
-
-.nb-class-capacities h3 {
-  margin: 0;
-}
-
-.nb-class-capacities > div {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: var(--space-3);
 }

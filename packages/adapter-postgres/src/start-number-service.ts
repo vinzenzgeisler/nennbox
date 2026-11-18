@@ -125,7 +125,7 @@ export function createStartNumberService(db: Database): StartNumberService {
             set: settings,
           });
       }),
-    assignAll: async (ctx, eventId) =>
+    assignAll: async (ctx, eventId, options) =>
       db.transaction(async (tx) => {
         await tx.execute(
           sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.organizationId}:start-numbers:${eventId}`}, 0))`,
@@ -194,16 +194,17 @@ export function createStartNumberService(db: Database): StartNumberService {
             numbers,
           );
           for (const item of planned) {
-            await tx
-              .update(entries)
-              .set({ requestedStartNumber: item.startNumber })
-              .where(
-                and(
-                  eq(entries.organizationId, ctx.organizationId),
-                  eq(entries.id, item.entryId),
-                  isNull(entries.requestedStartNumber),
-                ),
-              );
+            if (!options?.dryRun)
+              await tx
+                .update(entries)
+                .set({ requestedStartNumber: item.startNumber })
+                .where(
+                  and(
+                    eq(entries.organizationId, ctx.organizationId),
+                    eq(entries.id, item.entryId),
+                    isNull(entries.requestedStartNumber),
+                  ),
+                );
             assigned.push(item.startNumber);
             result.push(item);
           }

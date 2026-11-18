@@ -24,9 +24,11 @@ export interface StartNumberService {
     ranges: readonly StartNumberRangeConfig[],
     settings: { automaticPromotion: boolean; confirmationHours: number },
   ): Promise<void>;
+  /** `dryRun` plans the assignment without writing, so the UI can name the count. */
   assignAll(
     ctx: RequestContext,
     eventId: string,
+    options?: { dryRun?: boolean },
   ): Promise<Array<{ entryId: string; startNumber: string }>>;
   promoteNext(
     ctx: RequestContext,

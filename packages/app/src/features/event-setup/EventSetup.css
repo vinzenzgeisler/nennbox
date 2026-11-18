@@ -53,12 +53,20 @@
   max-width: var(--event-form-width);
 }
 
-.event-setup.is-fields .event-setup-layout {
+.event-setup.is-fields .event-setup-layout,
+.event-setup.is-portal .event-setup-layout,
+.event-setup.is-numbers .event-setup-layout {
   grid-template-columns: minmax(132px, 184px) minmax(0, 1fr);
 }
 
-.event-setup.is-fields .event-setup-main {
+.event-setup.is-fields .event-setup-main,
+.event-setup.is-portal .event-setup-main,
+.event-setup.is-numbers .event-setup-main {
   max-width: none;
+}
+
+.event-setup.is-numbers .event-setup-main {
+  max-width: 62rem;
 }
 
 .event-setup-nav a[aria-current='true'] {
@@ -162,7 +170,9 @@
     grid-template-columns: minmax(120px, 150px) minmax(0, 720px);
   }
 
-  .event-setup.is-fields .event-setup-layout {
+  .event-setup.is-fields .event-setup-layout,
+  .event-setup.is-portal .event-setup-layout,
+  .event-setup.is-numbers .event-setup-layout {
     grid-template-columns: minmax(120px, 150px) minmax(0, 1fr);
   }
 
@@ -174,7 +184,9 @@
 
 @media (width < 768px) {
   .event-setup-layout,
-  .event-setup.is-fields .event-setup-layout {
+  .event-setup.is-fields .event-setup-layout,
+  .event-setup.is-portal .event-setup-layout,
+  .event-setup.is-numbers .event-setup-layout {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
   }

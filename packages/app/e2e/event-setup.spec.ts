@@ -72,6 +72,12 @@ test('admin creates a class, terms and opens its public registration in the UI',
       hasText: 'Veranstaltung gespeichert und Nennung geöffnet.',
     }),
   ).toBeVisible();
+  const setupNav = page.getByRole('navigation', {
+    name: 'Abschnittsnavigation',
+  });
+  await setupNav
+    .getByRole('link', { name: /Startnummern & Warteliste/ })
+    .click();
   const numberSettings = page.getByRole('region', {
     name: 'Startnummern & Warteliste',
   });
@@ -91,29 +97,46 @@ test('admin creates a class, terms and opens its public registration in the UI',
     .check();
   await numberSettings.getByLabel('Bestätigungsfrist (Stunden)').fill('24');
   await numberSettings
-    .getByRole('button', { name: 'Einstellungen speichern' })
+    .getByRole('button', { name: 'Speichern', exact: true })
     .click();
   await expect(numberSettings.getByRole('status')).toContainText(
     'Einstellungen gespeichert.',
   );
-  if (verificationDir) {
-    for (const [width, height] of [
-      [1920, 1080],
-      [1440, 900],
-      [390, 844],
-    ]) {
-      await page.setViewportSize({ width, height });
-      await page.evaluate(() => {
-        (document.activeElement as HTMLElement | null)?.blur();
-        window.scrollTo(0, 0);
-      });
+  await numberSettings
+    .getByRole('button', { name: 'Alle offenen Nummern vergeben' })
+    .click();
+  await expect(numberSettings.getByRole('status')).toContainText(
+    'keine offenen Nummern',
+  );
+  for (const [width, height] of [
+    [1920, 1080],
+    [1440, 900],
+    [390, 844],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.evaluate(() => {
+      (document.activeElement as HTMLElement | null)?.blur();
+      window.scrollTo(0, 0);
+    });
+    if (width === 390) {
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+      ).toBeLessThanOrEqual(width);
+      const activeLink = setupNav.locator('a[aria-current="true"]');
+      const navBox = await setupNav.boundingBox();
+      const linkBox = await activeLink.boundingBox();
+      expect(navBox && linkBox && linkBox.x < navBox.x + navBox.width).toBe(
+        true,
+      );
+    }
+    if (verificationDir)
       await page.screenshot({
         path: `${verificationDir}/numbers-waitlist-${width}x${height}.png`,
         fullPage: true,
       });
-    }
-    await page.setViewportSize({ width: 1280, height: 720 });
   }
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await setupNav.getByRole('link', { name: /Veranstaltung$/ }).click();
   const publicLink = page.getByRole('link', { name: /\/events\/.*\/register/ });
   await expect(publicLink).toBeVisible();
   const url = await publicLink.getAttribute('href');

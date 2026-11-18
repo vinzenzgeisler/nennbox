@@ -14,7 +14,6 @@ import { RegistrationFormSettings } from '../registration/RegistrationFormSettin
 import { EventDocumentSettings } from '../event-documents/EventDocumentSettings.js';
 import { AdminWorkflow } from '../workflow/AdminWorkflow.js';
 import { EventSetup } from '../event-setup/EventSetup.js';
-import { NumberAndWaitlistSettings } from '../event-setup/NumberAndWaitlistSettings.js';
 import { adminFetch, getAdminIdentity } from '../../auth.js';
 
 export function AdminApplication() {
@@ -270,20 +269,15 @@ export function AdminApplication() {
         ) : view === 'workflow' ? (
           <AdminWorkflow eventId={selectedEvent} events={events} />
         ) : view === 'setup' ? (
-          <>
-            <EventSetup
-              onCreated={(event) => {
-                setEvents((current) => [
-                  ...current.filter((item) => item.id !== event.id),
-                  { ...event, registrationClosesAt: null },
-                ]);
-                setSelectedEvent(event.id);
-              }}
-            />
-            {selectedEvent && (
-              <NumberAndWaitlistSettings eventId={selectedEvent} />
-            )}
-          </>
+          <EventSetup
+            onCreated={(event) => {
+              setEvents((current) => [
+                ...current.filter((item) => item.id !== event.id),
+                { ...event, registrationClosesAt: null },
+              ]);
+              setSelectedEvent(event.id);
+            }}
+          />
         ) : view === 'account' ? (
           <>
             <EventDocumentSettings eventId={selectedEvent} />

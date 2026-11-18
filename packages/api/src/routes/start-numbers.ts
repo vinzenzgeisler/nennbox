@@ -71,6 +71,7 @@ export function registerStartNumberRoutes({
         assigned: await deps.startNumbers.assignAll(
           guard.context,
           eventId.data,
+          { dryRun: c.req.query('dryRun') === '1' },
         ),
       });
     } catch {

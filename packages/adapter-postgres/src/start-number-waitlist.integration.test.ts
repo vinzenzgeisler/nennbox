@@ -142,10 +142,25 @@ describe.skipIf(!url)('start-number ranges and waitlist concurrency', () => {
       expect(
         (await numbers.list(context(b.org.id), b.event.id)).ranges,
       ).toEqual([]);
-      expect(await numbers.assignAll(context(a.org.id), a.event.id)).toEqual([
+      const planned = [
         { entryId: a.entries[0]!.id, startNumber: '2' },
         { entryId: a.entries[1]!.id, startNumber: '3' },
-      ]);
+      ];
+      expect(
+        await numbers.assignAll(context(a.org.id), a.event.id, {
+          dryRun: true,
+        }),
+      ).toEqual(planned);
+      const beforeAssignment = await first.db
+        .select({ number: entries.requestedStartNumber })
+        .from(entries)
+        .where(eq(entries.organizationId, a.org.id));
+      expect(beforeAssignment.every((entry) => entry.number === null)).toBe(
+        true,
+      );
+      expect(await numbers.assignAll(context(a.org.id), a.event.id)).toEqual(
+        planned,
+      );
       expect(await numbers.assignAll(context(b.org.id), b.event.id)).toEqual(
         [],
       );
