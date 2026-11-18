@@ -30,7 +30,7 @@ function recordingStorage() {
   const storage: ObjectStorageProvider = {
     put: async ({ organizationId: org, body, contentType }) => {
       const objectId = crypto.randomUUID();
-      stored.push(`${org}/${objectId}`);
+      stored.push(`organization/${org}/${objectId}`);
       return {
         organizationId: org,
         objectId,
@@ -248,7 +248,8 @@ describe.skipIf(!databaseUrl)(
       );
       expect((await exportJob())?.status).toBe('ready');
       expect(objects).toHaveLength(1);
-      expect(objects[0]?.startsWith(`${a.id}/`)).toBe(true);
+      expect(objects[0]?.startsWith(`organization/${a.id}/`)).toBe(true);
+      expect(objects[0]).not.toContain(`organization/${b.id}/`);
 
       await run('mail_outbox', envelope(a.id, 'mail.outbox', { outboxId }));
       expect(sent).toHaveBeenCalledOnce();
