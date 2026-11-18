@@ -31,8 +31,8 @@ test('Admin reviews and rejects real documents; list and preview refresh', async
 }) => {
   test.setTimeout(180_000);
   await signIn(page);
-  await page.getByRole('searchbox', { name: 'Suche' }).fill('Anna Beispiel');
-  const row = page.getByRole('row').filter({ hasText: 'Anna Beispiel' });
+  await page.getByRole('searchbox', { name: 'Suche' }).fill('Anja Richter');
+  const row = page.getByRole('row').filter({ hasText: 'Anja Richter' });
   await expect(row).toContainText('Unterlagen 2/2', { timeout: 90_000 });
   await expect(row.locator('.nb-entry-list-orga')).toHaveText(
     /^[2-9A-HJKMNP-TV-Z]{5}$/,
@@ -79,7 +79,7 @@ test('Bergpreis documents match the A7/A4 reference at three widths', async ({
 }) => {
   test.setTimeout(180_000);
   await signIn(page);
-  const row = page.getByRole('row').filter({ hasText: 'Tom Probe' });
+  const row = page.getByRole('row').filter({ hasText: 'Thomas Berger' });
   await expect(row).toContainText('Unterlagen 1/2', { timeout: 90_000 });
   await row.locator('button[data-entry-action]').click();
   const preview = page.getByRole('complementary', { name: 'Nennungsvorschau' });
@@ -148,8 +148,8 @@ test('Admin configures document activation persistently', async ({ page }) => {
   await settings.getByRole('button', { name: 'Unterlagen speichern' }).click();
   await expect(settings.getByRole('status')).toContainText('gespeichert');
   await page.getByRole('button', { name: 'Nennungen', exact: true }).click();
-  await page.getByRole('searchbox', { name: 'Suche' }).fill('Tom Probe');
-  const row = page.getByRole('row').filter({ hasText: 'Tom Probe' });
+  await page.getByRole('searchbox', { name: 'Suche' }).fill('Thomas Berger');
+  const row = page.getByRole('row').filter({ hasText: 'Thomas Berger' });
   await expect(row).toContainText('Unterlagen 1/1');
   await row.locator('button[data-entry-action]').click();
   await expect(
