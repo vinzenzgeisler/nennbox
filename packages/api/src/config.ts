@@ -67,6 +67,8 @@ const configSchema = z.object({
   OIDC_REDIRECT_URI: z.string().url().optional(),
   OIDC_BOOTSTRAP_SUBJECT: z.string().optional(),
   OIDC_BOOTSTRAP_EMAIL: z.string().email().optional(),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
 });
 
 export function loadConfig(env: NodeJS.ProcessEnv) {
@@ -117,6 +119,13 @@ export function loadConfig(env: NodeJS.ProcessEnv) {
   )
     throw new Error(
       'Invalid configuration variables: STORAGE_S3_ACCESS_KEY_ID, STORAGE_S3_SECRET_ACCESS_KEY',
+    );
+  if (
+    Boolean(parsed.data.STRIPE_SECRET_KEY) !==
+    Boolean(parsed.data.STRIPE_WEBHOOK_SECRET)
+  )
+    throw new Error(
+      'Invalid configuration variables: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET',
     );
   const trustedProxyAddresses = parsed.data.TRUSTED_PROXIES.split(',')
     .map((address) => address.trim())

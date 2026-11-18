@@ -68,6 +68,12 @@ jobs:
   test:
     needs: repo-identity
     runs-on: ubuntu-latest
+    services:
+      stripe-mock:
+        image: stripe/stripe-mock:latest
+        ports: ['12111:12111']
+    env:
+      STRIPE_MOCK_URL: http://127.0.0.1:12111
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -75,6 +81,15 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Wait for Stripe mock
+        run: |
+          for attempt in $(seq 1 30); do
+            status=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:12111/ || true)
+            if [ "$status" = 401 ]; then exit 0; fi
+            sleep 1
+          done
+          echo "stripe-mock did not become ready" >&2
+          exit 1
       - run: npm test
 
   build:

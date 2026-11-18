@@ -1,6 +1,7 @@
 import type { ApiRoutesContext } from './context.js';
 import { z } from 'zod';
 import {
+  resolveCanonicalOrigin,
   recordInvoicePayment,
   correctInvoicePayment,
   updatePaymentRecipient,
@@ -104,6 +105,88 @@ export function registerPaymentsRoutes(context: ApiRoutesContext): void {
       return result ? c.json(result, 201) : c.json({ error: 'Not found' }, 404);
     } catch {
       return c.json({ error: 'Forbidden or invalid correction' }, 403);
+    }
+  });
+}
+
+/** Stripe callbacks are authenticated by the provider signature, not member auth. */
+export function registerPaymentProviderRoutes(context: ApiRoutesContext): void {
+  const { app, deps, resolvePublicContext } = context;
+  app.post(
+    '/public/organizations/:organizationId/invoices/:invoiceId/checkout',
+    async (c) => {
+      if (!deps.paymentProvider || !deps.checkoutRepository)
+        return c.json({ error: 'Unavailable' }, 503);
+      const requestContext = await resolvePublicContext(c.req.raw);
+      if (
+        !requestContext ||
+        requestContext.organizationId !== c.req.param('organizationId')
+      )
+        return c.json({ error: 'Not found' }, 404);
+      if (!deps.paymentReturnOrigin)
+        return c.json({ error: 'Unavailable' }, 503);
+      const origin = await resolveCanonicalOrigin(deps.paymentReturnOrigin, {
+        deploymentMode: requestContext.deploymentMode,
+        organizationId: requestContext.organizationId,
+      });
+      if (!origin) return c.json({ error: 'Unavailable' }, 503);
+      const invoice = await deps.checkoutRepository.get(
+        requestContext,
+        c.req.param('invoiceId'),
+      );
+      if (
+        !invoice ||
+        invoice.status === 'cancelled' ||
+        invoice.status === 'paid' ||
+        invoice.totalCents <= invoice.paidCents
+      )
+        return c.json({ error: 'Not found' }, 404);
+      try {
+        const session = await deps.paymentProvider.createCheckoutSession({
+          organizationId: requestContext.organizationId,
+          invoiceId: invoice.id,
+          idempotencyKey: `checkout:${invoice.id}:${invoice.totalCents - invoice.paidCents}`,
+          amountCents: invoice.totalCents - invoice.paidCents,
+          currency: invoice.currency,
+          description: `Nennung ${invoice.eventSlug}`,
+          successUrl: `${origin}/events/${encodeURIComponent(invoice.eventSlug)}/register?payment=success`,
+          cancelUrl: `${origin}/events/${encodeURIComponent(invoice.eventSlug)}/register?payment=cancelled`,
+          paymentMethods: ['card', 'sepa_debit'],
+        });
+        await deps.checkoutRepository.createSession(
+          requestContext,
+          invoice.id,
+          session.id,
+          session.url,
+        );
+        return c.json({ url: session.url }, 201);
+      } catch {
+        return c.json({ error: 'Checkout unavailable' }, 503);
+      }
+    },
+  );
+
+  app.post('/webhooks/stripe', async (c) => {
+    if (!deps.paymentProvider || !deps.checkoutRepository)
+      return c.json({ error: 'Unavailable' }, 503);
+    const signature = c.req.header('stripe-signature');
+    if (!signature) return c.json({ error: 'Invalid signature' }, 400);
+    try {
+      const event = await deps.paymentProvider.verifyWebhook(
+        await c.req.text(),
+        signature,
+      );
+      if (
+        context.mode === 'community' &&
+        event.organizationId !== context.communityOrganizationId
+      )
+        return c.json({ error: 'Invalid event' }, 400);
+      const result = await deps.checkoutRepository.applyProviderEvent(event);
+      if (result === 'not_found')
+        return c.json({ error: 'Unknown payment' }, 404);
+      return c.json({ received: true, duplicate: result === 'duplicate' });
+    } catch {
+      return c.json({ error: 'Invalid webhook' }, 400);
     }
   });
 }

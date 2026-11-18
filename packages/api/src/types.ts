@@ -27,6 +27,9 @@ import type {
   PassengerAdminRepository,
   PassengerPublicRepository,
   PaymentRecipientRepository,
+  CheckoutRepository,
+  PaymentProvider,
+  CanonicalOrigin,
 } from '@racepilot/core';
 import type { ModuleApiDeps } from './modules.js';
 import type { RegistrationRateLimiter } from './rate-limit.js';
@@ -79,6 +82,9 @@ export interface CoreApiDeps {
   artifactJobs: ArtifactJobRepository;
   overview: OverviewRepository;
   payments: InvoicePaymentRepository;
+  checkoutRepository?: CheckoutRepository;
+  paymentProvider?: PaymentProvider;
+  paymentReturnOrigin?: CanonicalOrigin;
   paymentRecipients: PaymentRecipientRepository;
   messages: MessageService;
   registrationSettings: RegistrationSettingsService;

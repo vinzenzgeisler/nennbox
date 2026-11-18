@@ -15,6 +15,7 @@ import {
   createEventRepository,
   createEventSetupRepository,
   createInvoicePaymentRepository,
+  createCheckoutRepository,
   createMembershipRepository,
   createMessageRepository,
   createModuleActivationRepository,
@@ -42,6 +43,7 @@ import {
   type ObjectStorageProvider,
   type OrganizationMail,
   type TenantRef,
+  type PaymentProvider,
 } from '@racepilot/core';
 import { createApp } from './app.js';
 import type { RegistrationRateLimiter } from './rate-limit.js';
@@ -84,6 +86,8 @@ export interface ProductApiOptions {
   /** Shared limiter for public registration; Community defaults to the Postgres one. */
   readonly registrationRateLimiter?: RegistrationRateLimiter;
   readonly logger?: Logger;
+  readonly paymentProvider?: PaymentProvider;
+  readonly paymentReturnOrigin?: CanonicalOrigin;
   readonly entitlements?: ModuleEntitlements;
   readonly oidcClient?: ApiDeps['oidcClient'];
   readonly rateLimits?: Pick<
@@ -177,6 +181,15 @@ export function createProductApi(options: ProductApiOptions): Hono {
     ...(passengers ? { passengers } : {}),
     memberships: createMembershipRepository(db),
     payments: createInvoicePaymentRepository(db),
+    ...(options.paymentReturnOrigin
+      ? { paymentReturnOrigin: options.paymentReturnOrigin }
+      : {}),
+    ...(options.paymentProvider
+      ? {
+          checkoutRepository: createCheckoutRepository(db),
+          paymentProvider: options.paymentProvider,
+        }
+      : {}),
     entryDetails: createEntryDetailRepository(db),
     entryAdminActions: createEntryAdminActionsRepository(db),
     paymentRecipients: createPaymentRecipientRepository(db),

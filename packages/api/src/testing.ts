@@ -23,7 +23,14 @@ function unwired<T extends object>(name: string, wired: Partial<T> = {}): T {
   }) as T;
 }
 
-type Wireable = Exclude<keyof CoreApiDeps, 'config' | 'logger'>;
+type Wireable = Exclude<
+  keyof CoreApiDeps,
+  | 'config'
+  | 'logger'
+  | 'checkoutRepository'
+  | 'paymentProvider'
+  | 'paymentReturnOrigin'
+>;
 type WiredForTest = Pick<CoreApiDeps, 'config' | 'organizations' | 'events'> &
   Partial<Omit<ApiDeps, Wireable>> & {
     [K in Exclude<Wireable, 'organizations' | 'events'>]?: Partial<
