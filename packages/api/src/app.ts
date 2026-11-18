@@ -94,7 +94,7 @@ export function createApp(deps: ApiDeps) {
     registerPublicRegistrationRoutes(routes, registration);
     registerPassengerPublicRoutes(routes, registration);
     registerPublicFormRoute(routes, registration.service);
-    registerRegistrationResumeRoutes(routes, registration.service);
+    registerRegistrationResumeRoutes(routes, registration);
   } else registerPublicEventFormRoute(routes);
   if (deps.objectStorage)
     registerStorageRoutes(routes, deps.objectStorage, registration);
