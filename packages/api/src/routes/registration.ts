@@ -1,4 +1,7 @@
-import type { ApiRoutesContext } from './context.js';
+import type {
+  ApiRoutesContext,
+  PublicRegistrationRouteDeps,
+} from './context.js';
 import type { ObjectStorageProvider } from '@racepilot/core';
 import type { PublicRegistrationService } from '../services.js';
 import { registerWorkflowRoutes } from './workflow.js';
@@ -218,9 +221,19 @@ export function registerPublicAssetRoute(
 /** Draft resumption and e-mail verification; registered with public registration. */
 export function registerRegistrationResumeRoutes(
   { app, resolvePublicContext }: ApiRoutesContext,
-  service: PublicRegistrationService,
+  registration: PublicRegistrationRouteDeps,
 ): void {
+  const { service, consumeRegistrationBudget, setRetryAfter } = registration;
   app.post('/public/registration/resume', async (c) => {
+    const budget = await consumeRegistrationBudget(c, [
+      { key: 'endpoint:registration-resume', limit: 20, windowMs: 60_000 },
+    ]);
+    if (budget.unavailable)
+      return c.json({ error: 'Resume link unavailable' }, 503);
+    if (!budget.allowed) {
+      setRetryAfter(c, budget.retryAfterMs);
+      return c.json({ error: 'Resume link unavailable' }, 429);
+    }
     const context = await resolvePublicContext(c.req.raw);
     const parsed = ResumeRegistrationRequestSchema.safeParse(
       await c.req.json().catch(() => null),
@@ -237,6 +250,14 @@ export function registerRegistrationResumeRoutes(
     }
   });
   app.post('/public/registration/verify', async (c) => {
+    const budget = await consumeRegistrationBudget(c, [
+      { key: 'endpoint:registration-verify', limit: 30, windowMs: 60_000 },
+    ]);
+    if (budget.unavailable) return c.json({ verified: false }, 503);
+    if (!budget.allowed) {
+      setRetryAfter(c, budget.retryAfterMs);
+      return c.json({ verified: false }, 429);
+    }
     const body = await c.req.json().catch(() => null);
     const token = z.string().min(1).max(512).safeParse(body?.token);
     if (!token.success) return c.json({ verified: false }, 200);

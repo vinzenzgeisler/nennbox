@@ -399,11 +399,15 @@ describe('registration administration and public endpoints', () => {
     );
     expect(mismatch.status).toBe(400);
     expect(saved).toBe(0);
-    const invalidResume = await app.request('/public/registration/resume', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token: 'not-a-valid-token' }),
-    });
+    const invalidResume = await app.request(
+      '/public/registration/resume',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token: 'not-a-valid-token' }),
+      },
+      { incoming: { socket: { remoteAddress: '192.0.2.9' } } },
+    );
     expect(invalidResume.status).toBe(404);
   });
 
@@ -848,6 +852,56 @@ describe('registration administration and public endpoints', () => {
     expect(() => createApp(api)).toThrow(
       /shared persistent rate-limit storage/,
     );
+  });
+
+  it('rate-limits resume and verification endpoints through the configured port', async () => {
+    const consumed: string[] = [];
+    const limiter = {
+      persistence: 'process' as const,
+      consume: async (
+        _clientIdentity: string,
+        scopes: readonly { key: string }[],
+      ) => {
+        consumed.push(...scopes.map((scope) => scope.key));
+        return { allowed: false, retryAfterMs: 2000 };
+      },
+    };
+    const api = deps();
+    api.publicRegistration = testRegistration(
+      {
+        resumeDraft: async () => null,
+        verify: async () => false,
+      },
+      limiter,
+    );
+    const app = createApp(api);
+    const remote = { incoming: { socket: { remoteAddress: '192.0.2.44' } } };
+    const resume = await app.request(
+      '/public/registration/resume',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token: 'resume-token' }),
+      },
+      remote,
+    );
+    expect(resume.status).toBe(429);
+    expect(resume.headers.get('retry-after')).toBe('2');
+    const verify = await app.request(
+      '/public/registration/verify',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token: 'verify-token' }),
+      },
+      remote,
+    );
+    expect(verify.status).toBe(429);
+    expect(verify.headers.get('retry-after')).toBe('2');
+    expect(consumed).toEqual([
+      'endpoint:registration-resume',
+      'endpoint:registration-verify',
+    ]);
   });
 
   it('separates organization and event budgets across clients and tenants with retry guidance', async () => {
