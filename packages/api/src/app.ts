@@ -48,6 +48,21 @@ function assertEditionWiring(deps: ApiDeps): void {
 export function createApp(deps: ApiDeps) {
   assertEditionWiring(deps);
   const app = new Hono();
+  app.use('*', async (c, next) => {
+    await next();
+    c.header(
+      'Content-Security-Policy',
+      "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    );
+    c.header('X-Content-Type-Options', 'nosniff');
+    c.header('Referrer-Policy', 'no-referrer');
+    c.header('X-Frame-Options', 'DENY');
+    if (new URL(c.req.url).protocol === 'https:')
+      c.header(
+        'Strict-Transport-Security',
+        'max-age=31536000; includeSubDomains',
+      );
+  });
   app.notFound((c) => c.json({ error: 'Not found' }, 404));
   app.get('/health', (c) => c.json({ status: 'ok' }));
   const contexts = createContextResolvers(deps);
