@@ -19,9 +19,9 @@ export function createRegistrationUploadCleanupTask(deps: {
   return async () => {
     const tenantIds = deps.communityOrganizationId
       ? [deps.communityOrganizationId]
-      : (await deps.db.select({ id: organizations.id }).from(organizations)).map(
-          (organization) => organization.id,
-        );
+      : (
+          await deps.db.select({ id: organizations.id }).from(organizations)
+        ).map((organization) => organization.id);
     const cutoff = new Date(
       Date.now() - deps.retentionDays * 24 * 60 * 60 * 1000,
     );
@@ -51,9 +51,13 @@ export function createRegistrationUploadCleanupTask(deps: {
   };
 }
 
-export function parseRegistrationUploadRetentionDays(value: string | undefined) {
+export function parseRegistrationUploadRetentionDays(
+  value: string | undefined,
+) {
   const days = value === undefined ? 7 : Number(value);
   if (!Number.isSafeInteger(days) || days < 1 || days > 365)
-    throw new Error('REGISTRATION_UPLOAD_RETENTION_DAYS must be an integer from 1 to 365');
+    throw new Error(
+      'REGISTRATION_UPLOAD_RETENTION_DAYS must be an integer from 1 to 365',
+    );
   return days;
 }
