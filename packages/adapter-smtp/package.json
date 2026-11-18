@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@racepilot/core": "*",
-    "nodemailer": "7.0.10"
+    "nodemailer": "^10.6.0"
   },
   "devDependencies": {
     "@types/nodemailer": "^7.0.12"
