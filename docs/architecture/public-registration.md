@@ -176,3 +176,31 @@ additional-entry adjustment, and early-bird rule as final server pricing. If no
 price rule exists for a selected class, it reports that price is unavailable
 rather than showing a guessed amount. A null registration-close time is
 presented as no deadline configured.
+
+### Retention of abandoned file uploads
+
+The worker's `registration_upload_cleanup` task runs every five minutes when
+object storage is configured (shared product composition, ADR 0005). Its
+retention window is `REGISTRATION_UPLOAD_RETENTION_DAYS` (1–365, default 7).
+Seven days matches the public upload credential's existing expiry: participants
+have the same week to finish a draft, after which the unattached upload is
+eligible for cleanup. Rows are eligible only after both their `expires_at` and
+the configured age cutoff; a longer configured window therefore extends, and a
+shorter window cannot shorten, the credential's own expiry.
+
+Each tenant's expired unbound rows are selected in batches of 100 with
+`FOR UPDATE SKIP LOCKED`. In the same transaction, the upload row is removed
+and its organization/object pair is written to `registration_upload_cleanup`.
+Submission locks the upload row before attaching it, so concurrent cleanup skips
+a row currently being submitted; bound rows are never candidates. The durable
+cleanup record remains until storage confirms deletion. A leased batch and
+idempotent provider delete allow retries after a worker crash or transient
+storage failure without losing the key needed to remove the object. Storage
+adapters receive the organization ID separately from the object ID and derive
+keys within that tenant's prefix; cleanup never takes a storage path from a
+request or from the upload row.
+
+The shared Cloud worker enumerates tenants internally, then queries, claims,
+and deletes objects one organization at a time. Community workers are restricted
+to their configured organization. The cleanup outbox intentionally has no event
+foreign key so that deleting an event cannot discard a pending storage deletion.

@@ -6,6 +6,7 @@ import { validateMailConfig } from '@racepilot/contracts';
 import { staticCanonicalOrigin } from '@racepilot/core';
 import { createProductWorker, type ProductWorkerEdition } from './product.js';
 import { readStorageConfiguration } from './community-storage.js';
+import { parseRegistrationUploadRetentionDays } from './registration-upload-cleanup.js';
 
 const env = process.env;
 const databaseUrl = env.DATABASE_URL;
@@ -59,6 +60,9 @@ const { taskList } = createProductWorker({
   db,
   edition: await readEdition(),
   ...(storage ? { storage } : {}),
+  registrationUploadRetentionDays: parseRegistrationUploadRetentionDays(
+    env.REGISTRATION_UPLOAD_RETENTION_DAYS,
+  ),
   ...(smtp && canonicalBaseUrl
     ? {
         mail: {
@@ -70,7 +74,11 @@ const { taskList } = createProductWorker({
     : {}),
   onRejected: (task, reason) => console.warn(`Rejected job ${task}: ${reason}`),
 });
-const runner = await run({ connectionString: databaseUrl, taskList });
+const runner = await run({
+  connectionString: databaseUrl,
+  taskList,
+  ...(storage ? { crontab: '*/5 * * * * registration_upload_cleanup' } : {}),
+});
 const stop = async () => {
   await runner.stop();
   await pool.end();

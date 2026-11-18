@@ -246,6 +246,13 @@
       "when": 1794422200002,
       "tag": "0034_registration_standard_fields",
       "breakpoints": false
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794422200003,
+      "tag": "0035_registration_upload_cleanup",
+      "breakpoints": false
     }
   ]
 }
