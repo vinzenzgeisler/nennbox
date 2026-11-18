@@ -22,16 +22,18 @@ export function NumberAndWaitlistSettings({ eventId }: { eventId: string }) {
   const [message, setMessage] = useState('');
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [pendingAssign, setPendingAssign] = useState<number | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     loadStartNumberSetup(eventId, controller.signal)
-      .then((loaded) => {
+      .then((data) => {
         if (controller.signal.aborted) return;
-        setRanges(loaded.ranges);
-        setSettings(loaded.settings);
-        setClasses(loaded.classes);
+        setRanges(data.ranges);
+        setSettings(data.settings);
+        setClasses(data.classes);
+        setLoaded(true);
       })
       .catch(() => {
         if (controller.signal.aborted) return;
@@ -87,57 +89,64 @@ export function NumberAndWaitlistSettings({ eventId }: { eventId: string }) {
         </p>
       </header>
       {message && <Banner tone={failed ? 'error' : 'info'}>{message}</Banner>}
-      <ClassCapacities classes={classes} onChange={setClasses} />
-      <StartNumberRanges
-        ranges={ranges}
-        classes={classes}
-        onChange={setRanges}
-      />
-      <section
-        className="nb-waitlist-settings"
-        aria-labelledby="waitlist-settings-title"
-      >
-        <h3 id="waitlist-settings-title">Warteliste</h3>
-        <Switch
-          className="nb-waitlist-toggle"
-          label="Bei freiem Platz automatisch nachrücken lassen"
-          checked={settings.automaticPromotion}
-          onChange={(event) =>
-            setSettings((current) => ({
-              ...current,
-              automaticPromotion: event.target.checked,
-            }))
-          }
-        />
-        <Field
-          label="Bestätigungsfrist (Stunden)"
-          type="number"
-          min="1"
-          max="720"
-          value={settings.confirmationHours}
-          onChange={(event) =>
-            setSettings((current) => ({
-              ...current,
-              confirmationHours: Number(event.target.value),
-            }))
-          }
-        />
-        <p>
-          Standard: 48 Stunden. Manuelles Nachrücken bleibt jederzeit möglich.
-        </p>
-      </section>
-      <footer>
-        <Button disabled={busy} onClick={() => void save()}>
-          Speichern
-        </Button>
-        <Button
-          variant="secondary"
-          disabled={busy}
-          onClick={() => void planAssign()}
-        >
-          Alle offenen Nummern vergeben
-        </Button>
-      </footer>
+      {!loaded ? (
+        !failed && <p role="status">Einstellungen werden geladen …</p>
+      ) : (
+        <>
+          <ClassCapacities classes={classes} onChange={setClasses} />
+          <StartNumberRanges
+            ranges={ranges}
+            classes={classes}
+            onChange={setRanges}
+          />
+          <section
+            className="nb-waitlist-settings"
+            aria-labelledby="waitlist-settings-title"
+          >
+            <h3 id="waitlist-settings-title">Warteliste</h3>
+            <Switch
+              className="nb-waitlist-toggle"
+              label="Bei freiem Platz automatisch nachrücken lassen"
+              checked={settings.automaticPromotion}
+              onChange={(event) =>
+                setSettings((current) => ({
+                  ...current,
+                  automaticPromotion: event.target.checked,
+                }))
+              }
+            />
+            <Field
+              label="Bestätigungsfrist (Stunden)"
+              type="number"
+              min="1"
+              max="720"
+              value={settings.confirmationHours}
+              onChange={(event) =>
+                setSettings((current) => ({
+                  ...current,
+                  confirmationHours: Number(event.target.value),
+                }))
+              }
+            />
+            <p>
+              Standard: 48 Stunden. Manuelles Nachrücken bleibt jederzeit
+              möglich.
+            </p>
+          </section>
+          <footer>
+            <Button disabled={busy} onClick={() => void save()}>
+              Speichern
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onClick={() => void planAssign()}
+            >
+              Alle offenen Nummern vergeben
+            </Button>
+          </footer>
+        </>
+      )}
       <Dialog
         open={pendingAssign !== null}
         title="Startnummern vergeben?"
