@@ -24,6 +24,7 @@ const UPLOAD_ROUTES = [
 /** Bounds buffered API bodies while allowing uploads up to 6 MB plus multipart overhead. */
 export const requestBodyLimit: MiddlewareHandler = (c, next) => {
   const isUpload =
-    c.req.method === 'POST' && UPLOAD_ROUTES.some((route) => route.test(c.req.path));
+    c.req.method === 'POST' &&
+    UPLOAD_ROUTES.some((route) => route.test(c.req.path));
   return (isUpload ? uploadBodyLimit : apiBodyLimit)(c, next);
 };

@@ -16,21 +16,27 @@ describe('request body limits', () => {
     '/public/organizations/org-1/events/summer/registration/custom-fields/photo/upload',
   ];
 
-  it.each(multipartRoutes)('allows multipart upload overhead at %s', async (path) => {
-    const response = await app().request(path, {
-      method: 'POST',
-      headers: { 'content-type': 'multipart/form-data; boundary=----test' },
-      body: `------test\r\nContent-Disposition: form-data; name="file"\r\n\r\n${'x'.repeat(1_000_001)}\r\n------test--\r\n`,
-    });
-    expect(response.status).toBe(200);
-  });
+  it.each(multipartRoutes)(
+    'allows multipart upload overhead at %s',
+    async (path) => {
+      const response = await app().request(path, {
+        method: 'POST',
+        headers: { 'content-type': 'multipart/form-data; boundary=----test' },
+        body: `------test\r\nContent-Disposition: form-data; name="file"\r\n\r\n${'x'.repeat(1_000_001)}\r\n------test--\r\n`,
+      });
+      expect(response.status).toBe(200);
+    },
+  );
 
   it('allows JSON message attachments above the generic API body limit', async () => {
-    const response = await app().request('/admin/events/123/messages/attachments', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ contentBase64: 'x'.repeat(1_000_001) }),
-    });
+    const response = await app().request(
+      '/admin/events/123/messages/attachments',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ contentBase64: 'x'.repeat(1_000_001) }),
+      },
+    );
     expect(response.status).toBe(200);
   });
 
