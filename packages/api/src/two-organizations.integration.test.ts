@@ -148,7 +148,12 @@ describe.skipIf(!databaseUrl)(
             locale: 'en',
             currency: 'EUR',
             // Only organization A has a mail identity: mail.delivery differs per organization.
-            ...(key === 'a' ? { mailFrom: 'club-a@example.test' } : {}),
+            ...(key === 'a'
+              ? {
+                  mailFrom: 'club-a@example.test',
+                  mailReplyTo: 'reply-a@example.test',
+                }
+              : {}),
           })
           .returning();
         if (!row) throw new Error('Organization insert failed');
@@ -848,6 +853,13 @@ describe.skipIf(!databaseUrl)(
       expect(obj(b.body).organization).toMatchObject({ id: tenants.b.id });
       expect(obj(a.body).capabilities).toContain('mail.delivery');
       expect(obj(b.body).capabilities).not.toContain('mail.delivery');
+      expect(await getOrganizationMailConfiguration(db, tenants.a.id)).toEqual({
+        from: 'club-a@example.test',
+        replyTo: 'reply-a@example.test',
+      });
+      expect(
+        await getOrganizationMailConfiguration(db, tenants.b.id),
+      ).toBeNull();
       expect((await call(null, 'GET', '/runtime/bootstrap')).status).toBe(404);
       const outbox = await db
         .select()
