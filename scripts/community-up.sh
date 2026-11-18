@@ -4,7 +4,7 @@ cd "$(dirname "$0")/.."
 command -v docker >/dev/null || { echo 'Docker mit Compose wird benötigt.' >&2; exit 1; }
 command -v node >/dev/null || { echo 'Node.js 24 wird benötigt.' >&2; exit 1; }
 node scripts/community-config.mjs
-compose=(docker compose --env-file .community-local/compose.env -f compose.community.dev.yaml)
+compose=(docker compose --project-name "${COMPOSE_PROJECT_NAME:-racepilot-community}" --env-file .community-local/compose.env -f compose.community.dev.yaml)
 "${compose[@]}" --profile prepare run --rm keycloak-prepare
 "${compose[@]}" up -d --wait --wait-timeout 120
 cleanup() {

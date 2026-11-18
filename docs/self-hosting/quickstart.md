@@ -54,33 +54,37 @@ Im Terminal mit dem laufenden Stack `Ctrl+C` drücken. PostgreSQL- und
 Keycloak-Volumes sowie `.community-local/` bleiben erhalten. Für den nächsten Start
 im Checkout erneut `bash scripts/community-up.sh` ausführen.
 
-## Backup und Wiederherstellung (Grundlagen)
+## Backup und vollständige Wiederherstellung
 
-Vor einem Backup den Stack mit `Ctrl+C` stoppen. Starte nur PostgreSQL für den
-Dump und führe die folgenden Befehle aus dem Checkout aus:
-
-```bash
-docker compose --env-file .community-local/compose.env -f compose.community.dev.yaml up -d --wait postgres
-mkdir -p backups
-docker compose --env-file .community-local/compose.env -f compose.community.dev.yaml exec -T postgres pg_dump -U racepilot -d racepilot --format=custom > backups/community.dump
-tar -czf backups/community-local.tar.gz .community-local
-```
-
-Datenbankdump und `.community-local` enthalten zusammengehörige sensible Daten.
-Bewahre sie verschlüsselt und zugriffsbeschränkt auf. Für eine Wiederherstellung
-auf derselben Compose-Installation zuerst die Container anhalten, dann den Dump
-in die bestehende Datenbank zurückspielen (PostgreSQL muss laufen):
+Das Backup besteht aus einem PostgreSQL-Custom-Dump und `.community-local`. Letzteres
+enthält die Zugangsdaten, den importierbaren Keycloak-Realm sowie den lokalen
+Upload-Speicher. Die Realm-Datei wird von `community-config.mjs` erzeugt; sie ist
+Teil des Backups, damit Benutzer/Passwort, Client und Redirect-URLs exakt erhalten
+bleiben. Das Backup enthält vertrauliche Daten und muss verschlüsselt sowie
+zugriffsbeschränkt aufbewahrt werden. Vor dem Backup App und Worker mit `Ctrl+C`
+beenden (PostgreSQL und Keycloak dürfen laufen):
 
 ```bash
-docker compose --env-file .community-local/compose.env -f compose.community.dev.yaml up -d --wait postgres
-docker compose --env-file .community-local/compose.env -f compose.community.dev.yaml exec -T postgres pg_restore -U racepilot -d racepilot --clean --if-exists < backups/community.dump
+bash scripts/community-backup.sh [backup-verzeichnis]
 ```
 
-`pg_restore --clean` ersetzt Objekte der Zieldatenbank. Es ist nicht für das
-Zusammenführen mit einer bestehenden Installation gedacht. Für einen vollständigen
-Wiederanlauf müssen außerdem die zugehörigen Compose-Volumes (PostgreSQL und
-Keycloak) und `.community-local/` verfügbar sein; stelle diese nicht durch
-unkoordinierte Einzelstände wieder her.
+Für einen vollständigen Restore im selben Checkout/Projekt (Standardprojekt
+`racepilot-community`) werden zunächst Container **und beide Compose-Volumes**
+entfernt, die lokalen Dateien aus dem Archiv wiederhergestellt, danach PostgreSQL,
+Keycloak und der Realm neu angelegt und der Dump eingespielt:
+
+```bash
+bash scripts/community-restore.sh [backup-verzeichnis]
+bash scripts/community-up.sh
+```
+
+`pg_restore --clean --if-exists` ersetzt Datenbankobjekte; dies ist kein Merge in
+eine bestehende Datenbank. Der Restore löscht die Volumes des angegebenen Compose-
+Projekts. Für Isolation kann `COMPOSE_PROJECT_NAME` auf denselben eindeutigen Wert
+für Backup, Restore und Start gesetzt werden. Verwende niemals den Namen eines
+anderen laufenden Compose-Projekts. Danach in der App anmelden, die gespeicherte
+Veranstaltung/Nennung öffnen und den Upload aus den Unterlagen herunterladen.
+
 
 ## Upgrade
 
