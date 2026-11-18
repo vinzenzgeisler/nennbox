@@ -3,8 +3,13 @@ import {
   createDatabase,
   entryPassengers,
   entryNotes,
+  entries,
+  people,
+  registrationGroups,
+  vehicles,
+  emailTemplateVersions,
+  saveMailTemplateVersion,
 } from '@racepilot/adapter-postgres';
-import { and, eq, sql } from 'drizzle-orm';
 import { demoCreatedAt, gradientImage } from './community-demo-data.js';
 import { demoPassenger } from './community-demo-profiles.js';
 
