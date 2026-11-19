@@ -73,7 +73,9 @@ export async function createInvoiceCheckout(
     return { status: 400 };
   const returnUrl = (outcome: 'success' | 'cancelled') =>
     `${origin}${returnPath(invoice.eventSlug)}?payment=${outcome}${
-      options.referenceInvoice ? `&invoice=${encodeURIComponent(invoice.id)}` : ''
+      options.referenceInvoice
+        ? `&invoice=${encodeURIComponent(invoice.id)}`
+        : ''
     }`;
   try {
     const session = await deps.paymentProvider.createCheckoutSession({
