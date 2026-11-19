@@ -186,6 +186,8 @@ test('driver requests a Mailpit link, uploads a document, and the office sees it
     .getByRole('button', { name: 'Weiter zur Prüfung', exact: true })
     .click();
   await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Weiter zur Zahlung' }).click();
+  await page.getByLabel('Später bezahlen').check();
   const submitted = page.waitForResponse(
     (response) =>
       response.url().includes('/registration/submissions') &&
