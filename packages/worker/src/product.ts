@@ -22,6 +22,7 @@ import { composeWorkerTasks, type WorkerTaskHandler } from './index.js';
 import { createMailOutboxTask } from './mail.js';
 import { createModuleTasks } from './modules.js';
 import { createRegistrationUploadCleanupTask } from './registration-upload-cleanup.js';
+import { createWaitlistDeadlineTask } from './waitlist-deadlines.js';
 
 /** Jobs of the single server-configured organization only. */
 export interface CommunityWorkerEdition {
@@ -117,6 +118,14 @@ export function createProductWorker(
         }),
       }
     : {};
+  const waitlistTasks = {
+    waitlist_deadlines: createWaitlistDeadlineTask({
+      db,
+      ...(edition.deploymentMode === 'community'
+        ? { communityOrganizationId: edition.organizationId }
+        : {}),
+    }),
+  };
   const mailTasks = mail
     ? {
         mail_outbox: createMailOutboxTask({
@@ -135,6 +144,7 @@ export function createProductWorker(
       moduleTasks,
       artifactTasks,
       registrationUploadCleanupTasks,
+      waitlistTasks,
       mailTasks,
     ),
   };

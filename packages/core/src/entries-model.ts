@@ -57,6 +57,8 @@ export interface Entry {
   verificationStatus: EntryVerificationStatus;
   acceptanceStatus: EntryAcceptanceStatus;
   requestedStartNumber: string | null;
+  waitlistPosition?: number | null;
+  waitlistConfirmationDeadline?: string | null;
   priceSnapshotVersion: string | null;
   formSnapshotVersion: string | null;
   priceSnapshot?: PriceSnapshot | null;

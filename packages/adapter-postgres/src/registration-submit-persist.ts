@@ -19,8 +19,9 @@ import { eventClasses } from './schema/organization.js';
 import { publicEntrySubmissions } from './schema/public-registration.js';
 import { createEntryRepository } from './entry-repository.js';
 import { createInvoiceRepository } from './billing-invoices.js';
-import { enqueueMailOutbox } from './mail-outbox.js';
+import { queueRegistrationVerificationMail } from './registration-submit-verification-mail.js';
 import { entryPassengers } from './schema/passengers.js';
+import { placeEntryOnWaitlist } from './registration-submit-waitlist.js';
 import type { Database, TransactionDatabase } from './database.js';
 import type { PublicRegistrationPayload } from './registration-settings.js';
 import type { RegistrationSubmissionEvent } from './registration-submit-types.js';
@@ -40,6 +41,8 @@ export async function persistRegistrationSubmission(args: {
   groupId: string;
   personId: string;
   uniqueClassIds: string[];
+  waitlistEntryIndexes: number[];
+  automaticStartNumbers: Array<string | null>;
   selectedTerms: NonNullable<RegistrationSubmissionEvent['consentTerms']>;
   /** What the event's form offers beyond the standard entry. */
   features: { passenger: boolean; spareVehicle: boolean };
@@ -59,6 +62,8 @@ export async function persistRegistrationSubmission(args: {
     groupId,
     personId,
     uniqueClassIds,
+    waitlistEntryIndexes,
+    automaticStartNumbers,
     selectedTerms,
     features,
   } = args;
@@ -145,6 +150,8 @@ export async function persistRegistrationSubmission(args: {
   const entryRepo = createEntryRepository(db);
   const invoiceRepo = createInvoiceRepository(db);
   const entryIds: string[] = [];
+  let requestEntryIndex = 0;
+  const waitlistPositions = new Map<string, number>();
   for (const requestEntry of payload.entries) {
     const [vehicle] = await tx
       .insert(vehicles)
@@ -175,6 +182,7 @@ export async function persistRegistrationSubmission(args: {
             .returning({ id: vehicles.id })
         )[0]
       : undefined;
+    const entryIndex = requestEntryIndex++;
     const entry = await entryRepo.create!(
       ctx,
       {
@@ -184,9 +192,9 @@ export async function persistRegistrationSubmission(args: {
         driverPersonId: personId,
         vehicleId: vehicle!.id,
         spareVehicleId: spare?.id ?? null,
-        requestedStartNumber: normalizeRequestedStartNumber(
-          requestEntry.requestedStartNumber,
-        ),
+        requestedStartNumber:
+          automaticStartNumbers[entryIndex] ??
+          normalizeRequestedStartNumber(requestEntry.requestedStartNumber),
         priceSnapshotVersion: snapshot?.version ?? null,
         priceSnapshot: snapshot,
         formSnapshotVersion: payload.formVersion,
@@ -194,6 +202,19 @@ export async function persistRegistrationSubmission(args: {
       tx,
     );
     entryIds.push(entry.id);
+    if (waitlistEntryIndexes.includes(entryIndex)) {
+      waitlistPositions.set(
+        requestEntry.classId,
+        await placeEntryOnWaitlist(
+          tx,
+          ctx,
+          event.id,
+          requestEntry.classId,
+          entry.id,
+          waitlistPositions.get(requestEntry.classId),
+        ),
+      );
+    }
     if (requestEntry.passenger)
       await tx.insert(entryPassengers).values({
         organizationId: ctx.organizationId,
@@ -232,7 +253,7 @@ export async function persistRegistrationSubmission(args: {
     ),
   });
   const codeRows = await tx
-    .select({ id: entries.id, code: entries.orgaCode })
+    .select({ code: entries.orgaCode })
     .from(entries)
     .where(
       and(
@@ -241,37 +262,19 @@ export async function persistRegistrationSubmission(args: {
         inArray(entries.id, entryIds),
       ),
     );
-  const codeByEntry = new Map(codeRows.map((row) => [row.id, row.code]));
-  const orgaCodes = entryIds.flatMap((id) => {
-    const code = codeByEntry.get(id);
-    return code ? [code] : [];
-  });
-  const verificationUrl = new URL(
-    `/registration/verify?token=${encodeURIComponent(token)}`,
-    canonicalOrigin,
-  ).toString();
-  await enqueueMailOutbox(
+  await queueRegistrationVerificationMail({
     db,
-    ctx.organizationId,
-    {
-      eventId: event.id,
-      registrationGroupId: groupId,
-      templateKey: 'verification',
-      templateVersion: template?.version ?? 1,
-      templateVersionId: template?.id ?? null,
-      locale: payload.language,
-      recipient: payload.person.email,
-      idempotencyKey: `registration-verification:${payload.submissionId}`,
-      variables: {
-        verificationUrl,
-        recipientName: `${payload.person.firstName.trim()} ${payload.person.lastName.trim()}`,
-        orgaCode: orgaCodes.join(', '),
-        orgaCodes: orgaCodes.join(', '),
-      },
-      correlationId: payload.submissionId,
-    },
     tx,
-  );
+    organizationId: ctx.organizationId,
+    eventId: event.id,
+    groupId,
+    canonicalOrigin,
+    payload,
+    token,
+    templateVersion: template?.version ?? 1,
+    templateVersionId: template?.id ?? null,
+    orgaCodes: codeRows.map((row) => row.code),
+  });
   const response = { accepted: true as const, entryCount: entryIds.length };
   await tx
     .update(publicEntrySubmissions)

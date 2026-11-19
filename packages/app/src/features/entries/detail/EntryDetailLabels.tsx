@@ -28,6 +28,9 @@ export function EntryDetailLabels({
   const projection = entry.statusProjection;
   return (
     <>
+      {entry.waitlistPosition != null && (
+        <HintLabel>Warteliste · Platz {entry.waitlistPosition}</HintLabel>
+      )}
       {[...(projection?.dimensions ?? [])]
         .sort((a, b) => ORDER.indexOf(a.key) - ORDER.indexOf(b.key))
         .map((item) => (

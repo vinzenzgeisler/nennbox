@@ -67,6 +67,9 @@ export function AdminEntryRow({
       imageAlt="Fahrzeugbild"
       hints={
         <>
+          {entry.waitlistPosition != null && (
+            <HintLabel>Warteliste · Platz {entry.waitlistPosition}</HintLabel>
+          )}
           {entry.statusProjection?.hints
             .filter((hint) => hint.present)
             .map((hint) => (

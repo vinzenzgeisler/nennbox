@@ -2,6 +2,7 @@ import type { RequestContext } from '@racepilot/core';
 import { organizations, events, eventClasses } from './schema/organization.js';
 import { eq, and } from 'drizzle-orm';
 import { eventClassPricingRules } from './schema/billing.js';
+import { startNumberRanges } from './schema/start-numbers.js';
 import type { PublicRegistrationDependencies } from './registration-public-types.js';
 
 export function createRegistrationFormMethods(
@@ -38,6 +39,25 @@ export function createRegistrationFormMethods(
           ),
         )
         .orderBy(eventClasses.sortOrder);
+      const numberRanges = await db
+        .select()
+        .from(startNumberRanges)
+        .where(
+          and(
+            eq(startNumberRanges.organizationId, ctx.organizationId),
+            eq(startNumberRanges.eventId, event.id),
+          ),
+        );
+      const defaultNumberMode =
+        numberRanges.find((range) => range.classId === null)?.assignmentMode ??
+        'driver_choice';
+      const startNumberModes = Object.fromEntries(
+        classRows.map((eventClass) => [
+          eventClass.id,
+          numberRanges.find((range) => range.classId === eventClass.id)
+            ?.assignmentMode ?? defaultNumberMode,
+        ]),
+      );
       const pricingRows = await db
         .select()
         .from(eventClassPricingRules)
@@ -97,6 +117,7 @@ export function createRegistrationFormMethods(
             event.registrationClosesAt?.toISOString() ?? null,
         },
         classes: classRows,
+        startNumberModes,
         currency: organization?.currency ?? 'EUR',
         pricing: pricingRows.map((rule) => ({
           classId: rule.classId,

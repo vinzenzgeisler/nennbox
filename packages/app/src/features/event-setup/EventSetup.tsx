@@ -7,9 +7,11 @@ import { useEventSetup } from './useEventSetup.js';
 import { RegistrationFormSettings } from '../registration/RegistrationFormSettings.js';
 import { EventSetupForm } from './EventSetupForm.js';
 import { DriverPortalSettings } from './DriverPortalSettings.js';
+import { NumberAndWaitlistSettings } from './NumberAndWaitlistSettings.js';
+import { validateDraft } from './validateDraft.js';
 import './EventSetup.css';
 
-type SetupView = 'event' | 'fields' | 'portal';
+type SetupView = 'event' | 'fields' | 'portal' | 'numbers';
 
 const sections: Array<{ id: string; label: string; view: SetupView }> = [
   { id: 'event-setup-event', label: 'Veranstaltung', view: 'event' },
@@ -27,6 +29,11 @@ const sections: Array<{ id: string; label: string; view: SetupView }> = [
   },
   { id: 'event-setup-form-fields', label: 'Formularfelder', view: 'fields' },
   { id: 'event-setup-driver-portal', label: 'Fahrer-Portal', view: 'portal' },
+  {
+    id: 'event-setup-numbers',
+    label: 'Startnummern & Warteliste',
+    view: 'numbers',
+  },
   { id: 'event-setup-actions', label: 'Nennung öffnen', view: 'event' },
 ];
 
@@ -38,10 +45,23 @@ export function EventSetup({
   const setup = useEventSetup(onCreated);
   const [view, setView] = useState<SetupView>('event');
   const target = useRef('');
+  const navRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (target.current)
       document.getElementById(target.current)?.scrollIntoView();
     target.current = '';
+    const revealActive = () => {
+      const nav = navRef.current;
+      const active = nav?.querySelector<HTMLElement>('a[aria-current="true"]');
+      if (nav && active && view !== 'event')
+        nav.scrollLeft +=
+          active.getBoundingClientRect().left -
+          nav.getBoundingClientRect().left -
+          8;
+    };
+    revealActive();
+    window.addEventListener('resize', revealActive);
+    return () => window.removeEventListener('resize', revealActive);
   }, [view]);
   const { refreshEvents, setDraft } = setup;
   useEffect(() => {
@@ -72,17 +92,21 @@ export function EventSetup({
 
   return (
     <section
-      className={`event-setup${view !== 'event' ? ' is-fields' : ''}`}
+      className={`event-setup${view === 'event' ? '' : ` is-${view}`}`}
       aria-label="Veranstaltung einrichten"
     >
       <div className="event-setup-layout">
-        <nav className="event-setup-nav" aria-label="Abschnittsnavigation">
+        <nav
+          ref={navRef}
+          className="event-setup-nav"
+          aria-label="Abschnittsnavigation"
+        >
           <p className="event-setup-nav-title">Einrichtung</p>
           {sections.map((section, index) => (
             <a
               key={section.id}
               href={`#${section.id}`}
-              aria-current={section.view === 'fields' && view === 'fields'}
+              aria-current={section.view !== 'event' && section.view === view}
               onClick={(event) => {
                 event.preventDefault();
                 if (section.view === view) {
@@ -170,6 +194,21 @@ export function EventSetup({
               )}
             </section>
           )}
+          {view === 'numbers' && (
+            <section id="event-setup-numbers">
+              {setup.draft.id ? (
+                <NumberAndWaitlistSettings
+                  key={setup.draft.id}
+                  eventId={setup.draft.id}
+                />
+              ) : (
+                <EmptyState
+                  title="Startnummern & Warteliste"
+                  description="Speichere die Veranstaltung zuerst als Entwurf, dann legst du hier Nummernbereiche und die Warteliste fest."
+                />
+              )}
+            </section>
+          )}
         </div>
         <aside
           className="event-setup-aside"
@@ -226,48 +265,4 @@ export function EventSetup({
       </div>
     </section>
   );
-}
-
-function validateDraft(
-  form: HTMLFormElement,
-  setMessage: (message: string) => void,
-): boolean {
-  const data = new FormData(form);
-  const name = String(data.get('event-name') ?? '').trim();
-  const slug = String(data.get('event-slug') ?? '').trim();
-  const startsOn = String(data.get('starts-on') ?? '');
-  const endsOn = String(data.get('ends-on') ?? '');
-  if (!form.reportValidity()) return false;
-  if (!name || !slug || !startsOn || !endsOn) return false;
-  if (endsOn < startsOn) {
-    setMessage('Das Ende muss am oder nach dem Beginn liegen.');
-    const endDate = form.elements.namedItem('ends-on');
-    if (endDate instanceof HTMLElement) endDate.focus();
-    return false;
-  }
-  for (const input of form.querySelectorAll<HTMLInputElement>(
-    'input[data-fee]',
-  )) {
-    if (!/^\d+(?:[,.]\d{1,2})?$/.test(input.value.trim())) {
-      input.setCustomValidity('Betrag wie 25,00 oder 25.00 eingeben.');
-      input.reportValidity();
-      input.setCustomValidity('');
-      return false;
-    }
-    if (!Number.isFinite(Number(input.value.trim().replace(',', '.')))) {
-      input.reportValidity();
-      return false;
-    }
-  }
-  for (const input of form.querySelectorAll<HTMLInputElement>(
-    'input[required]',
-  )) {
-    if (input.value.trim() === '') {
-      input.setCustomValidity('Dieses Feld darf nicht leer sein.');
-      input.reportValidity();
-      input.setCustomValidity('');
-      return false;
-    }
-  }
-  return form.reportValidity();
 }

@@ -30,6 +30,9 @@ export function mapEntry(
     driverPersonId: row.driverPersonId,
     vehicleId: row.vehicleId,
     requestedStartNumber: row.requestedStartNumber,
+    waitlistPosition: row.waitlistPosition,
+    waitlistConfirmationDeadline:
+      row.waitlistConfirmationDeadline?.toISOString() ?? null,
     orgaCode: row.orgaCode,
     priceSnapshotVersion: row.priceSnapshotVersion,
     formSnapshotVersion: row.formSnapshotVersion,

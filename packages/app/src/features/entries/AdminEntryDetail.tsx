@@ -7,13 +7,10 @@ import {
 } from '@racepilot/ui';
 import type { EntryResponse as Entry } from '@racepilot/contracts';
 import type { Outcome, WorkflowView } from './AdminEntriesModel.js';
-import type { AdminActionKind } from './detail/EntryAdminActionDialog.js';
+import type { Pending } from './detail/EntryDetailPending.js';
 import { EntryAdminActionDialog } from './detail/EntryAdminActionDialog.js';
-import { EntryActionRail, type StatusStep } from './detail/EntryActionRail.js';
-import {
-  EntryDocumentsSection,
-  type DimensionAction,
-} from './detail/EntryDocumentsSection.js';
+import { EntryActionRail } from './detail/EntryActionRail.js';
+import { EntryDocumentsSection } from './detail/EntryDocumentsSection.js';
 import { EntryConsentsSection } from './detail/EntryConsentsSection.js';
 import { EntryPassengerFlow } from './detail/EntryPassengerDialog.js';
 import { EntryPassengerBlocks } from './detail/EntryPassengerSection.js';
@@ -28,6 +25,7 @@ import { requestMessageSeed } from './documents/requestMessage.js';
 import { useEntryDocumentActions } from './documents/useEntryDocumentActions.js';
 import type { MessageSeed } from '../messages/messageSeed.js';
 import { EntryMessagesSection } from './detail/EntryMessagesSection.js';
+import { EntryStartNumber } from './detail/EntryStartNumber.js';
 import { EntryPaymentDialog } from './detail/EntryPaymentDialog.js';
 import { EntryVehicleSection } from './detail/EntryVehicleSection.js';
 import {
@@ -40,14 +38,6 @@ import {
   useEntryDetailApi,
   useEntryMessages,
 } from './detail/useEntryDetailApi.js';
-
-type Pending =
-  | { kind: 'status'; step: StatusStep }
-  | { kind: 'verify' }
-  | { kind: 'dimension'; action: DimensionAction }
-  | { kind: 'payment' }
-  | { kind: 'admin'; action: AdminActionKind }
-  | { kind: 'passenger'; action: 'add' | 'link' };
 
 export function AdminEntryDetail({
   selected,
@@ -207,6 +197,10 @@ export function AdminEntryDetail({
       >
         {error && !pending && <Banner tone="error">{error}</Banner>}
         {documents.error && <Banner tone="error">{documents.error}</Banner>}
+        <EntryStartNumber
+          entry={selected}
+          onUpdated={(entry) => onUpdated(entry, false)}
+        />
         <EntryDriverSection
           driver={details.driver}
           passenger={details.passenger ?? null}

@@ -240,18 +240,30 @@ describe.skipIf(!url)('co-driver, personal link and spare vehicle', () => {
           .from(vehicles)
           .where(eq(vehicles.organizationId, a.org.id)),
       ).toHaveLength(2);
-      // The class has capacity 1: the spare vehicle did not count, a second entry is refused.
-      await expect(
-        service.submit(
-          ctx(a.org.id),
-          a.event.slug,
-          submission(a, [{ classId: a.optional.id }], {
-            firstName: 'Bert',
-            lastName: 'Zweiter',
-            email: 'bert@example.test',
-          }),
-        ),
-      ).rejects.toMatchObject({ reason: 'capacity-exceeded' });
+      // The spare vehicle does not consume a seat; the next entry joins the waitlist.
+      await service.submit(
+        ctx(a.org.id),
+        a.event.slug,
+        submission(a, [{ classId: a.optional.id }], {
+          firstName: 'Bert',
+          lastName: 'Zweiter',
+          email: 'bert@example.test',
+        }),
+      );
+      const [waitlisted] = await db
+        .select()
+        .from(entries)
+        .where(
+          and(
+            eq(entries.organizationId, a.org.id),
+            eq(entries.classId, a.optional.id),
+            eq(entries.acceptanceStatus, 'waitlisted'),
+          ),
+        );
+      expect(waitlisted).toMatchObject({
+        waitlistPosition: 1,
+        waitlistConfirmationDeadline: null,
+      });
 
       // No mail goes to the co-driver before the driver's address is verified.
       const passengerMails = () =>
@@ -272,6 +284,7 @@ describe.skipIf(!url)('co-driver, personal link and spare vehicle', () => {
           and(
             eq(emailOutbox.organizationId, a.org.id),
             eq(emailOutbox.templateKey, 'verification'),
+            eq(emailOutbox.recipient, 'anna@example.test'),
           ),
         );
       const verifyToken = new URL(

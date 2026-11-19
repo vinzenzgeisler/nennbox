@@ -26,6 +26,10 @@ export type FormPayload = {
     earlyBirdDeadline: string | null;
     earlyBirdDiscountCents: number;
   }>;
+  startNumberModes?: Record<
+    string,
+    'driver_choice' | 'organizer_assigned' | 'automatic'
+  >;
   classes: Array<{
     id: string;
     name: string;

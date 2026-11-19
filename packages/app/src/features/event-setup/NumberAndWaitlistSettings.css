@@ -1,0 +1,118 @@
+.nb-number-waitlist-settings {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 62rem;
+  min-width: 0;
+}
+
+.nb-number-waitlist-settings h2,
+.nb-number-waitlist-settings h3 {
+  margin: 0;
+}
+
+.nb-number-waitlist-settings header {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.nb-class-capacities p,
+.nb-waitlist-settings p,
+.nb-number-waitlist-settings header p {
+  margin: 0;
+  max-width: 48rem;
+  color: var(--color-graphite);
+}
+
+.nb-class-capacities,
+.nb-number-ranges,
+.nb-waitlist-settings {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  min-width: 0;
+  padding-block-start: var(--space-4);
+  border-top: 1px solid var(--color-line);
+}
+
+.nb-number-table {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.nb-number-table .nb-field {
+  position: relative;
+}
+
+/* Labels stay in the accessibility tree; the table header names the column. */
+.nb-number-table .nb-field > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.nb-number-table td,
+.nb-number-table th[scope='row'] {
+  padding: var(--space-1) var(--space-2);
+}
+
+.nb-number-table th[scope='row'] {
+  border-bottom: 1px solid var(--color-line);
+}
+
+.nb-class-capacities .nb-number-table {
+  max-width: 28rem;
+}
+
+.nb-number-ranges .nb-number-table td:nth-child(2),
+.nb-number-ranges .nb-number-table td:nth-child(3) {
+  width: 6.5rem;
+}
+
+.nb-class-capacities .nb-number-table td:nth-child(2) {
+  width: 10rem;
+}
+
+.nb-waitlist-settings {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: stretch;
+}
+
+.nb-waitlist-settings .nb-waitlist-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.nb-waitlist-settings .nb-field {
+  width: 14rem;
+}
+
+.nb-number-waitlist-settings footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block-start: var(--space-4);
+  border-top: 1px solid var(--color-line);
+}
+
+@media (width < 768px) {
+  .nb-number-ranges .nb-number-table td:nth-child(2),
+  .nb-number-ranges .nb-number-table td:nth-child(3),
+  .nb-class-capacities .nb-number-table td:nth-child(2) {
+    width: auto;
+  }
+
+  .nb-number-ranges .nb-table {
+    min-width: 46rem;
+  }
+
+  .nb-number-waitlist-settings footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

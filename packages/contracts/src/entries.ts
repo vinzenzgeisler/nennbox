@@ -40,6 +40,12 @@ export const EntryResponse = z
     verificationStatus: z.enum(['unverified', 'verified']),
     acceptanceStatus: z.string().regex(/^[a-z][a-z0-9_-]{0,63}$/),
     requestedStartNumber: z.string().nullable(),
+    waitlistPosition: z.number().int().positive().nullable().optional(),
+    waitlistConfirmationDeadline: z
+      .string()
+      .datetime({ offset: true })
+      .nullable()
+      .optional(),
     priceSnapshotVersion: z.string().nullable(),
     formSnapshotVersion: z.string().nullable(),
     priceSnapshot: PriceSnapshotSchema.nullable().optional(),
