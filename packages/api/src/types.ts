@@ -1,3 +1,4 @@
+import type { DriverPortalRepository } from '@racepilot/adapter-postgres';
 import type { Hono } from 'hono';
 import type {
   DeploymentMode,
@@ -125,6 +126,7 @@ export interface EditionApiDeps {
   objectStorage?: ObjectStorageProvider;
   publicRegistration?: PublicRegistrationModule;
   passengers?: PassengerModule;
+  driverPortal?: DriverPortalRepository;
   authenticator?: Authenticator;
   memberships?: MembershipRepository;
   bootstrap?: MembershipBootstrap;

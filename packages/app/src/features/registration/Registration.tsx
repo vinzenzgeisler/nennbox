@@ -42,6 +42,14 @@ export function Registration({
       <section aria-labelledby="registration-success">
         <h2 id="registration-success">{payload.event.name}</h2>
         <p role="status">{t.submitted}</p>
+        <p>
+          {locale === 'de'
+            ? 'Nach Bestätigung deiner E-Mail kannst du deine Nennung jederzeit einsehen.'
+            : 'After verifying your email, you can view your entry at any time.'}
+        </p>
+        <a href={`/events/${encodeURIComponent(eventSlug)}/my-entry`}>
+          {locale === 'de' ? 'Meine Nennung' : 'My entry'}
+        </a>
       </section>
     );
 

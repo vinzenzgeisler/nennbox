@@ -23,6 +23,7 @@ import {
   createOverviewRepository,
   createPassengerAdminRepository,
   createPassengerPublicRepository,
+  createDriverPortalRepository,
   createPaymentRecipientRepository,
   createPostgresRegistrationRateLimiter,
   createPublicRegistrationRateLimitSettingsRepository,
@@ -179,6 +180,9 @@ export function createProductApi(options: ProductApiOptions): Hono {
       createPublicRegistrationRateLimitSettingsRepository(db),
     ...(publicRegistration ? { publicRegistration } : {}),
     ...(passengers ? { passengers } : {}),
+    ...(mail && canonicalOrigin
+      ? { driverPortal: createDriverPortalRepository(db, canonicalOrigin) }
+      : {}),
     memberships: createMembershipRepository(db),
     payments: createInvoicePaymentRepository(db),
     ...(options.paymentReturnOrigin

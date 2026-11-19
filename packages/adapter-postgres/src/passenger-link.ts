@@ -1,4 +1,3 @@
-import { createHash, randomBytes } from 'node:crypto';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import { PASSENGER_LINK_TTL_MS } from '@racepilot/core';
 import type { TransactionDatabase } from './database.js';
@@ -6,18 +5,16 @@ import { emailTemplateVersions } from './mail-schema.js';
 import { enqueueMailOutbox } from './mail-outbox.js';
 import { entryPassengerLinks } from './schema/passengers.js';
 import type { Database } from './database.js';
+import {
+  createPersonalLinkToken,
+  hashPersonalLinkToken,
+} from './personal-link-token.js';
 
-export const hashPassengerToken = (token: string) =>
-  createHash('sha256').update(token).digest('hex');
+export const hashPassengerToken = hashPersonalLinkToken;
 
 /** A random token the link carries; only its SHA-256 hash is stored. */
 export function createPassengerToken(now = new Date()) {
-  const token = randomBytes(32).toString('base64url');
-  return {
-    token,
-    tokenHash: hashPassengerToken(token),
-    expiresAt: new Date(now.getTime() + PASSENGER_LINK_TTL_MS),
-  };
+  return createPersonalLinkToken(PASSENGER_LINK_TTL_MS, now);
 }
 
 export interface PassengerLinkTarget {
