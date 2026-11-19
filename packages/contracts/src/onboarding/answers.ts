@@ -122,8 +122,10 @@ export function resolveAnswers(answers: OnboardingAnswers): ResolvedAnswers {
     doubleStart: answers.doubleStart ?? defaults.doubleStart,
     paymentMode: answers.paymentMode ?? defaults.paymentMode,
     stripeTiming: answers.stripeTiming ?? 'later',
-    classes: answers.classes ?? templateClasses(kind),
-    eventTitle: answers.eventTitle?.trim() || suggestedTitle(kind, startDate),
+    classes: answers.classes ?? (answers.kind ? templateClasses(kind) : []),
+    eventTitle:
+      answers.eventTitle?.trim() ||
+      (answers.kind ? suggestedTitle(kind, startDate) : ''),
     startDate,
     endDate,
     location: answers.location.trim(),

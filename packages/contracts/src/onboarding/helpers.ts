@@ -105,12 +105,21 @@ export function suggestBrandColors(samples: readonly string[]): BrandPalette[] {
   if (usable.length === 0)
     return [paletteOf(defaultBrandPalette.primary, defaultBrandPalette.accent)];
   const [first, second, third] = usable as [string, string?, string?];
-  const pairs: Array<[string, string]> = [
+  const candidates: Array<[string | undefined, string | undefined]> = [
     [first, second ?? defaultBrandPalette.accent],
+    [first, third],
+    [second, third],
+    [second, first],
+    [first, defaultBrandPalette.accent],
   ];
-  if (second && third) pairs.push([second, third], [first, third]);
-  if (!second) pairs.push([first, defaultBrandPalette.primary]);
-  return pairs
+  const seen = new Set<string>();
+  return candidates
+    .filter((pair): pair is [string, string] => {
+      const key = pair.join();
+      if (!pair[0] || !pair[1] || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
     .slice(0, 3)
     .map(([primary, accent]) => paletteOf(primary, accent));
 }
