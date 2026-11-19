@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { createHash, randomUUID } from 'node:crypto';
+import Stripe from 'stripe';
 import { mkdirSync, readFileSync } from 'node:fs';
 
 // The payment test continues with the entry that the lifecycle test registered.
@@ -21,6 +22,8 @@ const apiBaseUrl =
   process.env.RACEPILOT_API_URL ??
   process.env.COMMUNITY_API_BASE_URL ??
   'http://127.0.0.1:3000';
+const stripeScreenshotDir =
+  process.env.STRIPE_SCREENSHOT_DIR ?? 'packages/app/test-results/stripe';
 const adminPassword = () => {
   const password = process.env.COMMUNITY_ADMIN_PASSWORD;
   if (!password) throw new Error('COMMUNITY_ADMIN_PASSWORD is required');
@@ -80,6 +83,14 @@ test('Community registration and admin lifecycle with API setup', async ({
     ).toBe(status);
     return response.json();
   };
+  const communityOrganizationId = (
+    await (await api('/runtime/bootstrap')).json()
+  ).organization.id as string;
+  await call('/admin/organization/payment-recipient', 'PUT', {
+    accountName: 'MSC Alpha',
+    iban: 'DE89370400440532013000',
+    bic: 'COBADEFFXXX',
+  });
   const slug = `alpha-${randomUUID().slice(0, 8)}`;
   const event = await call(
     '/admin/events',
@@ -137,6 +148,7 @@ test('Community registration and admin lifecycle with API setup', async ({
       city: { state: 'hidden' },
       displacement: { state: 'required' },
     },
+    payments: { onlineMethods: ['card'], bankTransfer: true },
     customFields: [
       {
         key: 'vehicle_photo',
@@ -173,15 +185,27 @@ test('Community registration and admin lifecycle with API setup', async ({
   const shots = async (name: string) => {
     const viewport = page.viewportSize();
     try {
-      for (const [width, height] of [
-        [1440, 900],
-        [1920, 1080],
-        [2200, 1080],
-        [390, 844],
-      ]) {
+      const viewports =
+        name === 'public-payment-step'
+          ? [
+              [1920, 1080],
+              [1440, 900],
+              [390, 844],
+            ]
+          : [
+              [1440, 900],
+              [1920, 1080],
+              [2200, 1080],
+              [390, 844],
+            ];
+      for (const [width, height] of viewports) {
         await page.setViewportSize({ width, height });
         await page.screenshot({
-          path: `packages/app/test-results/alpha/${name}-${width}.png`,
+          fullPage: name === 'public-payment-step',
+          path:
+            name === 'public-payment-step'
+              ? `${stripeScreenshotDir}/${width}.png`
+              : `packages/app/test-results/alpha/${name}-${width}.png`,
         });
       }
     } finally {
@@ -239,19 +263,146 @@ test('Community registration and admin lifecycle with API setup', async ({
     'true',
   );
   await shots('public-consent-step');
-  await page.getByRole('button', { name: 'Nennung absenden' }).click();
+  await page.getByRole('button', { name: 'Weiter zur Zahlung' }).click();
   await expect(page.getByRole('alert')).toContainText('Bitte bestätige');
   await page.getByRole('checkbox').check();
   await shots('public-consent-accepted');
+  await page.getByRole('button', { name: 'Weiter zur Zahlung' }).click();
+  await expect(page.getByRole('group', { name: 'Bezahlen' })).toBeVisible();
+  await expect(page.getByLabel('Per Überweisung')).toBeVisible();
+  const stripeEnabled = Boolean(
+    process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET,
+  );
+  if (stripeEnabled) {
+    await expect(page.getByLabel('Jetzt online bezahlen')).toBeVisible();
+    await page.getByLabel('Jetzt online bezahlen').check();
+    await expect(page.getByText('VISA · MC')).toBeVisible();
+    await page.route('**/invoices/*/checkout', (route) =>
+      route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          url: 'https://checkout.stripe.com/c/pay/cs_test_browser',
+        }),
+      }),
+    );
+    await page.route('https://checkout.stripe.com/**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: '<title>Stripe Checkout mock</title>',
+      }),
+    );
+  } else {
+    await page.getByLabel('Später bezahlen').check();
+  }
+  if (stripeEnabled) mkdirSync(stripeScreenshotDir, { recursive: true });
+  await shots('public-payment-step');
+  const checkoutResponsePromise = stripeEnabled
+    ? page.waitForResponse((response) => response.url().includes('/checkout'))
+    : null;
   const submissionResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes('/registration/submissions') &&
       response.request().method() === 'POST',
   );
-  await page.getByRole('button', { name: 'Nennung absenden' }).click();
+  await page
+    .getByRole('button', {
+      name: stripeEnabled ? 'Jetzt bezahlen · 10,00 €' : 'Nennung absenden',
+    })
+    .click();
   const submissionResponse = await submissionResponsePromise;
   const submissionBody = await submissionResponse.json();
   expect(submissionResponse.status(), JSON.stringify(submissionBody)).toBe(202);
+  if (stripeEnabled) {
+    const checkoutResponse = await checkoutResponsePromise!;
+    expect(checkoutResponse.status()).toBe(201);
+    await expect(page).toHaveURL(/checkout\.stripe\.com/);
+    const invoiceId = submissionBody.invoiceId as string;
+    await page.goto(
+      `/events/${slug}/register?payment=cancelled&invoice=${encodeURIComponent(invoiceId)}`,
+    );
+    await expect(
+      page.getByRole('heading', { name: 'Zahlung abgebrochen' }),
+    ).toBeVisible();
+    for (const [width, height] of [
+      [1920, 1080],
+      [1440, 900],
+      [390, 844],
+    ]) {
+      await page.setViewportSize({ width, height });
+      await page.screenshot({
+        fullPage: true,
+        path: `${stripeScreenshotDir}/cancelled-${width}.png`,
+      });
+    }
+    await page.getByRole('button', { name: 'Erneut bezahlen' }).click();
+    await expect(page).toHaveURL(/checkout\.stripe\.com/);
+    await page.goto(
+      `/events/${slug}/register?payment=success&invoice=${encodeURIComponent(invoiceId)}`,
+    );
+    await expect(
+      page.getByRole('heading', { name: 'Zahlung erfolgreich' }),
+    ).toBeVisible();
+    for (const [width, height] of [
+      [1920, 1080],
+      [1440, 900],
+      [390, 844],
+    ]) {
+      await page.setViewportSize({ width, height });
+      await page.screenshot({
+        fullPage: true,
+        path: `${stripeScreenshotDir}/success-${width}.png`,
+      });
+    }
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+    const paymentIntentId = `pi_browser_${randomUUID().replaceAll('-', '')}`;
+    const webhookEvent = {
+      id: `evt_${randomUUID().replaceAll('-', '')}`,
+      object: 'event',
+      api_version: '2025-04-30.basil',
+      created: Math.floor(Date.now() / 1000),
+      livemode: false,
+      pending_webhooks: 1,
+      request: { id: null, idempotency_key: null },
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_test_browser',
+          object: 'checkout.session',
+          payment_status: 'paid',
+          amount_total: 1000,
+          currency: 'eur',
+          payment_intent: paymentIntentId,
+          metadata: {
+            organizationId: communityOrganizationId,
+            invoiceId: submissionBody.invoiceId,
+          },
+        },
+      },
+    };
+    const rawWebhook = JSON.stringify(webhookEvent);
+    const signature = Stripe.webhooks.generateTestHeaderString({
+      payload: rawWebhook,
+      secret: webhookSecret,
+    });
+    const webhookResponse = await request.post(
+      `${apiBaseUrl}/webhooks/stripe`,
+      {
+        data: rawWebhook,
+        headers: {
+          'content-type': 'application/json',
+          'stripe-signature': signature,
+        },
+      },
+    );
+    const webhookBody = await webhookResponse.text();
+    expect(webhookResponse.status(), webhookBody).toBe(200);
+    expect(JSON.parse(webhookBody)).toMatchObject({
+      received: true,
+      duplicate: false,
+    });
+  }
   let mail: { ID: string };
   await expect
     .poll(
@@ -288,8 +439,7 @@ test('Community registration and admin lifecycle with API setup', async ({
   await page
     .getByRole('combobox', { name: 'Veranstaltung' })
     .selectOption(event.id);
-  const navigation = page.locator('.nb-admin-nav');
-  await navigation.getByRole('button', { name: 'Übersicht' }).click();
+  await page.getByRole('button', { name: 'Übersicht' }).click();
   await expect(page.getByRole('region', { name: 'Warnungen' })).toContainText(
     'ohne bestätigte E-Mail-Adresse',
   );
@@ -305,7 +455,7 @@ test('Community registration and admin lifecycle with API setup', async ({
   await expect(
     page.getByRole('row').filter({ hasText: participantName }),
   ).toBeVisible();
-  await navigation.getByRole('button', { name: 'Exporte' }).click();
+  await page.getByRole('button', { name: 'Exporte' }).click();
   await page
     .getByRole('combobox', { name: 'E-Mail-Prüfung' })
     .selectOption('unverified');
@@ -535,34 +685,60 @@ test('admin records payment from entry detail UI', async ({
   await expect(entryDetail).toBeVisible();
   await expect(entryDetail).toContainText(shared.participant);
 
-  // The invoice is open until the payment is recorded in the UI.
+  // Stripe-enabled runs reach the ledger through the signed browser webhook;
+  // the baseline Community smoke records a bank/manual payment here.
   await expect(entryDetail).toContainText('Startgeld');
-  await entryDetail
-    .getByRole('button', { name: 'Zahlung erfassen' })
-    .first()
-    .click();
-  let dialog = page.getByRole('dialog');
-  await expect(dialog.getByLabel(/Betrag/)).toHaveValue('10,00');
-  await dialog
-    .getByLabel('Begründung (für das Protokoll erforderlich)')
-    .fill('Alpha E2E payment');
-  await dialog.getByRole('button', { name: 'Zahlung erfassen' }).click();
-
-  await expect(entryDetail.locator('.nb-detail-labels')).toContainText(
-    /Zahlung · Bezahlt/i,
+  const stripeEnabled = Boolean(
+    process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET,
   );
-  await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
-    'Zahlung eingegangen',
-  );
-  await expect(
-    entryDetail.getByRole('button', { name: 'Zahlung erfassen' }),
-  ).toHaveCount(0);
+  let dialog: ReturnType<typeof page.getByRole>;
+  if (stripeEnabled) {
+    await expect(entryDetail).toContainText('Bezahlt');
+    await expect(
+      entryDetail.getByRole('button', { name: 'Erstattung auslösen' }),
+    ).toBeVisible();
+    await entryDetail
+      .getByRole('button', { name: 'Erstattung auslösen' })
+      .click();
+    dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Erstattungsbetrag (EUR)').fill('1,00');
+    await dialog
+      .getByLabel('Grund für die Erstattung (für das Protokoll erforderlich)')
+      .fill('Alpha E2E partial refund');
+    await dialog.getByRole('button', { name: 'Erstattung auslösen' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
+      'Zahlung erstattet',
+    );
+  } else {
+    await entryDetail
+      .getByRole('button', { name: 'Zahlung erfassen' })
+      .first()
+      .click();
+    dialog = page.getByRole('dialog');
+    await expect(dialog.getByLabel(/Betrag/)).toHaveValue('10,00');
+    await dialog
+      .getByLabel('Begründung (für das Protokoll erforderlich)')
+      .fill('Alpha E2E payment');
+    await dialog.getByRole('button', { name: 'Zahlung erfassen' }).click();
+    await expect(entryDetail.locator('.nb-detail-labels')).toContainText(
+      /Zahlung · Bezahlt/i,
+    );
+    await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
+      'Zahlung eingegangen',
+    );
+    await expect(
+      entryDetail.getByRole('button', { name: 'Zahlung erfassen' }),
+    ).toHaveCount(0);
+  }
   expect(token, 'bearer token captured from admin requests').not.toBe('');
   const detail = await request.fetch(
     `${apiBaseUrl}/admin/entries?eventId=${shared.eventId}`,
     { headers: { authorization: ['Bearer', token].join(' ') } },
   );
-  expect(await detail.text()).toMatch(/"paidCents":1000/);
+  expect(await detail.text()).toMatch(
+    stripeEnabled ? /"paidCents":900/ : /"paidCents":1000/,
+  );
 
   await entryDetail.getByRole('button', { name: 'Klasse ändern' }).click();
   dialog = page.getByRole('dialog');

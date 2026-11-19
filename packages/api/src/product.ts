@@ -16,6 +16,7 @@ import {
   createEventSetupRepository,
   createInvoicePaymentRepository,
   createCheckoutRepository,
+  createPaymentRefundRepository,
   createMembershipRepository,
   createMessageRepository,
   createModuleActivationRepository,
@@ -193,6 +194,7 @@ export function createProductApi(options: ProductApiOptions): Hono {
     ...(options.paymentProvider
       ? {
           checkoutRepository: createCheckoutRepository(db),
+          paymentRefunds: createPaymentRefundRepository(db),
           paymentProvider: options.paymentProvider,
         }
       : {}),

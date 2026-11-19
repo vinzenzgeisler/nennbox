@@ -25,5 +25,15 @@ describe.skipIf(!apiBaseUrl)('Stripe mock checkout', () => {
     });
     expect(session.id).toMatch(/^cs_/);
     expect(session.url).toMatch(/^https:\/\//);
+    await expect(
+      provider.refund({
+        idempotencyKey: '00000000-0000-4000-8000-000000000001',
+        organizationId: organizationId('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+        invoiceId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        paymentId: 'pi_browser_simulated',
+        amountCents: 1000,
+        reason: 'Integration test refund',
+      }),
+    ).resolves.toMatchObject({ id: expect.stringMatching(/^re_/) });
   });
 });

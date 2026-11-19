@@ -123,18 +123,104 @@ export function registerPaymentProviderRoutes(context: ApiRoutesContext): void {
         requestContext.organizationId !== c.req.param('organizationId')
       )
         return c.json({ error: 'Not found' }, 404);
+      const requested = z
+        .object({
+          paymentMethods: z
+            .array(z.enum(['card', 'sepa_debit', 'paypal', 'klarna']))
+            .min(1)
+            .max(4)
+            .optional(),
+        })
+        .strict()
+        .safeParse(await c.req.json().catch(() => ({})));
+      if (!requested.success)
+        return c.json({ error: 'Invalid payment methods' }, 400);
       const result = await createInvoiceCheckout(
         deps,
         requestContext,
         c.req.param('invoiceId'),
         (slug) => `/events/${encodeURIComponent(slug)}/register`,
+        {
+          methods: {
+            kind: 'configured',
+            ...(requested.data.paymentMethods
+              ? { requested: requested.data.paymentMethods }
+              : {}),
+          },
+          referenceInvoice: true,
+        },
       );
       if (result.status === 201) return c.json({ url: result.url }, 201);
+      if (result.status === 400)
+        return c.json({ error: 'Payment method unavailable' }, 400);
       return result.status === 404
         ? c.json({ error: 'Not found' }, 404)
         : c.json({ error: 'Unavailable' }, 503);
     },
   );
+
+  app.post('/admin/invoices/:invoiceId/refunds', async (c) => {
+    if (!deps.paymentProvider || !deps.paymentRefunds)
+      return c.json({ error: 'Unavailable' }, 503);
+    const guard = await context.requireMember(c.req.raw, 'payment:write');
+    if (!guard.ok) return c.json({ error: guard.error }, guard.status);
+    const parsed = z
+      .object({
+        providerPaymentId: z.string().min(1).max(255),
+        amountCents: z.number().int().positive(),
+        reason: z.string().trim().min(1).max(1000),
+        idempotencyKey: z.string().uuid(),
+      })
+      .strict()
+      .safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
+    const payment = await deps.paymentRefunds.getRefundable(
+      guard.context,
+      c.req.param('invoiceId'),
+      parsed.data.providerPaymentId,
+    );
+    if (!payment || parsed.data.amountCents > payment.refundableCents)
+      return c.json({ error: 'Refund amount unavailable' }, 409);
+    const actor = guard.context.subject
+      ? `${guard.context.subject.issuer}#${guard.context.subject.subject}`
+      : guard.context.correlationId;
+    let refund: { readonly id: string };
+    try {
+      refund = await deps.paymentProvider.refund({
+        idempotencyKey: parsed.data.idempotencyKey,
+        organizationId: guard.context.organizationId,
+        invoiceId: payment.invoiceId,
+        paymentId: payment.providerPaymentId,
+        amountCents: parsed.data.amountCents,
+        reason: parsed.data.reason,
+      });
+    } catch (error) {
+      deps.logger.warn('Stripe provider refund failed', {
+        errorName: error instanceof Error ? error.name : 'unknown',
+      });
+      return c.json({ error: 'Refund unavailable' }, 503);
+    }
+    try {
+      const result = await deps.paymentRefunds.recordRefund(guard.context, {
+        ...payment,
+        amountCents: parsed.data.amountCents,
+        providerRefundId: refund.id,
+        actor,
+        reason: parsed.data.reason,
+      });
+      return result
+        ? c.json(
+            { refundId: refund.id, duplicate: result === 'duplicate' },
+            201,
+          )
+        : c.json({ error: 'Refund could not be recorded' }, 409);
+    } catch (error) {
+      deps.logger.warn('Stripe refund ledger write failed', {
+        errorName: error instanceof Error ? error.name : 'unknown',
+      });
+      return c.json({ error: 'Refund unavailable' }, 503);
+    }
+  });
 
   app.post('/webhooks/stripe', async (c) => {
     if (!deps.paymentProvider || !deps.checkoutRepository)

@@ -1,10 +1,32 @@
 import { resolveCanonicalOrigin } from '@racepilot/core';
-import type { RequestContext } from '@racepilot/core';
+import type { OnlinePaymentMethod, RequestContext } from '@racepilot/core';
 import type { ApiDeps } from '../types.js';
 
 export type InvoiceCheckoutResult =
   | { readonly status: 201; readonly url: string }
-  | { readonly status: 404 | 503 };
+  | { readonly status: 400 | 404 | 503 };
+
+/**
+ * Which payment methods a checkout offers: a fixed list, or the methods the
+ * organizer enabled for the event (optionally narrowed by the payer).
+ */
+export type InvoiceCheckoutMethods =
+  | { readonly kind: 'fixed'; readonly methods: readonly OnlinePaymentMethod[] }
+  | {
+      readonly kind: 'configured';
+      readonly requested?: readonly OnlinePaymentMethod[];
+    };
+
+export interface InvoiceCheckoutOptions {
+  readonly methods?: InvoiceCheckoutMethods;
+  /** Adds the invoice id to the return URLs so the page can confirm that payment. */
+  readonly referenceInvoice?: boolean;
+}
+
+const standardMethods: InvoiceCheckoutMethods = {
+  kind: 'fixed',
+  methods: ['card', 'sepa_debit'],
+};
 
 /** Whether this deployment can start an online payment at all. */
 export const onlinePaymentConfigured = (deps: ApiDeps): boolean =>
@@ -21,6 +43,7 @@ export async function createInvoiceCheckout(
   requestContext: RequestContext,
   invoiceId: string,
   returnPath: (eventSlug: string) => string,
+  options: InvoiceCheckoutOptions = {},
 ): Promise<InvoiceCheckoutResult> {
   if (!deps.paymentProvider || !deps.checkoutRepository) return { status: 503 };
   if (!deps.paymentReturnOrigin) return { status: 503 };
@@ -37,6 +60,21 @@ export async function createInvoiceCheckout(
     invoice.totalCents <= invoice.paidCents
   )
     return { status: 404 };
+  const selection = options.methods ?? standardMethods;
+  const paymentMethods =
+    selection.kind === 'fixed'
+      ? selection.methods
+      : (selection.requested ?? invoice.paymentMethods);
+  if (
+    !paymentMethods.length ||
+    (selection.kind === 'configured' &&
+      paymentMethods.some((method) => !invoice.paymentMethods.includes(method)))
+  )
+    return { status: 400 };
+  const returnUrl = (outcome: 'success' | 'cancelled') =>
+    `${origin}${returnPath(invoice.eventSlug)}?payment=${outcome}${
+      options.referenceInvoice ? `&invoice=${encodeURIComponent(invoice.id)}` : ''
+    }`;
   try {
     const session = await deps.paymentProvider.createCheckoutSession({
       organizationId: requestContext.organizationId,
@@ -45,9 +83,9 @@ export async function createInvoiceCheckout(
       amountCents: invoice.totalCents - invoice.paidCents,
       currency: invoice.currency,
       description: `Nennung ${invoice.eventSlug}`,
-      successUrl: `${origin}${returnPath(invoice.eventSlug)}?payment=success`,
-      cancelUrl: `${origin}${returnPath(invoice.eventSlug)}?payment=cancelled`,
-      paymentMethods: ['card', 'sepa_debit'],
+      successUrl: returnUrl('success'),
+      cancelUrl: returnUrl('cancelled'),
+      paymentMethods,
     });
     await deps.checkoutRepository.createSession(
       requestContext,

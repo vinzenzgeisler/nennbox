@@ -17,6 +17,7 @@ import {
   RegistrationFormOptions,
 } from './RegistrationFormOptions.js';
 import { RegistrationFieldsPreview } from './RegistrationFieldsPreview.js';
+import { RegistrationPaymentSettings } from './RegistrationPaymentSettings.js';
 import { registrationFieldLabels } from './registrationFieldLabels.js';
 
 export function RegistrationFormSettings({
@@ -37,6 +38,7 @@ export function RegistrationFormSettings({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [eventLoaded, setEventLoaded] = useState(!eventId);
   useEffect(() => {
     let active = true;
     void adminFetch('/admin/organization/registration-form-config', {
@@ -67,7 +69,7 @@ export function RegistrationFormSettings({
     };
   }, []);
   useEffect(() => {
-    if (scope !== 'event' || !eventId) return;
+    if (!loaded || scope !== 'event' || !eventId) return;
     let active = true;
     void adminFetch(
       `/admin/events/${encodeURIComponent(eventId)}/registration-form-config`,
@@ -94,11 +96,14 @@ export function RegistrationFormSettings({
           setMessage(
             'Veranstaltungs-Einstellungen konnten nicht geladen werden.',
           );
+      })
+      .finally(() => {
+        if (active) setEventLoaded(true);
       });
     return () => {
       active = false;
     };
-  }, [scope, eventId, organizationConfig]);
+  }, [scope, eventId, organizationConfig, loaded]);
 
   const activeConfig = scope === 'organization' ? organizationConfig : config;
   const updateConfig = (
@@ -192,7 +197,7 @@ export function RegistrationFormSettings({
     }));
     setMessage('Datei hochgeladen. Änderungen anschließend speichern.');
   };
-  if (!loaded)
+  if (!loaded || (scope === 'event' && !eventLoaded))
     return (
       <section aria-busy="true">
         <p role="status">Einstellungen werden geladen …</p>
@@ -250,6 +255,10 @@ export function RegistrationFormSettings({
               config={activeConfig}
               updateConfig={updateConfig}
               fieldLabels={registrationFieldLabels}
+            />
+            <RegistrationPaymentSettings
+              config={activeConfig}
+              updateConfig={updateConfig}
             />
             {embedded && saveBar}
           </div>

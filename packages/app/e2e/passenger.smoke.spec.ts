@@ -203,6 +203,8 @@ test('A co-driver completes data and consents through the personal link; the off
   await expect(page.getByText(`Bruno Beifahrer ${suffix}`)).toBeVisible();
   await shoot(page, 'form-pruefung');
   await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Weiter zur Zahlung' }).click();
+  await page.getByLabel('Später bezahlen').check();
   const submitted = page.waitForResponse(
     (response) =>
       response.url().includes('/registration/submissions') &&

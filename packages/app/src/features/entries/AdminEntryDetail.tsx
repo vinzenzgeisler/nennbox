@@ -1,10 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  Banner,
-  DetailHeader,
-  DetailLayout,
-  ReasonDialog,
-} from '@racepilot/ui';
+import { Banner, DetailLayout, ReasonDialog } from '@racepilot/ui';
 import type { EntryResponse as Entry } from '@racepilot/contracts';
 import type { Outcome, WorkflowView } from './AdminEntriesModel.js';
 import type { Pending } from './detail/EntryDetailPending.js';
@@ -18,7 +13,6 @@ import { EntryCustomAnswers } from './detail/EntryCustomAnswers.js';
 import { EntryDriverSection } from './detail/EntryDriverSection.js';
 import { EntryHistorySection } from './detail/EntryHistorySection.js';
 import { EntryConfirmation } from './detail/EntryConfirmation.js';
-import { EntryDetailLabels } from './detail/EntryDetailLabels.js';
 import { EntryDocumentRejectDialog } from './documents/EntryDocumentRejectDialog.js';
 import type { UploadLine } from './documents/documentLines.js';
 import { requestMessageSeed } from './documents/requestMessage.js';
@@ -27,17 +21,15 @@ import type { MessageSeed } from '../messages/messageSeed.js';
 import { EntryMessagesSection } from './detail/EntryMessagesSection.js';
 import { EntryStartNumber } from './detail/EntryStartNumber.js';
 import { EntryPaymentDialog } from './detail/EntryPaymentDialog.js';
+import { EntryRefundAction } from './detail/EntryRefundAction.js';
 import { EntryVehicleSection } from './detail/EntryVehicleSection.js';
-import {
-  formatDateTime,
-  lastChangeAt,
-  timelineFor,
-} from './detail/entryDetailModel.js';
+import { timelineFor } from './detail/entryDetailModel.js';
+import { EntryDetailHeader } from './detail/EntryDetailHeader.js';
+import { useEntryDetailApi } from './detail/useEntryDetailApi.js';
 import {
   useDimensionLabels,
-  useEntryDetailApi,
   useEntryMessages,
-} from './detail/useEntryDetailApi.js';
+} from './detail/useEntryDetailReads.js';
 
 export function AdminEntryDetail({
   selected,
@@ -81,7 +73,6 @@ export function AdminEntryDetail({
   );
   if (!details)
     return <p role="alert">Die Details dieser Nennung sind nicht verfügbar.</p>;
-  const changed = lastChangeAt(selected);
   const close = () => {
     setPending(null);
     setDialogError('');
@@ -159,24 +150,10 @@ export function AdminEntryDetail({
       <DetailLayout
         railLabel="Aktionen"
         header={
-          <DetailHeader
-            backLabel="Nennungen"
+          <EntryDetailHeader
+            entry={selected}
             onBack={onBack}
-            number={selected.requestedStartNumber ?? details.startNumber}
-            title={`${details.driver.name} · ${details.vehicle.make} ${details.vehicle.model}`}
-            subtitle={[
-              `Klasse ${details.eventClass.name}`,
-              selected.orgaCode ? `Orga-Code ${selected.orgaCode}` : null,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-            meta={
-              <>
-                Eingang {formatDateTime(selected.createdAt)}
-                {changed && <> · Geändert {formatDateTime(changed)}</>}
-              </>
-            }
-            labels={<EntryDetailLabels entry={selected} workflow={workflow} />}
+            workflow={workflow}
           />
         }
         rail={
@@ -225,6 +202,7 @@ export function AdminEntryDetail({
             setPending({ kind: 'dimension', action })
           }
           onRecordPayment={() => setPending({ kind: 'payment' })}
+          onRefundPayment={() => setPending({ kind: 'refund' })}
         />
         <EntryConsentsSection
           consents={details.consents ?? []}
@@ -288,6 +266,16 @@ export function AdminEntryDetail({
           busy={api.busy}
           error={dialogError}
           onConfirm={(cents, reason) => void confirm(reason, cents)}
+          onClose={close}
+        />
+      )}
+      {pending?.kind === 'refund' && details.invoice && (
+        <EntryRefundAction
+          invoice={details.invoice}
+          busy={api.busy}
+          error={dialogError}
+          refundPayment={api.refundPayment}
+          onError={setDialogError}
           onClose={close}
         />
       )}

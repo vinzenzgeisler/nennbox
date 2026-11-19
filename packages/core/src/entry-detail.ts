@@ -70,6 +70,10 @@ export interface AdminEntryInvoice {
   totalCents: number;
   paidCents: number;
   status: 'open' | 'partially_paid' | 'paid' | 'cancelled';
+  providerPayments: Array<{
+    providerPaymentId: string;
+    refundableCents: number;
+  }>;
 }
 
 /** Everything the admin detail shows about one entry beyond the entry record itself. */

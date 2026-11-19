@@ -5,7 +5,7 @@ import {
   TechnicalLabel,
 } from '@racepilot/ui';
 import { formatShortDateTime } from './entryDetailModel.js';
-import type { EntryMessage } from './useEntryDetailApi.js';
+import type { EntryMessage } from './useEntryDetailReads.js';
 
 const STATUS = {
   sent: ['done', 'Gesendet'],

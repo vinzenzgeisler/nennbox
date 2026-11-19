@@ -155,9 +155,11 @@ function describe(
   if (event.kind === 'payment')
     return {
       title:
-        event.label === 'reversal'
-          ? 'Zahlung zurückgenommen'
-          : 'Zahlung eingegangen',
+        event.label === 'refund'
+          ? 'Zahlung erstattet'
+          : event.label === 'reversal'
+            ? 'Zahlung zurückgenommen'
+            : 'Zahlung eingegangen',
       tone: 'accent',
       ...(detail ? { detail } : {}),
     };

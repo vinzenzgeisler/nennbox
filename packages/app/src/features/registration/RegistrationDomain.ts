@@ -48,6 +48,8 @@ export type FormPayload = {
   }>;
   registrationSettings: RegistrationSettings;
   registrationFormConfig: RegistrationFormConfig;
+  onlinePaymentAvailable?: boolean;
+  bankTransferAvailable?: boolean;
 };
 export type VehicleEntry = {
   classId: string;

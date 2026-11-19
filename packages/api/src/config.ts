@@ -69,6 +69,7 @@ const configSchema = z.object({
   OIDC_BOOTSTRAP_EMAIL: z.string().email().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_API_BASE_URL: z.string().url().optional(),
 });
 
 export function loadConfig(env: NodeJS.ProcessEnv) {

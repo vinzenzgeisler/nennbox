@@ -30,6 +30,7 @@ type Wireable = Exclude<
   | 'checkoutRepository'
   | 'paymentProvider'
   | 'paymentReturnOrigin'
+  | 'paymentRefunds'
 >;
 type WiredForTest = Pick<CoreApiDeps, 'config' | 'organizations' | 'events'> &
   Partial<Omit<ApiDeps, Wireable>> & {

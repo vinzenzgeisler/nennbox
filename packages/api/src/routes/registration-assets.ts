@@ -17,7 +17,7 @@ import {
 
 /** The public registration form with consents and the organization's form configuration. */
 export function registerPublicFormRoute(
-  { app, resolvePublicContext }: ApiRoutesContext,
+  { app, deps, resolvePublicContext }: ApiRoutesContext,
   service: PublicRegistrationService,
 ): void {
   app.get(
@@ -36,6 +36,18 @@ export function registerPublicFormRoute(
         ? c.json({
             form: standardRegistrationForm,
             ...(result as object),
+            onlinePaymentAvailable: Boolean(
+              deps.paymentProvider && deps.paymentReturnOrigin,
+            ),
+            bankTransferAvailable: Boolean(
+              await (async () => {
+                try {
+                  return await deps.paymentRecipients.get(context);
+                } catch {
+                  return null;
+                }
+              })(),
+            ),
             registrationFormConfig: mergeRegistrationFormConfig(
               defaultRegistrationFormConfig,
               RegistrationFormConfigPatchSchema.parse(
