@@ -248,6 +248,8 @@ test('admin creates a class, terms and opens its public registration in the UI',
   const consent = page.getByRole('checkbox');
   await expect(consent).toBeVisible();
   await consent.check();
+  await page.getByRole('button', { name: 'Weiter zur Zahlung' }).click();
+  await page.getByLabel('Später bezahlen').check();
   const submission = page.waitForResponse((response) =>
     response.url().includes('/registration/submissions'),
   );

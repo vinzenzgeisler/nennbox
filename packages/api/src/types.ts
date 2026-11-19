@@ -30,6 +30,7 @@ import type {
   PaymentRecipientRepository,
   CheckoutRepository,
   PaymentProvider,
+  PaymentRefundRepository,
   CanonicalOrigin,
 } from '@racepilot/core';
 import type { ModuleApiDeps } from './modules.js';
@@ -85,6 +86,7 @@ export interface CoreApiDeps {
   payments: InvoicePaymentRepository;
   checkoutRepository?: CheckoutRepository;
   paymentProvider?: PaymentProvider;
+  paymentRefunds?: PaymentRefundRepository;
   paymentReturnOrigin?: CanonicalOrigin;
   paymentRecipients: PaymentRecipientRepository;
   messages: MessageService;

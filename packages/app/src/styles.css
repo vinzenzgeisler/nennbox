@@ -5,3 +5,103 @@
 @import url('./features/gallery/styles.css');
 @import url('./features/entries/rows.css');
 @import url('./features/entries/hints.css');
+
+.registration-payment,
+.registration-payment-instructions,
+.registration-payment-return {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 680px;
+  padding: var(--space-6);
+  border: 1px solid var(--color-line);
+  background: var(--surface-panel);
+}
+
+.registration-payment {
+  max-width: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.registration-payment-total {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.registration-payment-total p,
+.registration-payment-note,
+.registration-payment-methods {
+  margin: 0;
+  color: var(--color-graphite);
+}
+
+.registration-payment-total strong {
+  color: var(--brand-action);
+  font-size: var(--type-h4-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.registration-payment-options {
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-3);
+  border-block: 1px solid var(--color-line);
+}
+
+.registration-payment-instructions dl {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) 2fr;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+
+.registration-payment-instructions dt {
+  color: var(--color-graphite);
+}
+
+.registration-payment-instructions dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.registration-payment-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.registration-payment-badge {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-line);
+  color: var(--color-graphite);
+  font: var(--text-label);
+}
+
+@media (width <= 480px) {
+  .registration-payment-instructions {
+    padding: var(--space-4);
+  }
+
+  .registration-payment-instructions dl {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+
+  .registration-payment-instructions dd + dt {
+    margin-top: 8px;
+  }
+}
+
+.registration-payment-config {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+}
+
+.registration-payment-config > p {
+  margin: 0;
+  color: var(--color-graphite);
+}

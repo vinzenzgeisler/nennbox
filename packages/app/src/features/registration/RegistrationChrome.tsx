@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { Button } from '@racepilot/ui';
 import type { RegistrationModel } from './RegistrationModel.js';
 
@@ -9,6 +10,24 @@ function formatEventStartDate(startsOn: string, locale: 'de' | 'en') {
     year: 'numeric',
     timeZone: 'UTC',
   }).format(new Date(`${startsOn}T00:00:00.000Z`));
+}
+
+export function registrationBrandStyle({
+  contrastColors,
+  payload,
+}: Pick<RegistrationModel, 'contrastColors' | 'payload'>): CSSProperties &
+  Record<`--brand-${string}`, string> {
+  return {
+    '--brand-primary': contrastColors.primarySurface,
+    '--brand-accent': contrastColors.accentSurface,
+    '--brand-primary-text': contrastColors.primaryForeground,
+    '--brand-accent-text': contrastColors.accentForeground,
+    '--brand-link': contrastColors.linkColor,
+    '--brand-radius':
+      payload.registrationFormConfig.branding.corners === 'rounded'
+        ? '6px'
+        : '0',
+  };
 }
 
 export function RegistrationHeader({

@@ -46,6 +46,7 @@ function makeApp(event: PaymentProviderEvent = paidEvent) {
           ctx.organizationId === organizationId(organization)
             ? {
                 id: invoiceId,
+                paymentMethods: ['card'],
                 organizationId: organizationId(organization),
                 eventId: 'event-id',
                 eventSlug: 'sommer-rallye',
@@ -85,8 +86,8 @@ describe('payment provider routes', () => {
         organizationId: organization,
         invoiceId,
         amountCents: 4200,
-        successUrl:
-          'https://nennbox.example.test/events/sommer-rallye/register?payment=success',
+        successUrl: `https://nennbox.example.test/events/sommer-rallye/register?payment=success&invoice=${invoiceId}`,
+        cancelUrl: `https://nennbox.example.test/events/sommer-rallye/register?payment=cancelled&invoice=${invoiceId}`,
       }),
     );
   });

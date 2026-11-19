@@ -1,5 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
-import type { CheckoutRepository } from '@racepilot/core';
+import type { CheckoutInvoice, CheckoutRepository } from '@racepilot/core';
 import { deriveInvoiceStatus } from '@racepilot/core';
 import type { Database } from './database.js';
 import {
@@ -21,6 +21,9 @@ export function createCheckoutRepository(db: Database): CheckoutRepository {
           organizationId: invoices.organizationId,
           eventId: invoices.eventId,
           eventSlug: sql<string>`(select e.slug from event e where e.organization_id = ${invoices.organizationId} and e.id = ${invoices.eventId})`,
+          paymentMethods: sql<
+            CheckoutInvoice['paymentMethods']
+          >`coalesce((select e.registration_form_config->'payments'->'onlineMethods' from event e where e.organization_id = ${invoices.organizationId} and e.id = ${invoices.eventId}), '[]'::jsonb)`,
           totalCents: invoices.totalCents,
           currency: invoices.currency,
           status: invoices.status,

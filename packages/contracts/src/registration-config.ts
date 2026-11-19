@@ -159,6 +159,15 @@ const registrationFormConfigObject = z
     organizerNotice: z.string().max(10000),
     fields: fieldsWithDefaults,
     customFields: z.array(RegistrationCustomFieldSchema).max(30),
+    payments: z
+      .object({
+        onlineMethods: z
+          .array(z.enum(['card', 'sepa_debit', 'paypal', 'klarna']))
+          .max(4),
+        bankTransfer: z.boolean(),
+      })
+      .strict()
+      .default({ onlineMethods: [], bankTransfer: true }),
     features: z
       .object({
         passenger: z.boolean(),
@@ -227,6 +236,7 @@ export const defaultRegistrationFormConfig: RegistrationFormConfig = {
   ) as RegistrationFormConfig['fields'],
   customFields: [],
   features: { passenger: false, spareVehicle: false, multipleEntries: true },
+  payments: { onlineMethods: [], bankTransfer: true },
 };
 export function mergeRegistrationFormConfig(
   base: RegistrationFormConfig,
@@ -239,5 +249,6 @@ export function mergeRegistrationFormConfig(
     branding: { ...base.branding, ...override.branding },
     fields: { ...base.fields, ...override.fields },
     features: { ...base.features, ...override.features },
+    payments: { ...base.payments, ...override.payments },
   });
 }

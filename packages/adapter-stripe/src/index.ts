@@ -134,7 +134,7 @@ export function createStripePaymentProvider(
           },
         },
         {
-          idempotencyKey: `refund:${request.paymentId}:${request.amountCents}:${request.reason}`,
+          idempotencyKey: request.idempotencyKey,
         },
       );
       return { id: refund.id };

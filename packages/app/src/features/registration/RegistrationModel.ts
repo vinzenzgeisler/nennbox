@@ -30,6 +30,13 @@ export function deriveRegistration(
           : field,
       ),
   }));
+  const paymentStepEnabled = payload.pricing.length > 0;
+  if (paymentStepEnabled)
+    steps.push({
+      id: 'payment',
+      title: { de: 'Zahlung', en: 'Payment' },
+      fields: [],
+    });
   const currentStep = steps[step];
   const contrastColors = deriveAccessibleBrandColors(
     payload.registrationFormConfig.branding.primaryColor,
@@ -85,6 +92,8 @@ export function deriveRegistration(
   return {
     steps,
     currentStep,
+    estimatedTotal,
+    paymentStepEnabled,
     contrastColors,
     age,
     guardianRequired,

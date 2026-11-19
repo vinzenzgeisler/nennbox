@@ -4,6 +4,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   check,
   integer,
   foreignKey,
@@ -122,6 +123,7 @@ export const invoicePayments = pgTable(
     amountCents: integer('amount_cents').notNull(),
     reversesPaymentId: uuid('reverses_payment_id'),
     providerPaymentId: text('provider_payment_id'),
+    providerRefundId: text('provider_refund_id'),
     actor: text('actor').notNull(),
     reason: text('reason').notNull(),
     occurredAt: timestamp('occurred_at', { withTimezone: true })
@@ -139,9 +141,14 @@ export const invoicePayments = pgTable(
       foreignColumns: [t.organizationId, t.id],
       name: 'invoice_payment_reversal_fk',
     }),
-    unique('invoice_payment_org_provider_unique').on(
+    uniqueIndex('invoice_payment_org_provider_unique')
+      .on(t.organizationId, t.providerPaymentId)
+      .where(
+        sql`${t.providerPaymentId} is not null and ${t.providerRefundId} is null`,
+      ),
+    unique('invoice_payment_org_refund_unique').on(
       t.organizationId,
-      t.providerPaymentId,
+      t.providerRefundId,
     ),
     check('invoice_payment_amount_nonzero_check', sql`${t.amountCents} <> 0`),
     check('invoice_payment_actor_check', sql`length(trim(${t.actor})) > 0`),

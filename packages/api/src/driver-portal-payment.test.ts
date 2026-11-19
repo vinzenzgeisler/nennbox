@@ -58,6 +58,7 @@ function makeApp(options: { online: boolean; paidCents?: number }) {
                 organizationId: organizationId(organization),
                 eventId: 'event-id',
                 eventSlug: 'sommer-rallye',
+                paymentMethods: ['card', 'sepa_debit'],
                 totalCents: 4200,
                 paidCents,
                 currency: 'EUR',

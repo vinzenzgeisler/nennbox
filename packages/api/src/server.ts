@@ -34,6 +34,9 @@ const app = createProductApi({
         paymentProvider: createStripePaymentProvider({
           secretKey: config.STRIPE_SECRET_KEY,
           webhookSecret: config.STRIPE_WEBHOOK_SECRET,
+          ...(config.STRIPE_API_BASE_URL
+            ? { apiBaseUrl: config.STRIPE_API_BASE_URL }
+            : {}),
         }),
       }
     : {}),

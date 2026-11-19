@@ -1,9 +1,11 @@
 import { Checkbox, Field, Steps } from '@racepilot/ui';
-import { Fragment, type CSSProperties } from 'react';
+import { RegistrationPayment } from './RegistrationPayment.js';
+import { Fragment } from 'react';
 import type { RegistrationModel } from './RegistrationModel.js';
 import type { RegistrationActions } from './RegistrationActions.js';
 import {
   RegistrationHeader,
+  registrationBrandStyle,
   RegistrationSummary,
 } from './RegistrationChrome.js';
 import { RegistrationVehicleFields } from './RegistrationVehicleFields.js';
@@ -26,6 +28,13 @@ const DRIVER_FIELD_RANK: Record<string, number> = {
   dateOfBirth: 2,
   email: 3,
 };
+
+function stepLabel(id: string, locale: 'de' | 'en') {
+  if (id === 'driver') return locale === 'de' ? 'Fahrer' : 'Driver';
+  if (id === 'vehicles') return locale === 'de' ? 'Startmeldungen' : 'Entries';
+  if (id === 'payment') return locale === 'de' ? 'Bezahlen' : 'Pay';
+  return locale === 'de' ? 'Prüfen' : 'Review';
+}
 
 export function RegistrationView({
   model,
@@ -61,6 +70,7 @@ export function RegistrationView({
     setStep,
     steps,
     draftMessage,
+    paymentStepEnabled,
   } = model;
   const { submit } = actions;
   const displayFields =
@@ -71,17 +81,7 @@ export function RegistrationView({
             (DRIVER_FIELD_RANK[right.key] ?? 99),
         )
       : currentStep?.fields;
-  const brandStyle: CSSProperties & Record<`--brand-${string}`, string> = {
-    '--brand-primary': contrastColors.primarySurface,
-    '--brand-accent': contrastColors.accentSurface,
-    '--brand-primary-text': contrastColors.primaryForeground,
-    '--brand-accent-text': contrastColors.accentForeground,
-    '--brand-link': contrastColors.linkColor,
-    '--brand-radius':
-      payload.registrationFormConfig.branding.corners === 'rounded'
-        ? '6px'
-        : '0',
-  };
+  const brandStyle = registrationBrandStyle(model);
   return (
     <section
       className="registration"
@@ -102,23 +102,12 @@ export function RegistrationView({
       )}
       <main className="registration-container">
         <Steps
-          steps={steps.map((item) =>
-            item.id === 'driver'
-              ? locale === 'de'
-                ? 'Fahrer'
-                : 'Driver'
-              : item.id === 'vehicles'
-                ? locale === 'de'
-                  ? 'Startmeldungen'
-                  : 'Entries'
-                : locale === 'de'
-                  ? 'Prüfen und absenden'
-                  : 'Review and submit',
-          )}
+          steps={steps.map((item) => stepLabel(item.id, locale))}
           current={step}
           label={locale === 'de' ? 'Anmeldeschritte' : 'Registration steps'}
           completedLabel={locale === 'de' ? 'Abgeschlossen' : 'Completed'}
           variant="registration"
+          compactLabel={`${locale === 'de' ? 'Schritt' : 'Step'} ${step + 1} ${locale === 'de' ? 'von' : 'of'} ${steps.length} · ${currentStep ? stepLabel(currentStep.id, locale) : ''}`}
         />
         <div className="registration-layout">
           <form
@@ -130,19 +119,24 @@ export function RegistrationView({
           >
             <fieldset>
               <legend>
-                {step === steps.length - 1
+                {step === steps.length - 1 && paymentStepEnabled
                   ? locale === 'de'
-                    ? 'Bitte prüfen'
-                    : 'Please review'
-                  : currentStep?.id === 'driver'
+                    ? 'Bezahlen'
+                    : 'Pay'
+                  : step === steps.length - 1 ||
+                      (paymentStepEnabled && step === steps.length - 2)
                     ? locale === 'de'
-                      ? 'Fahrer'
-                      : 'Driver'
-                    : currentStep?.id === 'vehicles'
+                      ? 'Bitte prüfen'
+                      : 'Please review'
+                    : currentStep?.id === 'driver'
                       ? locale === 'de'
-                        ? 'Startmeldungen'
-                        : 'Entries'
-                      : currentStep?.title[locale]}
+                        ? 'Fahrer'
+                        : 'Driver'
+                      : currentStep?.id === 'vehicles'
+                        ? locale === 'de'
+                          ? 'Startmeldungen'
+                          : 'Entries'
+                        : currentStep?.title[locale]}
               </legend>
               {step !== steps.length - 1 && currentStep?.id === 'vehicles' && (
                 <p className="registration-step-description">
@@ -151,7 +145,10 @@ export function RegistrationView({
                     : 'Create an entry for each vehicle. You can add multiple entries.'}
                 </p>
               )}
-              {step === steps.length - 1 ? (
+              {paymentStepEnabled && step === steps.length - 1 ? (
+                <RegistrationPayment model={model} />
+              ) : step === steps.length - 1 ||
+                (paymentStepEnabled && step === steps.length - 2) ? (
                 <RegistrationReview
                   model={model}
                   onEditDriver={() => setStep(0)}

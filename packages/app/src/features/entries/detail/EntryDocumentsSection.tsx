@@ -32,6 +32,7 @@ export function EntryDocumentsSection({
   busy,
   onDimensionAction,
   onRecordPayment,
+  onRefundPayment,
   onReviewDocument,
   onRejectDocument,
   onRequestDocument,
@@ -40,6 +41,7 @@ export function EntryDocumentsSection({
   busy: boolean;
   onDimensionAction: (action: DimensionAction) => void;
   onRecordPayment: () => void;
+  onRefundPayment: () => void;
   onReviewDocument: (line: UploadLine) => void;
   onRejectDocument: (line: UploadLine) => void;
   onRequestDocument?: ((line: UploadLine) => void) | undefined;
@@ -117,6 +119,11 @@ export function EntryDocumentsSection({
         items={rows}
         empty={<p>Für diese Nennung sind keine Unterlagen erforderlich.</p>}
       />
+      {invoice?.providerPayments?.some((item) => item.refundableCents > 0) && (
+        <Button variant="text" onClick={onRefundPayment}>
+          Erstattung auslösen
+        </Button>
+      )}
       {invoice && invoice.paidCents > 0 && (
         <DetailNote>
           Bezahlt: {formatMoney(invoice.paidCents, invoice.currency)} von{' '}

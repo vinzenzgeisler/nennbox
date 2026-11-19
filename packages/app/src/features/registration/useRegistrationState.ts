@@ -69,6 +69,17 @@ export function useRegistrationState({
   >({});
   const numberLookup = useRef<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [paymentChoice, setPaymentChoice] = useState<
+    'online' | 'bank_transfer' | 'later'
+  >('later');
+  const [paymentInstructions, setPaymentInstructions] = useState<{
+    accountName: string;
+    iban: string;
+    bic: string | null;
+    paymentReference: string;
+    amountCents: number;
+    currency: string;
+  } | null>(null);
   const [savingDraft, setSavingDraft] = useState(false);
   const [draftMessage, setDraftMessage] = useState('');
   const formRef = useRef<HTMLFormElement>(null);
@@ -128,6 +139,10 @@ export function useRegistrationState({
     numberLookup,
     submitted,
     setSubmitted,
+    paymentChoice,
+    setPaymentChoice,
+    paymentInstructions,
+    setPaymentInstructions,
     savingDraft,
     setSavingDraft,
     draftMessage,

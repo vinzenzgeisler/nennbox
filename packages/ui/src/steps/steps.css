@@ -58,6 +58,9 @@
   margin-block: var(--space-6);
   border-bottom: 1px solid var(--color-line);
 }
+.nb-steps.is-registration .nb-steps-compact-label {
+  display: none;
+}
 .nb-steps.is-registration li {
   position: relative;
   flex: 1;
@@ -103,10 +106,15 @@
 }
 @media (width <= 600px) {
   .nb-steps.is-registration {
-    gap: var(--space-3);
+    display: block;
+    padding-block: var(--space-3);
   }
   .nb-steps.is-registration li {
-    flex-direction: column;
-    gap: var(--space-1);
+    display: none;
+  }
+  .nb-steps.is-registration .nb-steps-compact-label {
+    display: block;
+    color: var(--color-ink);
+    font: var(--text-label);
   }
 }

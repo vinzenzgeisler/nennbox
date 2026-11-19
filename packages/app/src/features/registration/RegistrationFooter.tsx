@@ -9,7 +9,27 @@ export function RegistrationFooter({
   model: RegistrationModel;
   actions: RegistrationActions;
 }) {
-  const { locale, step, steps, submitting, savingDraft, setStep, t } = model;
+  const {
+    locale,
+    step,
+    steps,
+    submitting,
+    savingDraft,
+    setStep,
+    t,
+    paymentStepEnabled,
+    paymentChoice,
+    estimatedTotal,
+    payload,
+  } = model;
+  const total =
+    estimatedTotal === null
+      ? ''
+      : new Intl.NumberFormat(locale, {
+          style: 'currency',
+          currency: payload.currency,
+        }).format(estimatedTotal / 100);
+  const reviewStep = paymentStepEnabled ? steps.length - 2 : steps.length - 1;
   const { saveDraft } = actions;
   return (
     <div className="registration-footer">
@@ -39,14 +59,22 @@ export function RegistrationFooter({
           {submitting
             ? t.sending
             : step === steps.length - 1
-              ? t.submit
-              : step === steps.length - 2
+              ? paymentChoice === 'online'
                 ? locale === 'de'
-                  ? 'Weiter zur Prüfung'
-                  : 'Continue to review'
-                : locale === 'de'
-                  ? 'Weiter zu Startmeldungen'
-                  : 'Continue to entries'}
+                  ? `Jetzt bezahlen · ${total}`
+                  : `Pay now · ${total}`
+                : t.submit
+              : step === reviewStep
+                ? locale === 'de'
+                  ? 'Weiter zur Zahlung'
+                  : 'Continue to payment'
+                : step === reviewStep - 1
+                  ? locale === 'de'
+                    ? 'Weiter zur Prüfung'
+                    : 'Continue to review'
+                  : locale === 'de'
+                    ? 'Weiter zu Startmeldungen'
+                    : 'Continue to entries'}
         </Button>
       </div>
     </div>

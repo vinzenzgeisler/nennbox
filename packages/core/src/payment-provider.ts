@@ -40,6 +40,7 @@ export type PaymentProviderEvent =
     };
 
 export interface PaymentRefundRequest {
+  readonly idempotencyKey: string;
   readonly organizationId: OrganizationId;
   readonly invoiceId: string;
   readonly paymentId: string;
@@ -64,6 +65,7 @@ export interface CheckoutInvoice {
   readonly organizationId: OrganizationId;
   readonly eventId: string;
   readonly eventSlug: string;
+  readonly paymentMethods: readonly OnlinePaymentMethod[];
   readonly totalCents: number;
   readonly paidCents: number;
   readonly currency: string;
@@ -84,4 +86,28 @@ export interface CheckoutRepository {
   applyProviderEvent(
     event: PaymentProviderEvent,
   ): Promise<'applied' | 'duplicate' | 'not_found'>;
+}
+
+export interface RefundablePayment {
+  readonly invoiceId: string;
+  readonly providerPaymentId: string;
+  readonly refundableCents: number;
+  readonly currency: string;
+}
+
+export interface PaymentRefundRepository {
+  getRefundable(
+    ctx: import('./context.js').RequestContext,
+    invoiceId: string,
+    providerPaymentId: string,
+  ): Promise<RefundablePayment | null>;
+  recordRefund(
+    ctx: import('./context.js').RequestContext,
+    input: RefundablePayment & {
+      amountCents: number;
+      providerRefundId: string;
+      actor: string;
+      reason: string;
+    },
+  ): Promise<'recorded' | 'duplicate' | null>;
 }

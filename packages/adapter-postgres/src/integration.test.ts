@@ -2690,8 +2690,8 @@ describe.skipIf(!url)('pricing and invoice isolation', () => {
           service.submit(ctx, event!.slug, body),
         ]),
       ).toEqual([
-        { accepted: true, entryCount: 2 },
-        { accepted: true, entryCount: 2 },
+        expect.objectContaining({ accepted: true, entryCount: 2 }),
+        expect.objectContaining({ accepted: true, entryCount: 2 }),
       ]);
       await expect(
         service.submit(ctx, event!.slug, {
@@ -2897,7 +2897,7 @@ describe.skipIf(!url)('pricing and invoice isolation', () => {
           .from(entryAuditEvents)
           .where(eq(entryAuditEvents.organizationId, org!.id)),
       ).toHaveLength(2);
-      expect(await service.submit(ctx, event!.slug, body)).toEqual({
+      expect(await service.submit(ctx, event!.slug, body)).toMatchObject({
         accepted: true,
         entryCount: 2,
       });
@@ -3098,7 +3098,7 @@ describe.skipIf(!url)('pricing and invoice isolation', () => {
         .update(events)
         .set({ registrationClosesAt: new Date(Date.now() - 1000) })
         .where(eq(events.id, event!.id));
-      expect(await service.submit(ctx, event!.slug, body)).toEqual({
+      expect(await service.submit(ctx, event!.slug, body)).toMatchObject({
         accepted: true,
         entryCount: 2,
       });

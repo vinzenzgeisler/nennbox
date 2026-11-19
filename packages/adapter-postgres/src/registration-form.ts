@@ -119,6 +119,7 @@ export function createRegistrationFormMethods(
         classes: classRows,
         startNumberModes,
         currency: organization?.currency ?? 'EUR',
+        onlinePaymentAvailable: false,
         pricing: pricingRows.map((rule) => ({
           classId: rule.classId,
           baseCents: rule.baseCents,

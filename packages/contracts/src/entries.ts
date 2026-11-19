@@ -176,6 +176,16 @@ export const EntryResponse = z
             totalCents: z.number().int().nonnegative(),
             paidCents: z.number().int(),
             status: z.enum(['open', 'partially_paid', 'paid', 'cancelled']),
+            providerPayments: z
+              .array(
+                z
+                  .object({
+                    providerPaymentId: z.string(),
+                    refundableCents: z.number().int().nonnegative(),
+                  })
+                  .strict(),
+              )
+              .default([]),
           })
           .strict()
           .nullable()

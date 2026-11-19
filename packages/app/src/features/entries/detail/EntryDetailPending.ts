@@ -7,5 +7,6 @@ export type Pending =
   | { kind: 'verify' }
   | { kind: 'dimension'; action: DimensionAction }
   | { kind: 'payment' }
+  | { kind: 'refund' }
   | { kind: 'admin'; action: AdminActionKind }
   | { kind: 'passenger'; action: 'add' | 'link' };

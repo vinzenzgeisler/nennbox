@@ -7,18 +7,23 @@ export function Steps({
   label,
   completedLabel,
   variant = 'default',
+  compactLabel,
 }: {
   steps: string[];
   current: number;
   label: string;
   completedLabel: string;
   variant?: 'default' | 'registration';
+  compactLabel?: string;
 }) {
   return (
     <ol
       className={`nb-steps${variant === 'registration' ? ' is-registration' : ''}`}
       aria-label={label}
     >
+      {compactLabel && (
+        <li className="nb-steps-compact-label">{compactLabel}</li>
+      )}
       {steps.map((step, i) => (
         <li
           key={step}

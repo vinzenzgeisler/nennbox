@@ -20,6 +20,10 @@ import { publicEntrySubmissions } from './schema/public-registration.js';
 import { createEntryRepository } from './entry-repository.js';
 import { createInvoiceRepository } from './billing-invoices.js';
 import { queueRegistrationVerificationMail } from './registration-submit-verification-mail.js';
+import {
+  createRegistrationSubmissionResponse,
+  type RegistrationSubmissionResponse,
+} from './registration-submit-response.js';
 import { entryPassengers } from './schema/passengers.js';
 import { placeEntryOnWaitlist } from './registration-submit-waitlist.js';
 import type { Database, TransactionDatabase } from './database.js';
@@ -46,7 +50,7 @@ export async function persistRegistrationSubmission(args: {
   selectedTerms: NonNullable<RegistrationSubmissionEvent['consentTerms']>;
   /** What the event's form offers beyond the standard entry. */
   features: { passenger: boolean; spareVehicle: boolean };
-}): Promise<{ accepted: true; entryCount: number }> {
+}): Promise<RegistrationSubmissionResponse> {
   const {
     db,
     tx,
@@ -231,7 +235,9 @@ export async function persistRegistrationSubmission(args: {
         createdBy: `${payload.person.firstName.trim()} ${payload.person.lastName.trim()}`,
       });
   }
-  if (snapshot) await invoiceRepo.issue(ctx, event.id, groupId, snapshot, tx);
+  const invoice = snapshot
+    ? await invoiceRepo.issue(ctx, event.id, groupId, snapshot, tx)
+    : null;
   for (const term of selectedTerms)
     await tx.insert(consentEvidence).values({
       organizationId: ctx.organizationId,
@@ -275,7 +281,12 @@ export async function persistRegistrationSubmission(args: {
     templateVersionId: template?.id ?? null,
     orgaCodes: codeRows.map((row) => row.code),
   });
-  const response = { accepted: true as const, entryCount: entryIds.length };
+  const response = await createRegistrationSubmissionResponse({
+    tx,
+    organizationId: ctx.organizationId,
+    invoice,
+    entryCount: entryIds.length,
+  });
   await tx
     .update(publicEntrySubmissions)
     .set({ registrationGroupId: groupId, response })

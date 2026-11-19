@@ -9,9 +9,25 @@ import {
   deriveAccessibleBrandColors,
   RegistrationFormConfigSchema,
   defaultRegistrationFormConfig,
+  mergeRegistrationFormConfig,
 } from './index.js';
 
 describe('registration brand contrast', () => {
+  it('defaults payment choices safely for legacy event configs and merges event overrides', () => {
+    expect(
+      RegistrationFormConfigSchema.parse(
+        mergeRegistrationFormConfig(defaultRegistrationFormConfig, {}),
+      ).payments,
+    ).toEqual({
+      onlineMethods: [],
+      bankTransfer: true,
+    });
+    expect(
+      mergeRegistrationFormConfig(defaultRegistrationFormConfig, {
+        payments: { onlineMethods: ['card', 'paypal'], bankTransfer: false },
+      }).payments,
+    ).toEqual({ onlineMethods: ['card', 'paypal'], bankTransfer: false });
+  });
   it('validates localized custom-field schemas, unique keys and type-specific options', () => {
     const customFields = [
       {

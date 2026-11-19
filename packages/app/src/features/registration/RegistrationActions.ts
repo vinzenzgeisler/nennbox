@@ -11,6 +11,8 @@ import {
   entryExtras,
 } from './RegistrationDomain.js';
 import { asked, contactPayload } from './RegistrationPayloadFields.js';
+import { completeRegistrationPayment } from './completeRegistrationPayment.js';
+import { hasMissingRequiredConsent } from './registrationConsentValidation.js';
 
 export function createRegistrationActions(
   model: RegistrationModel,
@@ -35,6 +37,8 @@ export function createRegistrationActions(
     customAnswers,
     vehicles,
     setSubmitted,
+    paymentChoice,
+    setPaymentInstructions,
     setDraftMessage,
     setSavingDraft,
     setCustomAnswers,
@@ -43,6 +47,17 @@ export function createRegistrationActions(
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (step < steps.length - 1) {
+      if (
+        step === steps.length - 2 &&
+        hasMissingRequiredConsent(payload!.consents, accepted, locale)
+      ) {
+        setError(
+          locale === 'de'
+            ? 'Bitte bestätige alle erforderlichen Bedingungen.'
+            : 'Please accept all required terms.',
+        );
+        return;
+      }
       if (formRef.current && !formRef.current.reportValidity()) return;
       if (
         steps[step]?.id === 'driver' &&
@@ -65,14 +80,7 @@ export function createRegistrationActions(
       setError(t.minAge);
       return;
     }
-    if (
-      payload!.consents
-        .filter((item) => item.language === locale && item.required !== false)
-        .some(
-          (item) =>
-            accepted[`${item.key}:${item.version}:${item.language}`] !== true,
-        )
-    ) {
+    if (hasMissingRequiredConsent(payload!.consents, accepted, locale)) {
       setError(
         locale === 'de'
           ? 'Bitte bestätige alle erforderlichen Bedingungen.'
@@ -196,7 +204,17 @@ export function createRegistrationActions(
         },
       );
       if (!response.ok) throw new Error();
-      setSubmitted(true);
+      const result = (await response.json()) as Parameters<
+        typeof completeRegistrationPayment
+      >[0]['result'];
+      await completeRegistrationPayment({
+        result,
+        paymentChoice,
+        organizationId,
+        paymentMethods: payload!.registrationFormConfig.payments.onlineMethods,
+        setPaymentInstructions,
+        setSubmitted,
+      });
     } catch {
       setError(t.retry);
     } finally {
