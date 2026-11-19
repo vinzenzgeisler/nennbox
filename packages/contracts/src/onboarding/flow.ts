@@ -1,5 +1,5 @@
 import { checkSubdomain, isIsoDay } from './helpers.js';
-import { resolveAnswers } from './suggest.js';
+import { resolveAnswers } from './answers.js';
 import { onboardingPhases } from './types.js';
 import type {
   OnboardingAnswers,
