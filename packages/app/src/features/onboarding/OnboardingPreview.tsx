@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import {
   Button,
   LivePreview,
@@ -36,6 +36,7 @@ import { sampleTakenSubdomains, type StepProps } from './steps/types.js';
 import { WhenStep } from './steps/WhenStep.js';
 import { useOnboardingState } from './state.js';
 import './onboarding.css';
+import './preview/preview.css';
 
 const phaseLabels: Record<OnboardingPhase, string> = {
   account: 'Konto',
@@ -47,6 +48,16 @@ const phaseLabels: Record<OnboardingPhase, string> = {
   done: 'Fertig',
 };
 type View = 'form' | 'event';
+const logoStorageKey = 'nennbox.onboarding-preview.logo.v1';
+
+function savedLogo(): LogoState {
+  try {
+    const raw = window.localStorage.getItem(logoStorageKey);
+    return raw ? (JSON.parse(raw) as LogoState) : null;
+  } catch {
+    return null;
+  }
+}
 const formSteps: OnboardingStepId[] = [
   'starters',
   'vehicle-era',
@@ -63,7 +74,20 @@ const formSteps: OnboardingStepId[] = [
  */
 export function OnboardingPreview() {
   const { state, patch, go, next, back, publish, reset } = useOnboardingState();
-  const [logo, setLogo] = useState<LogoState>(null);
+  const [logo, setLogo] = useState<LogoState>(savedLogo);
+  useLayoutEffect(() => {
+    try {
+      if (logo)
+        window.localStorage.setItem(logoStorageKey, JSON.stringify(logo));
+      else window.localStorage.removeItem(logoStorageKey);
+    } catch {
+      // Private mode or a large image: the logo remains available this session.
+    }
+  }, [logo]);
+  const restart = () => {
+    setLogo(null);
+    reset();
+  };
   const [override, setOverride] = useState<{
     step: OnboardingStepId;
     view: View;
@@ -133,7 +157,7 @@ export function OnboardingPreview() {
           <SuccessScreen
             proposal={proposal}
             outcome={state.outcome ?? 'open'}
-            onReset={reset}
+            onReset={restart}
           />
         );
       default:
@@ -215,7 +239,7 @@ export function OnboardingPreview() {
             )}
           </span>
           {!isSuccess && step !== 'account' && (
-            <Button variant="text" size={40} onClick={reset}>
+            <Button variant="text" size={40} onClick={restart}>
               Neu
             </Button>
           )}

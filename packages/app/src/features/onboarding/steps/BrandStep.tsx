@@ -54,14 +54,23 @@ export function BrandStep({
     if (!/^image\/(png|jpeg|svg\+xml|webp)$/.test(file.type))
       return setError('Bitte ein Bild als PNG, JPG, SVG oder WebP wählen.');
     setError(undefined);
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-    image.onload = () => {
-      setLogo({ url, name: file.name, colors: sampleImageColors(image) });
-      patch({ logoName: file.name });
+    if (file.size > 2_000_000)
+      return setError('Bitte ein Logo unter 2 MB wählen.');
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = typeof reader.result === 'string' ? reader.result : '';
+      if (!url) return setError('Dieses Bild konnte nicht gelesen werden.');
+      const image = new Image();
+      image.onload = () => {
+        setLogo({ url, name: file.name, colors: sampleImageColors(image) });
+        patch({ logoName: file.name });
+      };
+      image.onerror = () =>
+        setError('Dieses Bild konnte nicht gelesen werden.');
+      image.src = url;
     };
-    image.onerror = () => setError('Dieses Bild konnte nicht gelesen werden.');
-    image.src = url;
+    reader.onerror = () => setError('Dieses Bild konnte nicht gelesen werden.');
+    reader.readAsDataURL(file);
   };
   const choose = (id: string) => {
     const sample = sampleLogos.find((entry) => entry.id === id)!;
@@ -87,7 +96,7 @@ export function BrandStep({
           </div>
           <FileUpload
             label="Logo hochladen"
-            hint="PNG, JPG, SVG oder WebP. Ihr könnt es später austauschen."
+            hint="PNG, JPG, SVG oder WebP bis 2 MB. Ihr könnt es später austauschen."
             accept="image/png,image/jpeg,image/svg+xml,image/webp"
             error={error}
             selectedFileName={logo ? logo.name : undefined}

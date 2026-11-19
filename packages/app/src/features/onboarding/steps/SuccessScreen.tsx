@@ -3,6 +3,23 @@ import { Button, Inline, Stack, StatusLabel } from '@racepilot/ui';
 import type { EventConfigProposal } from '@racepilot/contracts';
 import type { Outcome } from '../state.js';
 
+async function copyLink(url: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(url);
+    return true;
+  } catch {
+    const field = document.createElement('textarea');
+    field.value = url;
+    field.style.position = 'fixed';
+    field.style.opacity = '0';
+    document.body.append(field);
+    field.select();
+    const copied = document.execCommand('copy');
+    field.remove();
+    return copied;
+  }
+}
+
 function useQrCode(url: string) {
   const [svg, setSvg] = useState('');
   useEffect(() => {
@@ -36,8 +53,18 @@ export function SuccessScreen({
   const url = proposal.registrationUrl;
   const qr = useQrCode(url);
   const [copied, setCopied] = useState(false);
-  const canShare =
-    typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+  const share = async () => {
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: proposal.event.title, url });
+        return;
+      } catch {
+        // A dismissed share sheet should leave the link available to copy.
+        return;
+      }
+    }
+    setCopied(await copyLink(url));
+  };
   const open = outcome === 'open';
   const steps = [
     proposal.payment.stripe === 'later' && {
@@ -88,25 +115,13 @@ export function SuccessScreen({
           <Inline gap={3}>
             <Button
               size={48}
-              onClick={() => {
-                void navigator.clipboard
-                  ?.writeText(url)
-                  .then(() => setCopied(true));
-              }}
+              onClick={() => void copyLink(url).then(setCopied)}
             >
               {copied ? 'Link kopiert' : 'Link kopieren'}
             </Button>
-            {canShare && (
-              <Button
-                variant="secondary"
-                size={48}
-                onClick={() =>
-                  void navigator.share({ title: proposal.event.title, url })
-                }
-              >
-                Teilen
-              </Button>
-            )}
+            <Button variant="secondary" size={48} onClick={() => void share()}>
+              Teilen
+            </Button>
           </Inline>
           <p className="nb-onb-note">
             Prototyp: Diese Adresse wird erst mit der Anbindung an NENNBOX

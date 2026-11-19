@@ -106,6 +106,24 @@ describe('onboarding prototype', () => {
     expect(heading()).toBe('Welche Fahrzeuge starten?');
   });
 
+  it('restores a selected logo and clears it when the prototype restarts', () => {
+    pick('Mit Google');
+    click(button('Weiter'));
+    type('Vereinsname', 'MSC Hohenstein e. V.');
+    click(button('Weiter'));
+    click(button(/Blau und Gelb/));
+    expect(container.querySelector('.nb-pv-club img')).not.toBeNull();
+    act(() => root!.unmount());
+    root = createRoot(container);
+    act(() => root!.render(<OnboardingPreview />));
+    expect(container.querySelector('.nb-pv-club img')).not.toBeNull();
+    click(button('Neu'));
+    expect(heading()).toBe('Wie willst du dich anmelden?');
+    expect(
+      window.localStorage.getItem('nennbox.onboarding-preview.logo.v1'),
+    ).toBeNull();
+  });
+
   it('restores the saved answers after a reload', () => {
     pick('Code per E-Mail');
     const saved = JSON.parse(window.localStorage.getItem(storageKey)!);
