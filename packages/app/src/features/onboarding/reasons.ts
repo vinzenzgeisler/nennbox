@@ -1,4 +1,4 @@
-import type { ProposedSetting, ReasonCode } from '@racepilot/contracts';
+import type { ProposedSetting, ReasonCode } from '@nennbox/contracts';
 
 const texts: Record<ReasonCode, string> = {
   'license-required':

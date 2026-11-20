@@ -2,7 +2,7 @@ import type {
   EventConfigProposal,
   OnboardingAnswers,
   ResolvedAnswers,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 
 export type StepProps = {
   answers: OnboardingAnswers;

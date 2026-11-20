@@ -12,10 +12,10 @@ export {
   previousOnboardingStep,
   resolveAnswers,
   suggestEventConfig,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 export type {
   EventConfigProposal,
   OnboardingAnswers,
   OnboardingStepId,
   ResolvedAnswers,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';

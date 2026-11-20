@@ -4,7 +4,7 @@ import {
   ChoiceGroup,
   OnboardingSketch,
   QuestionStep,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import { choiceSteps, type ChoiceStep } from '../choices.js';
 import { reasonFor } from '../reasons.js';
 import type { StepProps } from './types.js';

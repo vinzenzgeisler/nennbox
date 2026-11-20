@@ -5,7 +5,7 @@ import {
   previousOnboardingStep,
   type OnboardingAnswers,
   type OnboardingStepId,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 
 export type Outcome = 'open' | 'draft';
 export type OnboardingState = {

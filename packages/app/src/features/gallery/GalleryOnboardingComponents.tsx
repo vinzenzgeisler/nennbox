@@ -7,7 +7,7 @@ import {
   OnboardingSketch,
   Slider,
   sketchNames,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 
 export function GalleryOnboardingComponents() {
   const [single, setSingle] = useState('b');

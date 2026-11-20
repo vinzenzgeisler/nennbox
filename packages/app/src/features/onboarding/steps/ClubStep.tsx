@@ -4,8 +4,8 @@ import {
   Stack,
   StatusLabel,
   TextInput,
-} from '@racepilot/ui';
-import { checkSubdomain } from '@racepilot/contracts';
+} from '@nennbox/ui';
+import { checkSubdomain } from '@nennbox/contracts';
 import { sampleTakenSubdomains, type StepProps } from './types.js';
 
 export function ClubStep({

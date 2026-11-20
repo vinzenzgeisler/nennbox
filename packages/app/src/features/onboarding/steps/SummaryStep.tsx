@@ -1,5 +1,5 @@
-import { Button, QuestionStep } from '@racepilot/ui';
-import { formatEuro, type OnboardingStepId } from '@racepilot/contracts';
+import { Button, QuestionStep } from '@nennbox/ui';
+import { formatEuro, type OnboardingStepId } from '@nennbox/contracts';
 import { choiceSteps } from '../choices.js';
 import { formatDay, formatRange } from '../format.js';
 import type { StepProps } from './types.js';

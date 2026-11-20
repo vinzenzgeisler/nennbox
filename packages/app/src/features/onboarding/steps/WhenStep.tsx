@@ -1,11 +1,5 @@
-import {
-  DateInput,
-  QuestionStep,
-  Stack,
-  Switch,
-  TextInput,
-} from '@racepilot/ui';
-import { addDays, suggestEntryDeadline } from '@racepilot/contracts';
+import { DateInput, QuestionStep, Stack, Switch, TextInput } from '@nennbox/ui';
+import { addDays, suggestEntryDeadline } from '@nennbox/contracts';
 import { formatDay } from '../format.js';
 import { reasonFor } from '../reasons.js';
 import type { StepProps } from './types.js';

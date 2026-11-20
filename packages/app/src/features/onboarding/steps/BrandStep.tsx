@@ -8,8 +8,8 @@ import {
   OnboardingSketch,
   QuestionStep,
   Stack,
-} from '@racepilot/ui';
-import { suggestBrandColors } from '@racepilot/contracts';
+} from '@nennbox/ui';
+import { suggestBrandColors } from '@nennbox/contracts';
 import { reasonFor } from '../reasons.js';
 import { sampleImageColors, sampleLogos } from './logo.js';
 import type { StepProps } from './types.js';

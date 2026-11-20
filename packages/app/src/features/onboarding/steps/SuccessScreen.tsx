@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Button, Inline, Stack, StatusLabel } from '@racepilot/ui';
-import type { EventConfigProposal } from '@racepilot/contracts';
+import { Button, Inline, Stack, StatusLabel } from '@nennbox/ui';
+import type { EventConfigProposal } from '@nennbox/contracts';
 import type { Outcome } from '../state.js';
 
 async function copyLink(url: string): Promise<boolean> {

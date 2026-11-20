@@ -4,7 +4,7 @@ import {
   OnboardingSketch,
   Slider,
   Stack,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import type { StepProps } from './types.js';
 
 /** Follow-up under the vehicle-era cards: the build-year limit for historic vehicles. */

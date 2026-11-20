@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button, Inline, QuestionStep, Stack, TextInput } from '@racepilot/ui';
-import { formatEuro, type OnboardingClass } from '@racepilot/contracts';
+import { Button, Inline, QuestionStep, Stack, TextInput } from '@nennbox/ui';
+import { formatEuro, type OnboardingClass } from '@nennbox/contracts';
 import { reasonFor } from '../reasons.js';
 import type { StepProps } from './types.js';
 

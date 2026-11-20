@@ -1,5 +1,5 @@
-import { QuestionStep, Slider, Stack, Switch } from '@racepilot/ui';
-import { waitlistThreshold } from '@racepilot/contracts';
+import { QuestionStep, Slider, Stack, Switch } from '@nennbox/ui';
+import { waitlistThreshold } from '@nennbox/contracts';
 import { reasonFor } from '../reasons.js';
 import type { StepProps } from './types.js';
 

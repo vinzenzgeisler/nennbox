@@ -6,7 +6,7 @@ import {
   OnboardingShell,
   StepActions,
   Wordmark,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import {
   canContinue,
   onboardingPhaseOf,
@@ -18,7 +18,7 @@ import {
   suggestEventConfig,
   type OnboardingPhase,
   type OnboardingStepId,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import { choiceSteps } from './choices.js';
 import { formatTime } from './format.js';
 import { EventPagePreview } from './preview/EventPagePreview.js';

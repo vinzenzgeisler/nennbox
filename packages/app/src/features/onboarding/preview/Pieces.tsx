@@ -1,9 +1,9 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
-import { Signet } from '@racepilot/ui';
+import { Signet } from '@nennbox/ui';
 import {
   deriveAccessibleBrandColors,
   type EventConfigProposal,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import { formatRange } from '../format.js';
 
 /** Replays a short highlight whenever the shown value changes, so each answer is visible in the preview. */

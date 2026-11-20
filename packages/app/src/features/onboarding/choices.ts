@@ -1,5 +1,5 @@
-import type { SketchName } from '@racepilot/ui';
-import type { OnboardingAnswers } from '@racepilot/contracts';
+import type { SketchName } from '@nennbox/ui';
+import type { OnboardingAnswers } from '@nennbox/contracts';
 import { kindStep } from './choices-kind.js';
 
 export type ChoiceOption = {
