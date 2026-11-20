@@ -1,6 +1,6 @@
 # ADR 0002: Product repository, clean start, and package boundaries
 
-> Product name at the time: RacePilot; since 2026-10-29: NENNBOX.
+> Product name at the time: nennbox; since 2026-10-29: NENNBOX.
 
 - Status: Accepted when merged; the repository owner decided the Cloud placement
   (private repository) on 2026-10-27
@@ -16,11 +16,11 @@
 the editions, the shared core, server-authoritative tenant context, and the
 permission/entitlement/capability split. Its
 [module map](../architecture/repository-module-map.md) assumed that the MSC backend
-and frontend would later be renamed or transferred into public RacePilot product
+and frontend would later be renamed or transferred into public nennbox product
 repositories, and that this repository would stay documentation-first.
 
 **Current fact:** The repository owner has since decided that
-`vinzenzgeisler/racepilot` is the single future product repository and that RacePilot
+`vinzenzgeisler/nennbox` is the single future product repository and that nennbox
 is a clean rebuild. `MSC-Event-Backend`, `MSC-Event-Frontend`, and
 `MSC-Event-Signing-Terminal` remain read-only functional and technical references.
 `MSC-Event-CLI` is out of scope. Issue #52 proposes an npm-workspaces monorepo.
@@ -32,20 +32,20 @@ any decision of ADR 0001.
 
 ### Repository
 
-`vinzenzgeisler/racepilot` is the single public product repository. It contains the
+`vinzenzgeisler/nennbox` is the single public product repository. It contains the
 shared domain core, the HTTP application, the workers, the product web application,
 public provider adapters, and the Community distribution.
 
 MSC code is not migrated or copied wholesale. A behavior adopted from an MSC
-repository is re-implemented against RacePilot contracts, and the issue names the
-reference it was derived from. Importing MSC *data* into a RacePilot organization is a
+repository is re-implemented against nennbox contracts, and the issue names the
+reference it was derived from. Importing MSC *data* into a nennbox organization is a
 separate migration concern (issue #2) and is not excluded by this decision.
 
 ### Cloud on AWS in a private repository
 
-RacePilot Cloud runs on AWS. As ADR 0001 requires, Cloud production infrastructure
+nennbox Cloud runs on AWS. As ADR 0001 requires, Cloud production infrastructure
 and the Cloud control plane stay private. They live in a private repository with the
-allocation label `vinzenzgeisler/racepilot-cloud`:
+allocation label `vinzenzgeisler/nennbox-cloud`:
 
 - AWS CDK stacks, environment configuration, and deployment workflows;
 - the Cloud runtime assembly (for example Lambda or container entry points that wire
@@ -82,7 +82,7 @@ are enforced on the server and not bundled as client-side authority.
 Adapter packages are introduced by the issues that add the corresponding ports
 (#36, #54, and #55), not as empty stubs. Process assembly (selecting adapters
 from validated deployment configuration) lives in the `api` and `worker` entry
-points for Community, and in `racepilot-cloud` for Cloud.
+points for Community, and in `nennbox-cloud` for Cloud.
 
 Package boundaries are enforced by an automated dependency check in CI from the first
 commit. Documentation alone is not enforcement.
@@ -130,7 +130,7 @@ request-context seam exists. They are not simulated before then.
 ### Repository identity guard
 
 The repository identity check from #53 accepts both HTTPS and SSH forms of
-`vinzenzgeisler/racepilot` locally. In GitHub Actions it compares `GITHUB_REPOSITORY`
+`vinzenzgeisler/nennbox` locally. In GitHub Actions it compares `GITHUB_REPOSITORY`
 instead of the Git remote. It is an agent and contributor safety net, not a security
 boundary.
 
@@ -157,6 +157,6 @@ database tooling are decided in
   remains satisfied, because boundaries are enforced from the first product commit.
 - Issue #52 must drop the root CDK directory, placeholder Compose services, the
   `shared` package, and `workspace:*` references before implementation.
-- Issue #53 must target `vinzenzgeisler/racepilot` and use `GITHUB_REPOSITORY` in CI.
-- Cloud issues that need AWS infrastructure are implemented in `racepilot-cloud`.
+- Issue #53 must target `vinzenzgeisler/nennbox` and use `GITHUB_REPOSITORY` in CI.
+- Cloud issues that need AWS infrastructure are implemented in `nennbox-cloud`.
   Their shared domain parts, such as organization scoping, still land here.

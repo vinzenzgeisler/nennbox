@@ -14,12 +14,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getCleanSourceCommit } from './pack-source.mjs';
-import { readEnv } from './env.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.resolve(
   root,
-  readEnv('NENNBOX_PACK_DIR', 'RACEPILOT_PACK_DIR') ?? 'product-artifacts',
+  process.env.NENNBOX_PACK_DIR ?? 'product-artifacts',
 );
 const rootManifest = JSON.parse(
   await readFile(path.join(root, 'package.json'), 'utf8'),

@@ -1,6 +1,6 @@
 # NENNBOX
 
-NENNBOX (formerly RacePilot) is an event registration and management application.
+NENNBOX is an event registration and management application.
 This public repository contains the shared product core, contracts, API, worker, UI,
 and adapters, plus a runnable **Community Alpha local preview**. It is not yet a
 production-ready Community distribution or Cloud platform. Cloud infrastructure,
@@ -46,7 +46,7 @@ and relative links.
 
 Prerequisites: Node.js 24 and npm. Verify the checkout before local agent work with
 `bash scripts/validate-repo-identity.sh` (forks may set `NENNBOX_EXPECTED_REPO`).
-Install dependencies with `npm ci`, then use the root commands `npm run lint`,
+After updating the local stack naming scheme, discard its volumes once with `docker compose -f compose.dev.yaml down -v` and recreate them. Install dependencies with `npm ci`, then use the root commands `npm run lint`,
 `npm run format:check`, `npm run typecheck`, `npm test`, `npm run build`, and
 `npm run check:boundaries`.
 

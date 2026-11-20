@@ -66,7 +66,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 start_stack
-export DATABASE_URL="postgres://racepilot:racepilot-local@127.0.0.1:$COMMUNITY_POSTGRES_PORT/racepilot"
+export DATABASE_URL="postgres://nennbox:nennbox-local@127.0.0.1:$COMMUNITY_POSTGRES_PORT/nennbox"
 export DEPLOYMENT_MODE=community COMMUNITY_ORGANIZATION_SLUG=community COMMUNITY_ORGANIZATION_NAME=NENNBOX
 export COMMUNITY_ORGANIZATION_TIMEZONE=Europe/Berlin COMMUNITY_ORGANIZATION_LOCALE=de
 export OIDC_PROVIDER=oidc OIDC_ISSUER_URL="$COMMUNITY_KEYCLOAK_URL/realms/nennbox" OIDC_AUDIENCE=nennbox-api
