@@ -28,14 +28,15 @@ function check(remote, extraEnv = {}) {
 
 describe('repository identity validation', () => {
   it.each([
-    'https://github.com/vinzenzgeisler/racepilot',
-    'https://github.com/VinzenzGeisler/RacePilot.git',
-    'git@github.com:vinzenzgeisler/racepilot',
-    'git@github.com:vinzenzgeisler/racepilot.git',
-    'ssh://git@github.com/vinzenzgeisler/racepilot',
-    'ssh://git@github.com/vinzenzgeisler/racepilot.git',
+    'https://github.com/vinzenzgeisler/nennbox',
+    'https://github.com/VinzenzGeisler/Nennbox.git',
+    'git@github.com:vinzenzgeisler/nennbox',
+    'git@github.com:vinzenzgeisler/nennbox.git',
+    'ssh://git@github.com/vinzenzgeisler/nennbox',
+    'ssh://git@github.com/vinzenzgeisler/nennbox.git',
   ])('accepts %s', (remote) => expect(check(remote).status).toBe(0));
   it.each([
+    'https://github.com/vinzenzgeisler/racepilot.git',
     'https://github.com/vinzenzgeisler/race-pilot.git',
     'git@github.com:vinzenzgeisler/MSC-Event-Backend.git',
   ])('rejects %s', (remote) => expect(check(remote).status).toBe(1));
@@ -47,7 +48,7 @@ describe('repository identity validation', () => {
   it('uses GitHub repository identity in Actions', () => {
     const result = check(null, {
       GITHUB_ACTIONS: 'true',
-      GITHUB_REPOSITORY: 'VinzenzGeisler/RacePilot',
+      GITHUB_REPOSITORY: 'VinzenzGeisler/Nennbox',
     });
     expect(result.status).toBe(0);
   });

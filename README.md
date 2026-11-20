@@ -5,7 +5,7 @@ This public repository contains the shared product core, contracts, API, worker,
 and adapters, plus a runnable **Community Alpha local preview**. It is not yet a
 production-ready Community distribution or Cloud platform. Cloud infrastructure,
 control plane, and the separately deployed product website live in a private repository.
-Internal package names use `@nennbox/*`; the GitHub repository remains `vinzenzgeisler/racepilot` until separately approved.
+Internal package names use `@nennbox/*`; the public GitHub repository is `vinzenzgeisler/nennbox`.
 
 NENNBOX is one product with one shared domain core and two explicit deployment
 modes:
@@ -85,8 +85,8 @@ Ein Cloud-Konto, kostenpflichtiger Dienst oder externer Mailserver ist für dies
 lokalen Test nicht erforderlich.
 
 ```bash
-git clone https://github.com/vinzenzgeisler/racepilot.git
-cd racepilot
+git clone https://github.com/vinzenzgeisler/nennbox.git
+cd nennbox
 git switch main
 git pull --ff-only
 bash scripts/community-up.sh
@@ -146,7 +146,7 @@ Admin-Bearbeitung sind vorhanden. Veranstaltungen, Klassen, Startgeld, Teilnahme
 werden über die Admin-Oberfläche eingerichtet. Zahlungserfassung und CSV-Export
 benötigen teilweise noch die API. Nennungsunterlagen und ihre Prüfung sind in der Admin-Oberfläche verfügbar. Details und ausdrücklich noch
 nicht verfügbare UI-Aktionen stehen im [lokalen Leitfaden](docs/getting-started/community-local.md)
-und im [Community-Alpha-Issue](https://github.com/vinzenzgeisler/racepilot/issues/120).
+und im [Community-Alpha-Issue](https://github.com/vinzenzgeisler/nennbox/issues/120).
 
 Public registration is rate-limited through PostgreSQL so multiple API processes
 share the same budgets. Defaults are 60 requests/minute per client and organization
