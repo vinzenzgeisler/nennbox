@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-expected="${NENNBOX_EXPECTED_REPO:-vinzenzgeisler/racepilot}"
+expected="${NENNBOX_EXPECTED_REPO:-vinzenzgeisler/nennbox}"
 if [[ -n "${NENNBOX_EXPECTED_REPO:-}" ]]; then
   printf 'Using repository identity override: %s\n' "$expected"
 fi

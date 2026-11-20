@@ -11,21 +11,21 @@ Status terms follow the definitions in the [repository README](../../README.md).
 
 | Concern | Current repository/module | Status and evidence |
 |---|---|---|
-| Shared product | `vinzenzgeisler/racepilot` | **Current fact (repository name; product name NENNBOX):** public npm-workspaces monorepo with core, contracts, API, worker, UI, and adapters. Packages remain unreleased; this issue's pack contract is not a registry publication. |
-| Community distribution | `vinzenzgeisler/racepilot` | **Current fact:** not yet available; no supported installation, upgrade, backup, or restore bundle exists. |
-| Cloud repository | Private `vinzenzgeisler/racepilot-cloud` | **Current fact:** private repository exists and currently contains the product website only. Its presence does not prove a running Cloud platform. |
-| Product website | `vinzenzgeisler/racepilot-cloud/apps/website` | **Current fact:** private website app with its own build/deploy path; it is not a product runtime dependency. Website deployment does not establish Cloud subscriptions, product runtime, or tenant provisioning. |
-| Cloud runtime and control plane | Private `vinzenzgeisler/racepilot-cloud` | **Current fact:** no verified production runtime, tenant provisioning, subscription, billing, or entitlement implementation. These remain future work. |
+| Shared product | `vinzenzgeisler/nennbox` | **Current fact (repository name; product name NENNBOX):** public npm-workspaces monorepo with core, contracts, API, worker, UI, and adapters. Packages remain unreleased; this issue's pack contract is not a registry publication. |
+| Community distribution | `vinzenzgeisler/nennbox` | **Current fact:** not yet available; no supported installation, upgrade, backup, or restore bundle exists. |
+| Cloud repository | Private `vinzenzgeisler/nennbox-cloud` | **Current fact:** private repository exists and currently contains the product website only. Its presence does not prove a running Cloud platform. |
+| Product website | `vinzenzgeisler/nennbox-cloud/apps/website` | **Current fact:** private website app with its own build/deploy path; it is not a product runtime dependency. Website deployment does not establish Cloud subscriptions, product runtime, or tenant provisioning. |
+| Cloud runtime and control plane | Private `vinzenzgeisler/nennbox-cloud` | **Current fact:** no verified production runtime, tenant provisioning, subscription, billing, or entitlement implementation. These remain future work. |
 | MSC repositories | `MSC-Event-Backend`, `MSC-Event-Frontend`, and related references | **Historical reference only:** inspected snapshots documented below; they are read-only references and are not modified or consumed as product sources. |
 
 ### Repository naming note
 
-The current repository is `vinzenzgeisler/racepilot` (target name after repository rename: `nennbox`). The separate Cloud repository is `vinzenzgeisler/racepilot-cloud` (target name after repository rename: `nennbox-cloud`). At snapshot time the name
+The current repository is `vinzenzgeisler/nennbox`. The separate Cloud repository is `vinzenzgeisler/nennbox-cloud`. At snapshot time the name
 `nennbox` belonged to the separate Next.js marketing-site repository. Paths prefixed
 with `nennbox/` in this map and in the [coupling inventory](current-couplings.md)
 refer to that marketing snapshot, not to this repository. The marketing commit listed
 under [evidence scope](#evidence-scope) is not reachable under the current
-`vinzenzgeisler/racepilot` name.
+`vinzenzgeisler/nennbox` name.
 
 The planning evidence is consistent with these observations:
 `reports/nennbox-projektmasterplan-2026-08-13.md` lines 30–48 describe the
@@ -42,16 +42,16 @@ clean rebuild in this repository, and the MSC repositories remain read-only refe
 
 | Concern | Target repository/module assignment | Visibility | Obligation |
 |---|---|---|---|
-| Architecture, contracts, and decision index | `vinzenzgeisler/racepilot` (`docs`, `packages/contracts`) | Public | Keep ADRs, the tenant inventory, and versioned contracts next to the code they govern. |
-| Backend domain core and HTTP application | `vinzenzgeisler/racepilot` (`packages/core`, `packages/api`) | Public | `core` holds domain, use cases, and ports without provider SDKs or MSC identity. `api` resolves server-side context and maps contracts to use cases. |
-| Database schema and migrations | `vinzenzgeisler/racepilot` (PostgreSQL adapter package) | Public | Organization ownership and tenant-safe migrations from the first table. Community and Cloud consume the same schema contract. |
-| Domain workers | `vinzenzgeisler/racepilot` (`packages/worker`) | Public | Require server-issued organization context and provider ports. Do not copy worker logic into the Cloud control plane. |
-| Product frontend | `vinzenzgeisler/racepilot` (`packages/app`) | Public | Consume the server bootstrap and API contracts only. No client-owned authority, no MSC defaults, one build for all organizations. |
-| Provider adapters | `vinzenzgeisler/racepilot` (`packages/adapter-*`) | Public | Community references (OIDC, SMTP, local/S3-compatible storage) and reusable, secret-free AWS adapters (Cognito, SES, S3). |
-| Community distribution | `vinzenzgeisler/racepilot` (`deploy/community`) | Public | Container images and Compose first: web, API, workers, PostgreSQL, and reference adapters. Include upgrades, migrations, backup/restore, and health checks. |
-| Cloud runtime assembly and AWS infrastructure | Private `vinzenzgeisler/racepilot-cloud` | Private | AWS CDK, environment configuration, deployment workflows, and runtime entry points. Depends only on released public artifacts, ports, and contracts. |
-| Cloud control plane | Private `vinzenzgeisler/racepilot-cloud` | Private | Tenant and membership lifecycle, domain mapping, subscriptions/entitlements, billing integration, platform support, and audit. It calls public product contracts; it does not own copied domain logic. |
-| Product website | Private `vinzenzgeisler/racepilot-cloud/apps/website` | Private; separately deployable | Keep independent of product uptime and authentication. Claims about Community/Cloud availability must track release evidence. This is the current website boundary, not a claim about a future public promotion. |
+| Architecture, contracts, and decision index | `vinzenzgeisler/nennbox` (`docs`, `packages/contracts`) | Public | Keep ADRs, the tenant inventory, and versioned contracts next to the code they govern. |
+| Backend domain core and HTTP application | `vinzenzgeisler/nennbox` (`packages/core`, `packages/api`) | Public | `core` holds domain, use cases, and ports without provider SDKs or MSC identity. `api` resolves server-side context and maps contracts to use cases. |
+| Database schema and migrations | `vinzenzgeisler/nennbox` (PostgreSQL adapter package) | Public | Organization ownership and tenant-safe migrations from the first table. Community and Cloud consume the same schema contract. |
+| Domain workers | `vinzenzgeisler/nennbox` (`packages/worker`) | Public | Require server-issued organization context and provider ports. Do not copy worker logic into the Cloud control plane. |
+| Product frontend | `vinzenzgeisler/nennbox` (`packages/app`) | Public | Consume the server bootstrap and API contracts only. No client-owned authority, no MSC defaults, one build for all organizations. |
+| Provider adapters | `vinzenzgeisler/nennbox` (`packages/adapter-*`) | Public | Community references (OIDC, SMTP, local/S3-compatible storage) and reusable, secret-free AWS adapters (Cognito, SES, S3). |
+| Community distribution | `vinzenzgeisler/nennbox` (`deploy/community`) | Public | Container images and Compose first: web, API, workers, PostgreSQL, and reference adapters. Include upgrades, migrations, backup/restore, and health checks. |
+| Cloud runtime assembly and AWS infrastructure | Private `vinzenzgeisler/nennbox-cloud` | Private | AWS CDK, environment configuration, deployment workflows, and runtime entry points. Depends only on released public artifacts, ports, and contracts. |
+| Cloud control plane | Private `vinzenzgeisler/nennbox-cloud` | Private | Tenant and membership lifecycle, domain mapping, subscriptions/entitlements, billing integration, platform support, and audit. It calls public product contracts; it does not own copied domain logic. |
+| Product website | Private `vinzenzgeisler/nennbox-cloud/apps/website` | Private; separately deployable | Keep independent of product uptime and authentication. Claims about Community/Cloud availability must track release evidence. This is the current website boundary, not a claim about a future public promotion. |
 
 Current repository names above are verified on 2026-10-28. The MSC repository names
 below refer only to historical, read-only source snapshots.
@@ -83,7 +83,7 @@ inspection workspace.
 |---|---|---|---|
 | [`vinzenzgeisler/MSC-Event-Backend`](https://github.com/vinzenzgeisler/MSC-Event-Backend) | `fix/editor-class-filter` | `4a96266f13f43b43fc76292193924d491bdf8673` | [Inspected commit](https://github.com/vinzenzgeisler/MSC-Event-Backend/commit/4a96266f13f43b43fc76292193924d491bdf8673) |
 | [`vinzenzgeisler/MSC-Event-Frontend`](https://github.com/vinzenzgeisler/MSC-Event-Frontend) | `feat/marshal-planning-refinements` | `b42ab84f2123a4860f4dbc9ad1c5a24f4d1b14cb` | [Inspected commit](https://github.com/vinzenzgeisler/MSC-Event-Frontend/commit/b42ab84f2123a4860f4dbc9ad1c5a24f4d1b14cb) |
-| `vinzenzgeisler/racepilot` (marketing site at snapshot time; name since reassigned, see the [naming note](#repository-naming-note)) | `main` | `33364c9d8dd0c5cfe6c53e987e876f55439dd39a` | Not reachable under the current repository name |
+| `vinzenzgeisler/nennbox-website` (private marketing site) | `main` | `33364c9d8dd0c5cfe6c53e987e876f55439dd39a` | Not reachable under the current repository name |
 
 The sources were inspected at these local read-only evidence paths:
 

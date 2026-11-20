@@ -193,7 +193,7 @@ try {
     `${JSON.stringify(
       {
         schemaVersion: 1,
-        source: { repository: 'vinzenzgeisler/racepilot', commit },
+        source: { repository: 'vinzenzgeisler/nennbox', commit },
         packageManager: rootManifest.packageManager,
         packages: packages.sort((left, right) =>
           left.name.localeCompare(right.name),
