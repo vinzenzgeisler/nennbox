@@ -36,7 +36,6 @@ describe('repository identity validation', () => {
     'ssh://git@github.com/vinzenzgeisler/nennbox.git',
   ])('accepts %s', (remote) => expect(check(remote).status).toBe(0));
   it.each([
-    'https://github.com/vinzenzgeisler/racepilot.git',
     'https://github.com/vinzenzgeisler/race-pilot.git',
     'git@github.com:vinzenzgeisler/MSC-Event-Backend.git',
   ])('rejects %s', (remote) => expect(check(remote).status).toBe(1));

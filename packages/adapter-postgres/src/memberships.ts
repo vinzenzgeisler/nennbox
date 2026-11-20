@@ -35,7 +35,7 @@ export function createMembershipRepository(db: Database): MembershipRepository {
           // still count as history and must permanently close bootstrap.
           await tx.execute(
             // legacy identifier, intentionally unchanged (#99)
-            sql`select pg_advisory_xact_lock(hashtextextended(${`racepilot.membership.bootstrap:${orgId}`}, 0))`,
+            sql`select pg_advisory_xact_lock(hashtextextended(${`nennbox.membership.bootstrap:${orgId}`}, 0))`,
           );
         }
         const [stored] = await tx

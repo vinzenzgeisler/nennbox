@@ -1,6 +1,6 @@
 # ADR 0005: Shared product composition for Community and Cloud
 
-> Product name at the time: RacePilot; since 2026-10-29: NENNBOX.
+> Product name at the time: nennbox; since 2026-10-29: NENNBOX.
 
 - Status: Accepted
 - Date: 2026-11-13

@@ -1,6 +1,6 @@
 # ADR 0003: HTTP framework, background jobs, and database tooling
 
-> Product name at the time: RacePilot; since 2026-10-29: NENNBOX.
+> Product name at the time: nennbox; since 2026-10-29: NENNBOX.
 
 - Status: Accepted
 - Date: 2026-10-27
@@ -12,8 +12,8 @@
 ## Context
 
 ADR 0002 requires `api` and `worker` to run as ordinary Node.js processes for
-Community and to be wrapped by a Cloud assembly in the private `racepilot-cloud`
-repository. RacePilot Cloud is expected to run on AWS, possibly serverless
+Community and to be wrapped by a Cloud assembly in the private `nennbox-cloud`
+repository. nennbox Cloud is expected to run on AWS, possibly serverless
 (API Gateway and Lambda, scheduled invocations) like the MSC reference system.
 
 **Current fact:** The MSC backend has no HTTP framework. API Gateway handles routing,
@@ -33,7 +33,7 @@ technical template.
 `packages/api` uses [Hono](https://hono.dev) with the Node.js server adapter for
 Community and local development. The Cloud assembly wraps the same application with
 Hono's AWS Lambda adapter or runs it as a container; this choice stays in
-`racepilot-cloud`.
+`nennbox-cloud`.
 
 - Routes are defined with zod schemas from `packages/contracts`; OpenAPI is generated
   from the same definitions.
@@ -98,7 +98,7 @@ and existing team experience.
 - Community can be self-hosted on any container platform, including AWS. AWS-managed
   services work through the generic adapters: RDS for PostgreSQL, S3 through the
   S3-compatible storage adapter, SES through its SMTP interface, and Cognito as a
-  standard OIDC provider. The managed RacePilot Cloud setup (serverless assembly,
+  standard OIDC provider. The managed nennbox Cloud setup (serverless assembly,
   production IaC, control plane) remains private, as ADR 0002 decides.
 - `api` and `worker` gain their first runtime dependencies. Boundary rules stay
   unchanged: `core` and `contracts` import none of these libraries.

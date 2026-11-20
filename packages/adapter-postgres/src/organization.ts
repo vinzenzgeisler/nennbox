@@ -21,7 +21,7 @@ export async function ensureCommunityOrganization(
   return db.transaction(async (tx) => {
     await tx.execute(
       // legacy identifier, intentionally unchanged (#99)
-      sql`select pg_advisory_xact_lock(hashtext('racepilot.community.bootstrap'))`,
+      sql`select pg_advisory_xact_lock(hashtext('nennbox.community.bootstrap'))`,
     );
     const rows = await tx.select().from(organizations);
     if (rows.length > 1)

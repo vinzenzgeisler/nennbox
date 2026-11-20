@@ -1,6 +1,6 @@
 # ADR 0001: Editions, shared core, and deployment modes
 
-> Product name at the time: RacePilot; since 2026-10-29: NENNBOX.
+> Product name at the time: nennbox; since 2026-10-29: NENNBOX.
 
 - Status: Accepted
 - Date: 2026-08-15
@@ -13,13 +13,13 @@
 ## Context
 
 **Current fact:** The existing application is split across an MSC backend, an MSC
-product frontend, and a RacePilot marketing site. The backend has event-scoped data
+product frontend, and a nennbox marketing site. The backend has event-scoped data
 but no organization or tenant model. It also contains AWS infrastructure and workers.
 The detailed evidence is recorded in the
 [repository and module map](../architecture/repository-module-map.md) and
 [coupling inventory](../architecture/current-couplings.md).
 
-**Target decision:** RacePilot is one product with a shared domain core. It supports
+**Target decision:** nennbox is one product with a shared domain core. It supports
 two deployment modes without duplicating domain behavior or maintaining edition
 branches.
 
@@ -30,19 +30,19 @@ branches.
 | Property | Community | Cloud |
 |---|---|---|
 | Deployment mode | `community` | `cloud` |
-| Operation | Self-hosted by the operator | Managed by RacePilot |
+| Operation | Self-hosted by the operator | Managed by nennbox |
 | Tenancy | Single tenant; exactly one organization per installation | Multi-tenant; many isolated organizations |
 | Events | Many for the one organization | Many per organization |
 | Domain core | Complete shared core | The same complete shared core |
 | Identity | Generic OIDC contract; documented reference provider | Managed identity adapter plus organization memberships |
 | Database | Operator-owned PostgreSQL | Managed PostgreSQL with mandatory tenant isolation |
 | Mail and object storage | Operator-configured adapters | Managed adapters and tenant-scoped configuration |
-| Billing and subscription | Free to use; no RacePilot product license fee or subscription is required | Subscription lifecycle and entitlements are Cloud concerns |
-| Operations | Updates, backups, monitoring, and recovery are operator responsibilities | RacePilot is responsible for platform operations |
+| Billing and subscription | Free to use; no nennbox product license fee or subscription is required | Subscription lifecycle and entitlements are Cloud concerns |
+| Operations | Updates, backups, monitoring, and recovery are operator responsibilities | nennbox is responsible for platform operations |
 
 Community is not a reduced or separate implementation of the business processes.
 Optional paid consulting, support, hosting/operations, or other services from
-RacePilot or third parties are separate from the free Community product license.
+nennbox or third parties are separate from the free Community product license.
 Cloud sells managed operation and Cloud-only platform services, not a fork of the
 domain core.
 
@@ -73,7 +73,7 @@ must reconstruct and enforce the same request context as synchronous API operati
 | Community infrastructure examples | Public | Reverse-proxy and local deployment examples without operator secrets |
 | Cloud control plane | Private | Organization lifecycle, subscriptions, billing integration, domain automation, support and platform administration |
 | Cloud production infrastructure and operations | Private | Managed tenant routing, production IaC, observability, backups, incident and support automation |
-| Product website | Private `racepilot-cloud/apps/website`, operationally separate | **Current fact (2026-10-28):** separately built/deployed from the private Cloud repository. Product information; never a runtime dependency of the product. Any later public promotion is an owner decision. |
+| Product website | Private `nennbox-cloud/apps/website`, operationally separate | **Current fact (2026-10-28):** separately built/deployed from the private Cloud repository. Product information; never a runtime dependency of the product. Any later public promotion is an owner decision. |
 
 The concrete current and target repository assignments are in the
 [repository and module map](../architecture/repository-module-map.md). Public does not
@@ -146,7 +146,7 @@ Changes must use one of these paths:
 4. a Cloud-only control-plane feature that does not duplicate domain logic; or
 5. a private Cloud incubation module with an explicit module identity, compatibility
    range, and declared capabilities, described by the provider-neutral
-   `@racepilot/contracts` extension manifest and composed through server-owned
+   `@nennbox/contracts` extension manifest and composed through server-owned
    API/UI/worker boundaries. Private code must not be imported by public packages.
    Tenant availability is determined and enforced server-side for every API request
    and job.

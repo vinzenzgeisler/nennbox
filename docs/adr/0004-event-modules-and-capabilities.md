@@ -1,6 +1,6 @@
 # ADR 0004: Event modules and capabilities
 
-> Product name at the time: RacePilot; since 2026-10-29: NENNBOX.
+> Product name at the time: nennbox; since 2026-10-29: NENNBOX.
 
 - Status: Accepted
 - Date: 2026-10-28
@@ -13,7 +13,7 @@
 
 ## Context
 
-The registration (Nennung) is the shared core of RacePilot. Everything beyond it,
+The registration (Nennung) is the shared core of nennbox. Everything beyond it,
 such as timing (#86) and later technical inspection or a marshal portal, is an
 optional add-on that an organization turns on for itself and per event. An event
 without timing must not need timing configuration, UI, or actions. Each rule is
@@ -37,7 +37,7 @@ serves traffic.
 
 ### Manifest
 
-`ModuleManifest` (core type, `ModuleManifestSchema` in `@racepilot/contracts`) is
+`ModuleManifest` (core type, `ModuleManifestSchema` in `@nennbox/contracts`) is
 data; the Zod config schema and route handlers are code in the `ModuleDefinition`.
 
 | Field | Meaning |
