@@ -1,5 +1,5 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
-import type { EntryMessage, RequestContext } from '@racepilot/core';
+import type { EntryMessage, RequestContext } from '@nennbox/core';
 import type { Database } from './database.js';
 import { entries } from './schema/entries.js';
 import { emailOutbox, emailTemplateVersions } from './mail-schema.js';

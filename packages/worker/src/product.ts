@@ -9,14 +9,14 @@ import {
   createPaymentRecipientRepository,
   organizations,
   type Database,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
 import {
   createModuleRegistry,
   type CanonicalOrigin,
   type MailProvider,
   type ModuleEntitlements,
   type ObjectStorageProvider,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { createArtifactTask } from './artifacts.js';
 import { composeWorkerTasks, type WorkerTaskHandler } from './index.js';
 import { createMailOutboxTask } from './mail.js';

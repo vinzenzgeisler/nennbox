@@ -1,7 +1,7 @@
 import { adminFetch } from '../../auth.js';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ModuleListResponse, EventSchema } from '@racepilot/contracts';
-import type { ModuleViewSchema } from '@racepilot/contracts';
+import { ModuleListResponse, EventSchema } from '@nennbox/contracts';
+import type { ModuleViewSchema } from '@nennbox/contracts';
 import {
   Button,
   DataTable,
@@ -12,7 +12,7 @@ import {
   StatusLabel,
   Tabs,
   TextInput,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import { updatePath } from './ModuleSchemaFields.js';
 import { ModuleConfigDialog } from './ModuleConfigDialog.js';
 import {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createApp } from './index.js';
-import { organizationId } from '@racepilot/core';
+import { organizationId } from '@nennbox/core';
 import { testDeps } from './testing.js';
 
 const eventId = '20000000-0000-4000-8000-000000000001';

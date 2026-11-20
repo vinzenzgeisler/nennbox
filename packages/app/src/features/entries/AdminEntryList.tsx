@@ -1,5 +1,5 @@
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import {
   DataTable,
   Pagination,
@@ -7,7 +7,7 @@ import {
   TabList,
   TabPanel,
   WorkspaceSplit,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import type {
   ApiState,
   EntryQuery,

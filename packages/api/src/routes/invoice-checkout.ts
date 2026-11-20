@@ -1,5 +1,5 @@
-import { resolveCanonicalOrigin } from '@racepilot/core';
-import type { OnlinePaymentMethod, RequestContext } from '@racepilot/core';
+import { resolveCanonicalOrigin } from '@nennbox/core';
+import type { OnlinePaymentMethod, RequestContext } from '@nennbox/core';
 import type { ApiDeps } from '../types.js';
 
 export type InvoiceCheckoutResult =

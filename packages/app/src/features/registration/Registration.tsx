@@ -1,6 +1,6 @@
-import type { RegistrationDraft } from '@racepilot/contracts';
+import type { RegistrationDraft } from '@nennbox/contracts';
 import { useState } from 'react';
-import { Button } from '@racepilot/ui';
+import { Button } from '@nennbox/ui';
 import { useRegistrationState } from './useRegistrationState.js';
 import { deriveRegistration } from './RegistrationModel.js';
 import { createRegistrationActions } from './RegistrationActions.js';

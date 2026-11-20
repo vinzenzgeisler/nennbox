@@ -1,5 +1,5 @@
 import type { Database } from './database.js';
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 import { eq, and } from 'drizzle-orm';
 import { events } from './schema/organization.js';
 import { eventConsentTermsAudit } from './schema/forms.js';

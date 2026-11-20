@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Banner, EmptyState } from '@racepilot/ui';
+import { Banner, EmptyState } from '@nennbox/ui';
 import type { SetupEvent } from './eventSetupApi.js';
 import { loadRecipient } from './eventRecipientApi.js';
 import { useEventSetup } from './useEventSetup.js';

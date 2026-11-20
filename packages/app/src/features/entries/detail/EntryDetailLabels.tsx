@@ -1,5 +1,5 @@
-import { HintLabel, StatusLabel } from '@racepilot/ui';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import { HintLabel, StatusLabel } from '@nennbox/ui';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { WorkflowView } from '../AdminEntriesModel.js';
 import { dimensionStatus } from '../dimensionStatus.js';
 import { statusMeaning } from '../EntryStatusBadge.js';

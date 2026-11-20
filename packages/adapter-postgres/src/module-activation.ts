@@ -3,7 +3,7 @@ import type {
   ModuleActivationRepository,
   ModuleStateRecord,
   RequestContext,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { uuidPattern } from './database.js';
 import type { Database } from './database.js';
 import { organizations, events } from './schema/organization.js';

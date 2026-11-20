@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { organizationId } from '@racepilot/core';
+import { organizationId } from '@nennbox/core';
 import { createStripePaymentProvider } from './index.js';
 
 const apiBaseUrl = process.env.STRIPE_MOCK_URL;

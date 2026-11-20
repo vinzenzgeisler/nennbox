@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { organizationId } from '@racepilot/core';
-import type { ObjectStorageProvider } from '@racepilot/core';
-import { MESSAGE_ATTACHMENT_LIMITS } from '@racepilot/contracts';
+import { organizationId } from '@nennbox/core';
+import type { ObjectStorageProvider } from '@nennbox/core';
+import { MESSAGE_ATTACHMENT_LIMITS } from '@nennbox/contracts';
 import { validateMessageAttachmentMetadata } from './messaging-attachments.js';
 
 const tenantId = organizationId('tenant-a');

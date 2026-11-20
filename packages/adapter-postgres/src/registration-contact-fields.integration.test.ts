@@ -1,8 +1,8 @@
-import { staticCanonicalOrigin } from '@racepilot/core';
+import { staticCanonicalOrigin } from '@nennbox/core';
 import { createHash } from 'node:crypto';
 import { eq, sql } from 'drizzle-orm';
 import { runMigrations } from 'graphile-worker';
-import { createRequestContext, organizationId } from '@racepilot/core';
+import { createRequestContext, organizationId } from '@nennbox/core';
 import { describe, expect, it } from 'vitest';
 import {
   createDatabase,
@@ -18,7 +18,7 @@ import {
   vehicles,
 } from './index.js';
 
-const url = process.env.RACEPILOT_TEST_DATABASE_URL;
+const url = process.env.NENNBOX_TEST_DATABASE_URL;
 const text = (key: string) => `Wortlaut ${key}: Ich stimme zu.`;
 const hash = (key: string) =>
   createHash('sha256').update(text(key)).digest('hex');

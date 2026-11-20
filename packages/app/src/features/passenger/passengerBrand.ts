@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import {
   defaultRegistrationFormConfig,
   deriveAccessibleBrandColors,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 
 const brand = deriveAccessibleBrandColors(
   defaultRegistrationFormConfig.branding.primaryColor,

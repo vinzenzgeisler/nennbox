@@ -1,4 +1,4 @@
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 import type { TransactionDatabase } from './database.js';
 import type { PublicRegistrationPayload } from './registration-settings.js';
 import type { events } from './schema/organization.js';

@@ -4,9 +4,9 @@ import {
   FormSection,
   FormWide,
   SelectField,
-} from '@racepilot/ui';
-import { BLOOD_GROUPS } from '@racepilot/contracts';
-import type { RegistrationFormConfig } from '@racepilot/contracts';
+} from '@nennbox/ui';
+import { BLOOD_GROUPS } from '@nennbox/contracts';
+import type { RegistrationFormConfig } from '@nennbox/contracts';
 import {
   fieldState,
   type DriverContact,

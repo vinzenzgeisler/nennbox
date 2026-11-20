@@ -4,8 +4,8 @@ import {
   type DeploymentMode,
   type JobContext,
   type ModuleDeps,
-} from '@racepilot/core';
-import { ModuleJobPayload } from '@racepilot/contracts';
+} from '@nennbox/core';
+import { ModuleJobPayload } from '@nennbox/contracts';
 import { createJobContext, parseJobEnvelope } from './index.js';
 import type { WorkerTaskHandler } from './index.js';
 

@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { RequestContext, DeploymentMode } from '@racepilot/core';
+import { RequestContext, DeploymentMode } from '@nennbox/core';
 import {
   RegistrationRateLimitScope,
   RegistrationRateLimitResult,

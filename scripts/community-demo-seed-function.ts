@@ -20,7 +20,7 @@ import {
   calculatePrice,
   organizationId,
   transitionEntry,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import {
   createDatabase,
   createPersonRepository,
@@ -34,7 +34,7 @@ import {
   people,
   entries,
   registrationGroups,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
 
 type Db = Awaited<ReturnType<typeof createDatabase>>['db'];
 

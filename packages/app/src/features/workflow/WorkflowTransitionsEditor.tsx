@@ -4,7 +4,7 @@ import {
   FormSection,
   SelectField,
   TextInput,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import type { Transition, Workflow } from './AdminWorkflow.js';
 
 export function WorkflowTransitionsEditor({

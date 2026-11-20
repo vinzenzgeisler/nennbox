@@ -3,7 +3,7 @@ import {
   advanceExpiredWaitlistOffers,
   organizations,
   type Database,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
 
 export function createWaitlistDeadlineTask(deps: {
   db: Database;

@@ -1,4 +1,4 @@
-import type { CanonicalOrigin } from '@racepilot/core';
+import type { CanonicalOrigin } from '@nennbox/core';
 import type { Database } from './database.js';
 import { createDriverPortalAccess } from './driver-portal-access.js';
 import { createDriverPortalView } from './driver-portal-view.js';

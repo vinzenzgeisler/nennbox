@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { createEventSetup } from '@racepilot/core';
+import { createEventSetup } from '@nennbox/core';
 import {
   CreateEventRequest,
   EventResponse,
   PassengerModeSchema,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import type { ApiRoutesContext } from './context.js';
 
 export function registerEventSetupRoute(apiContext: ApiRoutesContext): void {

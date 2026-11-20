@@ -18,14 +18,14 @@ const nativeControlExceptions = JSON.parse(
   ),
 );
 const nativeControlSelectors = [
-  ['button', 'Use @racepilot/ui Button instead of a raw button.'],
+  ['button', 'Use @nennbox/ui Button instead of a raw button.'],
   [
     'input',
-    'Use the appropriate @racepilot/ui input component instead of a raw input.',
+    'Use the appropriate @nennbox/ui input component instead of a raw input.',
   ],
-  ['select', 'Use @racepilot/ui SelectField instead of a raw select.'],
-  ['textarea', 'Use @racepilot/ui Textarea instead of a raw textarea.'],
-  ['table', 'Use @racepilot/ui DataTable instead of a raw table.'],
+  ['select', 'Use @nennbox/ui SelectField instead of a raw select.'],
+  ['textarea', 'Use @nennbox/ui Textarea instead of a raw textarea.'],
+  ['table', 'Use @nennbox/ui DataTable instead of a raw table.'],
 ].map(([name, message]) => ({
   selector: `JSXOpeningElement[name.name='${name}']`,
   message,

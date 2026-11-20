@@ -1,4 +1,4 @@
-import { StatusLabel } from '@racepilot/ui';
+import { StatusLabel } from '@nennbox/ui';
 import type { WorkflowStatus } from './AdminEntriesModel.js';
 
 const statusLabels: Record<string, string> = {

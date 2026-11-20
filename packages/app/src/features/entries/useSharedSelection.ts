@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 
 export function useSharedSelection(
   shared: Entry | null | undefined,

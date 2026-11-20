@@ -1,4 +1,4 @@
-import { Button, StatusLabel } from '@racepilot/ui';
+import { Button, StatusLabel } from '@nennbox/ui';
 import { EntryDocumentDownload } from './EntryDocumentDownload.js';
 import { documentStatusView, type UploadLine } from './documentLines.js';
 

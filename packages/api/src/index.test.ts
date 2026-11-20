@@ -11,7 +11,7 @@ import {
   defaultEntryWorkflow,
   defaultEntryStatusDimensionConfig,
   EntryStatusInUseError,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { testDeps } from './testing.js';
 
 describe('api entry', () => {
@@ -24,7 +24,7 @@ describe('api entry', () => {
   it('disables optional provider capabilities by default', () => {
     const config = loadConfig({
       DEPLOYMENT_MODE: 'community',
-      DATABASE_URL: 'postgres://localhost/racepilot',
+      DATABASE_URL: 'postgres://localhost/nennbox',
       COMMUNITY_ORGANIZATION_SLUG: 'club',
       COMMUNITY_ORGANIZATION_NAME: 'Club',
       COMMUNITY_ORGANIZATION_TIMEZONE: 'Europe/Berlin',
@@ -40,7 +40,7 @@ describe('api entry', () => {
   it('validates trusted proxy CIDRs and configurable public rate limits', () => {
     const base = {
       DEPLOYMENT_MODE: 'community',
-      DATABASE_URL: 'postgres://localhost/racepilot',
+      DATABASE_URL: 'postgres://localhost/nennbox',
       COMMUNITY_ORGANIZATION_SLUG: 'club',
       COMMUNITY_ORGANIZATION_NAME: 'Club',
       COMMUNITY_ORGANIZATION_TIMEZONE: 'UTC',
@@ -67,7 +67,7 @@ describe('api entry', () => {
   it('fails closed when mail lacks a canonical base URL', () => {
     const config = loadConfig({
       DEPLOYMENT_MODE: 'community',
-      DATABASE_URL: 'postgres://localhost/racepilot',
+      DATABASE_URL: 'postgres://localhost/nennbox',
       COMMUNITY_ORGANIZATION_SLUG: 'club',
       COMMUNITY_ORGANIZATION_NAME: 'Club',
       COMMUNITY_ORGANIZATION_TIMEZONE: 'UTC',
@@ -81,7 +81,7 @@ describe('api entry', () => {
     expect(
       loadConfig({
         DEPLOYMENT_MODE: 'community',
-        DATABASE_URL: 'postgres://localhost/racepilot',
+        DATABASE_URL: 'postgres://localhost/nennbox',
         COMMUNITY_ORGANIZATION_SLUG: 'club',
         COMMUNITY_ORGANIZATION_NAME: 'Club',
         COMMUNITY_ORGANIZATION_TIMEZONE: 'UTC',
@@ -98,7 +98,7 @@ describe('api entry', () => {
     expect(() =>
       loadConfig({
         DEPLOYMENT_MODE: 'community',
-        DATABASE_URL: 'postgres://localhost/racepilot',
+        DATABASE_URL: 'postgres://localhost/nennbox',
         COMMUNITY_ORGANIZATION_SLUG: 'club',
         COMMUNITY_ORGANIZATION_NAME: 'Club',
         COMMUNITY_ORGANIZATION_TIMEZONE: 'Europe/Berlin',
@@ -117,7 +117,7 @@ describe('api entry', () => {
     expect(() =>
       loadConfig({
         DEPLOYMENT_MODE: 'community',
-        DATABASE_URL: 'postgres://localhost/racepilot',
+        DATABASE_URL: 'postgres://localhost/nennbox',
         COMMUNITY_ORGANIZATION_SLUG: 'club',
         COMMUNITY_ORGANIZATION_NAME: 'Club',
         COMMUNITY_ORGANIZATION_TIMEZONE: 'UTC',
@@ -164,7 +164,7 @@ describe('api entry', () => {
         },
         oidcClient: {
           issuerUrl: 'https://id.example',
-          clientId: 'racepilot-web',
+          clientId: 'nennbox-web',
           redirectUri: 'https://app.example/callback',
         },
       }),
@@ -172,7 +172,7 @@ describe('api entry', () => {
     expect(await (await app.request('/auth/config')).json()).toEqual({
       oidc: {
         issuerUrl: 'https://id.example',
-        clientId: 'racepilot-web',
+        clientId: 'nennbox-web',
         redirectUri: 'https://app.example/callback',
       },
     });

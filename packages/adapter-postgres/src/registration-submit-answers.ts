@@ -1,5 +1,5 @@
-import type { RequestContext } from '@racepilot/core';
-import { RegistrationUnavailable } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
+import { RegistrationUnavailable } from '@nennbox/core';
 import { eq, and, sql } from 'drizzle-orm';
 import { registrationFormUploads } from './schema/forms.js';
 import type {

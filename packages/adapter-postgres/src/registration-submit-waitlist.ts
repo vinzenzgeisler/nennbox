@@ -1,5 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 import type { TransactionDatabase } from './database.js';
 import { entries } from './schema/entries.js';
 

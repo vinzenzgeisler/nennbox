@@ -1,5 +1,5 @@
 {
-  "name": "@racepilot/adapter-smtp",
+  "name": "@nennbox/adapter-smtp",
   "version": "0.0.0",
   "type": "module",
   "exports": "./dist/index.js",
@@ -9,7 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@racepilot/core": "*",
+    "@nennbox/core": "*",
     "nodemailer": "^10.6.0"
   },
   "devDependencies": {

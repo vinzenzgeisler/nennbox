@@ -1,5 +1,5 @@
-import type { EventOverview } from '@racepilot/contracts';
-import { Banner, Button } from '@racepilot/ui';
+import type { EventOverview } from '@nennbox/contracts';
+import { Banner, Button } from '@nennbox/ui';
 import {
   warningFilters,
   warningText,

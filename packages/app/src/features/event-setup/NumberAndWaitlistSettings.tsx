@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Banner, Button, Dialog, Field, Switch } from '@racepilot/ui';
+import { Banner, Button, Dialog, Field, Switch } from '@nennbox/ui';
 import { ClassCapacities } from './ClassCapacities.js';
 import { StartNumberRanges } from './StartNumberRanges.js';
 import {

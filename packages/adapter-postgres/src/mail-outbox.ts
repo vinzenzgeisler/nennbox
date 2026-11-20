@@ -1,5 +1,5 @@
 import type { Database } from './database.js';
-import { transitionMessageRecipient } from '@racepilot/core';
+import { transitionMessageRecipient } from '@nennbox/core';
 
 import { sql } from 'drizzle-orm';
 

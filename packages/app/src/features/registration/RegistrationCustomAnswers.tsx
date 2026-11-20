@@ -1,6 +1,6 @@
-import { Field, FileUpload, SelectField, Textarea } from '@racepilot/ui';
+import { Field, FileUpload, SelectField, Textarea } from '@nennbox/ui';
 import type { Dispatch, SetStateAction } from 'react';
-import type { RegistrationCustomField } from '@racepilot/contracts';
+import type { RegistrationCustomField } from '@nennbox/contracts';
 
 type Answer = string | boolean | { objectId: string; uploadToken: string };
 

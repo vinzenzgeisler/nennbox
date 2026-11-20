@@ -1,5 +1,5 @@
 {
-  "name": "@racepilot/core",
+  "name": "@nennbox/core",
   "version": "0.0.0",
   "type": "module",
   "exports": "./dist/index.js",
@@ -13,6 +13,6 @@
   ],
   "private": true,
   "dependencies": {
-    "@racepilot/contracts": "0.0.0"
+    "@nennbox/contracts": "0.0.0"
   }
 }

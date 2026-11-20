@@ -19,7 +19,7 @@ export const eventEntryStatusDimensionConfigs = pgTable(
     organizationId: uuid('organization_id').notNull(),
     eventId: uuid('event_id').notNull(),
     config: jsonb('config')
-      .$type<import('@racepilot/core').EntryStatusDimensionConfig>()
+      .$type<import('@nennbox/core').EntryStatusDimensionConfig>()
       .notNull(),
     actor: text('actor').notNull(),
     reason: text('reason').notNull(),
@@ -115,10 +115,10 @@ export const eventEntryStatusDimensionConfigAudit = pgTable(
     actor: text('actor').notNull(),
     reason: text('reason').notNull(),
     beforeConfig: jsonb('before_config').$type<
-      import('@racepilot/core').EntryStatusDimensionConfig | null
+      import('@nennbox/core').EntryStatusDimensionConfig | null
     >(),
     afterConfig: jsonb('after_config')
-      .$type<import('@racepilot/core').EntryStatusDimensionConfig>()
+      .$type<import('@nennbox/core').EntryStatusDimensionConfig>()
       .notNull(),
     occurredAt: timestamp('occurred_at', { withTimezone: true })
       .notNull()

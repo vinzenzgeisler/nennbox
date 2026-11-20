@@ -1,5 +1,5 @@
 {
-  "name": "@racepilot/worker",
+  "name": "@nennbox/worker",
   "version": "0.0.0",
   "type": "module",
   "exports": "./dist/index.js",
@@ -10,14 +10,14 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "@racepilot/adapter-postgres": "*",
-    "@racepilot/adapter-smtp": "*",
-    "@racepilot/contracts": "*",
-    "@racepilot/core": "*",
+    "@nennbox/adapter-postgres": "*",
+    "@nennbox/adapter-smtp": "*",
+    "@nennbox/contracts": "*",
+    "@nennbox/core": "*",
     "graphile-worker": "^0.16.6",
-    "@racepilot/artifacts": "*",
-    "@racepilot/adapter-local-storage": "*",
-    "@racepilot/adapter-s3": "*"
+    "@nennbox/artifacts": "*",
+    "@nennbox/adapter-local-storage": "*",
+    "@nennbox/adapter-s3": "*"
   },
   "files": [
     "dist"

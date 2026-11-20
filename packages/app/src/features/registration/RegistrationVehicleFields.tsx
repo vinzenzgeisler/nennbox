@@ -1,4 +1,4 @@
-import { Button, Field, SelectField } from '@racepilot/ui';
+import { Button, Field, SelectField } from '@nennbox/ui';
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import type { FormPayload, VehicleEntry } from './RegistrationDomain.js';
 import {

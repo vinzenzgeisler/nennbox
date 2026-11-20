@@ -1,6 +1,6 @@
-import { createLocalObjectStorage } from '@racepilot/adapter-local-storage';
-import { createS3ObjectStorage } from '@racepilot/adapter-s3';
-import type { ObjectStorageProvider } from '@racepilot/core';
+import { createLocalObjectStorage } from '@nennbox/adapter-local-storage';
+import { createS3ObjectStorage } from '@nennbox/adapter-s3';
+import type { ObjectStorageProvider } from '@nennbox/core';
 
 /** Reads the operator-selected object storage from the environment; fails closed when incomplete. */
 export function readStorageConfiguration(

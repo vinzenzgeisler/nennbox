@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import {
   RuntimeBootstrapResponse,
   type RuntimeBootstrapResponse as RuntimeConfig,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import './styles.css';
 import {
   Registration,

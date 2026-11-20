@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRequestContext, organizationId } from '@racepilot/core';
+import { createRequestContext, organizationId } from '@nennbox/core';
 import { createApp } from './index.js';
 import { testDeps } from './testing.js';
 

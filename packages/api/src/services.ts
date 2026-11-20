@@ -7,11 +7,11 @@ import type {
   MessageRecipientFilter,
   MessageTemplate,
   RequestContext,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type {
   PublicRegistrationRequest,
   RegistrationSettings,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 
 /** Message campaigns, templates, and quick actions of the admin UI. */
 export interface MessageService {

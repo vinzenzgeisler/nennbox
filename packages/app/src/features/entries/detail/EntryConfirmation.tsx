@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, DetailSection } from '@racepilot/ui';
-import { ExportQueuedSchema, type ExportJobState } from '@racepilot/contracts';
+import { Button, DetailSection } from '@nennbox/ui';
+import { ExportQueuedSchema, type ExportJobState } from '@nennbox/contracts';
 import { adminFetch } from '../../../auth.js';
 import { readJson } from '../../remote/apiRequest.js';
 import { downloadProtectedFile } from '../../remote/saveBlob.js';

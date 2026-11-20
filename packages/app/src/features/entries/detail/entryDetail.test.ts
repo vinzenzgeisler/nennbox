@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import { statusSteps } from './EntryActionRail.js';
 import { parseEuroToCents } from './EntryPaymentDialog.js';
 import { missingRequirements, timelineFor } from './entryDetailModel.js';

@@ -1,4 +1,4 @@
-import type { ObjectStorageProvider } from '@racepilot/core';
+import type { ObjectStorageProvider } from '@nennbox/core';
 import {
   registerConfirmationRoutes,
   registerFormUploadRoutes,

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
 import { inflateSync } from 'node:zlib';
-import { createEntryConfirmationPdf } from '@racepilot/artifacts/pdf';
+import { createEntryConfirmationPdf } from '@nennbox/artifacts/pdf';
 
 describe('entry confirmation PDF', () => {
   it('renders deterministically with snapshot date and organization branding only', async () => {
     const input = {
-      eventName: 'RacePilot Cup',
+      eventName: 'NENNBOX Cup',
       eventStartsOn: '2026-05-01',
       driverName: 'Max Mustermann',
       vehicle: 'Example GT',
@@ -39,7 +39,7 @@ describe('entry confirmation PDF', () => {
     expect(content).not.toContain('MSC');
     expect(content).toContain('/Image-');
     expect(content).toContain('/FontFile2');
-    expect(pdf.getTitle()).toContain('RacePilot Cup');
+    expect(pdf.getTitle()).toContain('NENNBOX Cup');
     expect(pdf.getAuthor()).toBe('Example Club');
   });
 
@@ -75,7 +75,7 @@ describe('entry confirmation PDF', () => {
   });
   it('does not emit transfer instructions or a QR when the capability is inactive', async () => {
     const input = {
-      eventName: 'RacePilot Cup',
+      eventName: 'NENNBOX Cup',
       eventStartsOn: '2026-05-01',
       driverName: 'Ada Driver',
       vehicle: 'Roadster',

@@ -1,6 +1,6 @@
 import type { Database } from './database.js';
 
-import type { EntryConfirmationRepository } from '@racepilot/core';
+import type { EntryConfirmationRepository } from '@nennbox/core';
 
 import { events, eventClasses } from './schema/organization.js';
 

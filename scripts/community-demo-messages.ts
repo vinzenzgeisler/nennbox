@@ -1,5 +1,5 @@
-import type { createDatabase } from '@racepilot/adapter-postgres';
-import { createMessageRepository } from '@racepilot/adapter-postgres';
+import type { createDatabase } from '@nennbox/adapter-postgres';
+import { createMessageRepository } from '@nennbox/adapter-postgres';
 
 type Db = Awaited<ReturnType<typeof createDatabase>>['db'];
 type Context = Parameters<

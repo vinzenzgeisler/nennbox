@@ -1,6 +1,6 @@
 import { people, vehicles } from './schema/entries.js';
 
-import { organizationId, normalizeEmail } from '@racepilot/core';
+import { organizationId, normalizeEmail } from '@nennbox/core';
 
 import type { Database } from './database.js';
 
@@ -10,7 +10,7 @@ import { sql } from 'drizzle-orm';
 
 function mapPerson(
   row: typeof people.$inferSelect,
-): import('@racepilot/core').Person {
+): import('@nennbox/core').Person {
   return {
     ...row,
     organizationId: organizationId(row.organizationId),
@@ -22,7 +22,7 @@ function mapPerson(
 
 function mapVehicle(
   row: typeof vehicles.$inferSelect,
-): import('@racepilot/core').Vehicle {
+): import('@nennbox/core').Vehicle {
   return {
     ...row,
     organizationId: organizationId(row.organizationId),
@@ -33,7 +33,7 @@ function mapVehicle(
 
 export function createPersonRepository(
   db: Database,
-): import('@racepilot/core').PersonRepository {
+): import('@nennbox/core').PersonRepository {
   return {
     create: async (ctx, input) => {
       const firstName = input.firstName.trim();
@@ -123,7 +123,7 @@ export function createPersonRepository(
 
 export function createVehicleRepository(
   db: Database,
-): import('@racepilot/core').VehicleRepository {
+): import('@nennbox/core').VehicleRepository {
   return {
     create: async (ctx, input) => {
       const [row] = await db

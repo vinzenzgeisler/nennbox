@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
-import { MESSAGE_VERIFICATION_TOKEN_TTL_MS } from '@racepilot/core';
+import { MESSAGE_VERIFICATION_TOKEN_TTL_MS } from '@nennbox/core';
 import type { TransactionDatabase } from './database.js';
 import { groupEmailVerifications } from './schema/public-registration.js';
 

@@ -1,5 +1,5 @@
 import { useEffect, type Dispatch, type SetStateAction } from 'react';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 
 export function useAdminEntriesKeyboard({
   items,

@@ -7,7 +7,7 @@ import { organizations, events } from './schema/organization.js';
 import { enqueueMailOutbox } from './mail-outbox.js';
 import { projectEntryRows } from './entry-projection.js';
 import type { Database } from './database.js';
-import type { EntryRepository } from '@racepilot/core';
+import type { EntryRepository } from '@nennbox/core';
 import { attachAdminEntryDetails } from './entry-admin-details.js';
 import { offerWaitlistSeat } from './waitlist-offer.js';
 

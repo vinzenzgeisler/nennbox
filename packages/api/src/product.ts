@@ -34,7 +34,7 @@ import {
   createStartNumberService,
   createTimingRepository,
   type Database,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
 import {
   consoleLogger,
   createModuleRegistry,
@@ -47,7 +47,7 @@ import {
   type OrganizationMail,
   type TenantRef,
   type PaymentProvider,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { createApp } from './app.js';
 import type { RegistrationRateLimiter } from './rate-limit.js';
 import { timingModule } from './timing-module.js';

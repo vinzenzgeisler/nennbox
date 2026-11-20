@@ -5,7 +5,7 @@ import {
   recordInvoicePayment,
   correctInvoicePayment,
   updatePaymentRecipient,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 export function registerPaymentsRoutes(context: ApiRoutesContext): void {
   const { app, deps, requireMember } = context;

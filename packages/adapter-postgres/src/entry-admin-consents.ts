@@ -1,5 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import type { AdminEntryConsent, RequestContext } from '@racepilot/core';
+import type { AdminEntryConsent, RequestContext } from '@nennbox/core';
 import type { Database } from './database.js';
 import { consentEvidence } from './schema/forms.js';
 import { events } from './schema/organization.js';

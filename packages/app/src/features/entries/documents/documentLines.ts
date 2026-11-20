@@ -1,8 +1,8 @@
 import type {
   EntryDocumentLine,
   EntryResponse as Entry,
-} from '@racepilot/contracts';
-import type { Status } from '@racepilot/ui';
+} from '@nennbox/contracts';
+import type { Status } from '@nennbox/ui';
 
 export type UploadLine = Extract<EntryDocumentLine, { kind: 'upload' }>;
 type UploadStatus = UploadLine['status'];

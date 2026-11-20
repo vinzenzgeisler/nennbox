@@ -1,4 +1,4 @@
-import { Checkbox, Field, Steps } from '@racepilot/ui';
+import { Checkbox, Field, Steps } from '@nennbox/ui';
 import { RegistrationPayment } from './RegistrationPayment.js';
 import { Fragment } from 'react';
 import type { RegistrationModel } from './RegistrationModel.js';

@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate as drizzleMigrate } from 'drizzle-orm/node-postgres/migrator';
 import { sql } from 'drizzle-orm';
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 import type { Pool } from 'pg';
 import type { Database } from './database.js';
 

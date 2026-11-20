@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { EntryMessagesResponse } from '@racepilot/contracts';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import { EntryMessagesResponse } from '@nennbox/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import { request } from '../AdminEntriesModel.js';
 
 export type EntryMessage = EntryMessagesResponse['items'][number];

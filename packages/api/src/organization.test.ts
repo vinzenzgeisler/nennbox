@@ -5,13 +5,13 @@ import {
   loadConfig,
   type ApiDeps,
 } from './index.js';
-import type { RegistrationSettings } from '@racepilot/contracts';
-import { defaultRegistrationFormConfig } from '@racepilot/contracts';
+import type { RegistrationSettings } from '@nennbox/contracts';
+import { defaultRegistrationFormConfig } from '@nennbox/contracts';
 import {
   createRequestContext,
   getEvent,
   organizationId,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { resolveRegistrationRateLimits } from './rate-limit.js';
 import { readFileSync } from 'node:fs';
 import { testDeps, testRegistration } from './testing.js';
@@ -1361,7 +1361,7 @@ describe('registration administration and public endpoints', () => {
 
 describe('registration workflow admin routes', () => {
   it('validates, authorizes and scopes organization and event workflow revisions', async () => {
-    const { defaultEntryWorkflow } = await import('@racepilot/core');
+    const { defaultEntryWorkflow } = await import('@nennbox/core');
     const stored = {
       id: 'rev1',
       organizationId: organizationId(config.organizationId),

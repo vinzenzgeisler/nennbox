@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createRequestContext, organizationId } from '@racepilot/core';
+import { createRequestContext, organizationId } from '@nennbox/core';
 import { allocateOrgaCode } from './orga-code.js';
 import type { TransactionDatabase } from './database.js';
 

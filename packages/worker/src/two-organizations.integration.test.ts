@@ -11,16 +11,16 @@ import {
   migrate,
   organizations,
   type Database,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
 import {
   createRequestContext,
   organizationId,
   type MailMessage,
   type ObjectStorageProvider,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { createProductWorker } from './product.js';
 
-const databaseUrl = process.env.RACEPILOT_TEST_DATABASE_URL;
+const databaseUrl = process.env.NENNBOX_TEST_DATABASE_URL;
 
 type Tenant = { id: string; origin: string };
 type Tasks = ReturnType<typeof createProductWorker>['taskList'];

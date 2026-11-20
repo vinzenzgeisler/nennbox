@@ -1,4 +1,4 @@
-import { staticCanonicalOrigin } from '@racepilot/core';
+import { staticCanonicalOrigin } from '@nennbox/core';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createMailOutboxTask,
@@ -8,12 +8,12 @@ import {
   type MailOutboxRepository,
   type MailOutboxRecord,
 } from './mail.js';
-import { organizationId } from '@racepilot/core';
+import { organizationId } from '@nennbox/core';
 import type {
   JobContext,
   MailAttachment,
   ObjectStorageProvider,
-} from '@racepilot/core';
+} from '@nennbox/core';
 const ctx: JobContext = {
   deploymentMode: 'cloud',
   organizationId: organizationId('org-a'),

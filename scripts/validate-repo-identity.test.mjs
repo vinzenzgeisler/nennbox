@@ -28,12 +28,12 @@ function check(remote, extraEnv = {}) {
 
 describe('repository identity validation', () => {
   it.each([
-    'https://github.com/vinzenzgeisler/racepilot',
-    'https://github.com/VinzenzGeisler/RacePilot.git',
-    'git@github.com:vinzenzgeisler/racepilot',
-    'git@github.com:vinzenzgeisler/racepilot.git',
-    'ssh://git@github.com/vinzenzgeisler/racepilot',
-    'ssh://git@github.com/vinzenzgeisler/racepilot.git',
+    'https://github.com/vinzenzgeisler/nennbox',
+    'https://github.com/VinzenzGeisler/NENNBOX.git',
+    'git@github.com:vinzenzgeisler/nennbox',
+    'git@github.com:vinzenzgeisler/nennbox.git',
+    'ssh://git@github.com/vinzenzgeisler/nennbox',
+    'ssh://git@github.com/vinzenzgeisler/nennbox.git',
   ])('accepts %s', (remote) => expect(check(remote).status).toBe(0));
   it.each([
     'https://github.com/vinzenzgeisler/race-pilot.git',
@@ -47,13 +47,13 @@ describe('repository identity validation', () => {
   it('uses GitHub repository identity in Actions', () => {
     const result = check(null, {
       GITHUB_ACTIONS: 'true',
-      GITHUB_REPOSITORY: 'VinzenzGeisler/RacePilot',
+      GITHUB_REPOSITORY: 'VinzenzGeisler/NENNBOX',
     });
     expect(result.status).toBe(0);
   });
   it('supports and displays an expected-repository override', () => {
     const result = check('https://github.com/example/fork.git', {
-      RACEPILOT_EXPECTED_REPO: 'example/fork',
+      NENNBOX_EXPECTED_REPO: 'example/fork',
     });
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('override');

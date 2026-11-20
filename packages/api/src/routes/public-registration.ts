@@ -10,11 +10,11 @@ import {
   createRequestContext,
   ProviderError,
   RegistrationUnavailable,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import {
   PublicRegistrationRequestSchema,
   SaveRegistrationDraftRequestSchema,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 
 export function registerPublicRegistrationRoutes(
   { app, deps, resolvePublicContext }: ApiRoutesContext,

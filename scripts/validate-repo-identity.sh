@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-expected="${RACEPILOT_EXPECTED_REPO:-vinzenzgeisler/racepilot}"
-if [[ -n "${RACEPILOT_EXPECTED_REPO:-}" ]]; then
+expected="${NENNBOX_EXPECTED_REPO:-vinzenzgeisler/racepilot}"
+if [[ -n "${NENNBOX_EXPECTED_REPO:-}" ]]; then
   printf 'Using repository identity override: %s\n' "$expected"
 fi
 if [[ -n "${GITHUB_ACTIONS:-}" && "${GITHUB_ACTIONS}" == "true" ]]; then

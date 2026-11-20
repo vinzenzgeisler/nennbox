@@ -1,7 +1,7 @@
 # Public registration (Issue #61)
 
 The shared public API serves the versioned `StandardRegistrationFormSchema` from
-`@racepilot/contracts`. The app renders its steps declaratively, uses the event's
+`@nennbox/contracts`. The app renders its steps declaratively, uses the event's
 configured consent text, and submits a strict `PublicRegistrationRequestSchema`.
 The contract rejects unknown fields and unsupported versions; the server repeats
 validation and never treats browser-provided organization, event, class, consent
@@ -108,7 +108,7 @@ button text picks the higher-contrast black/white foreground and links are
 darkened until they achieve 4.5:1 against the fixed light surface. The app
 displays a neutral notice when a configured color needs adjustment. The fixed
 three-step structure, IBM Plex body font, and system status colors remain
-product invariants. The public `@racepilot/ui` package and Brandbook M4 specify
+product invariants. The public `@nennbox/ui` package and Brandbook M4 specify
 Archivo for headings; F1 mentions six heading fonts but identifies no approved
 families or corresponding license/source set. This implementation exposes the
 specified Brandbook font (Archivo) only rather than inventing choices or loading

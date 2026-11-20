@@ -6,7 +6,7 @@
 import {
   RegistrationFormConfigPatchSchema,
   registrationFieldDefaultState,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 
 export type RegistrationFieldState = 'required' | 'optional' | 'hidden';
 

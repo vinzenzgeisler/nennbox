@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ReasonDialog, SelectField, TextInput } from '@racepilot/ui';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import { ReasonDialog, SelectField, TextInput } from '@nennbox/ui';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import { formatMoney } from './entryDetailModel.js';
 import { parseEuroToCents } from './EntryPaymentDialog.js';
 

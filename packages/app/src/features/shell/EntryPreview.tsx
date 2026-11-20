@@ -2,14 +2,14 @@ import { dimensionStatus } from '../entries/dimensionStatus.js';
 import type {
   EntryResponse as Entry,
   EntryWorkflowCategory,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import {
   Button,
   DocumentList,
   KeyboardHintBar,
   PreviewPanel,
   StatusLabel,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import type { WorkflowView } from '../entries/AdminEntriesModel.js';
 import {
   documentStatusView,

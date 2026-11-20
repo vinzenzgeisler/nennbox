@@ -4,13 +4,13 @@ import type {
   OrganizationRepository,
   OrganizationPatch,
   Organization,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 import { sql } from 'drizzle-orm';
 
 import { organizations } from './schema/organization.js';
 
-import { organizationId } from '@racepilot/core';
+import { organizationId } from '@nennbox/core';
 
 import { eq } from 'drizzle-orm';
 
@@ -20,7 +20,7 @@ export async function ensureCommunityOrganization(
 ): Promise<Organization> {
   return db.transaction(async (tx) => {
     await tx.execute(
-      sql`select pg_advisory_xact_lock(hashtext('racepilot.community.bootstrap'))`,
+      sql`select pg_advisory_xact_lock(hashtext('nennbox.community.bootstrap'))`,
     );
     const rows = await tx.select().from(organizations);
     if (rows.length > 1)

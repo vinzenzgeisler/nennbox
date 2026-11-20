@@ -3,7 +3,7 @@ import {
   organizationId,
   type Entry,
   type EntryAdminActionResult,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { createApp } from './index.js';
 import { testDeps } from './testing.js';
 

@@ -1,4 +1,4 @@
-import { createDatabase } from '@racepilot/adapter-postgres';
+import { createDatabase } from '@nennbox/adapter-postgres';
 import { seedCommunityDemo } from './community-demo-seed.js';
 
 async function runCli() {

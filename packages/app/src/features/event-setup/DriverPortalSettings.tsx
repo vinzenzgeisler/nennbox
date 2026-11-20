@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Banner, Button, Checkbox, FormSection } from '@racepilot/ui';
+import { Banner, Button, Checkbox, FormSection } from '@nennbox/ui';
 import { z } from 'zod';
 import { apiRequest } from '../remote/apiRequest.js';
 

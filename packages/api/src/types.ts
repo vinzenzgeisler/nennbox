@@ -1,4 +1,4 @@
-import type { DriverPortalRepository } from '@racepilot/adapter-postgres';
+import type { DriverPortalRepository } from '@nennbox/adapter-postgres';
 import type { Hono } from 'hono';
 import type {
   DeploymentMode,
@@ -32,7 +32,7 @@ import type {
   PaymentProvider,
   PaymentRefundRepository,
   CanonicalOrigin,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type { ModuleApiDeps } from './modules.js';
 import type { RegistrationRateLimiter } from './rate-limit.js';
 import type {
@@ -124,7 +124,7 @@ export interface RuntimeBootstrapConfig {
  * need one of them are registered only when it is present.
  */
 export interface EditionApiDeps {
-  startNumbers?: import('@racepilot/core').StartNumberService;
+  startNumbers?: import('@nennbox/core').StartNumberService;
   /** Documents, exports, uploads, and message attachments need object storage. */
   objectStorage?: ObjectStorageProvider;
   publicRegistration?: PublicRegistrationModule;

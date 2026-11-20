@@ -163,7 +163,7 @@ export const entries = pgTable(
     orgaCode: text('orga_code').notNull(),
     priceSnapshotVersion: text('price_snapshot_version'),
     priceSnapshot: jsonb('price_snapshot').$type<
-      import('@racepilot/core').PriceSnapshot | null
+      import('@nennbox/core').PriceSnapshot | null
     >(),
     formSnapshotVersion: text('form_snapshot_version'),
     createdAt: timestamp('created_at', { withTimezone: true })

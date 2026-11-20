@@ -1,6 +1,6 @@
 # Provider ports (Issue #36)
 
-`@racepilot/core` defines provider-neutral `IdentityProvider`, `MailProvider`, and
+`@nennbox/core` defines provider-neutral `IdentityProvider`, `MailProvider`, and
 `ObjectStorageProvider` contracts. Identity verification returns only the verified
 issuer/subject and optional profile attributes; it must never carry roles or
 permissions. Authorization remains server-side membership policy (#55).

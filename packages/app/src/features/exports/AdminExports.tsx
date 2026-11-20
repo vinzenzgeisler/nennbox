@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Banner } from '@racepilot/ui';
-import type { ExportJob } from '@racepilot/contracts';
+import { Banner } from '@nennbox/ui';
+import type { ExportJob } from '@nennbox/contracts';
 import {
   LoadingNotice,
   NoEventSelected,

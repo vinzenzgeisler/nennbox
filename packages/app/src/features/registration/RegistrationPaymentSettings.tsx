@@ -1,5 +1,5 @@
-import { Checkbox } from '@racepilot/ui';
-import type { RegistrationFormConfig } from '@racepilot/contracts';
+import { Checkbox } from '@nennbox/ui';
+import type { RegistrationFormConfig } from '@nennbox/contracts';
 
 const methods = [
   ['card', 'Karte'],

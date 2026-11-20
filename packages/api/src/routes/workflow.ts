@@ -8,8 +8,8 @@ import {
   normalizeEntryWorkflow,
   validateEntryStatusDimensionConfig,
   EntryStatusInUseError,
-} from '@racepilot/core';
-import { EntryStatusDimensionConfigSchema } from '@racepilot/contracts';
+} from '@nennbox/core';
+import { EntryStatusDimensionConfigSchema } from '@nennbox/contracts';
 
 const consentTerm = z
   .object({
@@ -108,7 +108,7 @@ export function registerWorkflowRoutes(context: ApiRoutesContext): void {
     let errors: string[];
     try {
       errors = validateEntryWorkflow(
-        candidate as import('@racepilot/core').EntryWorkflow,
+        candidate as import('@nennbox/core').EntryWorkflow,
       );
     } catch {
       return c.json({ error: 'Invalid workflow' }, 400);
@@ -122,7 +122,7 @@ export function registerWorkflowRoutes(context: ApiRoutesContext): void {
       await deps.entryWorkflows.setOrganization(
         context,
         normalizeEntryWorkflow(
-          candidate as import('@racepilot/core').EntryWorkflow,
+          candidate as import('@nennbox/core').EntryWorkflow,
         ),
         actor,
         body.reason,
@@ -169,7 +169,7 @@ export function registerWorkflowRoutes(context: ApiRoutesContext): void {
     let errors: string[];
     try {
       errors = validateEntryWorkflow(
-        candidate as import('@racepilot/core').EntryWorkflow,
+        candidate as import('@nennbox/core').EntryWorkflow,
       );
     } catch {
       return c.json({ error: 'Invalid workflow' }, 400);
@@ -183,7 +183,7 @@ export function registerWorkflowRoutes(context: ApiRoutesContext): void {
       context,
       c.req.param('eventId'),
       normalizeEntryWorkflow(
-        candidate as import('@racepilot/core').EntryWorkflow,
+        candidate as import('@nennbox/core').EntryWorkflow,
       ),
       actor,
       body.reason,

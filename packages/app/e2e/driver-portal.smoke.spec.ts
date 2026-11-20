@@ -7,8 +7,8 @@ import {
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 
-const api = process.env.RACEPILOT_API_URL ?? 'http://127.0.0.1:3000';
-const mailpit = process.env.RACEPILOT_MAILPIT_URL ?? 'http://127.0.0.1:8025';
+const api = process.env.NENNBOX_API_URL ?? 'http://127.0.0.1:3000';
+const mailpit = process.env.NENNBOX_MAILPIT_URL ?? 'http://127.0.0.1:8025';
 const shots = process.env.PORTAL_SCREENSHOT_DIR;
 async function shoot(page: Page, name: string) {
   if (!shots) return;

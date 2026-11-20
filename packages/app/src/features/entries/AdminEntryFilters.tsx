@@ -1,5 +1,5 @@
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
-import { FilterBar, SelectField, TextInput } from '@racepilot/ui';
+import { FilterBar, SelectField, TextInput } from '@nennbox/ui';
 import type { EntryQuery } from './AdminEntriesModel.js';
 
 export function AdminEntryFilters({

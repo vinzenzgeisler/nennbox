@@ -12,7 +12,7 @@ export COMMUNITY_APP_PORT="${COMMUNITY_APP_PORT:-5173}"
 export COMMUNITY_KEYCLOAK_URL="${COMMUNITY_KEYCLOAK_URL:-http://127.0.0.1:$COMMUNITY_KEYCLOAK_PORT}"
 export COMMUNITY_APP_URL="${COMMUNITY_APP_URL:-http://127.0.0.1:$COMMUNITY_APP_PORT}"
 node scripts/community-config.mjs
-compose=(docker compose --project-name "${COMPOSE_PROJECT_NAME:-racepilot-community}" --env-file .community-local/compose.env -f compose.community.dev.yaml)
+compose=(docker compose --project-name "${COMPOSE_PROJECT_NAME:-nennbox-community}" --env-file .community-local/compose.env -f compose.community.dev.yaml)
 "${compose[@]}" --profile prepare run --rm keycloak-prepare
 "${compose[@]}" up -d --wait --wait-timeout 120
 cleanup() {
@@ -33,7 +33,7 @@ for attempt in {1..30}; do
 done
 npm ci
 npm run build
-export DATABASE_URL="postgres://racepilot:racepilot-local@127.0.0.1:$COMMUNITY_POSTGRES_PORT/racepilot"
+export DATABASE_URL="postgres://nennbox:nennbox-local@127.0.0.1:$COMMUNITY_POSTGRES_PORT/nennbox"
 export DEPLOYMENT_MODE=community
 export COMMUNITY_ORGANIZATION_SLUG=community
 export COMMUNITY_ORGANIZATION_NAME=NENNBOX
@@ -54,7 +54,7 @@ mkdir -p "$STORAGE_LOCAL_ROOT"
 node scripts/community-init.mjs
 PORT="$COMMUNITY_API_PORT" node packages/api/dist/server.js & api_pid=$!
 node packages/worker/dist/server.js & worker_pid=$!
-RACEPILOT_API_URL="http://127.0.0.1:$COMMUNITY_API_PORT" node node_modules/vite/bin/vite.js packages/app --host 127.0.0.1 --port "$COMMUNITY_APP_PORT" --strictPort & app_pid=$!
+NENNBOX_API_URL="http://127.0.0.1:$COMMUNITY_API_PORT" node node_modules/vite/bin/vite.js packages/app --host 127.0.0.1 --port "$COMMUNITY_APP_PORT" --strictPort & app_pid=$!
 if [[ "${COMMUNITY_SEED_DEMO:-0}" == 1 ]]; then
   COMMUNITY_DEMO_SEED=I_UNDERSTAND npm run community:demo-seed & demo_seed_pid=$!
 fi

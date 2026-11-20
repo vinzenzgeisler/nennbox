@@ -8,8 +8,8 @@ import {
   normalizeEmail,
   normalizeRequestedStartNumber,
   MESSAGE_VERIFICATION_TOKEN_TTL_MS,
-} from '@racepilot/core';
-import type { RequestContext } from '@racepilot/core';
+} from '@nennbox/core';
+import type { RequestContext } from '@nennbox/core';
 import { eventClassPricingRules } from './schema/billing.js';
 import { emailTemplateVersions } from './mail-schema.js';
 import { vehicles, entries } from './schema/entries.js';

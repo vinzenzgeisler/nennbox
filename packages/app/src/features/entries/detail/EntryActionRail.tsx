@@ -4,8 +4,8 @@ import {
   NextStepButton,
   RailAction,
   RailNote,
-} from '@racepilot/ui';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+} from '@nennbox/ui';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { WorkflowView } from '../AdminEntriesModel.js';
 import {
   dimensionAction,

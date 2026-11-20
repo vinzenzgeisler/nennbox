@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createRequestContext, organizationId } from '@racepilot/core';
-import type { ObjectStorageProvider } from '@racepilot/core';
+import { createRequestContext, organizationId } from '@nennbox/core';
+import type { ObjectStorageProvider } from '@nennbox/core';
 import type { ApiDeps } from './types.js';
 import { createApp } from './index.js';
 import { testDeps } from './testing.js';

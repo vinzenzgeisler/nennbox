@@ -1,12 +1,12 @@
 import { and, eq } from 'drizzle-orm';
-import { uploadEntryDocument, decideEntryDocument } from '@racepilot/core';
+import { uploadEntryDocument, decideEntryDocument } from '@nennbox/core';
 import {
   createDatabase,
   createEntryDocumentsRepository,
   entries,
   people,
-} from '@racepilot/adapter-postgres';
-import { createLocalObjectStorage } from '@racepilot/adapter-local-storage';
+} from '@nennbox/adapter-postgres';
+import { createLocalObjectStorage } from '@nennbox/adapter-local-storage';
 import type { rows as demoRows } from './community-demo-data.js';
 import { demoEmail } from './community-demo-profiles.js';
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   RegistrationDraftSchema,
   type RegistrationDraft,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import { Registration } from './Registration.js';
 
 export function RegistrationResume({

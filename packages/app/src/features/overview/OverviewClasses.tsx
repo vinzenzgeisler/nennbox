@@ -1,5 +1,5 @@
-import type { EventOverview } from '@racepilot/contracts';
-import { DetailSection, OccupancyBar } from '@racepilot/ui';
+import type { EventOverview } from '@nennbox/contracts';
+import { DetailSection, OccupancyBar } from '@nennbox/ui';
 
 const valueText = (occupied: number, capacity: number | null): string =>
   capacity === null

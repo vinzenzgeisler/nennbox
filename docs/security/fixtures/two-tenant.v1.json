@@ -6,7 +6,7 @@
     {
       "organizationId": "10000000-0000-4000-8000-000000000001",
       "slug": "tenant-a",
-      "host": "tenant-a.test.racepilot.invalid",
+      "host": "tenant-a.test.nennbox.invalid",
       "adminSubject": "fixture-admin-a",
       "eventId": "20000000-0000-4000-8000-000000000001",
       "entryId": "30000000-0000-4000-8000-000000000001",
@@ -21,7 +21,7 @@
     {
       "organizationId": "10000000-0000-4000-8000-000000000002",
       "slug": "tenant-b",
-      "host": "tenant-b.test.racepilot.invalid",
+      "host": "tenant-b.test.nennbox.invalid",
       "adminSubject": "fixture-admin-b",
       "eventId": "20000000-0000-4000-8000-000000000002",
       "entryId": "30000000-0000-4000-8000-000000000002",

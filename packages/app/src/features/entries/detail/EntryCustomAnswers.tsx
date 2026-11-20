@@ -1,5 +1,5 @@
-import { DetailSection, FieldGrid, FieldItem } from '@racepilot/ui';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import { DetailSection, FieldGrid, FieldItem } from '@nennbox/ui';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 
 type Answer = NonNullable<Entry['adminDetails']>['customAnswers'][number];
 

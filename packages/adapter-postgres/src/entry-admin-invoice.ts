@@ -1,5 +1,5 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import type { AdminEntryInvoice, RequestContext } from '@racepilot/core';
+import type { AdminEntryInvoice, RequestContext } from '@nennbox/core';
 import type { Database } from './database.js';
 import { invoices } from './schema/billing.js';
 

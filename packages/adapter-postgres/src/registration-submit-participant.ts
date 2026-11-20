@@ -1,10 +1,10 @@
-import type { RequestContext } from '@racepilot/core';
-import { RegistrationUnavailable } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
+import { RegistrationUnavailable } from '@nennbox/core';
 import {
   normalizeEmail,
   normalizeRequestedStartNumber,
   availableStartNumbers,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { eq, and, inArray, sql } from 'drizzle-orm';
 import { people, entries } from './schema/entries.js';
 import { eventClasses } from './schema/organization.js';

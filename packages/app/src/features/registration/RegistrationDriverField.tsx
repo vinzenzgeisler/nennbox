@@ -1,5 +1,5 @@
-import { Field } from '@racepilot/ui';
-import type { StandardRegistrationForm } from '@racepilot/contracts';
+import { Field } from '@nennbox/ui';
+import type { StandardRegistrationForm } from '@nennbox/contracts';
 import type { RegistrationModel } from './RegistrationModel.js';
 
 type DriverField = StandardRegistrationForm['steps'][number]['fields'][number];

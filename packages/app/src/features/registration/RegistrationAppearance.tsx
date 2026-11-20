@@ -6,8 +6,8 @@ import {
   SelectField,
   Stack,
   Textarea,
-} from '@racepilot/ui';
-import type { RegistrationFormConfig } from '@racepilot/contracts';
+} from '@nennbox/ui';
+import type { RegistrationFormConfig } from '@nennbox/contracts';
 
 type UpdateConfig = (
   updater: (current: RegistrationFormConfig) => RegistrationFormConfig,

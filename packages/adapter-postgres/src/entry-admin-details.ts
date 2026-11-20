@@ -1,5 +1,5 @@
 import type { Database } from './database.js';
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 import {
   people,
   vehicles,
@@ -12,7 +12,7 @@ import {
   effectivePassengerMode,
   registrationFeatureEnabled,
   type PassengerMode,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { registrationFormUploads } from './schema/forms.js';
 import { sql } from 'drizzle-orm';
 import { loadConsentEvidence } from './entry-admin-consents.js';
@@ -25,8 +25,8 @@ import { customAnswersFor } from './entry-admin-custom-answers.js';
 export async function attachAdminEntryDetails(
   db: Pick<Database, 'select'>,
   ctx: RequestContext,
-  items: readonly import('@racepilot/core').Entry[],
-): Promise<import('@racepilot/core').Entry[]> {
+  items: readonly import('@nennbox/core').Entry[],
+): Promise<import('@nennbox/core').Entry[]> {
   if (!items.length) return [];
   const ids = items.map((item) => item.id);
   const groupIds = [...new Set(items.map((item) => item.registrationGroupId))];
@@ -87,7 +87,7 @@ export async function attachAdminEntryDetails(
         `${upload.registrationGroupId}:${upload.eventId}:${upload.fieldKey}:${upload.objectId}`,
     ),
   );
-  const customAnswersOf = (item: import('@racepilot/core').Entry) =>
+  const customAnswersOf = (item: import('@nennbox/core').Entry) =>
     customAnswersFor(item, groupById.get(item.registrationGroupId), uploadKeys);
   const peopleRows = await db
     .select({
@@ -179,7 +179,7 @@ export async function attachAdminEntryDetails(
   const vehiclesByEntry = new Map(vehicleRows.map((row) => [row.entryId, row]));
   const classesByEntry = new Map(classRows.map((row) => [row.entryId, row]));
   const passengerModeFor = (
-    item: import('@racepilot/core').Entry,
+    item: import('@nennbox/core').Entry,
     classMode: string | undefined,
   ): PassengerMode => {
     const group = groupById.get(item.registrationGroupId);

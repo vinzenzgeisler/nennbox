@@ -3,7 +3,7 @@ import {
   PublicRegistrationRequestSchema,
   RegistrationContactFieldsSchema,
   RegistrationDraftSchema,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import type { RegistrationModel } from './RegistrationModel.js';
 import {
   nullIfEmpty,

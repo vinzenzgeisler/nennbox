@@ -1,5 +1,5 @@
-import type { EventOverview } from '@racepilot/contracts';
-import { DataTable, DetailSection } from '@racepilot/ui';
+import type { EventOverview } from '@nennbox/contracts';
+import { DataTable, DetailSection } from '@nennbox/ui';
 import { statusRows } from './overviewModel.js';
 
 export function OverviewStatuses({

@@ -4,8 +4,8 @@ import type {
   ExportFilters,
   ExportJob,
   ExportJobState,
-} from '@racepilot/contracts';
-import { EXPORT_FIELDS } from '@racepilot/contracts';
+} from '@nennbox/contracts';
+import { EXPORT_FIELDS } from '@nennbox/contracts';
 
 export const FIELD_LABELS: Record<ExportField, string> = {
   driver: 'Fahrer',

@@ -28,11 +28,11 @@ async function shoot(page: Page, name: string) {
 }
 
 const mailpitBaseUrl =
-  process.env.RACEPILOT_MAILPIT_URL ??
+  process.env.NENNBOX_MAILPIT_URL ??
   process.env.COMMUNITY_MAILPIT_BASE_URL ??
   'http://127.0.0.1:8025';
 const apiBaseUrl =
-  process.env.RACEPILOT_API_URL ??
+  process.env.NENNBOX_API_URL ??
   process.env.COMMUNITY_API_BASE_URL ??
   'http://127.0.0.1:3000';
 

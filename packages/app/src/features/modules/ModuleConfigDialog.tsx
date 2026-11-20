@@ -1,4 +1,4 @@
-import { Button, Dialog } from '@racepilot/ui';
+import { Button, Dialog } from '@nennbox/ui';
 import { SchemaFields } from './ModuleSchemaFields.js';
 import { words, type ModuleLocale } from './moduleWords.js';
 import type { Module } from './AdminModules.js';

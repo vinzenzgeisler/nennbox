@@ -1,9 +1,9 @@
 import { entries } from './schema/entries.js';
-import { normalizeRequestedStartNumber } from '@racepilot/core';
+import { normalizeRequestedStartNumber } from '@nennbox/core';
 import { eq, and } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import type { Database } from './database.js';
-import type { EntryRepository } from '@racepilot/core';
+import type { EntryRepository } from '@nennbox/core';
 import { mapEntry } from './entry-projection.js';
 import { withAllocatedOrgaCode } from './orga-code.js';
 

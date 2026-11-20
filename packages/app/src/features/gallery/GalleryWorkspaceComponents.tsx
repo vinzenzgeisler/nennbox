@@ -18,7 +18,7 @@ import {
   TextInput,
   Wordmark,
   WorkspaceSplit,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 
 const image = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="210"><defs><linearGradient id="g"><stop stop-color="#7d8b78"/><stop offset="1" stop-color="#34473c"/></linearGradient></defs><rect width="320" height="210" fill="url(#g)"/></svg>')}`;
 const events = [

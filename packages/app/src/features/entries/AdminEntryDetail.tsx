@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Banner, DetailLayout, ReasonDialog } from '@racepilot/ui';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import { Banner, DetailLayout, ReasonDialog } from '@nennbox/ui';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { Outcome, WorkflowView } from './AdminEntriesModel.js';
 import type { Pending } from './detail/EntryDetailPending.js';
 import { EntryAdminActionDialog } from './detail/EntryAdminActionDialog.js';

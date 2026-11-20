@@ -1,5 +1,5 @@
-import { Field, FormGrid, FormWide, Textarea } from '@racepilot/ui';
-import type { RegistrationFormConfig } from '@racepilot/contracts';
+import { Field, FormGrid, FormWide, Textarea } from '@nennbox/ui';
+import type { RegistrationFormConfig } from '@nennbox/contracts';
 import {
   fieldState,
   type VehicleEntry,

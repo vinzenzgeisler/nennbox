@@ -1,5 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 import type { Database } from './database.js';
 import { entryPassengerLinks, entryPassengers } from './schema/passengers.js';
 

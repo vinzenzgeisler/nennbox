@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { WorkflowView } from './AdminEntriesModel.js';
 import type { EntryFilters } from '../overview/overviewModel.js';
 import type { MessageSeed } from '../messages/messageSeed.js';

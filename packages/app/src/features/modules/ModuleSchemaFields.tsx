@@ -5,7 +5,7 @@ import {
   SelectField,
   TextInput,
   Textarea,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 
 type JsonSchema = {
   type?: string;

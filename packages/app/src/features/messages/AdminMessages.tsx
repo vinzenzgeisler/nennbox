@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react';
-import { Button, Dialog, MessageLayout } from '@racepilot/ui';
+import { Button, Dialog, MessageLayout } from '@nennbox/ui';
 import {
   MessageRecipientFilterSchema,
   type MessageAttachmentRecord,
   type MessageRecipientFilter,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import type { MessageSeed } from './messageSeed.js';
 import { MessageRecipients } from './MessageRecipients.js';
 import { MessageComposer } from './MessageComposer.js';

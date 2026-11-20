@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button, DetailSection, Banner, Field } from '@racepilot/ui';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import { Button, DetailSection, Banner, Field } from '@nennbox/ui';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import { adminFetch } from '../../../auth.js';
 
 export function EntryStartNumber({

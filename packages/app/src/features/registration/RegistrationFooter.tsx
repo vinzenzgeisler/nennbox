@@ -1,4 +1,4 @@
-import { Button } from '@racepilot/ui';
+import { Button } from '@nennbox/ui';
 import type { RegistrationActions } from './RegistrationActions.js';
 import type { RegistrationModel } from './RegistrationModel.js';
 

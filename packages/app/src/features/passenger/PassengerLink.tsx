@@ -6,12 +6,12 @@ import {
   Field,
   FormGrid,
   FormWide,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import {
   PassengerLinkViewSchema,
   defaultRegistrationFormConfig,
   type PassengerLinkView,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import { RegistrationContactFields } from '../registration/RegistrationContactFields.js';
 import {
   translations,

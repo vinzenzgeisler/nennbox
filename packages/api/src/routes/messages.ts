@@ -4,12 +4,12 @@ import {
   MessageCampaignCreateSchema,
   MessageRecipientFilterSchema,
   MessageTemplateSchema,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import { z } from 'zod';
-import type { ObjectStorageProvider } from '@racepilot/core';
+import type { ObjectStorageProvider } from '@nennbox/core';
 
 function messageCampaignResponse(
-  data: import('@racepilot/core').MessageCampaignData,
+  data: import('@nennbox/core').MessageCampaignData,
 ) {
   const { campaign, recipients } = data;
   return {

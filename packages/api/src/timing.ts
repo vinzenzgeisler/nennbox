@@ -1,8 +1,8 @@
-import { calculateTimingResults, type TimingCompetitor } from '@racepilot/core';
+import { calculateTimingResults, type TimingCompetitor } from '@nennbox/core';
 import type {
   TimingRepository,
   TimingMeasurementInput,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
 import type { ModuleRouter } from './modules.js';
 import { TimingConfigSchema } from './timing-module.js';
 import {

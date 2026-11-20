@@ -1,5 +1,5 @@
-import { DetailNote, DetailSection, EvidenceList } from '@racepilot/ui';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import { DetailNote, DetailSection, EvidenceList } from '@nennbox/ui';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import { formatDateTime } from './entryDetailModel.js';
 
 type Consent = NonNullable<

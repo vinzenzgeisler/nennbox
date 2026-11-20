@@ -2,7 +2,7 @@ import type {
   ApiRoutesContext,
   PublicRegistrationRouteDeps,
 } from './context.js';
-import type { ObjectStorageProvider } from '@racepilot/core';
+import type { ObjectStorageProvider } from '@nennbox/core';
 import type { PublicRegistrationService } from '../services.js';
 import { registerWorkflowRoutes } from './workflow.js';
 
@@ -15,7 +15,7 @@ import {
   RegistrationFormConfigPatchSchema,
   defaultRegistrationFormConfig,
   ResumeRegistrationRequestSchema,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 
 export function registerRegistrationRoutes(context: ApiRoutesContext): void {
   const { app, deps, requireMember } = context;

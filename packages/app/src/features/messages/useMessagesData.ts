@@ -5,8 +5,8 @@ import type {
   MessageRecipientPreview,
   MessageRenderedPreview,
   MessageTemplateRecord,
-} from '@racepilot/contracts';
-import { EventClassSchema } from '@racepilot/contracts';
+} from '@nennbox/contracts';
+import { EventClassSchema } from '@nennbox/contracts';
 import { z } from 'zod';
 import { MessageApiError, messagesApi } from './messagesApi.js';
 

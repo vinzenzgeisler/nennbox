@@ -30,10 +30,10 @@ describe('OIDC integration with a local discovery/JWKS provider', () => {
     ];
     const provider = await createOIDCIdentityProvider({
       issuerUrl: issuer,
-      audience: 'racepilot-web',
+      audience: 'nennbox-web',
     });
 
-    const valid = await token(first.privateKey, issuer, 'racepilot-web', {
+    const valid = await token(first.privateKey, issuer, 'nennbox-web', {
       kid: 'first',
     });
     const identity = await provider.verify(valid);
@@ -56,21 +56,21 @@ describe('OIDC integration with a local discovery/JWKS provider', () => {
     ];
     await expect(
       provider.verify(
-        await token(rotated.privateKey, issuer, 'racepilot-web', {
+        await token(rotated.privateKey, issuer, 'nennbox-web', {
           kid: 'rotated',
         }),
       ),
     ).resolves.toMatchObject({ subject: 'member-1' });
     await expect(
       provider.verify(
-        await token(first.privateKey, issuer, 'racepilot-web', {
+        await token(first.privateKey, issuer, 'nennbox-web', {
           kid: 'retired',
         }),
       ),
     ).rejects.toThrow();
     await expect(
       provider.verify(
-        await token(first.privateKey, `${issuer}/wrong`, 'racepilot-web'),
+        await token(first.privateKey, `${issuer}/wrong`, 'nennbox-web'),
       ),
     ).rejects.toThrow();
     await expect(
@@ -78,26 +78,26 @@ describe('OIDC integration with a local discovery/JWKS provider', () => {
     ).rejects.toThrow();
     await expect(
       provider.verify(
-        await token(first.privateKey, issuer, 'racepilot-web', {
+        await token(first.privateKey, issuer, 'nennbox-web', {
           expired: true,
         }),
       ),
     ).rejects.toThrow();
     await expect(
       provider.verify(
-        await token(attacker.privateKey, issuer, 'racepilot-web'),
+        await token(attacker.privateKey, issuer, 'nennbox-web'),
       ),
     ).rejects.toThrow();
     await expect(
       provider.verify(
-        await token(first.privateKey, issuer, 'racepilot-web', {
+        await token(first.privateKey, issuer, 'nennbox-web', {
           futureIat: true,
         }),
       ),
     ).rejects.toThrow();
     await expect(
       provider.verify(
-        await token(first.privateKey, issuer, 'racepilot-web', {
+        await token(first.privateKey, issuer, 'nennbox-web', {
           futureNbf: true,
         }),
       ),
@@ -109,7 +109,7 @@ describe('OIDC integration with a local discovery/JWKS provider', () => {
     })
       .setProtectedHeader({ alg: 'RS256', kid: 'rotated' })
       .setIssuer(issuer)
-      .setAudience('racepilot-web')
+      .setAudience('nennbox-web')
       .setSubject('attacker')
       .setIssuedAt()
       .setExpirationTime('5m')
@@ -190,5 +190,5 @@ async function token(
 function unsignedToken(issuer: string): string {
   const encode = (value: object) =>
     Buffer.from(JSON.stringify(value)).toString('base64url');
-  return `${encode({ alg: 'none' })}.${encode({ iss: issuer, aud: 'racepilot-web', sub: 'attacker', iat: 1, exp: 4_000_000_000 })}.`;
+  return `${encode({ alg: 'none' })}.${encode({ iss: issuer, aud: 'nennbox-web', sub: 'attacker', iat: 1, exp: 4_000_000_000 })}.`;
 }

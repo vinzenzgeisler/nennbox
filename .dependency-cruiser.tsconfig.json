@@ -2,12 +2,12 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@racepilot/core": ["packages/core/src/index.ts"],
-      "@racepilot/contracts": ["packages/contracts/src/index.ts"],
-      "@racepilot/api": ["packages/api/src/index.ts"],
-      "@racepilot/worker": ["packages/worker/src/index.ts"],
-      "@racepilot/app": ["packages/app/src/index.ts"],
-      "@racepilot/adapter-postgres": ["packages/adapter-postgres/src/index.ts"]
+      "@nennbox/core": ["packages/core/src/index.ts"],
+      "@nennbox/contracts": ["packages/contracts/src/index.ts"],
+      "@nennbox/api": ["packages/api/src/index.ts"],
+      "@nennbox/worker": ["packages/worker/src/index.ts"],
+      "@nennbox/app": ["packages/app/src/index.ts"],
+      "@nennbox/adapter-postgres": ["packages/adapter-postgres/src/index.ts"]
     }
   }
 }

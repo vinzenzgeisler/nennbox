@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Button, DateInput, FormDialog, TextInput } from '@racepilot/ui';
+import { Button, DateInput, FormDialog, TextInput } from '@nennbox/ui';
 import type {
   AdminPassengerCreateRequest,
   AdminPassengerLinkRequest,
   AdminPassengerLinkResponse,
   EntryResponse as Entry,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import { formatDateTime } from './entryDetailModel.js';
 import type { useEntryDetailApi } from './useEntryDetailApi.js';
 

@@ -1,8 +1,8 @@
-import { staticCanonicalOrigin } from '@racepilot/core';
+import { staticCanonicalOrigin } from '@nennbox/core';
 import { runMigrations } from 'graphile-worker';
 import { and, eq, inArray } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import { createRequestContext, organizationId } from '@racepilot/core';
+import { createRequestContext, organizationId } from '@nennbox/core';
 import { createDatabase, migrate } from './database-service.js';
 import { createMessageRepository } from './messaging-repository.js';
 import { emailOutbox } from './mail-schema.js';
@@ -19,7 +19,7 @@ import {
   vehicles,
 } from './schema/entries.js';
 
-const databaseUrl = process.env.RACEPILOT_TEST_DATABASE_URL;
+const databaseUrl = process.env.NENNBOX_TEST_DATABASE_URL;
 
 describe.skipIf(!databaseUrl)('messaging PostgreSQL integration', () => {
   it('isolates organizations and makes sends idempotent', async () => {

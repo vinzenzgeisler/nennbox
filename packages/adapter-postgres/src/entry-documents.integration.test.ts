@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import { createRequestContext, organizationId } from '@racepilot/core';
+import { createRequestContext, organizationId } from '@nennbox/core';
 import {
   createDatabase,
   migrate,
@@ -14,7 +14,7 @@ import {
   registrationGroups,
 } from './index.js';
 
-const url = process.env.RACEPILOT_TEST_DATABASE_URL;
+const url = process.env.NENNBOX_TEST_DATABASE_URL;
 describe.skipIf(!url)(
   'entry documents and orga code PostgreSQL integration',
   () => {

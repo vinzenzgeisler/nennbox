@@ -2,7 +2,7 @@ import { and, asc, eq, ne, sql } from 'drizzle-orm';
 import {
   type EntryAdminActionResult,
   type EntryAdminActionsRepository,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type { Database } from './database.js';
 import { entries } from './schema/entries.js';
 import {

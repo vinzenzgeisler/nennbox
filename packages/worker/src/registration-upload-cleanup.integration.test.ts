@@ -11,11 +11,11 @@ import {
   registrationFormUploads,
   registrationGroups,
   type Database,
-} from '@racepilot/adapter-postgres';
-import type { ObjectStorageProvider } from '@racepilot/core';
+} from '@nennbox/adapter-postgres';
+import type { ObjectStorageProvider } from '@nennbox/core';
 import { createProductWorker } from './product.js';
 
-const databaseUrl = process.env.RACEPILOT_TEST_DATABASE_URL;
+const databaseUrl = process.env.NENNBOX_TEST_DATABASE_URL;
 
 describe.skipIf(!databaseUrl)(
   'registration upload retention',

@@ -4,7 +4,7 @@ import {
   AdminEntryListResponse,
   EventSchema,
   type EntryResponse as Entry,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import { adminFetch } from '../../auth.js';
 import { defaultWorkflow } from '../workflow/AdminWorkflow.js';
 import {

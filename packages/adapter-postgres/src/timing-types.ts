@@ -1,4 +1,4 @@
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 
 export interface TimingMeasurementInput {
   readonly entryId: string;

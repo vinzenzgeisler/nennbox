@@ -1,12 +1,12 @@
 import {
   defaultRegistrationFormConfig,
   mergeRegistrationFormConfig,
-} from '@racepilot/contracts';
-import { staticCanonicalOrigin } from '@racepilot/core';
+} from '@nennbox/contracts';
+import { staticCanonicalOrigin } from '@nennbox/core';
 import { createHash } from 'node:crypto';
 import { eq, sql } from 'drizzle-orm';
 import { runMigrations } from 'graphile-worker';
-import { createRequestContext, organizationId } from '@racepilot/core';
+import { createRequestContext, organizationId } from '@nennbox/core';
 import { describe, expect, it } from 'vitest';
 import {
   createDatabase,
@@ -21,7 +21,7 @@ import {
   vehicles,
 } from './index.js';
 
-const url = process.env.RACEPILOT_TEST_DATABASE_URL;
+const url = process.env.NENNBOX_TEST_DATABASE_URL;
 const text = 'Wortlaut: Ich stimme zu.';
 const hash = createHash('sha256').update(text).digest('hex');
 const context = (orgId: string, permissions: string[] = []) =>

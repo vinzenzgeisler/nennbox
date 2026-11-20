@@ -4,7 +4,7 @@ import type {
   EventClassPricingRepository,
   InvoiceRepository,
   InvoiceRecord,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 import {
   eventClassPricingRules,
@@ -16,7 +16,7 @@ import { eq, and } from 'drizzle-orm';
 
 import { sql } from 'drizzle-orm';
 
-import { organizationId, createPaymentReference } from '@racepilot/core';
+import { organizationId, createPaymentReference } from '@nennbox/core';
 
 export function createEventClassPricingRepository(
   db: Database,

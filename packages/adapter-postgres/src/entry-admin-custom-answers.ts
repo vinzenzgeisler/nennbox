@@ -1,4 +1,4 @@
-import type { AdminEntryDetails } from '@racepilot/core';
+import type { AdminEntryDetails } from '@nennbox/core';
 
 export interface CustomAnswerGroup {
   id: string;

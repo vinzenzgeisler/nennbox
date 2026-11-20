@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
-import type { RequestContext } from '@racepilot/core';
-import { transitionMessageCampaign } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
+import { transitionMessageCampaign } from '@nennbox/core';
 import type { Database } from './database.js';
 import { events } from './schema/organization.js';
 import { emailOutbox } from './mail-schema.js';

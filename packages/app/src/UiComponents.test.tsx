@@ -11,7 +11,7 @@ import {
   Switch,
   Toast,
   SelectionBar,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 
 let root: ReturnType<typeof createRoot> | undefined;
 let container: HTMLDivElement;

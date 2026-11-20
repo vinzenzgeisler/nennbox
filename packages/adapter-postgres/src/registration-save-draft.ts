@@ -1,6 +1,6 @@
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 import { randomBytes } from 'node:crypto';
-import { normalizeEmail } from '@racepilot/core';
+import { normalizeEmail } from '@nennbox/core';
 import { organizations, events } from './schema/organization.js';
 import { eq, and } from 'drizzle-orm';
 import {
@@ -14,7 +14,7 @@ import type { PublicRegistrationDependencies } from './registration-public-types
 import {
   RegistrationUnavailable,
   resolveCanonicalOrigin,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 export function createRegistrationSaveDraftMethods(
   dependencies: PublicRegistrationDependencies,

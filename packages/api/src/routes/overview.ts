@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getEventOverview } from '@racepilot/core';
+import { getEventOverview } from '@nennbox/core';
 import type { ApiRoutesContext } from './context.js';
 
 export function registerOverviewRoutes(context: ApiRoutesContext): void {

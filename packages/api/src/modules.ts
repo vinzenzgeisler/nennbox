@@ -12,12 +12,12 @@ import {
   setOrganizationModule,
   type ModuleDeps,
   type RequestContext,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import {
   ModuleChangeRequest,
   ModuleListResponse,
   ModuleViewSchema,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 
 /** Per-request state a guarded module route receives; set only by the server guard. */
 export interface ModuleRequest {

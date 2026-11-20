@@ -3,7 +3,7 @@ import {
   resolveCanonicalOrigin,
   type CanonicalOrigin,
   type RequestContext,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type { Database, TransactionDatabase } from './database.js';
 import { entries, people } from './schema/entries.js';
 import { events } from './schema/organization.js';

@@ -1,9 +1,9 @@
-import { MESSAGE_ATTACHMENT_LIMITS } from '@racepilot/core';
+import { MESSAGE_ATTACHMENT_LIMITS } from '@nennbox/core';
 import type {
   MessageCampaignSendResult,
   ObjectStorageProvider,
-} from '@racepilot/core';
-import type { OrganizationId } from '@racepilot/core';
+} from '@nennbox/core';
+import type { OrganizationId } from '@nennbox/core';
 
 export async function validateMessageAttachmentMetadata(
   storage: ObjectStorageProvider | undefined,

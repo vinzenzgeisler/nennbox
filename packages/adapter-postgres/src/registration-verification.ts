@@ -1,10 +1,10 @@
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 import { groupEmailVerifications } from './schema/public-registration.js';
 import { eq, and } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import { entries } from './schema/entries.js';
 import { entryAuditEvents } from './schema/entry-audit.js';
-import { assertEntryTransition } from '@racepilot/core';
+import { assertEntryTransition } from '@nennbox/core';
 import type { PublicRegistrationDependencies } from './registration-public-types.js';
 import { issueRegistrationPassengerLinks } from './passenger-registration-links.js';
 

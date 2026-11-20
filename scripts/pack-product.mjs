@@ -18,7 +18,7 @@ import { getCleanSourceCommit } from './pack-source.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.resolve(
   root,
-  process.env.RACEPILOT_PACK_DIR ?? 'product-artifacts',
+  process.env.NENNBOX_PACK_DIR ?? 'product-artifacts',
 );
 const rootManifest = JSON.parse(
   await readFile(path.join(root, 'package.json'), 'utf8'),
@@ -44,7 +44,7 @@ for (const directory of directories) {
     if (
       JSON.parse(
         await readFile(path.join(directory, 'package.json'), 'utf8'),
-      ).name?.startsWith('@racepilot/')
+      ).name?.startsWith('@nennbox/')
     )
       expectedPackageCount += 1;
   } catch (error) {
@@ -52,7 +52,7 @@ for (const directory of directories) {
   }
 }
 await mkdir(output, { recursive: true });
-const stagingRoot = await mkdtemp(path.join(os.tmpdir(), 'racepilot-pack-'));
+const stagingRoot = await mkdtemp(path.join(os.tmpdir(), 'nennbox-pack-'));
 
 try {
   for (const directory of directories) {
@@ -63,7 +63,7 @@ try {
     } catch {
       continue;
     }
-    if (!manifest.name?.startsWith('@racepilot/')) continue;
+    if (!manifest.name?.startsWith('@nennbox/')) continue;
     if (manifest.private !== true) {
       throw new Error(
         `${manifest.name} must remain private to block registry publication`,
@@ -72,7 +72,7 @@ try {
     const stagedManifest = { ...manifest, version: release.version };
     stagedManifest.dependencies = { ...manifest.dependencies };
     for (const dependency of Object.keys(stagedManifest.dependencies).filter(
-      (name) => name.startsWith('@racepilot/'),
+      (name) => name.startsWith('@nennbox/'),
     )) {
       stagedManifest.dependencies[dependency] = release.version;
     }
@@ -104,7 +104,7 @@ try {
         if (error.code !== 'ENOENT') throw error;
       }
     }
-    if (manifest.name === '@racepilot/ui') {
+    if (manifest.name === '@nennbox/ui') {
       await cp(
         path.join(root, 'TRADEMARKS.md'),
         path.join(stage, 'TRADEMARKS.md'),
@@ -126,7 +126,7 @@ try {
     const filePath = path.join(output, packed.filename);
     const bytes = await readFile(filePath);
     const packedFiles = packed.files.map(({ path: file }) => file).sort();
-    if (manifest.name === '@racepilot/ui') {
+    if (manifest.name === '@nennbox/ui') {
       for (const required of [
         'TRADEMARKS.md',
         'src/brand/signet.svg',
@@ -134,7 +134,7 @@ try {
         'src/components.css',
       ]) {
         if (!packedFiles.includes(required)) {
-          throw new Error(`@racepilot/ui artifact is missing ${required}`);
+          throw new Error(`@nennbox/ui artifact is missing ${required}`);
         }
       }
       // Every stylesheet that components.css imports must be in the artifact.
@@ -147,7 +147,7 @@ try {
       )) {
         if (!packedFiles.includes(`src/${target}`)) {
           throw new Error(
-            `@racepilot/ui artifact is missing imported stylesheet src/${target}`,
+            `@nennbox/ui artifact is missing imported stylesheet src/${target}`,
           );
         }
       }
@@ -184,7 +184,7 @@ try {
   }
 
   if (packages.length !== expectedPackageCount) {
-    throw new Error('Not every RacePilot workspace was packed');
+    throw new Error('Not every NENNBOX workspace was packed');
   }
 
   await writeFile(
@@ -192,7 +192,7 @@ try {
     `${JSON.stringify(
       {
         schemaVersion: 1,
-        source: { repository: 'vinzenzgeisler/racepilot', commit },
+        source: { repository: 'vinzenzgeisler/nennbox', commit },
         packageManager: rootManifest.packageManager,
         packages: packages.sort((left, right) =>
           left.name.localeCompare(right.name),

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createSmtpMailProvider } from './index.js';
 import { createRecordingMailProvider } from './test.js';
-import { organizationId, ProviderError } from '@racepilot/core';
+import { organizationId, ProviderError } from '@nennbox/core';
 
 describe('SMTP mail port contract', () => {
   it('requires complete safe configuration', () => {
@@ -26,7 +26,7 @@ describe('SMTP mail port contract', () => {
       host: '127.0.0.1',
       port: 1,
       secure: false,
-      from: 'RacePilot <noreply@example.test>',
+      from: 'NENNBOX <noreply@example.test>',
     });
     await expect(
       provider.send({

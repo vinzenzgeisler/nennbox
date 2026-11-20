@@ -4,10 +4,10 @@ import { anyOf } from './sql-helpers.js';
 import { sql } from 'drizzle-orm';
 import { eventClasses } from './schema/organization.js';
 import type { Database } from './database.js';
-import type { EntryRepository } from '@racepilot/core';
+import type { EntryRepository } from '@nennbox/core';
 import { attachAdminEntryDetails } from './entry-admin-details.js';
 import { projectEntryRows } from './entry-projection.js';
-import { normalizeOrgaCode } from '@racepilot/core';
+import { normalizeOrgaCode } from '@nennbox/core';
 
 export function createEntryReadMethods(
   db: Database,

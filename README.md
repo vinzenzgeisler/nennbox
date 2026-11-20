@@ -5,7 +5,7 @@ This public repository contains the shared product core, contracts, API, worker,
 and adapters, plus a runnable **Community Alpha local preview**. It is not yet a
 production-ready Community distribution or Cloud platform. Cloud infrastructure,
 control plane, and the separately deployed product website live in a private repository.
-Internal package names and the repository URL still use `racepilot`.
+Internal package names use `@nennbox/*`; the GitHub repository remains `vinzenzgeisler/racepilot` until separately approved.
 
 NENNBOX is one product with one shared domain core and two explicit deployment
 modes:
@@ -45,7 +45,7 @@ and relative links.
 ## Development
 
 Prerequisites: Node.js 24 and npm. Verify the checkout before local agent work with
-`bash scripts/validate-repo-identity.sh` (forks may set `RACEPILOT_EXPECTED_REPO`).
+`bash scripts/validate-repo-identity.sh` (forks may set `NENNBOX_EXPECTED_REPO`).
 Install dependencies with `npm ci`, then use the root commands `npm run lint`,
 `npm run format:check`, `npm run typecheck`, `npm test`, `npm run build`, and
 `npm run check:boundaries`.
@@ -71,7 +71,7 @@ npm registry or make a license/publication decision. The private Cloud consumer 
 pin and verify the full source commit before rebuilding this pack set. See the
 [artifact contract](docs/release/artifact-contract.md).
 
-Local development PostgreSQL is available through `docker compose -f compose.dev.yaml up -d` (Docker is optional; tests can use any PostgreSQL 16 instance). Configure `DATABASE_URL`, `DEPLOYMENT_MODE=community`, `COMMUNITY_ORGANIZATION_SLUG`, `COMMUNITY_ORGANIZATION_NAME`, `COMMUNITY_ORGANIZATION_TIMEZONE`, and `COMMUNITY_ORGANIZATION_LOCALE`; `PORT` defaults to 3000. Mail delivery is disabled by default. Enable it with `MAIL_PROVIDER=smtp`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, optional paired `SMTP_USER`/`SMTP_PASSWORD`, and `CANONICAL_BASE_URL` (HTTPS outside localhost). Configure each organization’s validated `mail_from` and optional `mail_reply_to` before delivery. The worker uses a 30-second SMTP timeout and a configurable `MAIL_OUTBOX_LEASE_MS` (default 300000; must exceed 90000). Delivery is at-least-once: if a worker crashes after the SMTP server accepts a message but before the database records success, the expired lease can cause a duplicate send; providers should honor the stable idempotency key where supported. The development Compose stack exposes Mailpit SMTP on `127.0.0.1:1025` and its UI on `http://127.0.0.1:8025`. Run `npm run db:migrate` and `npm run db:seed`. Integration tests use `RACEPILOT_TEST_DATABASE_URL`.
+Local development PostgreSQL is available through `docker compose -f compose.dev.yaml up -d` (Docker is optional; tests can use any PostgreSQL 16 instance). Configure `DATABASE_URL`, `DEPLOYMENT_MODE=community`, `COMMUNITY_ORGANIZATION_SLUG`, `COMMUNITY_ORGANIZATION_NAME`, `COMMUNITY_ORGANIZATION_TIMEZONE`, and `COMMUNITY_ORGANIZATION_LOCALE`; `PORT` defaults to 3000. Mail delivery is disabled by default. Enable it with `MAIL_PROVIDER=smtp`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, optional paired `SMTP_USER`/`SMTP_PASSWORD`, and `CANONICAL_BASE_URL` (HTTPS outside localhost). Configure each organization’s validated `mail_from` and optional `mail_reply_to` before delivery. The worker uses a 30-second SMTP timeout and a configurable `MAIL_OUTBOX_LEASE_MS` (default 300000; must exceed 90000). Delivery is at-least-once: if a worker crashes after the SMTP server accepts a message but before the database records success, the expired lease can cause a duplicate send; providers should honor the stable idempotency key where supported. The development Compose stack exposes Mailpit SMTP on `127.0.0.1:1025` and its UI on `http://127.0.0.1:8025`. Run `npm run db:migrate` and `npm run db:seed`. Integration tests use `NENNBOX_TEST_DATABASE_URL`.
 
 ### NENNBOX jetzt lokal nutzen (Community Alpha)
 

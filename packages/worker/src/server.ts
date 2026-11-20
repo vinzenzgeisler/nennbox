@@ -1,9 +1,9 @@
 import { run } from 'graphile-worker';
 import { and, eq } from 'drizzle-orm';
-import { createDatabase, organizations } from '@racepilot/adapter-postgres';
-import { createSmtpMailProvider } from '@racepilot/adapter-smtp';
-import { validateMailConfig } from '@racepilot/contracts';
-import { staticCanonicalOrigin } from '@racepilot/core';
+import { createDatabase, organizations } from '@nennbox/adapter-postgres';
+import { createSmtpMailProvider } from '@nennbox/adapter-smtp';
+import { validateMailConfig } from '@nennbox/contracts';
+import { staticCanonicalOrigin } from '@nennbox/core';
 import { createProductWorker, type ProductWorkerEdition } from './product.js';
 import { readStorageConfiguration } from './community-storage.js';
 import { parseRegistrationUploadRetentionDays } from './registration-upload-cleanup.js';

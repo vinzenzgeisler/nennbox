@@ -2,8 +2,8 @@ import {
   createRegistrationUploadCleanupRepository,
   organizations,
   type Database,
-} from '@racepilot/adapter-postgres';
-import { organizationId, type ObjectStorageProvider } from '@racepilot/core';
+} from '@nennbox/adapter-postgres';
+import { organizationId, type ObjectStorageProvider } from '@nennbox/core';
 
 const BATCH_SIZE = 100;
 const CLAIM_LEASE_MS = 5 * 60 * 1000;

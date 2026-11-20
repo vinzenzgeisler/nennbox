@@ -1,8 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, relative, resolve, sep } from 'node:path';
-import type { ObjectStorageProvider, StoredObjectRef } from '@racepilot/core';
-import { organizationId, ProviderError } from '@racepilot/core';
+import type { ObjectStorageProvider, StoredObjectRef } from '@nennbox/core';
+import { organizationId, ProviderError } from '@nennbox/core';
 import { z } from 'zod';
 
 const StoredObjectRefSchema = z.object({

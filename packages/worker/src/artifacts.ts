@@ -1,4 +1,4 @@
-import { JobEnvelope } from '@racepilot/contracts';
+import { JobEnvelope } from '@nennbox/contracts';
 import {
   entryExportFields,
   renderEntryCsv,
@@ -11,8 +11,8 @@ import {
   type ObjectStorageProvider,
   type OrganizationRepository,
   type PaymentRecipientRepository,
-} from '@racepilot/core';
-import { createEntryConfirmationPdf } from '@racepilot/artifacts/pdf';
+} from '@nennbox/core';
+import { createEntryConfirmationPdf } from '@nennbox/artifacts/pdf';
 import { createJobContext } from './index.js';
 
 export function createArtifactTask(deps: {

@@ -2,7 +2,7 @@ import type {
   EntryDocumentLine,
   EntryDocumentProjection,
   EntryStatusDimensionProjection,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { entryDocuments } from './schema/documents.js';
 import { eventEntryDocumentTypes } from './schema/documents.js';
 

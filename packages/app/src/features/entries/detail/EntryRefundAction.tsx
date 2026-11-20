@@ -1,4 +1,4 @@
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { Outcome } from '../AdminEntriesModel.js';
 import { EntryRefundDialog } from './EntryRefundDialog.js';
 

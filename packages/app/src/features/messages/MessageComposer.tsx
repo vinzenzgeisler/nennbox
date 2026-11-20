@@ -5,12 +5,12 @@ import {
   SelectField,
   Textarea,
   Field,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import {
   MESSAGE_ATTACHMENT_LIMITS,
   type MessageAttachmentRecord,
   type MessageTemplateRecord,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import { messagesApi } from './messagesApi.js';
 import { useState } from 'react';
 

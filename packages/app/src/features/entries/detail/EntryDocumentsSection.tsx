@@ -4,8 +4,8 @@ import {
   DetailSection,
   DocumentList,
   StatusLabel,
-} from '@racepilot/ui';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+} from '@nennbox/ui';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import { AdminFileDownload } from '../AdminFileDownload.js';
 import { uploadLines, type UploadLine } from '../documents/documentLines.js';
 import { uploadRows } from '../documents/uploadRows.js';

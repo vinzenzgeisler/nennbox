@@ -1,5 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
-import type { OverviewRepository } from '@racepilot/core';
+import type { OverviewRepository } from '@nennbox/core';
 import { events, eventClasses } from './schema/organization.js';
 import { entries } from './schema/entries.js';
 import { invoices } from './schema/billing.js';

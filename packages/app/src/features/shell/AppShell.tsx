@@ -5,7 +5,7 @@ import {
   PageHeader,
   Wordmark,
   type IconName,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 
 export type ShellModule = {
   id: string;

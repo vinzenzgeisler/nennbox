@@ -3,7 +3,7 @@ import type {
   EntryAdminAction,
   EntryAdminActionResult,
   PriceSnapshot,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type { Database } from './database.js';
 import { entries } from './schema/entries.js';
 import {
