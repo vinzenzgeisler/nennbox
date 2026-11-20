@@ -16,11 +16,7 @@ import { seedDemoDocuments } from './community-demo-documents.js';
 import { seedDemoMessages } from './community-demo-messages.js';
 import { createDemoStateHelpers } from './community-demo-states.js';
 import { and, eq, sql } from 'drizzle-orm';
-import {
-  calculatePrice,
-  organizationId,
-  transitionEntry,
-} from '@nennbox/core';
+import { calculatePrice, organizationId, transitionEntry } from '@nennbox/core';
 import {
   createDatabase,
   createPersonRepository,

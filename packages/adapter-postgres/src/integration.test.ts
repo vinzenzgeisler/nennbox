@@ -2478,9 +2478,7 @@ describe.skipIf(!url)('pricing and invoice isolation', () => {
         html: '<a href="{{verificationUrl}}">Verify</a>',
       });
       const service = createPublicRegistrationService(db, {
-        canonicalOrigin: staticCanonicalOrigin(
-          'https://nennbox.example.test',
-        ),
+        canonicalOrigin: staticCanonicalOrigin('https://nennbox.example.test'),
       });
       const [foreignOrg] = await db
         .insert(organizations)

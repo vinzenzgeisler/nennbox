@@ -15,11 +15,7 @@ import {
   messageCampaigns,
   messageCampaignRecipients,
 } from '@nennbox/adapter-postgres';
-import {
-  events,
-  organizations,
-  eventClasses,
-} from '@nennbox/adapter-postgres';
+import { events, organizations, eventClasses } from '@nennbox/adapter-postgres';
 import {
   entries,
   people,

@@ -84,9 +84,7 @@ describe('OIDC integration with a local discovery/JWKS provider', () => {
       ),
     ).rejects.toThrow();
     await expect(
-      provider.verify(
-        await token(attacker.privateKey, issuer, 'nennbox-web'),
-      ),
+      provider.verify(await token(attacker.privateKey, issuer, 'nennbox-web')),
     ).rejects.toThrow();
     await expect(
       provider.verify(

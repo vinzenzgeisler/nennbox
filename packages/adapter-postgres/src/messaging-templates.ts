@@ -4,10 +4,7 @@ import type {
   MessageTemplate,
   RequestContext,
 } from '@nennbox/core';
-import {
-  renderMessageTemplate,
-  validateMessageTemplate,
-} from '@nennbox/core';
+import { renderMessageTemplate, validateMessageTemplate } from '@nennbox/core';
 import type { Database } from './database.js';
 import { events } from './schema/organization.js';
 import { messageTemplates } from './messaging-schema.js';

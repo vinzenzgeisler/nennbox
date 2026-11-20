@@ -11,10 +11,7 @@ import { sql } from 'drizzle-orm';
 import { enqueueMailOutbox } from './mail-outbox.js';
 import { randomUUID } from 'node:crypto';
 import type { PublicRegistrationDependencies } from './registration-public-types.js';
-import {
-  RegistrationUnavailable,
-  resolveCanonicalOrigin,
-} from '@nennbox/core';
+import { RegistrationUnavailable, resolveCanonicalOrigin } from '@nennbox/core';
 
 export function createRegistrationSaveDraftMethods(
   dependencies: PublicRegistrationDependencies,

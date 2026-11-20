@@ -7,11 +7,7 @@ import {
 } from './index.js';
 import type { RegistrationSettings } from '@nennbox/contracts';
 import { defaultRegistrationFormConfig } from '@nennbox/contracts';
-import {
-  createRequestContext,
-  getEvent,
-  organizationId,
-} from '@nennbox/core';
+import { createRequestContext, getEvent, organizationId } from '@nennbox/core';
 import { resolveRegistrationRateLimits } from './rate-limit.js';
 import { readFileSync } from 'node:fs';
 import { testDeps, testRegistration } from './testing.js';
