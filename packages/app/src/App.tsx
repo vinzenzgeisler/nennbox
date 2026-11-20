@@ -1,5 +1,5 @@
 import { DriverPortal } from './features/driver-portal/DriverPortal.js';
-import { useEffect, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import {
   RuntimeBootstrapResponse,
   type RuntimeBootstrapResponse as RuntimeConfig,
@@ -19,19 +19,31 @@ type State =
   | { kind: 'unavailable' }
   | { kind: 'ready'; config: RuntimeConfig };
 
+// Clickable onboarding prototype (#201). Development builds and builds made with
+// VITE_ONBOARDING_PREVIEW=true only; the condition folds to a constant, so a normal
+// production build contains neither the route nor the prototype code.
+const OnboardingPreview =
+  import.meta.env.DEV || import.meta.env.VITE_ONBOARDING_PREVIEW === 'true'
+    ? lazy(() => import('./features/onboarding/OnboardingPreview.js'))
+    : null;
+
 export interface AppProps {
   renderContribution?: (config: RuntimeConfig) => ReactNode;
 }
 
 export function App({ renderContribution }: AppProps = {}) {
   const [state, setState] = useState<State>({ kind: 'loading' });
+  const isOnboardingPreview =
+    OnboardingPreview !== null &&
+    window.location.pathname === '/app/onboarding-preview';
   const isAdmin =
-    window.location.pathname.startsWith('/admin') ||
-    window.location.pathname.startsWith('/app') ||
-    window.location.pathname === '/auth/callback';
+    !isOnboardingPreview &&
+    (window.location.pathname.startsWith('/admin') ||
+      window.location.pathname.startsWith('/app') ||
+      window.location.pathname === '/auth/callback');
   const isComponentGallery = window.location.pathname === '/components';
   useEffect(() => {
-    if (isAdmin || isComponentGallery) return;
+    if (isAdmin || isComponentGallery || isOnboardingPreview) return;
     let current = true;
     fetch('/runtime/bootstrap', {
       credentials: 'same-origin',
@@ -51,9 +63,16 @@ export function App({ renderContribution }: AppProps = {}) {
     return () => {
       current = false;
     };
-  }, [isAdmin, isComponentGallery]);
+  }, [isAdmin, isComponentGallery, isOnboardingPreview]);
 
   if (isComponentGallery) return <ComponentGallery />;
+
+  if (isOnboardingPreview && OnboardingPreview)
+    return (
+      <Suspense fallback={<p role="status">NENNBOX lädt…</p>}>
+        <OnboardingPreview />
+      </Suspense>
+    );
 
   if (isAdmin) return <AuthenticatedAdmin />;
 

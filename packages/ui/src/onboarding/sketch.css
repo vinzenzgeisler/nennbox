@@ -1,0 +1,53 @@
+.nb-sketch {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: var(--color-green);
+  overflow: visible;
+}
+.nb-sketch .sk {
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  vector-effect: non-scaling-stroke;
+}
+.nb-sketch .sk-thin {
+  stroke-width: 1.25;
+}
+.nb-sketch .sk-mint {
+  fill: var(--color-mint);
+}
+.nb-sketch .sk-sage {
+  fill: var(--color-sage);
+}
+.nb-sketch .sk-white {
+  fill: var(--color-white);
+}
+.nb-sketch .sk-orange {
+  fill: var(--color-marshal);
+}
+.nb-sketch .sk-solid {
+  fill: currentcolor;
+  stroke: none;
+}
+.nb-sketch .sk-accent {
+  stroke: var(--color-marshal);
+}
+.nb-sketch .sk-accent-fill {
+  fill: var(--color-marshal);
+  stroke: none;
+}
+.nb-sketch .sk-dash {
+  stroke-dasharray: 4 4;
+}
+.nb-sketch .sk-text {
+  fill: currentcolor;
+  stroke: none;
+  font-family: var(--font-archivo);
+  font-weight: 800;
+}
+.nb-step-actions .nb-button.nb-text {
+  border-color: transparent;
+}

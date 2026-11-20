@@ -57,3 +57,9 @@
 @import './message-layout/message-layout.css';
 @import url('./metric/metric.css');
 @import url('./occupancy/occupancy.css');
+@import url('./onboarding/onboarding-shell.css');
+@import url('./onboarding/question-step.css');
+@import url('./onboarding/choice-card.css');
+@import url('./onboarding/live-preview.css');
+@import url('./onboarding/sketch.css');
+@import url('./onboarding/slider.css');
