@@ -6,11 +6,11 @@ import {
   RegistrationContactFieldsSchema,
   RegistrationFormConfigPatchSchema,
   RegistrationFormConfigSchema,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import {
   registrationDetailFieldKeys,
   resolveRegistrationFieldStates,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 const request = (person: object = {}, vehicle: object = {}) => ({
   submissionId: '11111111-1111-4111-8111-111111111111',

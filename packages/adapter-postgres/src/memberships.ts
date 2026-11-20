@@ -4,7 +4,7 @@ import type {
   MembershipRepository,
   MembershipBootstrap,
   ExternalIdentity,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 import { sql } from 'drizzle-orm';
 
@@ -15,7 +15,7 @@ import {
 
 import { eq, and } from 'drizzle-orm';
 
-import { permissionsForRole } from '@racepilot/core';
+import { permissionsForRole } from '@nennbox/core';
 
 export function createMembershipRepository(db: Database): MembershipRepository {
   return {
@@ -34,6 +34,7 @@ export function createMembershipRepository(db: Database): MembershipRepository {
           // Serialize first-admin attempts per organization. Disabled memberships
           // still count as history and must permanently close bootstrap.
           await tx.execute(
+            // legacy identifier, intentionally unchanged (#99)
             sql`select pg_advisory_xact_lock(hashtextextended(${`racepilot.membership.bootstrap:${orgId}`}, 0))`,
           );
         }

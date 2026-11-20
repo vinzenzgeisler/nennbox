@@ -4,14 +4,14 @@ import {
   createInMemoryModuleActivationRepository,
   createModuleRegistry,
   organizationId,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type {
   TimingRepository,
   TimingMeasurementRecord,
   TimingResultVersion,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
 import { createApp } from './index.js';
-import { ModuleManifestSchema } from '@racepilot/contracts';
+import { ModuleManifestSchema } from '@nennbox/contracts';
 import type { ModuleApiDeps } from './modules.js';
 import {
   timingModule,

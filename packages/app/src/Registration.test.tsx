@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   defaultRegistrationFormConfig,
   standardRegistrationForm,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import {
   estimateRegistrationTotal,
   Registration,

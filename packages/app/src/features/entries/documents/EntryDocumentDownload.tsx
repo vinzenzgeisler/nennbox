@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '@racepilot/ui';
+import { Button } from '@nennbox/ui';
 import { documentDownloadPath } from './documentLines.js';
 import { useAbortableDownload } from './useAbortableDownload.js';
 

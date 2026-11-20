@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { uploadEntryDocument, ENTRY_DOCUMENT_MAX_BYTES } from '@racepilot/core';
-import type { RequestContext } from '@racepilot/core';
+import { uploadEntryDocument, ENTRY_DOCUMENT_MAX_BYTES } from '@nennbox/core';
+import type { RequestContext } from '@nennbox/core';
 import { registerDriverPortalPaymentRoute } from './driver-portal-payment.js';
 import { onlinePaymentConfigured } from './invoice-checkout.js';
 import type {

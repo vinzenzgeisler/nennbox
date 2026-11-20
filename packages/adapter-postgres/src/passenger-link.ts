@@ -1,5 +1,5 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
-import { PASSENGER_LINK_TTL_MS } from '@racepilot/core';
+import { PASSENGER_LINK_TTL_MS } from '@nennbox/core';
 import type { TransactionDatabase } from './database.js';
 import { emailTemplateVersions } from './mail-schema.js';
 import { enqueueMailOutbox } from './mail-outbox.js';

@@ -3,7 +3,7 @@ import {
   organizationId,
   type PaymentProvider,
   type PaymentProviderEvent,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { createApp } from './app.js';
 import { testDeps } from './testing.js';
 

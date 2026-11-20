@@ -3,7 +3,7 @@ import { z } from 'zod';
 import {
   OrganizationPublicRegistrationRateLimitOverridesSchema,
   EventPublicRegistrationRateLimitOverridesSchema,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 
 export function registerRegistrationRateLimitRoutes(
   context: ApiRoutesContext,

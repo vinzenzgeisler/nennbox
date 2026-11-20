@@ -1,7 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { runMigrations } from 'graphile-worker';
 import { describe, expect, it } from 'vitest';
-import { organizationId, createRequestContext } from '@racepilot/core';
+import { organizationId, createRequestContext } from '@nennbox/core';
 import { createDatabase, migrate } from './database-service.js';
 import { createCheckoutRepository } from './payment-checkouts.js';
 import { createPaymentRefundRepository } from './payment-refunds.js';
@@ -13,7 +13,7 @@ import {
   invoicePaymentAuditEvents,
 } from './schema/billing.js';
 
-const url = process.env.RACEPILOT_TEST_DATABASE_URL;
+const url = process.env.NENNBOX_TEST_DATABASE_URL;
 describe.skipIf(!url)('PostgreSQL payment checkout repository', () => {
   it('isolates webhook orgs and applies successful provider events exactly once with audit', async () => {
     await migrate(url!);

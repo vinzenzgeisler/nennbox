@@ -1,5 +1,5 @@
 import { adminFetch } from '../../auth.js';
-import { Button, PageHeader, SelectField, Stack } from '@racepilot/ui';
+import { Button, PageHeader, SelectField, Stack } from '@nennbox/ui';
 import { useEffect, useState, type ChangeEvent } from 'react';
 import './RegistrationFormSettings.css';
 import {
@@ -9,7 +9,7 @@ import {
   RegistrationFormConfigPatchSchema,
   type RegistrationFormConfig,
   type RegistrationCustomField,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import { RegistrationAppearance } from './RegistrationAppearance.js';
 import { RegistrationCustomFields } from './RegistrationCustomFields.js';
 import {

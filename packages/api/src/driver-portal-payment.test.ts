@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { organizationId, type PaymentProvider } from '@racepilot/core';
-import type { DriverPortalRepository } from '@racepilot/adapter-postgres';
+import { organizationId, type PaymentProvider } from '@nennbox/core';
+import type { DriverPortalRepository } from '@nennbox/adapter-postgres';
 import { createApp } from './app.js';
 import { testDeps, testRegistration } from './testing.js';
 

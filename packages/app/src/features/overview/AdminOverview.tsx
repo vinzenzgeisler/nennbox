@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import { EmptyState } from '@racepilot/ui';
+import { EmptyState } from '@nennbox/ui';
 import {
   LoadingNotice,
   NoEventSelected,

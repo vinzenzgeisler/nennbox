@@ -6,7 +6,7 @@ import {
   defaultRegistrationFormConfig,
   standardRegistrationForm,
   type RegistrationDraft,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import { Registration } from './Registration.js';
 import './styles.css';
 

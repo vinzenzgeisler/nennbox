@@ -11,13 +11,13 @@ import type {
   EventClassInput,
   EventSetupInput,
   EventSetupRepository,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 import { events, eventClasses } from './schema/organization.js';
 import { eventClassPricingRules } from './schema/billing.js';
 import { eventConsentTermsAudit } from './schema/forms.js';
 
-import { organizationId } from '@racepilot/core';
+import { organizationId } from '@nennbox/core';
 
 import { eq, and } from 'drizzle-orm';
 

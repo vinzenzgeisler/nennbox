@@ -6,9 +6,9 @@ import {
   createPostgresRegistrationRateLimiter,
   createPublicRegistrationRateLimitSettingsRepository,
 } from './index.js';
-import { createRequestContext, organizationId } from '@racepilot/core';
+import { createRequestContext, organizationId } from '@nennbox/core';
 
-const url = process.env.RACEPILOT_TEST_DATABASE_URL;
+const url = process.env.NENNBOX_TEST_DATABASE_URL;
 
 describe.skipIf(!url)('PostgreSQL public registration rate limiter', () => {
   it('persists isolated organization/event token buckets across instances and retries', async () => {

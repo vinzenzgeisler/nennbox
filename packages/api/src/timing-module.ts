@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ModuleDefinition } from '@racepilot/core';
+import type { ModuleDefinition } from '@nennbox/core';
 
 export const TimingConfigSchema = z
   .object({

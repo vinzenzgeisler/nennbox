@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { sql } from 'drizzle-orm';
-import { findAvailableOrgaCode, generateOrgaCode } from '@racepilot/core';
-import type { RequestContext } from '@racepilot/core';
+import { findAvailableOrgaCode, generateOrgaCode } from '@nennbox/core';
+import type { RequestContext } from '@nennbox/core';
 import type { Database, TransactionDatabase } from './database.js';
 
 export const ORGA_CODE_MAX_ATTEMPTS = 10;

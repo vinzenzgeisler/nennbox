@@ -1,4 +1,4 @@
-@import url('@racepilot/ui/tokens.css');
+@import url('@nennbox/ui/tokens.css');
 @import url('./features/styles/global.css');
 @import url('./features/entries/admin.css');
 @import url('./features/entries/status.css');

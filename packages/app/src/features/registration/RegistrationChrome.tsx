@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { Button } from '@racepilot/ui';
+import { Button } from '@nennbox/ui';
 import type { RegistrationModel } from './RegistrationModel.js';
 
 function formatEventStartDate(startsOn: string, locale: 'de' | 'en') {

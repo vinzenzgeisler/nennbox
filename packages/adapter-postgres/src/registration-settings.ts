@@ -1,6 +1,6 @@
 import type { Database } from './database.js';
 
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 
 import { organizations, events } from './schema/organization.js';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import { timelineFor } from './entryTimeline.js';
 
 describe('entry payment timeline', () => {

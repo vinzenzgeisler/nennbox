@@ -5,11 +5,11 @@ import {
   FormSection,
   SelectField,
   Textarea,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import type {
   RegistrationCustomField,
   RegistrationFormConfig,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 
 type UpdateConfig = (
   updater: (current: RegistrationFormConfig) => RegistrationFormConfig,

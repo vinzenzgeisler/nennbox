@@ -4,7 +4,7 @@ import {
   availableStartNumbers,
   type StartNumberService,
   type StartNumberMode,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { entries } from './schema/entries.js';
 import { offerWaitlistSeat } from './waitlist-offer.js';
 import {

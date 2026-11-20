@@ -1,4 +1,4 @@
-import { Button, FormSection, TextInput, Textarea } from '@racepilot/ui';
+import { Button, FormSection, TextInput, Textarea } from '@nennbox/ui';
 import type { SetupDraft } from './eventSetupApi.js';
 
 export function EventOrganizerFields({

@@ -10,12 +10,12 @@ import {
   defaultEntryStatusDimensionConfig,
   validateEntryStatusDimensionConfig,
   EntryStatusInUseError,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 export function createEntryStatusConfigRepository(
   db: Database,
 ): Pick<
-  import('@racepilot/core').EntryStatusDimensionRepository,
+  import('@nennbox/core').EntryStatusDimensionRepository,
   'getEvent' | 'setEvent'
 > {
   return {
@@ -99,7 +99,7 @@ export function createEntryStatusConfigRepository(
           );
           if (!dimension?.values.some((item) => item.key === state.value))
             throw new EntryStatusInUseError(
-              state.dimension as import('@racepilot/core').EntryStatusDimensionKey,
+              state.dimension as import('@nennbox/core').EntryStatusDimensionKey,
               state.value,
             );
         }

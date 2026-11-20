@@ -3,7 +3,7 @@ import {
   calculatePrice,
   createRequestContext,
   organizationId,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { describe, expect, it } from 'vitest';
 import { and, eq, inArray } from 'drizzle-orm';
 import {
@@ -27,11 +27,11 @@ import {
   vehicles,
 } from './index.js';
 
-const url = process.env.RACEPILOT_TEST_DATABASE_URL;
+const url = process.env.NENNBOX_TEST_DATABASE_URL;
 
 describe.skipIf(!url)('entry admin actions', () => {
   it('enforces tenant/version/capacity, recalculates price, audits notes and soft-deletes', async () => {
-    if (!url) throw new Error('RACEPILOT_TEST_DATABASE_URL is required');
+    if (!url) throw new Error('NENNBOX_TEST_DATABASE_URL is required');
     await migrate(url);
     await runMigrations({ connectionString: url });
     const { db, pool } = await createDatabase(url);

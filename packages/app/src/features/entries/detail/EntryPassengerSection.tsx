@@ -6,8 +6,8 @@ import {
   FieldValue,
   HintLabel,
   StatusLabel,
-} from '@racepilot/ui';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+} from '@nennbox/ui';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import {
   NOT_GIVEN,
   countryName,

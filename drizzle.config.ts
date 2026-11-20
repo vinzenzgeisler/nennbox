@@ -4,6 +4,6 @@ export default defineConfig({
   out: './packages/adapter-postgres/migrations',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? 'postgres://localhost/racepilot',
+    url: process.env.DATABASE_URL ?? 'postgres://localhost/nennbox',
   },
 });

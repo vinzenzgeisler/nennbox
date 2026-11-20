@@ -1,4 +1,4 @@
-import { DataTable, Field } from '@racepilot/ui';
+import { DataTable, Field } from '@nennbox/ui';
 import type { ClassOption } from './startNumberApi.js';
 
 export type { ClassOption };

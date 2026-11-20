@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import type { ArtifactJob } from '@racepilot/core';
+import type { ArtifactJob } from '@nennbox/core';
 import { createArtifactTask } from './artifacts.js';
 
 const organizationId = '11111111-1111-4111-8111-111111111111';

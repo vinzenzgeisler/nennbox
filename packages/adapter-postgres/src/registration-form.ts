@@ -1,4 +1,4 @@
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 import { organizations, events, eventClasses } from './schema/organization.js';
 import { eq, and } from 'drizzle-orm';
 import { eventClassPricingRules } from './schema/billing.js';

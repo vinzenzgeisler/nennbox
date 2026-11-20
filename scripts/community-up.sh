@@ -54,7 +54,7 @@ mkdir -p "$STORAGE_LOCAL_ROOT"
 node scripts/community-init.mjs
 PORT="$COMMUNITY_API_PORT" node packages/api/dist/server.js & api_pid=$!
 node packages/worker/dist/server.js & worker_pid=$!
-RACEPILOT_API_URL="http://127.0.0.1:$COMMUNITY_API_PORT" node node_modules/vite/bin/vite.js packages/app --host 127.0.0.1 --port "$COMMUNITY_APP_PORT" --strictPort & app_pid=$!
+NENNBOX_API_URL="http://127.0.0.1:$COMMUNITY_API_PORT" node node_modules/vite/bin/vite.js packages/app --host 127.0.0.1 --port "$COMMUNITY_APP_PORT" --strictPort & app_pid=$!
 if [[ "${COMMUNITY_SEED_DEMO:-0}" == 1 ]]; then
   COMMUNITY_DEMO_SEED=I_UNDERSTAND npm run community:demo-seed & demo_seed_pid=$!
 fi

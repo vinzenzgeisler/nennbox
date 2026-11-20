@@ -1,18 +1,18 @@
 import type { Database } from './database.js';
 
-import { organizationId, normalizeEntryWorkflow } from '@racepilot/core';
+import { organizationId, normalizeEntryWorkflow } from '@nennbox/core';
 
 import { sql } from 'drizzle-orm';
 
 export function createEntryWorkflowRepository(
   db: Database,
-): import('@racepilot/core').EntryWorkflowRepository {
+): import('@nennbox/core').EntryWorkflowRepository {
   const map = (row: {
     id: string;
     organization_id: string;
     event_id: string | null;
     version: number;
-    workflow: import('@racepilot/core').EntryWorkflow;
+    workflow: import('@nennbox/core').EntryWorkflow;
   }) => ({
     id: row.id,
     organizationId: organizationId(row.organization_id),

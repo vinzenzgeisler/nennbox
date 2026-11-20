@@ -3,7 +3,7 @@ import {
   confirmationDeadline,
   organizationId as brandOrganizationId,
   type RequestContext,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type { TransactionDatabase } from './database.js';
 import { entries, people, registrationGroups } from './schema/entries.js';
 import { eventClasses, events, organizations } from './schema/organization.js';

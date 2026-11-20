@@ -1,4 +1,4 @@
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 
 export type MemberGuardResult =
   | { readonly ok: true; readonly context: RequestContext }

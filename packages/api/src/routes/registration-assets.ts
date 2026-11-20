@@ -6,14 +6,14 @@ import { createHash, randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import { validateRegistrationImage } from '../registration-assets.js';
 import { resolveRegistrationRateLimits } from '../rate-limit.js';
-import { getPublicEvent, type ObjectStorageProvider } from '@racepilot/core';
+import { getPublicEvent, type ObjectStorageProvider } from '@nennbox/core';
 import type { PublicRegistrationService } from '../services.js';
 import {
   standardRegistrationForm,
   RegistrationFormConfigPatchSchema,
   defaultRegistrationFormConfig,
   mergeRegistrationFormConfig,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 
 /** The public registration form with consents and the organization's form configuration. */
 export function registerPublicFormRoute(

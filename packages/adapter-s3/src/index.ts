@@ -6,8 +6,8 @@ import {
   DeleteObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import type { ObjectStorageProvider, StoredObjectRef } from '@racepilot/core';
-import { organizationId, ProviderError } from '@racepilot/core';
+import type { ObjectStorageProvider, StoredObjectRef } from '@nennbox/core';
+import { organizationId, ProviderError } from '@nennbox/core';
 
 export interface S3ObjectStorageConfig {
   readonly bucket: string;

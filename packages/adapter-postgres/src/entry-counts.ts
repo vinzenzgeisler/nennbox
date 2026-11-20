@@ -1,6 +1,6 @@
 import { and, count, eq, isNull } from 'drizzle-orm';
 import type { Database } from './database.js';
-import type { EntryRepository } from '@racepilot/core';
+import type { EntryRepository } from '@nennbox/core';
 import { entries } from './schema/entries.js';
 import { events } from './schema/organization.js';
 

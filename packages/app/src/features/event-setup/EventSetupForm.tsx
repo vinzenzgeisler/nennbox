@@ -5,7 +5,7 @@ import {
   SelectField,
   TextInput,
   Textarea,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import type { FormEvent } from 'react';
 import { EventOrganizerFields } from './EventOrganizerFields.js';
 import type {

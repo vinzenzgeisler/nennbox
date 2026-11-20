@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { mailConfigSchema, validateMailConfig } from '@racepilot/contracts';
+import { mailConfigSchema, validateMailConfig } from '@nennbox/contracts';
 import { compileTrustedProxyList } from './rate-limit.js';
-import { parseDeploymentMode } from '@racepilot/core';
-import { healthResponseSchema } from '@racepilot/contracts';
+import { parseDeploymentMode } from '@nennbox/core';
+import { healthResponseSchema } from '@nennbox/contracts';
 
 export function health(version: string) {
   return healthResponseSchema.parse({ status: 'ok', version });

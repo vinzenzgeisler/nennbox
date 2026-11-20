@@ -1,6 +1,6 @@
-import { PreviewPanel, useWorkspacePreview } from '@racepilot/ui';
+import { PreviewPanel, useWorkspacePreview } from '@nennbox/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { WorkflowView } from '../entries/AdminEntriesModel.js';
 import { AdminEntries } from '../entries/AdminEntries.js';
 import { AppShell } from './AppShell.js';

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   EntryDocumentTypeSchema,
   type EntryDocumentType,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import { adminFetch } from '../../auth.js';
 
 export class EventDocumentsApiError extends Error {}

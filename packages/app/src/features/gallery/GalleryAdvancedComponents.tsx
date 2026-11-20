@@ -16,7 +16,7 @@ import {
   Tabs,
   Textarea,
   TextInput,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 
 export function GalleryAdvancedComponents() {
   const [tab, setTab] = useState('list');

@@ -4,7 +4,7 @@ import {
   createPaymentReference,
   createRequestContext,
   organizationId,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { describe, expect, it } from 'vitest';
 import {
   createDatabase,
@@ -24,7 +24,7 @@ import {
   vehicles,
 } from './index.js';
 
-const url = process.env.RACEPILOT_TEST_DATABASE_URL;
+const url = process.env.NENNBOX_TEST_DATABASE_URL;
 
 describe.skipIf(!url)('entry detail maintenance', () => {
   it('edits within the entry context, audits it and lists mail and payment state per tenant', async () => {

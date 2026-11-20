@@ -13,10 +13,10 @@ import {
   FormWide,
   SelectField,
   TextInput,
-} from '@racepilot/ui';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
-import { BLOOD_GROUPS } from '@racepilot/contracts';
-import type { EntryDriverUpdateRequest } from '@racepilot/contracts';
+} from '@nennbox/ui';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
+import { BLOOD_GROUPS } from '@nennbox/contracts';
+import type { EntryDriverUpdateRequest } from '@nennbox/contracts';
 import {
   COUNTRY_CODES,
   NOT_GIVEN,

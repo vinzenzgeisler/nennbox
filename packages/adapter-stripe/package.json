@@ -1,5 +1,5 @@
 {
-  "name": "@racepilot/adapter-stripe",
+  "name": "@nennbox/adapter-stripe",
   "version": "0.0.0",
   "type": "module",
   "exports": "./dist/index.js",
@@ -9,7 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@racepilot/core": "*",
+    "@nennbox/core": "*",
     "stripe": "^22.6.2"
   },
   "private": true

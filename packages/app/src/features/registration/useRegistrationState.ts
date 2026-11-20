@@ -4,7 +4,7 @@ import {
   RegistrationFormConfigSchema,
   defaultRegistrationFormConfig,
   type RegistrationDraft,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import {
   emptyVehicle,
   translations,

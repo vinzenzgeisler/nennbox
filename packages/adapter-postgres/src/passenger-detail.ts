@@ -3,7 +3,7 @@ import type {
   AdminEntryPassenger,
   AdminEntrySpareVehicle,
   RequestContext,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type { Database } from './database.js';
 import { toAdminConsent } from './entry-admin-consents.js';
 import { entries, vehicles } from './schema/entries.js';

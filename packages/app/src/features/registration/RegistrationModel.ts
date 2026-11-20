@@ -1,4 +1,4 @@
-import { deriveAccessibleBrandColors } from '@racepilot/contracts';
+import { deriveAccessibleBrandColors } from '@nennbox/contracts';
 import {
   estimateRegistrationTotal,
   getAge,

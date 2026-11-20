@@ -19,7 +19,7 @@ export default defineConfig({
         'react',
         'react-dom',
         'react/jsx-runtime',
-        '@racepilot/contracts',
+        '@nennbox/contracts',
       ],
     },
     emptyOutDir: false,

@@ -1,4 +1,4 @@
-import { Radio } from '@racepilot/ui';
+import { Radio } from '@nennbox/ui';
 import type { RegistrationModel } from './RegistrationModel.js';
 
 const paymentLabels: Record<string, string> = {

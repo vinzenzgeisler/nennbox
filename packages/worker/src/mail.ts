@@ -1,13 +1,13 @@
-import { organizationId, resolveCanonicalOrigin } from '@racepilot/core';
-import type { CanonicalOrigin } from '@racepilot/core';
+import { organizationId, resolveCanonicalOrigin } from '@nennbox/core';
+import type { CanonicalOrigin } from '@nennbox/core';
 import type {
   JobContext,
   MailProvider,
   MailAttachment,
   ObjectStorageProvider,
   MailAttachmentReference,
-} from '@racepilot/core';
-import { JobEnvelope, MESSAGE_ATTACHMENT_LIMITS } from '@racepilot/contracts';
+} from '@nennbox/core';
+import { JobEnvelope, MESSAGE_ATTACHMENT_LIMITS } from '@nennbox/contracts';
 import { createJobContext } from './index.js';
 
 export const mailTemplateContracts = {

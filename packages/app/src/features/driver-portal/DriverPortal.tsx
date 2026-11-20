@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Banner, Button, Dialog, Field, Wordmark } from '@racepilot/ui';
+import { Banner, Button, Dialog, Field, Wordmark } from '@nennbox/ui';
 import type { View } from './driverPortalTypes.js';
 import { DriverPortalReady } from './DriverPortalReady.js';
 import { passengerBrandStyle } from '../passenger/passengerBrand.js';

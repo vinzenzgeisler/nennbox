@@ -1,5 +1,5 @@
 import { actorName } from './actorName.js';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { WorkflowView } from '../AdminEntriesModel.js';
 
 type History = NonNullable<Entry['adminHistory']>[number];

@@ -6,8 +6,8 @@ import {
   type Dispatch,
   type SetStateAction,
 } from 'react';
-import { EntryResponse } from '@racepilot/contracts';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import { EntryResponse } from '@nennbox/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { WorkflowView, Gate, Outcome } from './AdminEntriesModel.js';
 import { begin, invalidate, isCurrent, request } from './AdminEntriesModel.js';
 

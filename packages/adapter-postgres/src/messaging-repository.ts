@@ -1,4 +1,4 @@
-import type { CanonicalOrigin, ObjectStorageProvider } from '@racepilot/core';
+import type { CanonicalOrigin, ObjectStorageProvider } from '@nennbox/core';
 import type { Database } from './database.js';
 import { createMessageCampaignRepository } from './messaging-campaigns.js';
 import { createMessageQuickActions } from './messaging-quick-actions.js';

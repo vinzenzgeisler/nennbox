@@ -3,8 +3,8 @@ import type {
   MessageRecipientCandidate,
   MessageRecipientFilter,
   RequestContext,
-} from '@racepilot/core';
-import { resolveMessageRecipientCandidates } from '@racepilot/core';
+} from '@nennbox/core';
+import { resolveMessageRecipientCandidates } from '@nennbox/core';
 import type { Database, TransactionDatabase } from './database.js';
 import { entries, people, registrationGroups } from './schema/entries.js';
 import { eventClasses, events } from './schema/organization.js';

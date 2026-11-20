@@ -14,13 +14,13 @@ import {
   setClassPriceRule,
   openEvent,
   mergeClassPriceRule,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import {
   CreateEventRequest,
   EventResponse,
   CreateEventClassRequest,
   UpdateEventClassRequest,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 
 export function registerEventsRoutes(context: ApiRoutesContext): void {
   const { app, deps, resolvePublicContext, requireMember } = context;
@@ -59,7 +59,7 @@ export function registerEventsRoutes(context: ApiRoutesContext): void {
         EventResponse.parse(
           await createEvent(
             context,
-            parsed.data as import('@racepilot/core').EventInput,
+            parsed.data as import('@nennbox/core').EventInput,
             { events: deps.events },
           ),
         ),
@@ -81,7 +81,7 @@ export function registerEventsRoutes(context: ApiRoutesContext): void {
       const result = await updateEvent(
         context,
         c.req.param('eventId'),
-        parsed.data as import('@racepilot/core').EventPatch,
+        parsed.data as import('@nennbox/core').EventPatch,
         { events: deps.events },
       );
       return result

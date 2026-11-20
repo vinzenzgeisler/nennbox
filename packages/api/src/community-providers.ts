@@ -1,11 +1,11 @@
-import { createOIDCIdentityProvider } from '@racepilot/adapter-oidc';
-import { createLocalObjectStorage } from '@racepilot/adapter-local-storage';
-import { createS3ObjectStorage } from '@racepilot/adapter-s3';
+import { createOIDCIdentityProvider } from '@nennbox/adapter-oidc';
+import { createLocalObjectStorage } from '@nennbox/adapter-local-storage';
+import { createS3ObjectStorage } from '@nennbox/adapter-s3';
 import type {
   IdentityProvider,
   MembershipBootstrap,
   ObjectStorageProvider,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type { loadConfig } from './config.js';
 import type { Authenticator } from './types.js';
 

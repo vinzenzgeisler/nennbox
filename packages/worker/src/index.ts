@@ -4,12 +4,12 @@ import {
   organizationId,
   type DeploymentMode,
   type JobContext,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import {
   JobEnvelope,
   healthResponseSchema,
   type HealthResponse,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 export type WorkerTaskHandler = (
   payload: unknown,
   helpers: {

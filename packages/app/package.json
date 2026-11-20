@@ -1,5 +1,5 @@
 {
-  "name": "@racepilot/app",
+  "name": "@nennbox/app",
   "version": "0.0.0",
   "type": "module",
   "exports": {
@@ -15,8 +15,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@racepilot/contracts": "*",
-    "@racepilot/ui": "*",
+    "@nennbox/contracts": "*",
+    "@nennbox/ui": "*",
     "oidc-client-ts": "^3.5.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

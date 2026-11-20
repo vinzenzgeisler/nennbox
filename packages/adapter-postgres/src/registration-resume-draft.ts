@@ -1,4 +1,4 @@
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 import {
   registrationFormDrafts,
   registrationFormUploads,
@@ -8,7 +8,7 @@ import { sql } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import { events } from './schema/organization.js';
 import type { PublicRegistrationDependencies } from './registration-public-types.js';
-import { RegistrationUnavailable } from '@racepilot/core';
+import { RegistrationUnavailable } from '@nennbox/core';
 
 export function createRegistrationResumeDraftMethods(
   dependencies: PublicRegistrationDependencies,

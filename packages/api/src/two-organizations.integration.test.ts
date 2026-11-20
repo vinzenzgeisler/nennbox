@@ -3,7 +3,7 @@ import { and, eq, inArray, ne } from 'drizzle-orm';
 import { runMigrations } from 'graphile-worker';
 import type { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { defaultRegistrationFormConfig } from '@racepilot/contracts';
+import { defaultRegistrationFormConfig } from '@nennbox/contracts';
 import {
   createDatabase,
   driverPortalLinks,
@@ -19,18 +19,18 @@ import {
   organizations,
   registrationGroups,
   type Database,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
 import {
   createRequestContext,
   organizationId,
   permissionsForRole,
   type ObjectStorageProvider,
   type RequestContext,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { createProductApi } from './product.js';
 import type { ContextResolvers } from './types.js';
 
-const databaseUrl = process.env.RACEPILOT_TEST_DATABASE_URL;
+const databaseUrl = process.env.NENNBOX_TEST_DATABASE_URL;
 const remote = { incoming: { socket: { remoteAddress: '203.0.113.7' } } };
 const sha = (value: string) => createHash('sha256').update(value).digest('hex');
 

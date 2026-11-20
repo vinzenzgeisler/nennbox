@@ -1,7 +1,9 @@
 import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { readEnv } from '../../scripts/env.mjs';
 // Local development only: the browser talks same-origin and Vite forwards API routes.
-const apiTarget = process.env.RACEPILOT_API_URL ?? 'http://127.0.0.1:3000';
+const apiTarget =
+  readEnv('NENNBOX_API_URL', 'RACEPILOT_API_URL') ?? 'http://127.0.0.1:3000';
 // The OIDC callback must be served by the SPA, not forwarded to the API.
 const apiRoutes = ['/runtime', '/auth/config', '/admin', '/public', '/health'];
 

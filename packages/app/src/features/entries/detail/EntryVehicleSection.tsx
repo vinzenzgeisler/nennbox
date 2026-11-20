@@ -12,9 +12,9 @@ import {
   MediaDetail,
   TextInput,
   Textarea,
-} from '@racepilot/ui';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
-import type { EntryVehicleUpdateRequest } from '@racepilot/contracts';
+} from '@nennbox/ui';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
+import type { EntryVehicleUpdateRequest } from '@nennbox/contracts';
 import { NOT_GIVEN, vehicleTypeLabel } from './entryDetailModel.js';
 import type { Outcome } from '../AdminEntriesModel.js';
 

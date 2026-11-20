@@ -1,4 +1,4 @@
-import { Button } from '@racepilot/ui';
+import { Button } from '@nennbox/ui';
 import { useEffect, useState } from 'react';
 import { restoreAdminSession, signIn } from '../../auth.js';
 import { AdminApplication } from './AdminApplication.js';

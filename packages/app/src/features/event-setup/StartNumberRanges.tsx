@@ -1,4 +1,4 @@
-import { Button, DataTable, Field, SelectField } from '@racepilot/ui';
+import { Button, DataTable, Field, SelectField } from '@nennbox/ui';
 import type { ClassOption, Mode, Range } from './startNumberApi.js';
 import { emptyRange } from './startNumberApi.js';
 

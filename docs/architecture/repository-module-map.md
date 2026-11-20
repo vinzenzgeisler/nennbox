@@ -11,7 +11,7 @@ Status terms follow the definitions in the [repository README](../../README.md).
 
 | Concern | Current repository/module | Status and evidence |
 |---|---|---|
-| Shared product | `vinzenzgeisler/racepilot` | **Current fact:** public npm-workspaces monorepo with core, contracts, API, worker, UI, and adapters. Packages remain unreleased; this issue's pack contract is not a registry publication. |
+| Shared product | `vinzenzgeisler/racepilot` | **Current fact (repository name; product name NENNBOX):** public npm-workspaces monorepo with core, contracts, API, worker, UI, and adapters. Packages remain unreleased; this issue's pack contract is not a registry publication. |
 | Community distribution | `vinzenzgeisler/racepilot` | **Current fact:** not yet available; no supported installation, upgrade, backup, or restore bundle exists. |
 | Cloud repository | Private `vinzenzgeisler/racepilot-cloud` | **Current fact:** private repository exists and currently contains the product website only. Its presence does not prove a running Cloud platform. |
 | Product website | `vinzenzgeisler/racepilot-cloud/apps/website` | **Current fact:** private website app with its own build/deploy path; it is not a product runtime dependency. Website deployment does not establish Cloud subscriptions, product runtime, or tenant provisioning. |
@@ -20,16 +20,15 @@ Status terms follow the definitions in the [repository README](../../README.md).
 
 ### Repository naming note
 
-This repository was renamed from `vinzenzgeisler/race-pilot` to
-`vinzenzgeisler/racepilot` after the 2026-08-15 snapshot. At snapshot time the name
-`racepilot` belonged to the separate Next.js marketing-site repository. Paths prefixed
-with `racepilot/` in this map and in the [coupling inventory](current-couplings.md)
+The current repository is `vinzenzgeisler/racepilot` (target name after repository rename: `nennbox`). The separate Cloud repository is `vinzenzgeisler/racepilot-cloud` (target name after repository rename: `nennbox-cloud`). At snapshot time the name
+`nennbox` belonged to the separate Next.js marketing-site repository. Paths prefixed
+with `nennbox/` in this map and in the [coupling inventory](current-couplings.md)
 refer to that marketing snapshot, not to this repository. The marketing commit listed
 under [evidence scope](#evidence-scope) is not reachable under the current
 `vinzenzgeisler/racepilot` name.
 
 The planning evidence is consistent with these observations:
-`reports/racepilot-projektmasterplan-2026-08-13.md` lines 30–48 describe the
+`reports/nennbox-projektmasterplan-2026-08-13.md` lines 30–48 describe the
 existing AWS backend, React/Vite frontend, marketing site, and the missing tenant and
 SaaS foundations. `SAAS_CONCEPT.md` identifies multi-tenant deployment, Docker, and
 billing as future work rather than implemented modules.
@@ -38,7 +37,7 @@ billing as future work rather than implemented modules.
 
 These are **target decisions**, not claims that extraction or implementation has
 happened. [ADR 0002](../adr/0002-product-repository-clean-start-and-package-boundaries.md)
-replaced the earlier plan to rename or transfer the MSC repositories: RacePilot is a
+replaced the earlier plan to rename or transfer the MSC repositories: NENNBOX is a
 clean rebuild in this repository, and the MSC repositories remain read-only references.
 
 | Concern | Target repository/module assignment | Visibility | Obligation |
@@ -90,8 +89,8 @@ The sources were inspected at these local read-only evidence paths:
 
 - `/home/node/.openclaw/workspace/MSC-Event-Backend`
 - `/home/node/.openclaw/workspace/MSC-Event-Frontend`
-- `/home/node/.openclaw/workspace/racepilot`
-- `/home/node/.openclaw/workspace/reports/racepilot-projektmasterplan-2026-08-13.md`
+- `/home/node/.openclaw/workspace/nennbox`
+- `/home/node/.openclaw/workspace/reports/nennbox-projektmasterplan-2026-08-13.md`
 - `/home/node/.openclaw/workspace/SAAS_CONCEPT.md`
 
 The more granular evidence and search limitations are recorded in the

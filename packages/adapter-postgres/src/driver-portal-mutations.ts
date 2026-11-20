@@ -1,5 +1,5 @@
 import { and, eq, isNull, ne } from 'drizzle-orm';
-import { assertWorkflowTransition } from '@racepilot/core';
+import { assertWorkflowTransition } from '@nennbox/core';
 import { createEntryWorkflowRepository } from './entry-workflow.js';
 import {
   entryAuditEvents,
@@ -9,7 +9,7 @@ import {
   driverPortalLinks,
   driverPortalSessions,
 } from './schema/driver-portal.js';
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 import { eventDriverPortalFields } from './schema/driver-portal.js';
 import { registrationGroups, entries } from './schema/entries.js';
 import { events } from './schema/organization.js';

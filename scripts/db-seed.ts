@@ -2,14 +2,14 @@ import {
   createDatabase,
   ensureCommunityOrganization,
   events,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error('DATABASE_URL is required');
 const { db, pool } = await createDatabase(url);
 try {
   const org = await ensureCommunityOrganization(db, {
     slug: 'demo-community',
-    name: 'RacePilot Demo',
+    name: 'NENNBOX Demo',
     timezone: 'Europe/Berlin',
     locale: 'en',
   });
@@ -18,7 +18,7 @@ try {
     .values({
       organizationId: org.id,
       slug: 'demo-event-2027',
-      name: 'RacePilot Demo Event',
+      name: 'NENNBOX Demo Event',
       startsOn: '2027-06-12',
       endsOn: '2027-06-13',
     })

@@ -1,4 +1,4 @@
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 import { uuidPattern } from './database.js';
 import { organizations, events } from './schema/organization.js';
 import { eq, and } from 'drizzle-orm';

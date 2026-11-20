@@ -1,4 +1,4 @@
-import { silentLogger } from '@racepilot/core';
+import { silentLogger } from '@nennbox/core';
 import {
   createInMemoryRegistrationRateLimiter,
   type RegistrationRateLimiter,

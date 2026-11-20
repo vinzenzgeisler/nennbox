@@ -83,15 +83,15 @@ security assessment.
 
 ## Marketing site: verified coupling and claim risks
 
-Paths prefixed with `racepilot/` refer to the separate marketing-site repository as it
+Paths prefixed with `nennbox/` refer to the separate marketing-site repository as it
 was named at snapshot time, not to this repository (see the
 [repository naming note](repository-module-map.md#repository-naming-note)).
 
 | ID | Verified finding and evidence paths | Architectural impact | Follow-up obligation |
 |---|---|---|---|
-| M-01 | MSC reference and Dreiecksrennen copy is embedded in `racepilot/components/Hero.tsx:23`, `SocialProof.tsx:21-29`, and `ProductShowcase.tsx:232`; the contact placeholder references an MSC example in `Contact.tsx:53`. | This is intentional marketing/reference content rather than tenant runtime data, but accuracy and consent still need ownership. | Keep it out of product runtime modules; review reference permission and claims separately. |
-| M-02 | Pricing claims Community source/Docker and Cloud availability in `racepilot/components/Pricing.tsx:8-50`, while the inspected product repositories contain no Community distribution or Cloud control plane. GitHub links are placeholders in `Footer.tsx:16` and `Nav.tsx:27`. | Marketing can imply editions are available before release evidence exists. | Gate edition availability claims and links on actual release evidence; label roadmap/pre-release state. |
-| M-03 | `racepilot/README.md:32-36` recommends Vercel deployment, but no marketing workflow was found. | This is hosting guidance/boilerplate, not evidence of an active deployment or product architecture. | Document real marketing deployment separately; keep it independent of product availability. |
+| M-01 | MSC reference and Dreiecksrennen copy is embedded in `nennbox/components/Hero.tsx:23`, `SocialProof.tsx:21-29`, and `ProductShowcase.tsx:232`; the contact placeholder references an MSC example in `Contact.tsx:53`. | This is intentional marketing/reference content rather than tenant runtime data, but accuracy and consent still need ownership. | Keep it out of product runtime modules; review reference permission and claims separately. |
+| M-02 | Pricing claims Community source/Docker and Cloud availability in `nennbox/components/Pricing.tsx:8-50`, while the inspected product repositories contain no Community distribution or Cloud control plane. GitHub links are placeholders in `Footer.tsx:16` and `Nav.tsx:27`. | Marketing can imply editions are available before release evidence exists. | Gate edition availability claims and links on actual release evidence; label roadmap/pre-release state. |
+| M-03 | `nennbox/README.md:32-36` recommends Vercel deployment, but no marketing workflow was found. | This is hosting guidance/boilerplate, not evidence of an active deployment or product architecture. | Document real marketing deployment separately; keep it independent of product availability. |
 
 ## Verified absences and open search limits
 

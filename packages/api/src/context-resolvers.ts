@@ -4,7 +4,7 @@ import {
   validatePaymentRecipient,
   type DeploymentMode,
   type RequestContext,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type { ApiDeps, ContextResolvers } from './types.js';
 
 type Resolve = (request: Request) => Promise<RequestContext | null>;

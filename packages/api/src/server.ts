@@ -4,15 +4,15 @@ import {
   ensureCommunityOrganization,
   getOrganizationMailConfiguration,
   migrate,
-} from '@racepilot/adapter-postgres';
-import { staticCanonicalOrigin } from '@racepilot/core';
+} from '@nennbox/adapter-postgres';
+import { staticCanonicalOrigin } from '@nennbox/core';
 import { loadConfig } from './config.js';
 import {
   createCommunityIdentity,
   createCommunityObjectStorage,
 } from './community-providers.js';
 import { createProductApi } from './product.js';
-import { createStripePaymentProvider } from '@racepilot/adapter-stripe';
+import { createStripePaymentProvider } from '@nennbox/adapter-stripe';
 
 const config = loadConfig(process.env);
 await migrate(config.DATABASE_URL);

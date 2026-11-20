@@ -5,7 +5,7 @@ import type {
   EntryDocument,
   EntryDocumentType,
   EntryDocumentStatus,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type { Database } from './database.js';
 import { withOrganizationTransaction } from './database-service.js';
 import { entries } from './schema/entries.js';

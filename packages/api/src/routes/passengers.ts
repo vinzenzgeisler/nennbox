@@ -4,7 +4,7 @@ import {
   AdminPassengerLinkRequest,
   PassengerCompletionRequest,
   PassengerLinkResolveRequest,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import type {
   ApiRoutesContext,
   PublicRegistrationRouteDeps,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { organizationId } from '@racepilot/core';
+import { organizationId } from '@nennbox/core';
 import { sql } from 'drizzle-orm';
 import {
   createDatabase,
@@ -14,7 +14,7 @@ import {
   createTimingRepository,
 } from './index.js';
 
-const url = process.env.RACEPILOT_TEST_DATABASE_URL;
+const url = process.env.NENNBOX_TEST_DATABASE_URL;
 describe.skipIf(!url)('PostgreSQL timing adapter', () => {
   it('records, corrects, versions and publishes only within the owning tenant/event', async () => {
     await migrate(url!);

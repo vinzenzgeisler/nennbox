@@ -12,18 +12,18 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate as drizzleMigrate } from 'drizzle-orm/node-postgres/migrator';
 import { runMigrations } from 'graphile-worker';
 import { Pool } from 'pg';
-import { createRequestContext, organizationId } from '@racepilot/core';
+import { createRequestContext, organizationId } from '@nennbox/core';
 import { describe, expect, it } from 'vitest';
 import { createDatabase } from './database-service.js';
 import { createEntryDetailRepository } from './entry-detail.js';
 import { createEntryRepository } from './entry-repository.js';
 
-const url = process.env.RACEPILOT_TEST_DATABASE_URL;
+const url = process.env.NENNBOX_TEST_DATABASE_URL;
 const migrations = fileURLToPath(new URL('../migrations', import.meta.url));
 
 /** Migrations up to and including the given tag, as a drizzle migrations folder. */
 function migrationsUpTo(tag: string) {
-  const folder = mkdtempSync(join(tmpdir(), 'racepilot-migrations-'));
+  const folder = mkdtempSync(join(tmpdir(), 'nennbox-migrations-'));
   mkdirSync(join(folder, 'meta'));
   const journal = JSON.parse(
     readFileSync(join(migrations, 'meta', '_journal.json'), 'utf8'),

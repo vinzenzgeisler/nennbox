@@ -1,6 +1,6 @@
 import type { ApiRoutesContext } from './context.js';
 import { z } from 'zod';
-import { queueArtifactJob, type ObjectStorageProvider } from '@racepilot/core';
+import { queueArtifactJob, type ObjectStorageProvider } from '@nennbox/core';
 import type { PublicRegistrationService } from '../services.js';
 
 /** Queues confirmation PDFs; registered only with storage, where the worker writes them. */

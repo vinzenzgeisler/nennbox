@@ -11,7 +11,7 @@ flock -w "${SMOKE_LOCK_TIMEOUT:-3600}" 9 || { echo 'community-restore-smoke: loc
 [[ ! -e .community-local ]] || { echo '.community-local already exists; refusing to overwrite local community data.' >&2; exit 1; }
 
 tag="nb-restore-$(basename "$root")-$$"
-backup="${XDG_CACHE_HOME:-$HOME/.cache}/racepilot-community-restore-$tag"
+backup="${XDG_CACHE_HOME:-$HOME/.cache}/nennbox-community-restore-$tag"
 logs="$root/.community-restore-logs-$tag"
 mkdir -p "$backup" "$logs"
 chmod 700 "$backup" "$logs"
@@ -87,9 +87,9 @@ start_stack
 
 export COMMUNITY_ADMIN_PASSWORD="$(node scripts/community-config.mjs --password)"
 export COMMUNITY_ADMIN_EMAIL="$(node scripts/community-config.mjs --email)"
-export RACEPILOT_API_URL="http://127.0.0.1:$COMMUNITY_API_PORT"
-export RACEPILOT_APP_URL="$COMMUNITY_APP_URL"
-export RACEPILOT_MAILPIT_URL="http://127.0.0.1:$COMMUNITY_MAILPIT_PORT"
+export NENNBOX_API_URL="http://127.0.0.1:$COMMUNITY_API_PORT"
+export NENNBOX_APP_URL="$COMMUNITY_APP_URL"
+export NENNBOX_MAILPIT_URL="http://127.0.0.1:$COMMUNITY_MAILPIT_PORT"
 npx playwright test --config packages/app/playwright.config.ts
 
 echo 'Community backup/restore proof passed: login, registration submissions, and uploaded-document download verified.'

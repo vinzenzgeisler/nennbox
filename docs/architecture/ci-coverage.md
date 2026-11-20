@@ -30,7 +30,7 @@ the same artifact or commit is tested in both columns, not two rebuilt forks.
 
 | Gate / core process | Community job | Cloud job | Required assertion | Accountable owner |
 |---|---|---|---|---|
-| Core unit and contract tests | `mode=community`, provider fakes | `mode=cloud`, the same provider fakes | Registration, pricing, participant/vehicle validation, lifecycle, permissions, entitlement/capability evaluation, and API/message schemas produce mode-independent domain results | RacePilot Core maintainers |
+| Core unit and contract tests | `mode=community`, provider fakes | `mode=cloud`, the same provider fakes | Registration, pricing, participant/vehicle validation, lifecycle, permissions, entitlement/capability evaluation, and API/message schemas produce mode-independent domain results | NENNBOX Core maintainers |
 | Server-authority tamper tests | Single configured organization | Two organizations, host and membership resolver | Client attempts to set mode, organization, role, permission, entitlement, or capability are ignored/rejected; server context wins | Backend/security owner |
 | Registration integration | Fresh PostgreSQL, one organization | Fresh PostgreSQL, organizations A and B | Configure event/classes, submit and verify an entry, calculate price, and reject closed registration; Cloud repeats foreign-ID attempts | Registration owner; security owner signs Cloud isolation |
 | Admin lifecycle and permissions | OIDC test identity in the one organization | Users with different memberships in A/B | Activate/close/archive event, update entry/payment/notes, and prove role permissions; an entitlement alone never grants access | Admin/IAM owner |
@@ -83,7 +83,7 @@ implementing jobs.
 
 ## Ownership and evidence
 
-- **RacePilot Core maintainers** own the matrix definition, required-check policy, and
+- **NENNBOX Core maintainers** own the matrix definition, required-check policy, and
   parity of shared business behavior.
 - The **named process owner** owns fixtures and positive/negative assertions for that
   row. The same person need not maintain every adapter.

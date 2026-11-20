@@ -1,5 +1,5 @@
-import { Checkbox, Field, FormGrid, FormWide } from '@racepilot/ui';
-import type { PassengerMode } from '@racepilot/contracts';
+import { Checkbox, Field, FormGrid, FormWide } from '@nennbox/ui';
+import type { PassengerMode } from '@nennbox/contracts';
 import type { VehicleEntry, translations } from './RegistrationDomain.js';
 
 type Words = (typeof translations)[keyof typeof translations];

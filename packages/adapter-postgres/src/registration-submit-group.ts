@@ -2,7 +2,7 @@ import {
   RegistrationUnavailable,
   mapRegistrationContactDetails,
   type RequestContext,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { eq, and, sql } from 'drizzle-orm';
 import { registrationGroups } from './schema/entries.js';
 import { registrationFormUploads } from './schema/forms.js';

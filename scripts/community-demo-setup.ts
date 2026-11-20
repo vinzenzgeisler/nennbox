@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
-import { defaultEntryStatusDimensionConfig } from '@racepilot/core';
+import { defaultEntryStatusDimensionConfig } from '@nennbox/core';
 import { classes, demoWorkflow } from './community-demo-data.js';
 import {
   createEventRepository,
@@ -12,7 +12,7 @@ import {
   createRegistrationFormConfigRepository,
   createEventConsentRepository,
   type createDatabase,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
 
 type Db = Awaited<ReturnType<typeof createDatabase>>['db'];
 type DemoContext = Parameters<

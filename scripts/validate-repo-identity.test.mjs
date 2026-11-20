@@ -53,7 +53,7 @@ describe('repository identity validation', () => {
   });
   it('supports and displays an expected-repository override', () => {
     const result = check('https://github.com/example/fork.git', {
-      RACEPILOT_EXPECTED_REPO: 'example/fork',
+      NENNBOX_EXPECTED_REPO: 'example/fork',
     });
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('override');

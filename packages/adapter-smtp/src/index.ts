@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
-import type { MailMessage, MailProvider } from '@racepilot/core';
-import { ProviderError } from '@racepilot/core';
+import type { MailMessage, MailProvider } from '@nennbox/core';
+import { ProviderError } from '@nennbox/core';
 export interface SmtpConfig {
   readonly host: string;
   readonly port: number;

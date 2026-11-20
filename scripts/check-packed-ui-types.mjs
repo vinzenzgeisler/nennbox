@@ -15,7 +15,7 @@ const archive = (name) => {
   if (!artifact) throw new Error(`Missing packed artifact ${name}`);
   return path.join(artifactDirectory, artifact.filename);
 };
-const consumer = await mkdtemp(path.join(os.tmpdir(), 'racepilot-ui-types-'));
+const consumer = await mkdtemp(path.join(os.tmpdir(), 'nennbox-ui-types-'));
 
 try {
   await writeFile(
@@ -25,7 +25,7 @@ try {
   await writeFile(
     path.join(consumer, 'consumer.tsx'),
     [
-      "import { App, type AppProps } from '@racepilot/app/ui';",
+      "import { App, type AppProps } from '@nennbox/app/ui';",
       'const props: AppProps = { renderContribution: (config) => config.organization.name };',
       'void App; void props;',
       '',
@@ -39,9 +39,9 @@ try {
       '--no-audit',
       '--no-fund',
       '--package-lock=false',
-      archive('@racepilot/contracts'),
-      archive('@racepilot/app'),
-      archive('@racepilot/ui'),
+      archive('@nennbox/contracts'),
+      archive('@nennbox/app'),
+      archive('@nennbox/ui'),
       'typescript@^5.9.3',
       '@types/react@^19.2.0',
     ],
@@ -63,7 +63,7 @@ try {
     { cwd: consumer, stdio: 'inherit' },
   );
   console.log(
-    'Packed @racepilot/app/ui declarations compile in isolated consumer',
+    'Packed @nennbox/app/ui declarations compile in isolated consumer',
   );
 } finally {
   await rm(consumer, { recursive: true, force: true });

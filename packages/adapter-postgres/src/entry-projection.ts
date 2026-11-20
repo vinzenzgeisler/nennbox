@@ -4,9 +4,9 @@ import {
   defaultEntryWorkflow,
   projectEntryStatuses,
   defaultEntryStatusDimensionConfig,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type { Database } from './database.js';
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 import { sql } from 'drizzle-orm';
 import {
   eventEntryStatusDimensionConfigs,
@@ -21,7 +21,7 @@ import { entryPassengers } from './schema/passengers.js';
 
 export function mapEntry(
   row: typeof entries.$inferSelect,
-): import('@racepilot/core').Entry {
+): import('@nennbox/core').Entry {
   return {
     id: row.id,
     eventId: row.eventId,
@@ -40,9 +40,9 @@ export function mapEntry(
     deletionReason: row.deletionReason,
     organizationId: organizationId(row.organizationId),
     verificationStatus:
-      row.verificationStatus as import('@racepilot/core').Entry['verificationStatus'],
+      row.verificationStatus as import('@nennbox/core').Entry['verificationStatus'],
     acceptanceStatus:
-      row.acceptanceStatus as import('@racepilot/core').Entry['acceptanceStatus'],
+      row.acceptanceStatus as import('@nennbox/core').Entry['acceptanceStatus'],
     createdAt: row.createdAt.toISOString(),
     revision: row.revision,
     deletedAt: row.deletedAt?.toISOString() ?? null,
@@ -53,7 +53,7 @@ export async function projectEntryRows(
   db: Pick<Database, 'select' | 'execute'>,
   ctx: RequestContext,
   rows: readonly (typeof entries.$inferSelect)[],
-): Promise<import('@racepilot/core').Entry[]> {
+): Promise<import('@nennbox/core').Entry[]> {
   if (!rows.length) return [];
   const ids = [...new Set(rows.map((row) => row.id))];
   const revisionIds = [
@@ -180,7 +180,7 @@ export async function projectEntryRows(
   const passengerEntryIds = new Set(passengerRows.map((row) => row.entryId));
   type WorkflowRow = {
     id: string;
-    workflow: import('@racepilot/core').EntryWorkflow;
+    workflow: import('@nennbox/core').EntryWorkflow;
   };
   type StarterRow = { id: string; double_starter: boolean };
   const workflowMap = new Map(

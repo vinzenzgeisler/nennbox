@@ -12,17 +12,17 @@ import {
   entryStatusHintsAudit,
 } from './schema/status.js';
 
-import { defaultEntryStatusDimensionConfig } from '@racepilot/core';
+import { defaultEntryStatusDimensionConfig } from '@nennbox/core';
 
 import { entries } from './schema/entries.js';
 
 import { sql } from 'drizzle-orm';
 
-import type { EntryStatusHintKey } from '@racepilot/core';
+import type { EntryStatusHintKey } from '@nennbox/core';
 
 export function createEntryStatusDimensionRepository(
   db: Database,
-): import('@racepilot/core').EntryStatusDimensionRepository {
+): import('@nennbox/core').EntryStatusDimensionRepository {
   return {
     ...createEntryStatusConfigRepository(db),
     transition: async (ctx, entryId, dimension, to, actor, reason) => {

@@ -1,4 +1,4 @@
-import { EventOverviewSchema } from '@racepilot/contracts';
+import { EventOverviewSchema } from '@nennbox/contracts';
 import { apiRequest } from '../remote/apiRequest.js';
 
 export const overviewApi = {

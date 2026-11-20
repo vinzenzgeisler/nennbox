@@ -1,4 +1,4 @@
-import { FormGrid, FormSection } from '@racepilot/ui';
+import { FormGrid, FormSection } from '@nennbox/ui';
 import type { RegistrationActions } from './RegistrationActions.js';
 import type { RegistrationModel } from './RegistrationModel.js';
 import { fieldState } from './RegistrationDomain.js';

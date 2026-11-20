@@ -1,4 +1,4 @@
-import { staticCanonicalOrigin, generateOrgaCode } from '@racepilot/core';
+import { staticCanonicalOrigin, generateOrgaCode } from '@nennbox/core';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { runMigrations } from 'graphile-worker';
 import {
@@ -14,7 +14,7 @@ import {
   defaultEntryStatusDimensionConfig,
   EntryStatusInUseError,
   transitionEntry,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { describe, it, expect } from 'vitest';
 import {
   createDatabase,
@@ -73,7 +73,7 @@ import {
   entryStatusDimensionAudit,
   entryStatusHintsAudit,
 } from './index.js';
-const url = process.env.RACEPILOT_TEST_DATABASE_URL;
+const url = process.env.NENNBOX_TEST_DATABASE_URL;
 describe.skipIf(!url)('PostgreSQL integration', () => {
   it('rolls back the whole event setup when inserting a later class fails', async () => {
     const { db, pool } = await createDatabase(url!);
@@ -1124,7 +1124,7 @@ describe.skipIf(!url)('PostgreSQL integration', () => {
     }
   });
   it('bootstraps idempotently and filters foreign event IDs', async () => {
-    if (!url) throw new Error('RACEPILOT_TEST_DATABASE_URL is required in CI');
+    if (!url) throw new Error('NENNBOX_TEST_DATABASE_URL is required in CI');
     const { db, pool } = await createDatabase(url);
     try {
       const a = await ensureCommunityOrganization(db, {
@@ -2478,9 +2478,7 @@ describe.skipIf(!url)('pricing and invoice isolation', () => {
         html: '<a href="{{verificationUrl}}">Verify</a>',
       });
       const service = createPublicRegistrationService(db, {
-        canonicalOrigin: staticCanonicalOrigin(
-          'https://racepilot.example.test',
-        ),
+        canonicalOrigin: staticCanonicalOrigin('https://nennbox.example.test'),
       });
       const [foreignOrg] = await db
         .insert(organizations)
@@ -2861,7 +2859,7 @@ describe.skipIf(!url)('pricing and invoice isolation', () => {
       const verificationUrl = outbox.variables.verificationUrl!;
       const token = new URL(verificationUrl).searchParams.get('token')!;
       expect(new URL(verificationUrl).origin).toBe(
-        'https://racepilot.example.test',
+        'https://nennbox.example.test',
       );
       const expiredToken = 'expired-verification-token';
       await db.insert(groupEmailVerifications).values({

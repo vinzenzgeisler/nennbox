@@ -120,7 +120,7 @@ jobs:
       - run: npm ci
       - run: npm run release:pack
         env:
-          RACEPILOT_PACK_DIR: /tmp/racepilot-product-artifacts
+          NENNBOX_PACK_DIR: /tmp/nennbox-product-artifacts
 
   boundaries:
     needs: repo-identity
@@ -153,17 +153,17 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: racepilot
-          POSTGRES_PASSWORD: racepilot
-          POSTGRES_DB: racepilot_test
+          POSTGRES_USER: nennbox
+          POSTGRES_PASSWORD: nennbox
+          POSTGRES_DB: nennbox_test
         ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U racepilot -d racepilot_test"
+          --health-cmd "pg_isready -U nennbox -d nennbox_test"
           --health-interval 5s --health-timeout 3s --health-retries 10
     env:
       CI: true
-      RACEPILOT_TEST_DATABASE_URL: postgres://racepilot:racepilot@127.0.0.1:5432/racepilot_test
-      DATABASE_URL: postgres://racepilot:racepilot@127.0.0.1:5432/racepilot_test
+      NENNBOX_TEST_DATABASE_URL: postgres://nennbox:nennbox@127.0.0.1:5432/nennbox_test
+      DATABASE_URL: postgres://nennbox:nennbox@127.0.0.1:5432/nennbox_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -180,7 +180,7 @@ jobs:
     needs: repo-identity
     runs-on: ubuntu-latest
     env:
-      RACEPILOT_TEST_MODE: community
+      NENNBOX_TEST_MODE: community
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -195,7 +195,7 @@ jobs:
     needs: repo-identity
     runs-on: ubuntu-latest
     env:
-      RACEPILOT_TEST_MODE: cloud
+      NENNBOX_TEST_MODE: cloud
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

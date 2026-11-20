@@ -7,9 +7,7 @@ import { getCleanSourceCommit } from './pack-source.mjs';
 
 describe('pack source identity', () => {
   it('identifies a clean tracked tree and fails closed on tracked edits', async () => {
-    const root = await mkdtemp(
-      path.join(os.tmpdir(), 'racepilot-source-test-'),
-    );
+    const root = await mkdtemp(path.join(os.tmpdir(), 'nennbox-source-test-'));
     try {
       execFileSync('git', ['init', '-q'], { cwd: root });
       execFileSync(

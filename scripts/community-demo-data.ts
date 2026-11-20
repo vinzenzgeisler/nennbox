@@ -242,7 +242,7 @@ export function demoCreatedAt(index: number): Date {
   return new Date(Date.UTC(2026, 10, day, 12, 0) - index * 60_000);
 }
 
-import { defaultEntryWorkflow } from '@racepilot/core';
+import { defaultEntryWorkflow } from '@nennbox/core';
 export const demoWorkflow = {
   ...defaultEntryWorkflow,
   statuses: defaultEntryWorkflow.statuses.map((s) => ({

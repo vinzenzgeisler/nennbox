@@ -5,7 +5,7 @@ import {
   createRequestContext,
   defaultEntryWorkflow,
   organizationId,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { createDatabase, migrate } from './database-service.js';
 import { createOverviewRepository } from './event-overview.js';
 import { createEntryWorkflowRepository } from './entry-workflow.js';
@@ -19,7 +19,7 @@ import {
 import { invoices } from './schema/billing.js';
 import { eventEntryDocumentTypes } from './schema/documents.js';
 
-const url = process.env.RACEPILOT_TEST_DATABASE_URL;
+const url = process.env.NENNBOX_TEST_DATABASE_URL;
 describe.skipIf(!url)('PostgreSQL event overview', () => {
   it('aggregates counts, capacity, outstanding cents, warnings and enforces organization isolation', async () => {
     await migrate(url!);

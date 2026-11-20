@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ReasonDialog, TextInput } from '@racepilot/ui';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import { ReasonDialog, TextInput } from '@nennbox/ui';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import { formatMoney } from './entryDetailModel.js';
 
 type Invoice = NonNullable<NonNullable<Entry['adminDetails']>['invoice']>;

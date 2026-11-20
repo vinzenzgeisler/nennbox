@@ -7,7 +7,7 @@ import { createRegistrationSaveDraftMethods } from './registration-save-draft.js
 import { createRegistrationResumeDraftMethods } from './registration-resume-draft.js';
 import { createRegistrationFormMethods } from './registration-form.js';
 import { createRegistrationVerificationMethods } from './registration-verification.js';
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 import type { PublicRegistrationPayload } from './registration-settings.js';
 import { organizations, events } from './schema/organization.js';
 import { eq, and } from 'drizzle-orm';
@@ -22,7 +22,7 @@ import {
   registrationStartNumberMatches,
   registrationFeatureEnabled,
   resolveRegistrationFieldStates,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { publicEntrySubmissions } from './schema/public-registration.js';
 import { sql } from 'drizzle-orm';
 import { validateRegistrationCustomAnswers } from './registration-submit-answers.js';

@@ -7,7 +7,7 @@ import {
   type EntryExportField,
   type EntryExportFilters,
   type ObjectStorageProvider,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 const EXPORT_HISTORY_LIMIT = 20;
 

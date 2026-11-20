@@ -1,6 +1,6 @@
 import { and, eq, sql } from 'drizzle-orm';
-import type { CheckoutInvoice, CheckoutRepository } from '@racepilot/core';
-import { deriveInvoiceStatus } from '@racepilot/core';
+import type { CheckoutInvoice, CheckoutRepository } from '@nennbox/core';
+import { deriveInvoiceStatus } from '@nennbox/core';
 import type { Database } from './database.js';
 import {
   invoices,

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 
-const mailpitUrl = process.env.RACEPILOT_MAILPIT_URL ?? 'http://127.0.0.1:8025';
+const mailpitUrl = process.env.NENNBOX_MAILPIT_URL ?? 'http://127.0.0.1:8025';
 
 test('Admin filters recipients, sends a message, and sees Mailpit delivery and sent outbox', async ({
   page,

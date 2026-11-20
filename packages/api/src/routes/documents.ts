@@ -3,17 +3,17 @@ import {
   EntryDocumentDecisionRequest,
   EntryDocumentTypeSchema,
   ENTRY_DOCUMENT_MAX_BYTES,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import type {
   EntryDocumentErrorCode,
   ObjectStorageProvider,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import {
   decideEntryDocument,
   getEntryDocumentProjection,
   uploadEntryDocument,
   setEntryDocumentTypes,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type { ApiRoutesContext } from './context.js';
 
 const uuid = z.string().uuid();

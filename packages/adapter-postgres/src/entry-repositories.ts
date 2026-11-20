@@ -1,5 +1,5 @@
 import type { Database } from './database.js';
-import { normalizeOrgaCode } from '@racepilot/core';
+import { normalizeOrgaCode } from '@nennbox/core';
 
 import { people, vehicles, entries } from './schema/entries.js';
 import { eventClasses } from './schema/organization.js';
@@ -10,7 +10,7 @@ import { sql } from 'drizzle-orm';
 
 export function createEntryExportRepository(
   db: Database,
-): import('@racepilot/core').EntryExportRepository {
+): import('@nennbox/core').EntryExportRepository {
   return {
     listByEvent: async (ctx, eventId, filters) => {
       const predicates = [

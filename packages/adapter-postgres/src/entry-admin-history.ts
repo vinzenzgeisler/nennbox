@@ -21,7 +21,7 @@ import {
 import { emailOutbox } from './mail-schema.js';
 import { loadPassengerHistory } from './passenger-history.js';
 import type { Database } from './database.js';
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 
 export async function loadEntryAdminHistory(
   db: Pick<Database, 'select'>,

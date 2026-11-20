@@ -1,12 +1,12 @@
 import { and, eq, sql } from 'drizzle-orm';
-import type { PaymentRefundRepository } from '@racepilot/core';
+import type { PaymentRefundRepository } from '@nennbox/core';
 import type { Database } from './database.js';
 import {
   invoices,
   invoicePayments,
   invoicePaymentAuditEvents,
 } from './schema/billing.js';
-import { deriveInvoiceStatus } from '@racepilot/core';
+import { deriveInvoiceStatus } from '@nennbox/core';
 
 export function createPaymentRefundRepository(
   db: Database,

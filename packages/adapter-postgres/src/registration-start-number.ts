@@ -1,5 +1,5 @@
-import type { RequestContext } from '@racepilot/core';
-import { normalizeRequestedStartNumber } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
+import { normalizeRequestedStartNumber } from '@nennbox/core';
 import { events } from './schema/organization.js';
 import { eq, and } from 'drizzle-orm';
 import { entries } from './schema/entries.js';

@@ -1,4 +1,4 @@
-import { DetailSection, HistoryTimeline } from '@racepilot/ui';
+import { DetailSection, HistoryTimeline } from '@nennbox/ui';
 import { formatShortDateTime, type TimelineItem } from './entryDetailModel.js';
 
 export function EntryHistorySection({ items }: { items: TimelineItem[] }) {

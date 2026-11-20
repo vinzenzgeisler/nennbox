@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { runMigrations } from 'graphile-worker';
-import { createRequestContext, organizationId } from '@racepilot/core';
+import { createRequestContext, organizationId } from '@nennbox/core';
 import { describe, expect, it } from 'vitest';
 import {
   createDatabase,
@@ -17,7 +17,7 @@ import {
 } from './index.js';
 import { offerWaitlistSeat } from './waitlist-offer.js';
 
-const url = process.env.RACEPILOT_TEST_DATABASE_URL;
+const url = process.env.NENNBOX_TEST_DATABASE_URL;
 describe.skipIf(!url)('start-number ranges and waitlist concurrency', () => {
   it('isolates configuration by organization and serializes simultaneous cancellations to distinct waitlist entries', async () => {
     await runMigrations({ connectionString: url! });

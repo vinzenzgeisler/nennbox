@@ -9,7 +9,7 @@ import {
   vehicles,
   emailTemplateVersions,
   saveMailTemplateVersion,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
 import { demoCreatedAt, gradientImage } from './community-demo-data.js';
 import { demoPassenger } from './community-demo-profiles.js';
 

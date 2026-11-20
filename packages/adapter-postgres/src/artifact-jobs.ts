@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, lt, or, sql } from 'drizzle-orm';
-import type { ArtifactJob, ArtifactJobRepository } from '@racepilot/core';
-import { organizationId } from '@racepilot/core';
+import type { ArtifactJob, ArtifactJobRepository } from '@nennbox/core';
+import { organizationId } from '@nennbox/core';
 import { artifactJobAudit, artifactJobs } from './artifact-job-schema.js';
 import type { Database } from './database.js';
 

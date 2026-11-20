@@ -7,12 +7,12 @@ import { registerEntryAdminActionRoutes } from './entry-admin-actions.js';
 import {
   EntryDriverUpdateRequest,
   EntryVehicleUpdateRequest,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 import {
   transitionEntry,
   type EntryListQuery,
   type EntryStatusHintKey,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 export function registerEntriesRoutes(context: ApiRoutesContext): void {
   const { app, deps, requireMember } = context;
@@ -238,13 +238,13 @@ export function registerEntriesRoutes(context: ApiRoutesContext): void {
           ? await deps.entryDetails.updateDriver(
               context,
               entryId.data,
-              parsed.data as import('@racepilot/core').EntryDriverPatch,
+              parsed.data as import('@nennbox/core').EntryDriverPatch,
               actor,
             )
           : await deps.entryDetails.updateVehicle(
               context,
               entryId.data,
-              parsed.data as import('@racepilot/core').EntryVehiclePatch,
+              parsed.data as import('@nennbox/core').EntryVehiclePatch,
               actor,
             );
       if (result === 'not_found') return c.json({ error: 'Not found' }, 404);

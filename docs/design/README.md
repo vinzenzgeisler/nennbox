@@ -1,10 +1,10 @@
 # NENNBOX design foundation
 
-This repository contains the implementation-facing design tokens for RacePilot's app package. The complete NENNBOX brandbook (M1–M6 and app specifications) is maintained in the private design repository; this document is only the public product's implementation reference.
+This repository contains the implementation-facing design tokens for NENNBOX's app package. The complete NENNBOX brandbook (M1–M6 and app specifications) is maintained in the private design repository; this document is only the public product's implementation reference.
 
 ## Tokens
 
-Import `@racepilot/ui/base.css` for the reset, typography, focus behavior, motion preference, locally hosted fonts, and tokens. `@racepilot/ui/tokens.css` can be imported independently. TypeScript constants are exported by `@racepilot/ui`.
+Import `@nennbox/ui/base.css` for the reset, typography, focus behavior, motion preference, locally hosted fonts, and tokens. `@nennbox/ui/tokens.css` can be imported independently. TypeScript constants are exported by `@nennbox/ui`.
 
 - **Color (M3):** Racing Green `#193B30`, Paddock Ivory `#F5F4EE`, White `#FFFFFF`, Ink `#111A16`, Night `#0F2219`, Mint `#B5E0CA`, Sage `#E4EAE3`, Graphite `#4F5A54`, Line `#C9CFC8`, Signal `#3FB97A`, Marshal `#E2531F` and text-safe Marshal `#B8400F`.
 - **Typography (M4):** Archivo Variable for display/headings and numerals; IBM Plex Sans weights 400/500/600 for readable UI; IBM Plex Mono 500 for uppercase labels. Skala (px; size/line-height/tracking):
@@ -64,9 +64,9 @@ Rendered the package base styles and `Wordmark` in Chromium on 2026-10-30 at exa
 
 ## Component library (A2 / F1)
 
-`@racepilot/ui` is the single source for reusable app and registration controls.
+`@nennbox/ui` is the single source for reusable app and registration controls.
 Use the named exports from the package root and import
-`@racepilot/ui/components.css` once in the application. Each primitive lives in
+`@nennbox/ui/components.css` once in the application. Each primitive lives in
 its own `packages/ui/src/<component>/` folder with implementation, token-based
 styles, and a focused test. `components.tsx` and `components.css` are small
 compatibility entrypoints only; they are not implementation files.

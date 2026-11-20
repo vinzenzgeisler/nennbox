@@ -1,5 +1,5 @@
-import { Button, DataTable, StatusLabel } from '@racepilot/ui';
-import type { MessageCampaignRecord } from '@racepilot/contracts';
+import { Button, DataTable, StatusLabel } from '@nennbox/ui';
+import type { MessageCampaignRecord } from '@nennbox/contracts';
 import { messagesApi } from './messagesApi.js';
 import { useState } from 'react';
 

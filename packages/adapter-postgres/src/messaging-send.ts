@@ -8,13 +8,13 @@ import type {
   MessageCampaignTransaction,
   ObjectStorageProvider,
   RequestContext,
-} from '@racepilot/core';
-import { resolveCanonicalOrigin, type CanonicalOrigin } from '@racepilot/core';
+} from '@nennbox/core';
+import { resolveCanonicalOrigin, type CanonicalOrigin } from '@nennbox/core';
 import {
   MESSAGE_ATTACHMENT_LIMITS,
   sendMessageCampaign,
   messageCampaignDelivery,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { validateMessageAttachmentMetadata } from './messaging-attachments.js';
 import type { Database } from './database.js';
 import { organizations } from './schema/organization.js';

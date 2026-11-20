@@ -26,7 +26,7 @@ export * from './message-campaign-delivery.js';
 export {
   MESSAGE_ATTACHMENT_LIMITS,
   MESSAGE_VERIFICATION_TOKEN_TTL_MS,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 export * from './registration-fields.js';
 export * from './registration-submission.js';
 export * from './documents.js';

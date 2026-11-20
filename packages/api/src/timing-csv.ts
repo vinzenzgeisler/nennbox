@@ -2,7 +2,7 @@ import type { ModuleRouter } from './modules.js';
 import type {
   TimingRepository,
   TimingMeasurementInput,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
 import { TimingConfigSchema } from './timing-module.js';
 import {
   MeasurementSchema,

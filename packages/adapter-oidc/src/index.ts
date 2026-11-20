@@ -3,7 +3,7 @@ import {
   ProviderError,
   type ExternalIdentity,
   type IdentityProvider,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 const algorithms = ['RS256', 'ES256'] as const;
 const maxClockSkewSeconds = 60;

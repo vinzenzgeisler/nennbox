@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { RequestContext } from '@racepilot/core';
+import type { RequestContext } from '@nennbox/core';
 
 export const MeasurementSchema = z
   .object({

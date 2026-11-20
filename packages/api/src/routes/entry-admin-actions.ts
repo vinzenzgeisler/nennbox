@@ -3,7 +3,7 @@ import { z } from 'zod';
 import {
   availablePassengerActions,
   performEntryAdminAction,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 export function registerEntryAdminActionRoutes(
   context: ApiRoutesContext,

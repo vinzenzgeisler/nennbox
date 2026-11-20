@@ -3,7 +3,7 @@ import {
   MessageTable,
   StatusLabel,
   TechnicalLabel,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import { formatShortDateTime } from './entryDetailModel.js';
 import type { EntryMessage } from './useEntryDetailReads.js';
 

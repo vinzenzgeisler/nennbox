@@ -1,10 +1,10 @@
 # Tenant resource inventory and isolation-test contract
 
-This document is the human-readable security contract for RacePilot issue #38. The
+This document is the human-readable security contract for NENNBOX issue #38. The
 normative, versioned artifacts are:
 
 - [tenant resource inventory v1](tenant-resource-inventory.v1.json), containing 111
-  classified resource records (including the two RacePilot authentication tables);
+  classified resource records (including the two NENNBOX authentication tables);
 - [two-tenant fixture v1](fixtures/two-tenant.v1.json), containing synthetic
   organizations A and B; and
 - [tenant isolation-test matrix v1](tenant-isolation-test-matrix.v1.json), containing
@@ -187,7 +187,7 @@ future product-level isolation matrix has executed.
 
 ## Product-owned inventory
 
-The frozen MSC snapshot in `tenant-resource-inventory.v1.json` is not edited for new RacePilot resources. The product-owned resources and linked negative tests are catalogued in [`product-resource-inventory.json`](product-resource-inventory.json) and checked by `scripts/validate_product_inventory.py`.
+The frozen MSC snapshot in `tenant-resource-inventory.v1.json` is not edited for new NENNBOX resources. The product-owned resources and linked negative tests are catalogued in [`product-resource-inventory.json`](product-resource-inventory.json) and checked by `scripts/validate_product_inventory.py`.
 
 
 Issue #63 adds tenant-owned mail outbox, delivery attempts, versioned template overrides, and the `mail-outbox-job` payload to the product inventory in [`product-resource-inventory.json`](product-resource-inventory.json). The transaction API accepts the caller's Drizzle executor, while composite foreign keys bind event, template, and delivery references to the same organization.

@@ -6,7 +6,7 @@ import {
   createTransferInstruction,
   type PaymentRecipient,
   type PriceSnapshot,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 export interface EntryConfirmationData {
   readonly eventName: string;
@@ -44,8 +44,8 @@ export async function createEntryConfirmationPdf(
   document.setTitle('Entry confirmation – ' + input.eventName);
   document.setAuthor(input.branding.organizationName);
   document.setSubject('Entry confirmation');
-  document.setCreator('RacePilot');
-  document.setProducer('RacePilot');
+  document.setCreator('NENNBOX');
+  document.setProducer('NENNBOX');
   document.setCreationDate(date);
   document.setModificationDate(date);
   const page = document.addPage([595.28, 841.89]);

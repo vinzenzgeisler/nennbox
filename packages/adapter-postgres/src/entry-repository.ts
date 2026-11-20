@@ -1,5 +1,5 @@
 import type { Database } from './database.js';
-import type { AdminEntryRepository } from '@racepilot/core';
+import type { AdminEntryRepository } from '@nennbox/core';
 import { createEntryWriteMethods } from './entry-write-methods.js';
 import { createEntryReadMethods } from './entry-read-methods.js';
 import { createEntryCountMethods } from './entry-counts.js';

@@ -4,7 +4,7 @@ import {
   type Entry,
   type PassengerAdminRepository,
   type PassengerPublicRepository,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { createApp } from './index.js';
 import { createInMemoryRegistrationRateLimiter } from './rate-limit.js';
 import { testDeps, testRegistration } from './testing.js';

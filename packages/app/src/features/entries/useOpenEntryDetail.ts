@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 
 /** Loads a row first, then opens its detail after the selected record is ready. */
 export function useOpenEntryDetail(

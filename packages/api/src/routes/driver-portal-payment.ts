@@ -3,8 +3,8 @@ import {
   createInvoiceCheckout,
   onlinePaymentConfigured,
 } from './invoice-checkout.js';
-import type { DriverPortalRepository } from '@racepilot/adapter-postgres';
-import type { RequestContext } from '@racepilot/core';
+import type { DriverPortalRepository } from '@nennbox/adapter-postgres';
+import type { RequestContext } from '@nennbox/core';
 
 type PortalAccess = { context: RequestContext; token: string } | null;
 

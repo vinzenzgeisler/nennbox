@@ -1,4 +1,4 @@
-import type { EntryFilterKey, EventOverview } from '@racepilot/contracts';
+import type { EntryFilterKey, EventOverview } from '@nennbox/contracts';
 
 const MINOR_UNITS_PER_MAJOR = 100;
 

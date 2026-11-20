@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { ModuleManifestSchema } from '@racepilot/contracts';
+import { ModuleManifestSchema } from '@nennbox/contracts';
 import {
   createInMemoryModuleActivationRepository,
   createModuleRegistry,
@@ -8,7 +8,7 @@ import {
   organizationId,
   type ModuleDefinition,
   type RequestContext,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { createApp, type ModuleApiDeps } from './index.js';
 import { testDeps } from './testing.js';
 

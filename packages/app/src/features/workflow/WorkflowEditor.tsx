@@ -1,4 +1,4 @@
-import { Button, PageHeader, TextInput } from '@racepilot/ui';
+import { Button, PageHeader, TextInput } from '@nennbox/ui';
 import { WorkflowStatusesEditor } from './WorkflowStatusesEditor.js';
 import { WorkflowTransitionsEditor } from './WorkflowTransitionsEditor.js';
 import type { WorkflowEditorProps } from './WorkflowEditorProps.js';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Banner, Button, Field, FileUpload, FormSection } from '@racepilot/ui';
+import { Banner, Button, Field, FileUpload, FormSection } from '@nennbox/ui';
 import type { Entry, View } from './driverPortalTypes.js';
 const labels: Record<string, string> = {
   phone: 'Telefon',

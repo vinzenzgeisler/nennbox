@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { Dispatch, SetStateAction } from 'react';
 import type { WorkflowView } from './AdminEntriesModel.js';
 

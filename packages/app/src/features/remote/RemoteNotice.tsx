@@ -1,4 +1,4 @@
-import { Banner, Button, EmptyState } from '@racepilot/ui';
+import { Banner, Button, EmptyState } from '@nennbox/ui';
 import type { RemoteErrorKind } from './apiRequest.js';
 
 const EXPLANATION: Record<RemoteErrorKind, string> = {

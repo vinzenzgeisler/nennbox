@@ -2,9 +2,9 @@ import {
   resolveCanonicalOrigin,
   type CanonicalOrigin,
   type RequestContext,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { createMessageSender } from './messaging-send.js';
-import { messageCampaignDelivery } from '@racepilot/core';
+import { messageCampaignDelivery } from '@nennbox/core';
 import type { Database } from './database.js';
 
 export type MessageQuickAction = 'resend-verification' | 'remind-open-payments';

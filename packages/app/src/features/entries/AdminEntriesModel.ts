@@ -1,6 +1,6 @@
 import { adminFetch } from '../../auth.js';
 import type { Dispatch, SetStateAction } from 'react';
-import { EventSchema } from '@racepilot/contracts';
+import { EventSchema } from '@nennbox/contracts';
 
 export type Event = ReturnType<typeof EventSchema.parse>;
 export type ApiState =

@@ -3,7 +3,7 @@ import {
   normalizeEmail,
   type PassengerPublicRepository,
   type RequestContext,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type { Database } from './database.js';
 import { matchAcceptedTerms, type ConsentTerm } from './consent-terms.js';
 import { entries, people } from './schema/entries.js';

@@ -4,7 +4,7 @@ import type {
   InvoicePaymentRepository,
   PaymentRecipientRepository,
   PaymentRecipient,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 import {
   organizationPaymentRecipients,
@@ -17,7 +17,7 @@ import { eq, and } from 'drizzle-orm';
 
 import { sql } from 'drizzle-orm';
 
-import { deriveInvoiceStatus } from '@racepilot/core';
+import { deriveInvoiceStatus } from '@nennbox/core';
 
 export function createInvoicePaymentRepository(
   db: Database,

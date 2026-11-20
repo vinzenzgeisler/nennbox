@@ -1,12 +1,12 @@
 import type { Dispatch, SetStateAction } from 'react';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import {
   EntryListRow,
   HintLabel,
   Menu,
   MenuItem,
   StatusLabel,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import type { WorkflowView } from './AdminEntriesModel.js';
 import { dimensionStatus } from './dimensionStatus.js';
 import { EntryStatusBadge } from './EntryStatusBadge.js';

@@ -1,8 +1,8 @@
 import { runMigrations } from 'graphile-worker';
 import { and, eq, sql } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import type { JobContext, MailProvider } from '@racepilot/core';
-import { organizationId } from '@racepilot/core';
+import type { JobContext, MailProvider } from '@nennbox/core';
+import { organizationId } from '@nennbox/core';
 import {
   createDatabase,
   createMailOutboxRepository,
@@ -10,10 +10,10 @@ import {
   emailDeliveries,
   emailOutbox,
   organizations,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
 import { processMailOutboxJob } from './mail.js';
 
-const url = process.env.RACEPILOT_TEST_DATABASE_URL;
+const url = process.env.NENNBOX_TEST_DATABASE_URL;
 describe.skipIf(!url)('mail outbox PostgreSQL/Graphile integration', () => {
   it('schedules a future retry job, then records terminal delivery failure', async () => {
     await runMigrations({ connectionString: url! });

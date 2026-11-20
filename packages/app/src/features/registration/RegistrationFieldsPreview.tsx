@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Field, FormSection } from '@racepilot/ui';
-import type { RegistrationFormConfig } from '@racepilot/contracts';
+import { Field, FormSection } from '@nennbox/ui';
+import type { RegistrationFormConfig } from '@nennbox/contracts';
 import {
   emptyVehicle,
   fieldState,

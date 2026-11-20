@@ -1,5 +1,7 @@
 # ADR 0003: HTTP framework, background jobs, and database tooling
 
+> Product name at the time: RacePilot; since 2026-10-29: NENNBOX.
+
 - Status: Accepted
 - Date: 2026-10-27
 - Scope: Runtime libraries for `packages/api`, `packages/worker`, and the PostgreSQL

@@ -1,5 +1,7 @@
 # ADR 0002: Product repository, clean start, and package boundaries
 
+> Product name at the time: RacePilot; since 2026-10-29: NENNBOX.
+
 - Status: Accepted when merged; the repository owner decided the Cloud placement
   (private repository) on 2026-10-27
 - Date: 2026-10-27

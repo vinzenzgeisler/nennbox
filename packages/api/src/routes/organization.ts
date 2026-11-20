@@ -3,11 +3,11 @@ import {
   getOrganization,
   updateOrganization,
   type OrganizationPatch,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import {
   OrganizationResponse,
   UpdateOrganizationRequest,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 
 export function registerOrganizationRoutes(context: ApiRoutesContext): void {
   const { app, deps, requireMember } = context;

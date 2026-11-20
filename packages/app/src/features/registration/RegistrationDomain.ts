@@ -3,7 +3,7 @@ import type {
   StandardRegistrationForm,
   RegistrationSettings,
   RegistrationFormConfig,
-} from '@racepilot/contracts';
+} from '@nennbox/contracts';
 export type FormPayload = {
   organization: { name: string; contactEmail: string | null };
   form: StandardRegistrationForm;

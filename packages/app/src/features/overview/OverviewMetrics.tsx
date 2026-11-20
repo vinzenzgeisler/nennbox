@@ -1,5 +1,5 @@
-import type { EventOverview } from '@racepilot/contracts';
-import { Metric, MetricGrid } from '@racepilot/ui';
+import type { EventOverview } from '@nennbox/contracts';
+import { Metric, MetricGrid } from '@nennbox/ui';
 import { deadlineText, formatMoney, totalEntries } from './overviewModel.js';
 
 export function OverviewMetrics({ overview }: { overview: EventOverview }) {

@@ -7,11 +7,11 @@ export default defineConfig({
   resolve: {
     // Tests run against package sources so they do not depend on a prior build.
     alias: {
-      '@racepilot/core': source('core'),
-      '@racepilot/ui': source('ui'),
-      '@racepilot/contracts': source('contracts'),
-      '@racepilot/adapter-postgres': source('adapter-postgres'),
-      '@racepilot/artifacts/pdf': fileURLToPath(
+      '@nennbox/core': source('core'),
+      '@nennbox/ui': source('ui'),
+      '@nennbox/contracts': source('contracts'),
+      '@nennbox/adapter-postgres': source('adapter-postgres'),
+      '@nennbox/artifacts/pdf': fileURLToPath(
         new URL('./packages/artifacts/src/pdf.ts', import.meta.url),
       ),
     },

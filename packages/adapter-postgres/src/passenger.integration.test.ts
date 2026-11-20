@@ -5,7 +5,7 @@ import {
   createRequestContext,
   organizationId,
   staticCanonicalOrigin,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { describe, expect, it } from 'vitest';
 import {
   createDatabase,
@@ -24,7 +24,7 @@ import {
   vehicles,
 } from './index.js';
 
-const url = process.env.RACEPILOT_TEST_DATABASE_URL;
+const url = process.env.NENNBOX_TEST_DATABASE_URL;
 const termsText = 'Ich habe die Teilnahmebedingungen gelesen.';
 const termsHash = createHash('sha256').update(termsText).digest('hex');
 const origin = 'https://entries.example.test';

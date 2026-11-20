@@ -1,5 +1,7 @@
 # ADR 0001: Editions, shared core, and deployment modes
 
+> Product name at the time: RacePilot; since 2026-10-29: NENNBOX.
+
 - Status: Accepted
 - Date: 2026-08-15
 - Scope: Architecture decision only; implementation is pending

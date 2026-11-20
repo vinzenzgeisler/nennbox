@@ -6,8 +6,8 @@ import {
   type AdminPassengerLinkRequest,
   type EntryDriverUpdateRequest,
   type EntryVehicleUpdateRequest,
-} from '@racepilot/contracts';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+} from '@nennbox/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import { request, type Outcome } from '../AdminEntriesModel.js';
 
 const failure = (status: number, action: string, code?: string) =>

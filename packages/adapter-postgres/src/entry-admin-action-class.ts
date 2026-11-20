@@ -4,7 +4,7 @@ import {
   type EntryAdminAction,
   type EntryAdminActionResult,
   type PriceSnapshot,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import type { Database } from './database.js';
 import { entries } from './schema/entries.js';
 import { entryAdminActionAuditEvents } from './schema/entry-admin.js';

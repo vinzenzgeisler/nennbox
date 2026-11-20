@@ -1,5 +1,5 @@
 {
-  "name": "@racepilot/api",
+  "name": "@nennbox/api",
   "version": "0.0.0",
   "type": "module",
   "exports": "./dist/index.js",
@@ -11,19 +11,19 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.9",
-    "@racepilot/adapter-local-storage": "*",
-    "@racepilot/adapter-oidc": "*",
-    "@racepilot/adapter-postgres": "*",
-    "@racepilot/adapter-s3": "*",
-    "@racepilot/artifacts": "*",
-    "@racepilot/contracts": "*",
-    "@racepilot/core": "*",
+    "@nennbox/adapter-local-storage": "*",
+    "@nennbox/adapter-oidc": "*",
+    "@nennbox/adapter-postgres": "*",
+    "@nennbox/adapter-s3": "*",
+    "@nennbox/artifacts": "*",
+    "@nennbox/contracts": "*",
+    "@nennbox/core": "*",
     "hono": "^4.13.19",
     "pdf-lib": "^1.17.1",
     "proxy-addr": "^2.0.8",
     "saxes": "^6.0.0",
     "zod": "^4.6.7",
-    "@racepilot/adapter-stripe": "*"
+    "@nennbox/adapter-stripe": "*"
   },
   "files": [
     "dist"

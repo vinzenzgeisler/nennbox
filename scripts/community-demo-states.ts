@@ -5,7 +5,7 @@ import {
   type createDatabase,
   type createEntryStatusDimensionRepository,
   type createInvoiceRepository,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
 
 type Db = Awaited<ReturnType<typeof createDatabase>>['db'];
 type StatusRepo = ReturnType<typeof createEntryStatusDimensionRepository>;

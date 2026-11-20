@@ -2,8 +2,8 @@ import {
   resolveOrganizationModuleCapabilities,
   validatePaymentRecipient,
   type TenantRef,
-} from '@racepilot/core';
-import { RuntimeBootstrapResponse } from '@racepilot/contracts';
+} from '@nennbox/core';
+import { RuntimeBootstrapResponse } from '@nennbox/contracts';
 import type { ApiRoutesContext } from './context.js';
 
 /** Presentation-only runtime contract; every value is resolved server-side per request. */

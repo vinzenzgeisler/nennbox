@@ -6,7 +6,7 @@ or production deployment.
 ## Version set
 
 `product-release.json` is the canonical exact product version. The packer stages each
-workspace manifest with that version and pins every internal `@racepilot/*` dependency
+workspace manifest with that version and pins every internal `@nennbox/*` dependency
 to it, so version changes do not require source edits across package manifests. Source
 workspaces remain `private: true` (and use workspace development versions); the staged
 tarballs also retain `private: true`. `npm pack` and local tarball installation work,
@@ -16,7 +16,9 @@ set; consumers must not mix individual packages from different commits or use a 
 branch name. Packing fails if tracked source changes are present, so the recorded commit
 cannot misidentify modified source bytes.
 
-Run `npm ci` followed by `npm run release:pack`. Set `RACEPILOT_PACK_DIR` to choose the
+CI/Dev environment variables have been renamed from `RACEPILOT_*` to `NENNBOX_*`; selected local developer tools temporarily read legacy names as fallbacks and warn once. Product runtime settings such as `DATABASE_URL` and `PORT` remain unprefixed and unchanged. The `racepilot-cloud` consumer must update artifact scopes to `@nennbox/*`, its environment names (for example `RACEPILOT_PACK_DIR` to `NENNBOX_PACK_DIR`), and `product-artifacts.lock.json`.
+
+Run `npm ci` followed by `npm run release:pack`. Set `NENNBOX_PACK_DIR` to choose the
 output directory. The command builds all workspaces, packs each product package, checks
 that packed paths are restricted to runtime output (`dist`, PostgreSQL migrations,
 and bundled fonts), and writes `product-artifacts.json` with:

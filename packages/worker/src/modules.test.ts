@@ -7,7 +7,7 @@ import {
   setEventModule,
   setOrganizationModule,
   type ModuleConfigSchema,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { composeWorkerTasks, createModuleTasks } from './index.js';
 
 const orgA = '10000000-0000-4000-8000-00000000000a';

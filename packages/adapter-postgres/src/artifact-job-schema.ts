@@ -15,7 +15,7 @@ import type {
   ArtifactJob,
   ArtifactKind,
   EntryExportFilters,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import { events } from './schema/organization.js';
 import { registrationGroups } from './schema/entries.js';
 

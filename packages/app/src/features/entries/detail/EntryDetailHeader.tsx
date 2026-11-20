@@ -1,5 +1,5 @@
-import { DetailHeader } from '@racepilot/ui';
-import type { EntryResponse as Entry } from '@racepilot/contracts';
+import { DetailHeader } from '@nennbox/ui';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { WorkflowView } from '../AdminEntriesModel.js';
 import { formatDateTime, lastChangeAt } from './entryDetailModel.js';
 import { EntryDetailLabels } from './EntryDetailLabels.js';

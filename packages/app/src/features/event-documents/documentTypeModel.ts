@@ -1,4 +1,4 @@
-import type { EntryDocumentType } from '@racepilot/contracts';
+import type { EntryDocumentType } from '@nennbox/contracts';
 
 /** A document type as edited in the form; `saved` types keep their key for good. */
 export type DocumentTypeDraft = {

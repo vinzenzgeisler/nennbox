@@ -5,12 +5,12 @@ import {
   FormSection,
   SelectField,
   Textarea,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import type {
   MessageRecipientFilter,
   MessageRecipientPreview,
-} from '@racepilot/contracts';
-import { EventClassSchema } from '@racepilot/contracts';
+} from '@nennbox/contracts';
+import { EventClassSchema } from '@nennbox/contracts';
 import { z } from 'zod';
 
 type Props = {

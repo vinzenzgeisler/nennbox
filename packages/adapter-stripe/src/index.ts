@@ -4,7 +4,7 @@ import type {
   PaymentProvider,
   PaymentProviderEvent,
   PaymentRefundRequest,
-} from '@racepilot/core';
+} from '@nennbox/core';
 
 export interface StripePaymentProviderOptions {
   readonly secretKey: string;

@@ -23,7 +23,7 @@ import {
   Switch,
   TechnicalLabel,
   Toast,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 
 export function ComponentGallery() {
   const [toast, setToast] = useState(false);

@@ -4,7 +4,7 @@ import {
   DetailSection,
   SelectField,
   TextInput,
-} from '@racepilot/ui';
+} from '@nennbox/ui';
 import type { ExportDraft } from './exportModel.js';
 import {
   ALL_FIELDS,
@@ -14,7 +14,7 @@ import {
   VERIFICATION_OPTIONS,
   toggleField,
 } from './exportModel.js';
-import { EXPORT_DELIMITERS } from '@racepilot/contracts';
+import { EXPORT_DELIMITERS } from '@nennbox/contracts';
 
 type Option = { key: string; label: string };
 

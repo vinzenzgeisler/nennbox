@@ -1,4 +1,4 @@
-import { ReasonDialog } from '@racepilot/ui';
+import { ReasonDialog } from '@nennbox/ui';
 import type { UploadLine } from './documentLines.js';
 
 export function EntryDocumentRejectDialog({

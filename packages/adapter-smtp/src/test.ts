@@ -1,4 +1,4 @@
-import type { MailMessage, MailProvider } from '@racepilot/core';
+import type { MailMessage, MailProvider } from '@nennbox/core';
 
 /** In-memory SMTP-port substitute for deterministic service and CI tests. */
 export function createRecordingMailProvider(

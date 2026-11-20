@@ -69,7 +69,7 @@ bash scripts/community-backup.sh backups/community-2026-11-18
 ```
 
 Für einen vollständigen Restore im selben Checkout/Projekt (Standardprojekt
-`racepilot-community`) werden zunächst Container **und beide Compose-Volumes**
+`nennbox-community`) werden zunächst Container **und beide Compose-Volumes**
 entfernt, die lokalen Dateien aus dem Archiv wiederhergestellt, danach PostgreSQL,
 Keycloak und der Realm neu angelegt und der Dump eingespielt:
 

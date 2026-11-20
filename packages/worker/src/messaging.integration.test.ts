@@ -5,7 +5,7 @@ import {
   createRequestContext,
   createJobContext,
   organizationId,
-} from '@racepilot/core';
+} from '@nennbox/core';
 import {
   createDatabase,
   createEntryDetailRepository,
@@ -14,22 +14,18 @@ import {
   emailOutbox,
   messageCampaigns,
   messageCampaignRecipients,
-} from '@racepilot/adapter-postgres';
-import {
-  events,
-  organizations,
-  eventClasses,
-} from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
+import { events, organizations, eventClasses } from '@nennbox/adapter-postgres';
 import {
   entries,
   people,
   registrationGroups,
   vehicles,
-} from '@racepilot/adapter-postgres';
-import { migrate } from '@racepilot/adapter-postgres';
+} from '@nennbox/adapter-postgres';
+import { migrate } from '@nennbox/adapter-postgres';
 import { processMailOutboxJob } from './mail.js';
 
-const databaseUrl = process.env.RACEPILOT_TEST_DATABASE_URL;
+const databaseUrl = process.env.NENNBOX_TEST_DATABASE_URL;
 
 describe.skipIf(!databaseUrl)(
   'message campaign mail delivery integration',
