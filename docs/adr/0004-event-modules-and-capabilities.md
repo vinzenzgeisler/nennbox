@@ -1,5 +1,7 @@
 # ADR 0004: Event modules and capabilities
 
+> Product name at the time: RacePilot; since 2026-10-29: NENNBOX.
+
 - Status: Accepted
 - Date: 2026-10-28
 - Scope: Module manifest contract, activation per organization and event,
