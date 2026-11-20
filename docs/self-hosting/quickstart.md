@@ -8,8 +8,8 @@ Node.js 24, npm 11, Docker mit Compose v2 und Bash.
 ## Start
 
 ```bash
-git clone https://github.com/vinzenzgeisler/nennbox.git
-cd nennbox
+git clone https://github.com/vinzenzgeisler/racepilot.git
+cd racepilot
 git switch main
 git pull --ff-only
 bash scripts/community-up.sh

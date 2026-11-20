@@ -11,8 +11,8 @@ Status terms follow the definitions in the [repository README](../../README.md).
 
 | Concern | Current repository/module | Status and evidence |
 |---|---|---|
-| Shared product | `vinzenzgeisler/nennbox` | **Current fact:** public npm-workspaces monorepo with core, contracts, API, worker, UI, and adapters. Packages remain unreleased; this issue's pack contract is not a registry publication. |
-| Community distribution | `vinzenzgeisler/nennbox` | **Current fact:** not yet available; no supported installation, upgrade, backup, or restore bundle exists. |
+| Shared product | `vinzenzgeisler/racepilot` | **Current fact (repository name; product name NENNBOX):** public npm-workspaces monorepo with core, contracts, API, worker, UI, and adapters. Packages remain unreleased; this issue's pack contract is not a registry publication. |
+| Community distribution | `vinzenzgeisler/racepilot` | **Current fact:** not yet available; no supported installation, upgrade, backup, or restore bundle exists. |
 | Cloud repository | Private `vinzenzgeisler/nennbox-cloud` | **Current fact:** private repository exists and currently contains the product website only. Its presence does not prove a running Cloud platform. |
 | Product website | `vinzenzgeisler/nennbox-cloud/apps/website` | **Current fact:** private website app with its own build/deploy path; it is not a product runtime dependency. Website deployment does not establish Cloud subscriptions, product runtime, or tenant provisioning. |
 | Cloud runtime and control plane | Private `vinzenzgeisler/nennbox-cloud` | **Current fact:** no verified production runtime, tenant provisioning, subscription, billing, or entitlement implementation. These remain future work. |

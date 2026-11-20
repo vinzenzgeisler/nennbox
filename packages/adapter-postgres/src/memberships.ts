@@ -34,7 +34,8 @@ export function createMembershipRepository(db: Database): MembershipRepository {
           // Serialize first-admin attempts per organization. Disabled memberships
           // still count as history and must permanently close bootstrap.
           await tx.execute(
-            sql`select pg_advisory_xact_lock(hashtextextended(${`nennbox.membership.bootstrap:${orgId}`}, 0))`,
+            // legacy identifier, intentionally unchanged (#99)
+            sql`select pg_advisory_xact_lock(hashtextextended(${`racepilot.membership.bootstrap:${orgId}`}, 0))`,
           );
         }
         const [stored] = await tx

@@ -20,7 +20,8 @@ export async function ensureCommunityOrganization(
 ): Promise<Organization> {
   return db.transaction(async (tx) => {
     await tx.execute(
-      sql`select pg_advisory_xact_lock(hashtext('nennbox.community.bootstrap'))`,
+      // legacy identifier, intentionally unchanged (#99)
+      sql`select pg_advisory_xact_lock(hashtext('racepilot.community.bootstrap'))`,
     );
     const rows = await tx.select().from(organizations);
     if (rows.length > 1)
