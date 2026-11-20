@@ -16,7 +16,7 @@ set; consumers must not mix individual packages from different commits or use a 
 branch name. Packing fails if tracked source changes are present, so the recorded commit
 cannot misidentify modified source bytes.
 
-CI/Dev environment variables have been renamed from `nennbox_*` to `NENNBOX_*`; selected local developer tools temporarily read legacy names as fallbacks and warn once. Product runtime settings such as `DATABASE_URL` and `PORT` remain unprefixed and unchanged. The `nennbox-cloud` consumer must update artifact scopes to `@nennbox/*`, its environment names (for example `nennbox_PACK_DIR` to `NENNBOX_PACK_DIR`), and `product-artifacts.lock.json`.
+CI/Dev environment variables use the `NENNBOX_*` prefix (for example `NENNBOX_PACK_DIR`, `NENNBOX_TEST_DATABASE_URL`). Product runtime settings such as `DATABASE_URL` and `PORT` are unprefixed. Consumers such as `nennbox-cloud` depend on the `@nennbox/*` package scope and pin an immutable source commit and `product-release.json` version in their own lock file.
 
 Run `npm ci` followed by `npm run release:pack`. Set `NENNBOX_PACK_DIR` to choose the
 output directory. The command builds all workspaces, packs each product package, checks
