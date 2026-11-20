@@ -8,7 +8,7 @@ services:
     ports:
       - '127.0.0.1:${COMMUNITY_POSTGRES_PORT:-5433}:5432'
     volumes:
-      - racepilot-postgres:/var/lib/postgresql/data
+      - community-postgres:/var/lib/postgresql/data
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U racepilot -d racepilot']
       interval: 2s
@@ -38,5 +38,5 @@ services:
       - '127.0.0.1:${COMMUNITY_SMTP_PORT:-1025}:1025'
       - '127.0.0.1:${COMMUNITY_MAILPIT_PORT:-8025}:8025'
 volumes:
-  racepilot-postgres:
+  community-postgres:
   community-keycloak:
