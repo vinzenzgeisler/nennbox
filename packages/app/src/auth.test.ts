@@ -5,12 +5,18 @@ const oidc = vi.hoisted(() => ({
   getUser: vi.fn(),
   signinRedirectCallback: vi.fn(),
   signinRedirect: vi.fn(),
+  signinSilent: vi.fn(),
+  managerOptions: null as Record<string, unknown> | null,
 }));
 vi.mock('oidc-client-ts', () => ({
   UserManager: class {
+    constructor(options: Record<string, unknown>) {
+      oidc.managerOptions = options;
+    }
     getUser = oidc.getUser;
     signinRedirectCallback = oidc.signinRedirectCallback;
     signinRedirect = oidc.signinRedirect;
+    signinSilent = oidc.signinSilent;
   },
   WebStorageStateStore: class {},
 }));
@@ -55,6 +61,82 @@ describe('Community OIDC browser session', () => {
         'Authorization',
       ),
     ).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('silently refreshes an expired token and enables refresh-token renewal', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          oidc: {
+            issuerUrl: 'https://login.example.test/realm',
+            clientId: 'nennbox-app',
+            redirectUri: 'https://app.example.test/auth/callback',
+          },
+        }),
+      }),
+    );
+    oidc.getUser.mockResolvedValue({ access_token: 'old', expired: true });
+    oidc.signinSilent.mockResolvedValue({
+      access_token: 'renewed',
+      expired: false,
+    });
+    const { restoreAdminSession } = await import('./auth.js');
+    expect(await restoreAdminSession()).toBe('ready');
+    expect(oidc.signinSilent).toHaveBeenCalledOnce();
+    expect(oidc.managerOptions).toMatchObject({ automaticSilentRenew: true });
+    vi.unstubAllGlobals();
+  });
+
+  it('checks the existing Keycloak SSO session when no browser token is stored', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          oidc: {
+            issuerUrl: 'https://login.example.test/realm',
+            clientId: 'nennbox-app',
+            redirectUri: 'https://app.example.test/auth/callback',
+          },
+        }),
+      }),
+    );
+    oidc.getUser.mockResolvedValue(null);
+    const { restoreAdminSession } = await import('./auth.js');
+    expect(await restoreAdminSession()).toBe('signed-out');
+    expect(oidc.signinRedirect).toHaveBeenCalledWith({
+      extraQueryParams: { prompt: 'none' },
+    });
+    vi.unstubAllGlobals();
+  });
+
+  it('falls back to interactive login when Keycloak has no SSO session', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          oidc: {
+            issuerUrl: 'https://login.example.test/realm',
+            clientId: 'nennbox-app',
+            redirectUri: 'https://app.example.test/auth/callback',
+          },
+        }),
+      }),
+    );
+    window.history.replaceState(
+      null,
+      '',
+      '/auth/callback?error=login_required&state=opaque',
+    );
+    oidc.signinRedirectCallback.mockRejectedValue(new Error('login_required'));
+    const { restoreAdminSession } = await import('./auth.js');
+    await expect(restoreAdminSession()).rejects.toThrow('login_required');
+    expect(oidc.signinRedirect).toHaveBeenCalledOnce();
+    expect(oidc.signinRedirect).toHaveBeenCalledWith();
     vi.unstubAllGlobals();
   });
 

@@ -11,6 +11,13 @@ export function getAdminIdentity() {
 let callbackPromise: ReturnType<UserManager['signinRedirectCallback']> | null =
   null;
 
+async function resumeKeycloakSession(client: UserManager): Promise<void> {
+  // prompt=none reuses an existing Keycloak SSO session without asking the
+  // user to authenticate again. If no SSO session exists, the error callback
+  // below falls back to the normal interactive sign-in flow.
+  await client.signinRedirect({ extraQueryParams: { prompt: 'none' } });
+}
+
 async function manager(): Promise<UserManager | null> {
   managerPromise ??= fetch('/auth/config', { cache: 'no-store' })
     .then(async (response) => {
@@ -33,6 +40,9 @@ async function manager(): Promise<UserManager | null> {
         response_type: 'code',
         scope: 'openid profile email',
         userStore: new WebStorageStateStore({ store: window.sessionStorage }),
+        // Renew expiring tokens with Keycloak's refresh token, retaining the
+        // existing per-tab session storage boundary.
+        automaticSilentRenew: true,
       });
     })
     .catch((error: unknown) => {
@@ -50,10 +60,36 @@ export async function restoreAdminSession(): Promise<
   const isCallback = window.location.pathname === '/auth/callback';
   // React StrictMode may mount twice while the callback is still pending.
   // The authorization code and stored OIDC state can only be consumed once.
-  const user = isCallback
-    ? await (callbackPromise ??= client.signinRedirectCallback())
+  let user = isCallback
+    ? await (callbackPromise ??= client
+        .signinRedirectCallback()
+        .catch(async (error: unknown) => {
+          const callbackError = new URLSearchParams(window.location.search).get(
+            'error',
+          );
+          if (
+            callbackError === 'login_required' ||
+            callbackError === 'interaction_required'
+          ) {
+            window.history.replaceState(null, '', '/app');
+            await client.signinRedirect();
+          }
+          throw error;
+        }))
     : await client.getUser();
   if (isCallback) window.history.replaceState(null, '', '/app');
+  if (!isCallback && user?.expired) {
+    try {
+      user = await client.signinSilent();
+    } catch {
+      await resumeKeycloakSession(client);
+      return 'signed-out';
+    }
+  }
+  if (!isCallback && !user) {
+    await resumeKeycloakSession(client);
+    return 'signed-out';
+  }
   accessToken = user && !user.expired ? user.access_token : null;
   if (user && !user.expired) {
     const profile = (user.profile ?? {}) as Record<string, unknown>;
