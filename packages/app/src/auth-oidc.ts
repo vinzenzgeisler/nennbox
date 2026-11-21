@@ -5,11 +5,47 @@ type OidcConfig = { issuerUrl: string; clientId: string; redirectUri: string };
 let managerPromise: Promise<UserManager | null> | null = null;
 let accessToken: string | null = null;
 let identity: { name: string; role: string } | null = null;
+const explicitSignOutKey = 'nennbox:explicit-sign-out';
 export function getAdminIdentity() {
   return identity;
 }
 let callbackPromise: ReturnType<UserManager['signinRedirectCallback']> | null =
   null;
+
+function updateSession(
+  user: {
+    access_token?: string | undefined;
+    expired?: boolean | undefined;
+    profile?: unknown;
+  } | null,
+): void {
+  accessToken = user && !user.expired ? (user.access_token ?? null) : null;
+  if (!accessToken || !user) {
+    identity = null;
+    return;
+  }
+  const profile = (user.profile ?? {}) as Record<string, unknown>;
+  const name =
+    [profile.given_name, profile.family_name]
+      .filter((part) => typeof part === 'string')
+      .join(' ') ||
+    (typeof profile.name === 'string' ? profile.name : '') ||
+    (typeof profile.preferred_username === 'string'
+      ? profile.preferred_username
+      : 'Angemeldet');
+  const realm = profile.realm_access as { roles?: unknown } | undefined;
+  const roles = Array.isArray(realm?.roles)
+    ? realm.roles.filter((role): role is string => typeof role === 'string')
+    : [];
+  identity = {
+    name,
+    role: roles.includes('admin')
+      ? 'Admin'
+      : roles.includes('member')
+        ? 'Mitglied'
+        : 'Angemeldet',
+  };
+}
 
 async function resumeKeycloakSession(client: UserManager): Promise<void> {
   // prompt=none reuses an existing Keycloak SSO session without asking the
@@ -33,7 +69,7 @@ async function manager(): Promise<UserManager | null> {
       const config = oidc as Partial<OidcConfig>;
       if (!config.issuerUrl || !config.clientId || !config.redirectUri)
         throw new Error('Incomplete authentication configuration');
-      return new UserManager({
+      const userManager = new UserManager({
         authority: config.issuerUrl,
         client_id: config.clientId,
         redirect_uri: config.redirectUri,
@@ -43,7 +79,11 @@ async function manager(): Promise<UserManager | null> {
         // Renew expiring tokens with Keycloak's refresh token, retaining the
         // existing per-tab session storage boundary.
         automaticSilentRenew: true,
+        post_logout_redirect_uri: config.redirectUri,
       });
+      userManager.events.addUserLoaded((user) => updateSession(user));
+      userManager.events.addUserUnloaded(() => updateSession(null));
+      return userManager;
     })
     .catch((error: unknown) => {
       managerPromise = null;
@@ -60,6 +100,12 @@ export async function restoreAdminSession(): Promise<
   const isCallback = window.location.pathname === '/auth/callback';
   // React StrictMode may mount twice while the callback is still pending.
   // The authorization code and stored OIDC state can only be consumed once.
+  if (window.sessionStorage.getItem(explicitSignOutKey)) {
+    window.sessionStorage.removeItem(explicitSignOutKey);
+    window.history.replaceState(null, '', '/app');
+    updateSession(null);
+    return 'signed-out';
+  }
   let user = isCallback
     ? await (callbackPromise ??= client
         .signinRedirectCallback()
@@ -90,30 +136,7 @@ export async function restoreAdminSession(): Promise<
     await resumeKeycloakSession(client);
     return 'signed-out';
   }
-  accessToken = user && !user.expired ? user.access_token : null;
-  if (user && !user.expired) {
-    const profile = (user.profile ?? {}) as Record<string, unknown>;
-    const name =
-      [profile.given_name, profile.family_name]
-        .filter((part) => typeof part === 'string')
-        .join(' ') ||
-      (typeof profile.name === 'string' ? profile.name : '') ||
-      (typeof profile.preferred_username === 'string'
-        ? profile.preferred_username
-        : 'Angemeldet');
-    const realm = profile.realm_access as { roles?: unknown } | undefined;
-    const roles = Array.isArray(realm?.roles)
-      ? realm.roles.filter((role): role is string => typeof role === 'string')
-      : [];
-    identity = {
-      name,
-      role: roles.includes('admin')
-        ? 'Admin'
-        : roles.includes('member')
-          ? 'Mitglied'
-          : 'Angemeldet',
-    };
-  } else identity = null;
+  updateSession(user && !user.expired ? user : null);
   return accessToken ? 'ready' : 'signed-out';
 }
 
@@ -126,8 +149,18 @@ export async function signIn(): Promise<void> {
 export async function signOut(): Promise<void> {
   accessToken = null;
   identity = null;
-  await (await manager())?.removeUser();
-  window.location.assign('/app');
+  const client = await manager();
+  if (!client) {
+    window.location.assign('/app');
+    return;
+  }
+  window.sessionStorage.setItem(explicitSignOutKey, '1');
+  try {
+    await client.signoutRedirect();
+  } catch (error) {
+    window.sessionStorage.removeItem(explicitSignOutKey);
+    throw error;
+  }
 }
 
 export function adminFetch(

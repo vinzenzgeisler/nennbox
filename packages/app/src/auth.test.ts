@@ -6,6 +6,15 @@ const oidc = vi.hoisted(() => ({
   signinRedirectCallback: vi.fn(),
   signinRedirect: vi.fn(),
   signinSilent: vi.fn(),
+  signoutRedirect: vi.fn(),
+  userLoaded: null as
+    | ((user: {
+        access_token?: string;
+        expired?: boolean;
+        profile?: unknown;
+      }) => void)
+    | null,
+  userUnloaded: null as (() => void) | null,
   managerOptions: null as Record<string, unknown> | null,
 }));
 vi.mock('oidc-client-ts', () => ({
@@ -17,6 +26,15 @@ vi.mock('oidc-client-ts', () => ({
     signinRedirectCallback = oidc.signinRedirectCallback;
     signinRedirect = oidc.signinRedirect;
     signinSilent = oidc.signinSilent;
+    signoutRedirect = oidc.signoutRedirect;
+    events = {
+      addUserLoaded: (callback: typeof oidc.userLoaded) => {
+        oidc.userLoaded = callback;
+      },
+      addUserUnloaded: (callback: typeof oidc.userUnloaded) => {
+        oidc.userUnloaded = callback;
+      },
+    };
   },
   WebStorageStateStore: class {},
 }));
@@ -26,6 +44,7 @@ describe('Community OIDC browser session', () => {
     vi.resetModules();
     vi.clearAllMocks();
     window.history.replaceState(null, '', '/app');
+    window.sessionStorage.clear();
   });
 
   it('adds the verified session token only to relative admin API calls', async () => {
@@ -87,6 +106,78 @@ describe('Community OIDC browser session', () => {
     expect(await restoreAdminSession()).toBe('ready');
     expect(oidc.signinSilent).toHaveBeenCalledOnce();
     expect(oidc.managerOptions).toMatchObject({ automaticSilentRenew: true });
+    vi.unstubAllGlobals();
+  });
+
+  it('uses renewed event tokens and clears expired or unloaded tokens', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            oidc: {
+              issuerUrl: 'https://login.example.test/realm',
+              clientId: 'nennbox-app',
+              redirectUri: 'https://app.example.test/auth/callback',
+            },
+          }),
+        })
+        .mockResolvedValue({ ok: true }),
+    );
+    oidc.getUser.mockResolvedValue({ access_token: 'initial', expired: false });
+    const { restoreAdminSession, adminFetch } = await import('./auth.js');
+    expect(await restoreAdminSession()).toBe('ready');
+
+    oidc.userLoaded?.({ access_token: 'renewed', expired: false });
+    await adminFetch('/admin/events');
+    const fetchMock = vi.mocked(fetch);
+    expect(
+      new Headers(fetchMock.mock.calls[1]?.[1]?.headers).get('Authorization'),
+    ).toBe('Bearer renewed');
+
+    oidc.userLoaded?.({ access_token: 'expired', expired: true });
+    await adminFetch('/admin/events');
+    expect(
+      new Headers(fetchMock.mock.calls[2]?.[1]?.headers).get('Authorization'),
+    ).toBeNull();
+
+    oidc.userLoaded?.({ access_token: 'another-token', expired: false });
+    oidc.userUnloaded?.();
+    await adminFetch('/admin/events');
+    expect(
+      new Headers(fetchMock.mock.calls[3]?.[1]?.headers).get('Authorization'),
+    ).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('performs provider logout and suppresses automatic SSO resume on return', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          oidc: {
+            issuerUrl: 'https://login.example.test/realm',
+            clientId: 'nennbox-app',
+            redirectUri: 'https://app.example.test/auth/callback',
+          },
+        }),
+      }),
+    );
+    oidc.getUser.mockResolvedValue({ access_token: 'active', expired: false });
+    const { restoreAdminSession, signOut } = await import('./auth.js');
+    expect(await restoreAdminSession()).toBe('ready');
+    await signOut();
+    expect(oidc.signoutRedirect).toHaveBeenCalledOnce();
+    expect(oidc.managerOptions).toMatchObject({
+      post_logout_redirect_uri: 'https://app.example.test/auth/callback',
+    });
+
+    expect(await restoreAdminSession()).toBe('signed-out');
+    expect(oidc.getUser).toHaveBeenCalledOnce();
+    expect(oidc.signinRedirect).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 
