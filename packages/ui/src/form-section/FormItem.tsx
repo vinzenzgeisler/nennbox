@@ -9,7 +9,8 @@ export function FormItem({
 }) {
   return (
     <div role="group" aria-label={label} className="nb-form-item">
-      {children}
+      <h3>{label}</h3>
+      <div className="nb-app-stack">{children}</div>
     </div>
   );
 }

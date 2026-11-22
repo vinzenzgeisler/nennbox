@@ -1,5 +1,6 @@
 .nb-admin-workspace {
   --nb-nav-width: var(--nb-sidebar-w);
+  --nb-page-gutter: var(--nb-space-7);
   display: grid;
   grid-template-columns: var(--nb-nav-width) minmax(0, 1fr);
   min-height: 100vh;
@@ -12,15 +13,18 @@
   min-width: 0;
 }
 .nb-admin-workspace-main.is-inset {
-  padding: 0 var(--nb-space-4) var(--nb-space-4);
+  --nb-content-inset: var(--nb-space-4);
+  padding: 0 var(--nb-content-inset) var(--nb-space-4);
 }
 @media (width <= 860px) {
   .nb-admin-workspace {
+    --nb-page-gutter: var(--nb-space-4);
     display: block;
     padding-bottom: 56px;
   }
   .nb-admin-workspace-main.is-inset {
-    padding: var(--nb-space-3);
+    --nb-content-inset: var(--nb-space-3);
+    padding: var(--nb-content-inset);
   }
   .nb-admin-workspace .nb-table,
   .nb-admin-workspace .nb-table tbody {

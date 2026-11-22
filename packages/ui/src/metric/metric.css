@@ -1,45 +1,38 @@
 .nb-metric-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(var(--metric-min-width), 1fr));
-  gap: 0;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, calc(var(--nb-space-10) * 5)), 1fr)
+  );
+  gap: var(--nb-space-6);
   margin: 0;
-  border-block: var(--line-section) solid var(--color-ink);
-  background: var(--color-white);
 }
 .nb-metric {
-  display: grid;
-  align-content: start;
-  gap: var(--space-2);
-  min-width: 0;
-  padding: var(--space-4);
-  border-inline-start: var(--line-group) solid var(--color-line);
-  border-block-start: var(--line-group) solid var(--color-line);
-}
-.nb-metric-grid > .nb-metric:first-child {
-  border-inline-start: 0;
+  padding: var(--nb-space-5);
+  border-radius: var(--nb-radius-lg);
+  background: var(--nb-bg-subtle);
 }
 .nb-metric dt {
-  color: var(--color-graphite);
-  font: var(--text-label);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+  color: var(--nb-fg-muted);
+  font-size: var(--nb-text-sm);
+  font-weight: 500;
 }
 .nb-metric dd {
   display: grid;
-  gap: var(--space-1);
-  margin: 0;
+  gap: var(--nb-space-1);
+  margin: var(--nb-space-2) 0 0;
 }
-.nb-metric dd strong {
-  font: var(--text-app-h1);
-  letter-spacing: var(--type-h1-tracking);
+.nb-metric strong {
+  font-size: var(--nb-text-2xl);
+  font-weight: 600;
 }
-.nb-metric dd small {
-  color: var(--color-graphite);
-  font: var(--text-body);
+.nb-metric small {
+  color: var(--nb-fg-muted);
+  font-size: var(--nb-text-sm);
 }
-.nb-metric.is-attention dd strong {
-  color: var(--color-marshal-text);
+.nb-metric.is-attention strong {
+  color: var(--nb-warn-fg);
 }
 .nb-metric-action {
-  margin-top: var(--space-1);
+  margin-top: var(--nb-space-2);
 }

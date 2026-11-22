@@ -30,7 +30,7 @@ export function statusRows(statuses: EventOverview['statuses']): StatusRow[] {
   return Object.entries(statuses)
     .map(([key, count]) => ({
       key,
-      label: CATEGORY_LABELS[key] ?? key,
+      label: CATEGORY_LABELS[key] ?? (key.trim() || 'Unbekannter Status'),
       count,
     }))
     .sort(

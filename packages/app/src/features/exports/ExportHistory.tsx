@@ -1,11 +1,17 @@
+import { relativeEntryTime } from '../entries/detail/relativeEntryTime.js';
 import type { ExportJob } from '@nennbox/contracts';
-import { Button, DataTable, DetailSection, StatusLabel } from '@nennbox/ui';
+import {
+  AppButton,
+  AppTable,
+  AppSection,
+  AppStatusPill,
+  AppEmptyState,
+} from '@nennbox/ui';
 import {
   describeFilters,
-  formatDateTime,
   safeDownloadPath,
   STATE_LABELS,
-  STATE_MEANING,
+  STATE_TONES,
 } from './exportModel.js';
 
 export function ExportHistory({
@@ -22,33 +28,38 @@ export function ExportHistory({
   onDownload: (job: ExportJob, path: string) => void;
 }) {
   return (
-    <DetailSection title="Bisherige Exporte">
+    <AppSection title="Bisherige Exporte">
       {jobs.length === 0 ? (
-        <p>Noch keine Exporte für diese Veranstaltung.</p>
+        <AppEmptyState
+          title="Noch keine Exporte"
+          description="Erstelle einen CSV-Export für diese Veranstaltung."
+        />
       ) : (
-        <DataTable headers={['Erstellt', 'Filter', 'Status', 'Datei']} compact>
+        <AppTable headers={['Erstellt', 'Filter', 'Status', 'Datei']}>
           {jobs.map((job) => {
             const path = safeDownloadPath(job.downloadUrl);
             return (
               <tr key={job.jobId}>
-                <td>{formatDateTime(job.createdAt)}</td>
+                <td>
+                  <time dateTime={job.createdAt}>
+                    {relativeEntryTime(job.createdAt)}
+                  </time>
+                </td>
                 <td>{describeFilters(job.filters, { classes, statuses })}</td>
                 <td>
-                  <StatusLabel
-                    status={STATE_MEANING[job.status]}
-                    label={STATE_LABELS[job.status]}
-                  />
+                  <AppStatusPill status={STATE_TONES[job.status]}>
+                    {STATE_LABELS[job.status]}
+                  </AppStatusPill>
                 </td>
                 <td>
                   {job.status === 'finished' && path ? (
-                    <Button
-                      variant="secondary"
-                      size={32}
+                    <AppButton
+                      tone="secondary"
                       disabled={downloading === job.jobId}
                       onClick={() => onDownload(job, path)}
                     >
                       CSV herunterladen
-                    </Button>
+                    </AppButton>
                   ) : (
                     '—'
                   )}
@@ -56,8 +67,8 @@ export function ExportHistory({
               </tr>
             );
           })}
-        </DataTable>
+        </AppTable>
       )}
-    </DetailSection>
+    </AppSection>
   );
 }

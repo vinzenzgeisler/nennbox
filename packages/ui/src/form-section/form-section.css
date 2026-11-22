@@ -19,13 +19,15 @@
   gap: var(--space-3);
 }
 .nb-form-item {
-  display: grid;
-  gap: var(--space-3);
   min-width: 0;
-  padding-bottom: var(--space-4);
-  border-bottom: 1px solid var(--color-line);
+  margin: 0;
+  padding: var(--nb-space-5);
+  border: 0;
+  border-radius: var(--nb-radius-lg);
+  background: var(--nb-bg-subtle);
 }
-.nb-form-item:last-of-type {
-  padding-bottom: 0;
-  border-bottom: 0;
+.nb-form-item h3 {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--nb-text-md);
 }

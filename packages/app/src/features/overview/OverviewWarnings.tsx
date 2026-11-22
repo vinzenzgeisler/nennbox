@@ -1,5 +1,5 @@
 import type { EventOverview } from '@nennbox/contracts';
-import { Banner, Button } from '@nennbox/ui';
+import { AppNotice, AppButton, AppView } from '@nennbox/ui';
 import {
   warningFilters,
   warningText,
@@ -17,25 +17,27 @@ export function OverviewWarnings({
 }) {
   if (warnings.length === 0) return null;
   return (
-    <section className="overview-warnings" aria-label="Warnungen">
-      {warnings.map((warning) => {
-        const filters = warningFilters(warning, eventId);
-        return (
-          <Banner key={warning.type} tone="warning">
-            <span className="overview-warning">
-              <span>{warningText(warning)}</span>
-              {filters && (
-                <Button
-                  variant="secondary"
-                  onClick={() => onOpenEntries(filters)}
-                >
-                  Nennungen anzeigen
-                </Button>
-              )}
-            </span>
-          </Banner>
-        );
-      })}
+    <section aria-label="Warnungen">
+      <AppView>
+        {warnings.map((warning) => {
+          const filters = warningFilters(warning, eventId);
+          return (
+            <AppNotice key={warning.type} tone="warning">
+              <>
+                <span>{warningText(warning)}</span>
+                {filters && (
+                  <AppButton
+                    tone="secondary"
+                    onClick={() => onOpenEntries(filters)}
+                  >
+                    Nennungen anzeigen
+                  </AppButton>
+                )}
+              </>
+            </AppNotice>
+          );
+        })}
+      </AppView>
     </section>
   );
 }
