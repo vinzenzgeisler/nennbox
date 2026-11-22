@@ -119,16 +119,7 @@
   color: var(--nb-fg-muted);
   font: 400 var(--nb-text-sm)/1.45 var(--nb-font);
 }
-.nb-entry-list-meta .nb-hint {
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--nb-fg-muted);
-  font: 400 var(--nb-text-sm)/1.45 var(--nb-font);
-  letter-spacing: 0;
-  white-space: nowrap;
-}
+
 .nb-entry-list-row td:last-child {
   text-align: right;
 }

@@ -16,7 +16,7 @@
 }
 .nb-emerging-groups {
   display: flex;
-  flex: 1;
+  flex: 1 0 auto;
   flex-direction: column;
   gap: var(--nb-space-4);
   padding: var(--nb-space-5);
@@ -52,8 +52,8 @@
   font-size: 13px;
   animation: none;
 }
-.is-armed .nb-emerging-row {
-  animation: nb-emerging-changed 1900ms var(--nb-ease-out) both;
+.nb-emerging-row.is-changed {
+  animation: nb-emerging-changed 1500ms var(--nb-ease-out) both;
 }
 .nb-emerging-fact {
   display: flex;
@@ -212,7 +212,7 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .is-armed .nb-emerging-row {
+  .nb-emerging-row.is-changed {
     animation: none;
   }
 }

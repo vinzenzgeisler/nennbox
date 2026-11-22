@@ -1,9 +1,10 @@
 import {
   rows,
   classes,
-  gradientImage,
   demoCreatedAt,
+  demoRequestedStartNumber,
 } from './community-demo-data.js';
+import type { SeedCommunityDemoOptions } from './community-demo-seed-options.js';
 import { demoEmail, demoProfile } from './community-demo-profiles.js';
 import {
   seedDemoConversation,
@@ -14,6 +15,10 @@ import {
 import { ensureDemoEvent } from './community-demo-setup.js';
 import { seedDemoDocuments } from './community-demo-documents.js';
 import { seedDemoMessages } from './community-demo-messages.js';
+import {
+  seedDemoStartNumbers,
+  seedDemoDoubleStarter,
+} from './community-demo-start-numbers.js';
 import { createDemoStateHelpers } from './community-demo-states.js';
 import { and, eq, sql } from 'drizzle-orm';
 import { calculatePrice, organizationId, transitionEntry } from '@nennbox/core';
@@ -78,7 +83,7 @@ export async function seedCommunityDemo(
       make,
       model,
       classCode,
-      number,
+      ,
       acceptance,
       payment,
       technical,
@@ -108,6 +113,7 @@ export async function seedCommunityDemo(
         and(
           eq(entries.organizationId, org.id),
           eq(entries.eventId, event.id),
+          eq(entries.classId, byCode.get(classCode)!.id),
           sql`${people.emailNormalized} in (${email}, ${`demo-${String(index + 1).padStart(3, '0')}@example.invalid`})`,
         ),
       )
@@ -176,7 +182,7 @@ export async function seedCommunityDemo(
       model,
       year: 1970 + (index % 30),
       registration,
-      imageUrl: gradientImage(index),
+      imageUrl: null,
     });
     const [group] = await db
       .insert(registrationGroups)
@@ -202,7 +208,7 @@ export async function seedCommunityDemo(
       registrationGroupId: group!.id,
       driverPersonId: person.id,
       vehicleId: vehicle.id,
-      requestedStartNumber: number,
+      requestedStartNumber: demoRequestedStartNumber(index),
       priceSnapshotVersion: snapshot?.version ?? null,
       priceSnapshot: snapshot,
       formSnapshotVersion: 'demo-1',
@@ -275,6 +281,15 @@ export async function seedCommunityDemo(
     }
     created++;
   }
+  const doubleStarterCreated = await seedDemoDoubleStarter(
+    db,
+    ctx,
+    event.id,
+    byCode.get('M6')!.id,
+    byCode.get('M4')!.id,
+  );
+  if (doubleStarterCreated) created++;
+  await seedDemoStartNumbers(db, ctx, event.id);
   await seedDemoDocuments(db, ctx, event.id, rows);
   await seedDemoMessages(db, ctx, event.id, event.slug);
   const [{ total }] = await db

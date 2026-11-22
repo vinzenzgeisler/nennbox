@@ -335,33 +335,60 @@ describe('actions, sections, emerging list, fields and shell', () => {
     expect(view.querySelector('.nb-emerging-reason')?.textContent).toBe(
       'Weil nur Lizenzfahrer starten',
     );
-    expect(
-      view.querySelector('.nb-emerging')?.classList.contains('is-armed'),
-    ).toBe(true);
+    expect(view.querySelectorAll('.is-changed')).toHaveLength(0);
   });
-  it('re-keys a row when its value changes so the highlight plays again', () => {
+  it('marks only changed values, not mount, unchanged open rows or screen switches', () => {
+    vi.useFakeTimers();
     function Host() {
       const [value, setValue] = useState<string | null>(null);
+      const [screen, setScreen] = useState(0);
       return (
         <>
           <button type="button" onClick={() => setValue('Bergrennen')}>
             wählen
           </button>
+          <button type="button" onClick={() => setScreen(screen + 1)}>
+            Schirm {screen}
+          </button>
           <EmergingList
             title="Das entsteht"
             openLabel="noch offen"
             closeLabel="Schließen"
-            groups={groups(value)}
+            groups={groups(value).map((group) => ({
+              ...group,
+              rows: [
+                ...group.rows,
+                {
+                  kind: 'fact' as const,
+                  id: 'open',
+                  label: 'Offen',
+                  value: null,
+                  signature: '',
+                },
+              ],
+            }))}
           />
         </>
       );
     }
     const view = mount(<Host />);
+    expect(view.querySelectorAll('.is-changed')).toHaveLength(0);
+    act(() => view.querySelectorAll<HTMLButtonElement>('button')[1]!.click());
+    expect(view.querySelectorAll('.is-changed')).toHaveLength(0);
     const before = view.querySelector('.nb-emerging-fact');
     act(() => view.querySelector('button')!.click());
     const after = view.querySelector('.nb-emerging-fact');
     expect(after).not.toBe(before);
     expect(after?.textContent).toContain('Bergrennen');
+    expect(after?.classList.contains('is-changed')).toBe(true);
+    expect(view.querySelectorAll('.is-changed')).toHaveLength(1);
+    act(() => vi.advanceTimersByTime(1500));
+    expect(view.querySelectorAll('.is-changed')).toHaveLength(0);
+    act(() => view.querySelectorAll<HTMLButtonElement>('button')[1]!.click());
+    expect(view.querySelectorAll('.is-changed')).toHaveLength(0);
+    act(() => root!.unmount());
+    root = undefined;
+    vi.useRealTimers();
   });
   it('collapses "Das entsteht" behind a labelled bar on narrow screens and closes with Escape', () => {
     const view = mount(

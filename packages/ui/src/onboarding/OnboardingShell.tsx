@@ -81,7 +81,9 @@ export function OnboardingShell({
       <div className="nb-onb-frame">
         {sections}
         <main className="nb-onb-main">
-          <div className="nb-onb-content">{children}</div>
+          <div className="nb-onb-scroll">
+            <div className="nb-onb-content">{children}</div>
+          </div>
           <div className="nb-onb-dock">
             {emerging && emergingBar && (
               <button

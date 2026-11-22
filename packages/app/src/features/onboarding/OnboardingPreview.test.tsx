@@ -118,6 +118,49 @@ describe('onboarding prototype', () => {
     expect(container.textContent).toContain('Schirm 1 von');
   });
 
+  it('does not flash unchanged preview rows when switching screens', () => {
+    vi.useFakeTimers();
+    try {
+      expect(
+        container.querySelectorAll('.nb-emerging-row.is-changed'),
+      ).toHaveLength(0);
+      pick('Passkey');
+      click(button('Weiter'));
+      expect(
+        container.querySelectorAll('.nb-emerging-row.is-changed'),
+      ).toHaveLength(0);
+      type('Vereinsname', 'MSC Hohenstein e. V.');
+      act(() => vi.advanceTimersByTime(1500));
+      click(button('Weiter'));
+      expect(
+        container.querySelectorAll('.nb-emerging-row.is-changed'),
+      ).toHaveLength(0);
+      skip();
+      act(() => vi.advanceTimersByTime(1500));
+      pick('Bergrennen');
+      const changed = [
+        ...container.querySelectorAll('.nb-emerging-fact.is-changed'),
+      ].map((item) => item.querySelector('.nb-emerging-label')!.textContent);
+      expect(changed).toEqual(['Art', 'Klassen', 'Nummern']);
+      expect(
+        container.querySelectorAll('.nb-emerging-fact.is-open.is-changed'),
+      ).toHaveLength(0);
+      act(() => vi.advanceTimersByTime(1500));
+      click(button('Weiter'));
+      expect(
+        container.querySelectorAll('.nb-emerging-row.is-changed'),
+      ).toHaveLength(0);
+      const scroll = container.querySelector('.nb-onb-scroll')!;
+      expect(scroll.querySelector('h1')).not.toBeNull();
+      expect(scroll.querySelector('.nb-onb-dock')).toBeNull();
+      expect(
+        scroll.parentElement?.querySelector(':scope > .nb-onb-dock'),
+      ).not.toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('checks the club address and adapts the follow-up questions', () => {
     press('1');
     press('Enter');
