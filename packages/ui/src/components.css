@@ -71,3 +71,5 @@
 @import url('./onboarding/question-step.css');
 @import url('./onboarding/choice-card.css');
 @import url('./onboarding/fields.css');
+
+@import url('./app-primitives/app-view.css');
