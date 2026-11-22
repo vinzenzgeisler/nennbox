@@ -35,6 +35,13 @@ export type PaymentMode = (typeof paymentModes)[number];
 
 export type StripeTiming = 'now' | 'later';
 
+/**
+ * Languages participants can register in. German is always the main language; the
+ * registration form and its mails exist in German and English today.
+ */
+export const eventLanguages = ['de', 'en'] as const;
+export type EventLanguage = (typeof eventLanguages)[number];
+
 export interface OnboardingClass {
   id: string;
   name: string;
@@ -66,6 +73,10 @@ export interface OnboardingAnswers {
   doubleStart: boolean | null;
   paymentMode: PaymentMode | null;
   stripeTiming: StripeTiming | null;
+  /** Additional languages besides German; `null` follows the suggestion (English). */
+  languages: EventLanguage[] | null;
+  /** Registration form fields the member turned off; only optional fields can be turned off. */
+  hiddenFields: string[];
   classes: OnboardingClass[] | null;
   eventTitle: string | null;
   startDate: string | null;
@@ -83,12 +94,14 @@ export type OnboardingStepId =
   | 'starters'
   | 'vehicle-era'
   | 'vehicle-type'
+  | 'languages'
   | 'expected'
   | 'numbers'
   | 'codriver'
   | 'double-start'
   | 'payment'
   | 'classes'
+  | 'form'
   | 'when'
   | 'terms'
   | 'summary'

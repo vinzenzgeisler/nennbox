@@ -11,7 +11,7 @@ export type EmergingFieldInput = {
   id: string;
   name: string;
   tag: string;
-  tone: 'required' | 'optional' | 'file';
+  tone: 'required' | 'optional' | 'file' | 'off';
   reason: string;
 };
 

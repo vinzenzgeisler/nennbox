@@ -103,12 +103,18 @@ export function OnboardingTextarea({
 export type OnboardingSwitchProps = Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   'type' | 'role'
-> & { label: string; hint?: string | undefined };
+> & {
+  label: string;
+  hint?: string | undefined;
+  /** Keeps the label for assistive technology only, e.g. in a list row that names the field itself. */
+  hideLabel?: boolean | undefined;
+};
 
 /** On/off switch with a label and an optional explanation. */
 export function OnboardingSwitch({
   label,
   hint,
+  hideLabel,
   id,
   ...props
 }: OnboardingSwitchProps) {
@@ -125,7 +131,11 @@ export function OnboardingSwitch({
       />
       <label htmlFor={inputId}>
         <span className="nb-onb-switch-track" aria-hidden="true" />
-        <span className="nb-onb-switch-text">{label}</span>
+        <span
+          className={hideLabel ? 'nb-visually-hidden' : 'nb-onb-switch-text'}
+        >
+          {label}
+        </span>
       </label>
       {hint && <small id={`${inputId}-hint`}>{hint}</small>}
     </div>

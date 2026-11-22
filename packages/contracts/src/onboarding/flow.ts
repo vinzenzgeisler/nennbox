@@ -15,12 +15,14 @@ const phaseOfStep: Record<OnboardingStepId, OnboardingPhase> = {
   starters: 'participants',
   'vehicle-era': 'participants',
   'vehicle-type': 'participants',
+  languages: 'participants',
   codriver: 'participants',
   'double-start': 'participants',
   numbers: 'participants',
   expected: 'entry',
   payment: 'entry',
   classes: 'entry',
+  form: 'entry',
   when: 'publish',
   terms: 'publish',
   summary: 'publish',
@@ -33,6 +35,7 @@ export const requiredSteps: readonly OnboardingStepId[] = [
   'account',
   'club',
   'kind',
+  'form',
   'when',
   'summary',
 ];
@@ -50,10 +53,11 @@ export function onboardingSteps(
   steps.push('starters');
   if (kind !== 'kart') steps.push('vehicle-era');
   if (kind !== 'kart' && kind !== 'rally') steps.push('vehicle-type');
+  steps.push('languages');
   if (kind === 'rally' || kind === 'regularity' || kind === 'other')
     steps.push('codriver');
   if (kind !== 'rally' && kind !== 'regularity') steps.push('double-start');
-  steps.push('numbers', 'expected', 'payment', 'classes');
+  steps.push('numbers', 'expected', 'payment', 'classes', 'form');
   steps.push('when', 'terms', 'summary', 'success');
   return steps;
 }

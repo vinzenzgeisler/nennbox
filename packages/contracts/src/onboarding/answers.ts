@@ -8,6 +8,7 @@ import {
 import { eventTemplate } from './templates.js';
 import type {
   EventKind,
+  EventLanguage,
   NumberMode,
   OnboardingAnswers,
   OnboardingClass,
@@ -38,6 +39,8 @@ export function createOnboardingAnswers(): OnboardingAnswers {
     doubleStart: null,
     paymentMode: null,
     stripeTiming: null,
+    languages: null,
+    hiddenFields: [],
     classes: null,
     eventTitle: null,
     startDate: null,
@@ -66,6 +69,8 @@ export interface ResolvedAnswers {
   doubleStart: boolean;
   paymentMode: PaymentMode;
   stripeTiming: StripeTiming;
+  /** German first, then the additional languages. */
+  languages: EventLanguage[];
   classes: OnboardingClass[];
   eventTitle: string;
   startDate: string | null;
@@ -76,6 +81,8 @@ export interface ResolvedAnswers {
 }
 
 export const defaultHistoricCutoffYear = 1990;
+/** English reaches most foreign starters. */
+export const defaultAdditionalLanguages: EventLanguage[] = ['en'];
 export const waitlistThreshold = 30;
 
 export function templateClasses(kind: EventKind): OnboardingClass[] {
@@ -122,6 +129,7 @@ export function resolveAnswers(answers: OnboardingAnswers): ResolvedAnswers {
     doubleStart: answers.doubleStart ?? defaults.doubleStart,
     paymentMode: answers.paymentMode ?? defaults.paymentMode,
     stripeTiming: answers.stripeTiming ?? 'later',
+    languages: ['de', ...(answers.languages ?? defaultAdditionalLanguages)],
     classes: answers.classes ?? (answers.kind ? templateClasses(kind) : []),
     eventTitle:
       answers.eventTitle?.trim() ||

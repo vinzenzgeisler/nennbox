@@ -193,3 +193,16 @@
     display: none;
   }
 }
+
+.nb-choice-card.is-locked .nb-choice-card-main {
+  cursor: default;
+}
+.nb-onb-code {
+  color: var(--nb-onb-soft-fg);
+  font-size: var(--nb-text-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.nb-choice-card.is-selected .nb-onb-code {
+  color: var(--nb-brand);
+}

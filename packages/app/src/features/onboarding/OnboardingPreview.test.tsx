@@ -54,6 +54,27 @@ const press = (key: string) =>
     window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
   });
 
+const skip = () => click(button(/Überspringen/));
+/** Walks the setup with suggestions up to the screen with the given heading. */
+const walkTo = (title: string, kind = 'Bergrennen') => {
+  pick('Passkey');
+  click(button('Weiter'));
+  type('Vereinsname', 'MSC Hohenstein e. V.');
+  click(button('Weiter'));
+  skip();
+  pick(kind);
+  click(button('Weiter'));
+  for (let guard = 0; guard < 20 && heading() !== title; guard++) {
+    if (heading() === 'Das füllen eure Teilnehmer aus') click(button('Weiter'));
+    else if (heading() === 'Wann und wo findet es statt?') {
+      type('Datum', '2027-04-26');
+      type('Ort', 'Bergstrecke Hohenstein');
+      click(button('Weiter'));
+    } else skip();
+  }
+  expect(heading()).toBe(title);
+};
+
 const rows = () =>
   [...container.querySelectorAll('.nb-emerging-fact')].map((row) => ({
     label: row.querySelector('.nb-emerging-label')!.textContent,
@@ -121,8 +142,11 @@ describe('onboarding prototype', () => {
     expect(heading()).toBe('Wer startet bei euch?');
     expect(button('Weiter').disabled).toBe(true);
     click(button(/Überspringen/));
-    // Karts have no vehicle history questions: straight to the run.
+    // Karts have no vehicle history questions: straight to the languages.
+    expect(heading()).toBe('In welchen Sprachen nennt man bei euch?');
+    click(button(/Überspringen/));
     expect(heading()).toBe('Darf ein Fahrer mehrfach starten?');
+    click(button('Zurück'));
     click(button('Zurück'));
     click(button('Zurück'));
     expect(heading()).toBe('Was veranstaltet ihr?');
@@ -218,5 +242,108 @@ describe('onboarding prototype', () => {
     expect(container.querySelector('.nb-emerging')).toBeNull();
     click(button('Weitermachen'));
     expect(heading()).toBe('Wie heißt euer Verein?');
+  });
+
+  it('offers German as the fixed main language and English as the recommendation', () => {
+    walkTo('In welchen Sprachen nennt man bei euch?');
+    const german = [...container.querySelectorAll('.nb-choice-card')].find(
+      (card) => card.textContent?.includes('Deutsch'),
+    )!;
+    expect(german.textContent).toContain('Hauptsprache');
+    expect(german.querySelector<HTMLInputElement>('input')!.disabled).toBe(
+      true,
+    );
+    const italian = [...container.querySelectorAll('.nb-choice-card')].find(
+      (card) => card.textContent?.includes('Italienisch'),
+    )!;
+    expect(italian.textContent).toContain('Noch nicht verfügbar');
+    expect(row('Sprachen')?.value).toBe('noch offen');
+    pick('Englisch');
+    expect(row('Sprachen')?.value).toBe('Deutsch, Englisch');
+    expect(container.textContent).toContain('Das übersetzt ihr selbst');
+    expect(container.textContent).toContain('Klassennamen');
+  });
+
+  it('keeps "nur Deutsch" when continuing without a pick and takes English with "Überspringen"', () => {
+    walkTo('In welchen Sprachen nennt man bei euch?');
+    expect(button('Weiter').disabled).toBe(false);
+    click(button('Weiter'));
+    expect(
+      JSON.parse(window.localStorage.getItem(storageKey)!).answers.languages,
+    ).toEqual([]);
+    expect(row('Sprachen')?.value).toBe('Nur Deutsch');
+    expect(container.textContent).not.toContain('Das übersetzt ihr selbst');
+    click(button('Zurück'));
+    pick('Englisch');
+    click(button('Zurück'));
+    click(button('Weiter'));
+    expect(row('Sprachen')?.value).toBe('Deutsch, Englisch');
+  });
+
+  it('shows the whole registration form and lets optional fields be turned off, required ones not', () => {
+    walkTo('Das füllen eure Teilnehmer aus');
+    const names = () =>
+      [...container.querySelectorAll('.nb-onb-form-name')].map(
+        (item) => item.firstChild?.textContent,
+      );
+    expect(names()).toContain('Lizenznummer');
+    expect(names()).toContain('Telefon');
+    const rowOf = (name: string) =>
+      [...container.querySelectorAll('.nb-onb-form-row')].find(
+        (item) =>
+          item.querySelector('.nb-onb-form-name')?.firstChild?.textContent ===
+          name,
+      )!;
+    expect(rowOf('Lizenznummer').querySelector('[role=switch]')).toBeNull();
+    expect(rowOf('Geburtsdatum').querySelector('[role=switch]')).toBeNull();
+    const phone =
+      rowOf('Telefon').querySelector<HTMLInputElement>('[role=switch]')!;
+    expect(phone.checked).toBe(true);
+    const total = container.querySelector('.nb-onb-stats dd')!.textContent;
+    act(() => phone.click());
+    expect(rowOf('Telefon').classList.contains('is-off')).toBe(true);
+    expect(rowOf('Telefon').textContent).toContain('Abgeschaltet');
+    expect(
+      Number(container.querySelector('.nb-onb-stats dd')!.textContent),
+    ).toBe(Number(total) - 1);
+    expect(
+      JSON.parse(window.localStorage.getItem(storageKey)!).answers.hiddenFields,
+    ).toContain('phone');
+    expect(container.querySelector('.nb-emerging')!.textContent).toContain(
+      'Abgeschaltet',
+    );
+    act(() => phone.click());
+    expect(rowOf('Telefon').classList.contains('is-off')).toBe(false);
+  });
+
+  it('ends in a draft: summary with real preview tabs, then "Euer Entwurf steht"', () => {
+    walkTo('Alles bereit zum Öffnen?');
+    expect(container.querySelector('.nb-emerging')).toBeNull();
+    expect(container.querySelector('.nb-onb-browser')).not.toBeNull();
+    expect(
+      container.querySelector('.nb-onb-browser-bar')!.textContent,
+    ).toContain('msc-hohenstein.nennbox.com/events/');
+    const tabs = [...container.querySelectorAll('.nb-app-segmented button')];
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      'Veranstaltungsseite',
+      'Nennformular',
+    ]);
+    click(tabs[1]!);
+    expect(
+      container.querySelector('.nb-onb-browser-bar')!.textContent,
+    ).toContain('/register');
+    expect(container.textContent).toContain('Nennformular');
+    expect(button('Entwurf anlegen')).toBeDefined();
+    pick('Jetzt öffnen');
+    expect(button('Nennung öffnen')).toBeDefined();
+    pick('Erst als Entwurf');
+    click(button('Entwurf anlegen'));
+    expect(heading()).toBe('Euer Entwurf steht.');
+    expect(container.textContent).toContain('Vorschau-Link');
+    expect(container.textContent).toContain('Bereit zum Öffnen?');
+    expect(container.textContent).toContain('Teilnahmebedingungen geprüft');
+    expect(container.querySelector('.nb-emerging')).toBeNull();
+    click(button('Nennung jetzt öffnen'));
+    expect(heading()).toBe('Eure Nennung ist offen.');
   });
 });

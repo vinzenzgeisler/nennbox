@@ -9,6 +9,8 @@ import {
 import { choiceSteps } from './choices.js';
 import { formatRange } from './format.js';
 import { icons } from './icons.js';
+import { formFieldRows } from './form-fields.js';
+import { languageSummary } from './languages.js';
 import { formRows, type EmergingFieldInput } from './emerging-form.js';
 
 export type EmergingInput = {
@@ -47,6 +49,7 @@ export function buildEmerging(input: EmergingInput): {
     starters: answers.starters !== null,
     'vehicle-era': answers.vehicleEra !== null,
     'vehicle-type': answers.vehicleType !== null,
+    languages: answers.languages !== null,
     numbers: answers.numberMode !== null,
     expected: answers.expectedStarters !== null,
     payment: answers.paymentMode !== null,
@@ -141,6 +144,11 @@ export function buildEmerging(input: EmergingInput): {
         ]
       : []),
     {
+      id: 'languages',
+      label: 'Sprachen',
+      value: known('languages', languageSummary(resolved.languages)),
+    },
+    {
       id: 'capacity',
       label: 'Plätze',
       value: known(
@@ -184,6 +192,45 @@ export function buildEmerging(input: EmergingInput): {
     signature: `${item.tag}|${item.reason}`,
   });
 
+  // Fields the member turned off stay in the list, pale, so they can be found again.
+  const switchedOff = formFieldRows(answers, resolved, proposal)
+    .rows.filter((item) => item.tone === 'off')
+    .map((item) => ({
+      id: item.id,
+      name: item.name,
+      tag: item.tag,
+      tone: 'off' as const,
+      reason: item.reason,
+    }));
+  const extraLanguages = resolved.languages.length - 1;
+  const translations: EmergingFieldInput[] =
+    decided('languages') && extraLanguages > 0
+      ? [
+          {
+            id: 'tr-classes',
+            name: 'Klassennamen',
+            tag: `${extraLanguages} ${extraLanguages === 1 ? 'Sprache' : 'Sprachen'}`,
+            tone: 'file',
+            reason: answers.classes
+              ? `${proposal.classes.length} Klassen`
+              : `${proposal.classes.length || 'Eure'} Klassen aus eurer Vorlage`,
+          },
+          {
+            id: 'tr-terms',
+            name: 'Teilnahmebedingungen',
+            tag: `${extraLanguages} ${extraLanguages === 1 ? 'Sprache' : 'Sprachen'}`,
+            tone: 'file',
+            reason: 'Der Mustertext kommt nur auf Deutsch',
+          },
+          {
+            id: 'tr-title',
+            name: 'Name der Veranstaltung',
+            tag: 'Freiwillig',
+            tone: 'optional',
+            reason: 'Ohne Übersetzung steht überall der deutsche Name',
+          },
+        ]
+      : [];
   const groups: EmergingGroup[] = [
     {
       id: 'event',
@@ -195,7 +242,7 @@ export function buildEmerging(input: EmergingInput): {
       id: 'form',
       title: 'Das fragt das Nennformular',
       icon: <OnboardingIcon path={icons.form} />,
-      rows: fields.map(fieldRow),
+      rows: [...fields.map(fieldRow), ...switchedOff.map(fieldRow)],
     },
   ];
   if (documents.length)
@@ -204,6 +251,13 @@ export function buildEmerging(input: EmergingInput): {
       title: 'Diese Unterlagen verlangt ihr',
       icon: <OnboardingIcon path={icons.docs} />,
       rows: documents.map(fieldRow),
+    });
+  if (translations.length)
+    groups.push({
+      id: 'translations',
+      title: 'Das übersetzt ihr selbst',
+      icon: <OnboardingIcon path={icons.translate} />,
+      rows: translations.map(fieldRow),
     });
   return {
     groups,

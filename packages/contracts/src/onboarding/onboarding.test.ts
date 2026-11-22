@@ -16,6 +16,7 @@ import {
   slugifyClubName,
   suggestBrandColors,
   suggestEntryDeadline,
+  proposedFieldState,
   suggestEventConfig,
   type OnboardingAnswers,
 } from './index.js';
@@ -93,6 +94,12 @@ describe('flow', () => {
       onboardingSteps(answers({ kind }));
     expect(steps('kart')).not.toContain('vehicle-era');
     expect(steps('kart')).not.toContain('vehicle-type');
+    for (const kind of eventKinds) {
+      expect(steps(kind)).toContain('languages');
+      expect(steps(kind).indexOf('form')).toBe(
+        steps(kind).indexOf('classes') + 1,
+      );
+    }
     expect(steps('rally')).toContain('codriver');
     expect(steps('rally')).not.toContain('double-start');
     expect(steps('hillclimb')).toContain('double-start');
@@ -107,8 +114,9 @@ describe('flow', () => {
   it('walks forwards and backwards over the same screens', () => {
     const a = answers({ kind: 'kart' });
     expect(nextOnboardingStep('kind', a)).toBe('starters');
-    expect(nextOnboardingStep('starters', a)).toBe('double-start');
-    expect(previousOnboardingStep('double-start', a)).toBe('starters');
+    expect(nextOnboardingStep('starters', a)).toBe('languages');
+    expect(nextOnboardingStep('languages', a)).toBe('double-start');
+    expect(previousOnboardingStep('languages', a)).toBe('starters');
     expect(previousOnboardingStep('account', a)).toBeNull();
     expect(nextOnboardingStep('success', a)).toBeNull();
   });
@@ -245,6 +253,37 @@ describe('suggested event configuration', () => {
     expect(
       suggestEventConfig(complete({ paymentMode: 'online' })).payment.stripe,
     ).toBe('later');
+  });
+  it('adds the main language and English by default and keeps German first', () => {
+    expect(resolveAnswers(createOnboardingAnswers()).languages).toEqual([
+      'de',
+      'en',
+    ]);
+    expect(suggestEventConfig(complete({ languages: [] })).languages).toEqual([
+      'de',
+    ]);
+    expect(
+      suggestEventConfig(complete({ languages: ['en'] })).languages,
+    ).toEqual(['de', 'en']);
+  });
+  it('turns optional form fields off on request but never required ones', () => {
+    const base = suggestEventConfig(complete({ starters: 'licensed' }));
+    expect(proposedFieldState(base, 'phone')).toBe('optional');
+    expect(proposedFieldState(base, 'licenseNumber')).toBe('required');
+    expect(proposedFieldState(base, 'dateOfBirth')).toBe('required');
+    const off = suggestEventConfig(
+      complete({
+        starters: 'licensed',
+        hiddenFields: ['phone', 'licenseNumber', 'dateOfBirth', 'nonsense'],
+      }),
+    );
+    expect(proposedFieldState(off, 'phone')).toBe('hidden');
+    expect(proposedFieldState(off, 'licenseNumber')).toBe('required');
+    expect(proposedFieldState(off, 'dateOfBirth')).toBe('required');
+    expect(off.formConfig.fields).not.toHaveProperty('nonsense');
+    expect(
+      RegistrationFormConfigPatchSchema.safeParse(off.formConfig).success,
+    ).toBe(true);
   });
   it('lists what is missing and builds the registration address', () => {
     const empty = suggestEventConfig(createOnboardingAnswers());

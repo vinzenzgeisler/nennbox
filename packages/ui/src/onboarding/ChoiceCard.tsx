@@ -53,6 +53,8 @@ export type ChoiceCardProps = {
   consequence?: React.ReactNode | undefined;
   /** Short label for the recommended answer, e.g. "Empfohlen"; replaced by the tick once chosen. */
   badge?: string | undefined;
+  /** Card that is always on, e.g. the main language: shows this label instead of the tick and cannot be changed. */
+  lockedLabel?: string | undefined;
   /** Why the card cannot be chosen; replaces the consequence and disables the card. */
   unavailableReason?: string | undefined;
   disabled?: boolean | undefined;
@@ -72,14 +74,15 @@ export function ChoiceCard({
   consequence,
   badge,
   unavailableReason,
+  lockedLabel,
   disabled,
 }: ChoiceCardProps) {
   const { name, mode } = useContext(GroupContext);
-  const blocked = Boolean(disabled || unavailableReason);
+  const blocked = Boolean(disabled || unavailableReason || lockedLabel);
   const foot = unavailableReason ?? consequence;
   return (
     <div
-      className={`nb-choice-card${checked ? ' is-selected' : ''}${blocked ? ' is-unavailable' : ''}`}
+      className={`nb-choice-card${checked || lockedLabel ? ' is-selected' : ''}${blocked && !lockedLabel ? ' is-unavailable' : ''}${lockedLabel ? ' is-locked' : ''}`}
       data-mode={mode}
     >
       <label className="nb-choice-card-main">
@@ -90,6 +93,7 @@ export function ChoiceCard({
           value={value}
           checked={checked}
           disabled={blocked}
+          readOnly={Boolean(lockedLabel)}
           data-choice=""
           onChange={(event) => onChange(event.target.checked)}
         />
@@ -110,7 +114,9 @@ export function ChoiceCard({
             <span>{foot}</span>
           </span>
         )}
-        {checked ? (
+        {lockedLabel ? (
+          <span className="nb-choice-card-badge">{lockedLabel}</span>
+        ) : checked ? (
           <span className="nb-choice-card-tick" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false">
               <path d="M5 12.5l4.5 4.5L19 7.5" />

@@ -20,23 +20,14 @@ import { choiceSteps } from './choices.js';
 import { buildEmerging, emergingOpenLabel } from './emerging.js';
 import { formatTime } from './format.js';
 import { remainingTime, sectionBar, sectionLabels } from './sections.js';
-import { BrandStep, type LogoState } from './steps/BrandStep.js';
-import {
-  ChoiceStepView,
-  chosenOption,
-  type ChoiceStepId,
-} from './steps/ChoiceStepView.js';
-import { CutoffYear, StripeTiming } from './steps/ChoiceExtras.js';
-import { ClassesStep } from './steps/ClassesStep.js';
-import { ClubStep } from './steps/ClubStep.js';
-import { ExpectedStep } from './steps/ExpectedStep.js';
-import { SuccessScreen } from './steps/SuccessScreen.js';
-import { SummaryStep } from './steps/SummaryStep.js';
-import { TermsStep } from './steps/TermsStep.js';
+import { type LogoState } from './steps/BrandStep.js';
+import { chosenOption, type ChoiceStepId } from './steps/ChoiceStepView.js';
+import { StepBody } from './steps/StepBody.js';
 import { sampleTakenSubdomains, type StepProps } from './steps/types.js';
-import { WhenStep } from './steps/WhenStep.js';
 import { useOnboardingState } from './state.js';
 import './onboarding.css';
+import './onboarding-finish.css';
+import './onboarding-form.css';
 
 const logoStorageKey = 'nennbox.onboarding-preview.logo.v1';
 
@@ -55,8 +46,18 @@ function savedLogo(): LogoState {
  * with the organization, event-setup, form-field, start-number, waitlist and payment APIs.
  */
 export function OnboardingPreview() {
-  const { state, patch, go, next, skip, back, pause, publish, reset } =
-    useOnboardingState();
+  const {
+    state,
+    patch,
+    go,
+    next: advance,
+    skip,
+    back,
+    pause,
+    setWay,
+    publish,
+    reset,
+  } = useOnboardingState();
   const [logo, setLogo] = useState<LogoState>(savedLogo);
   useLayoutEffect(() => {
     try {
@@ -72,6 +73,12 @@ export function OnboardingPreview() {
     reset();
   };
   const { answers, step, skipped } = state;
+  // Leaving the language screen with nothing ticked means "only German", not "use the suggestion".
+  const next = () => {
+    if (step === 'languages' && answers.languages === null)
+      patch({ languages: [] });
+    advance();
+  };
   const resolved = resolveAnswers(answers);
   const proposal = suggestEventConfig(answers);
   const steps = onboardingSteps(answers);
@@ -84,6 +91,8 @@ export function OnboardingPreview() {
       null;
   const allowed = canContinue(step, answers, sampleTakenSubdomains) && chosen;
   const isSuccess = step === 'success';
+  const way = state.startWay ?? 'draft';
+  const isSummary = step === 'summary';
 
   const bar = sectionBar(step, answers);
   const activeBar = bar.find((section) => section.state === 'active');
@@ -110,43 +119,22 @@ export function OnboardingPreview() {
     eyebrow,
     accepted,
   };
-  const choice = (id: ChoiceStepId, extra?: React.ReactNode) => (
-    <ChoiceStepView key={id} id={id} extra={extra} {...common} />
+  const body = (
+    <StepBody
+      step={step}
+      common={common}
+      logo={logo}
+      setLogo={setLogo}
+      way={way}
+      onWay={setWay}
+      go={go}
+      proposal={proposal}
+      answers={answers}
+      outcome={state.outcome}
+      onOpen={() => publish('open')}
+      onReset={restart}
+    />
   );
-  const body = (() => {
-    switch (step) {
-      case 'club':
-        return <ClubStep {...common} />;
-      case 'brand':
-        return <BrandStep {...common} logo={logo} setLogo={setLogo} />;
-      case 'vehicle-era':
-        return choice(step, <CutoffYear {...common} />);
-      case 'payment':
-        return choice(step, <StripeTiming {...common} />);
-      case 'expected':
-        return <ExpectedStep {...common} />;
-      case 'classes':
-        return <ClassesStep {...common} />;
-      case 'when':
-        return <WhenStep {...common} />;
-      case 'terms':
-        return <TermsStep {...common} />;
-      case 'summary':
-        return (
-          <SummaryStep {...common} go={go} onDraft={() => publish('draft')} />
-        );
-      case 'success':
-        return (
-          <SuccessScreen
-            proposal={proposal}
-            outcome={state.outcome ?? 'open'}
-            onReset={restart}
-          />
-        );
-      default:
-        return choice(step);
-    }
-  })();
 
   const emerging = buildEmerging({
     answers,
@@ -164,13 +152,19 @@ export function OnboardingPreview() {
       skipLabel="Überspringen"
       skipHint="Wir nehmen den Vorschlag"
       onSkip={requiredSteps.includes(step) ? undefined : skip}
-      continueLabel={step === 'summary' ? 'Nennung öffnen' : 'Weiter'}
-      onContinue={step === 'summary' ? () => publish('open') : next}
+      continueLabel={
+        isSummary
+          ? way === 'draft'
+            ? 'Entwurf anlegen'
+            : 'Nennung öffnen'
+          : 'Weiter'
+      }
+      onContinue={isSummary ? () => publish(way) : next}
       continueDisabled={!allowed}
       disabledReason="Bitte erst die Angaben auf dieser Seite vervollständigen."
       hints={
-        step === 'summary'
-          ? ['↵ Nennung öffnen']
+        isSummary
+          ? [`↵ ${way === 'draft' ? 'Entwurf anlegen' : 'Nennung öffnen'}`]
           : isChoice
             ? chosen
               ? ['↵ weiter', '1–9 wählen']
@@ -250,7 +244,7 @@ export function OnboardingPreview() {
         )
       }
       emerging={
-        isSuccess || paused ? undefined : (
+        isSuccess || paused || isSummary ? undefined : (
           <EmergingList
             title="Das entsteht"
             openLabel={emergingOpenLabel}
@@ -267,6 +261,7 @@ export function OnboardingPreview() {
         close: 'Schließen',
       }}
       actions={paused ? undefined : actions}
+      wide={isSummary}
     >
       {paused ? (
         <section className="nb-onb-paused" aria-labelledby="nb-onb-paused">

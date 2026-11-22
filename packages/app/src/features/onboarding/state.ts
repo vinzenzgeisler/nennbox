@@ -17,6 +17,8 @@ export type OnboardingState = {
   skipped: OnboardingStepId[];
   /** "Später fortsetzen": the setup is parked until the member resumes. */
   paused: boolean;
+  /** How the member wants to start; `null` follows the recommendation (draft). */
+  startWay: Outcome | null;
 };
 
 type Action =
@@ -24,6 +26,7 @@ type Action =
   | { type: 'go'; step: OnboardingStepId }
   | { type: 'skip'; to: OnboardingStepId | null }
   | { type: 'pause'; paused: boolean }
+  | { type: 'way'; way: Outcome }
   | { type: 'publish'; outcome: Outcome }
   | { type: 'reset' };
 
@@ -35,6 +38,7 @@ const initial = (): OnboardingState => ({
   savedAt: null,
   skipped: [],
   paused: false,
+  startWay: null,
 });
 
 function reducer(state: OnboardingState, action: Action): OnboardingState {
@@ -63,6 +67,8 @@ function reducer(state: OnboardingState, action: Action): OnboardingState {
           : [...state.skipped, state.step],
         savedAt: Date.now(),
       };
+    case 'way':
+      return { ...state, startWay: action.way, savedAt: Date.now() };
     case 'pause':
       return { ...state, paused: action.paused, savedAt: Date.now() };
     case 'publish':
@@ -128,6 +134,21 @@ export function useOnboardingState() {
     (outcome: Outcome) => dispatch({ type: 'publish', outcome }),
     [],
   );
+  const setWay = useCallback(
+    (way: Outcome) => dispatch({ type: 'way', way }),
+    [],
+  );
   const reset = useCallback(() => dispatch({ type: 'reset' }), []);
-  return { state, patch, go, next, skip, back, pause, publish, reset };
+  return {
+    state,
+    patch,
+    go,
+    next,
+    skip,
+    back,
+    pause,
+    setWay,
+    publish,
+    reset,
+  };
 }

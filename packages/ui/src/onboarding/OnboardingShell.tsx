@@ -20,6 +20,8 @@ export type OnboardingShellProps = {
   emergingBar?:
     { title: string; summary: string; open: string; close: string } | undefined;
   actions?: React.ReactNode | undefined;
+  /** Uses the whole middle column, e.g. for the summary with its preview. */
+  wide?: boolean | undefined;
   children: React.ReactNode;
 };
 
@@ -40,6 +42,7 @@ export function OnboardingShell({
   emerging,
   emergingBar,
   actions,
+  wide,
   children,
 }: OnboardingShellProps) {
   const [open, setOpen] = useState(false);
@@ -55,7 +58,7 @@ export function OnboardingShell({
   const percent = Math.round(Math.min(1, Math.max(0, progress)) * 100);
   return (
     <div
-      className={`nb-onb nb-app-design${emerging ? ' has-emerging' : ''}${sections ? ' has-sections' : ''}`}
+      className={`nb-onb nb-app-design${emerging ? ' has-emerging' : ''}${sections ? ' has-sections' : ''}${wide ? ' is-wide' : ''}`}
     >
       <header className="nb-onb-top">
         <div className="nb-onb-brand">{brand}</div>

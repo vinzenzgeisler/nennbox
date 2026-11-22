@@ -1,10 +1,15 @@
-import type { RegistrationFormConfigPatch } from '../registration-config.js';
+import {
+  registrationFieldDefaultState,
+  registrationFieldKeys,
+  type RegistrationFormConfigPatch,
+} from '../registration-config.js';
 import { checkSubdomain, slugifyTitle } from './helpers.js';
 import { resolveAnswers, type ResolvedAnswers } from './answers.js';
 import { eventTemplate } from './templates.js';
 import type {
   DocumentKey,
   EventKind,
+  EventLanguage,
   NumberMode,
   OnboardingAnswers,
   OnboardingClass,
@@ -20,6 +25,16 @@ export interface ProposedDocument {
 }
 
 export type FieldStates = Partial<Record<string, RegistrationFieldChoice>>;
+
+/** State of a registration form field after the proposal: its default unless the proposal sets it. */
+export function proposedFieldState(
+  proposal: Pick<EventConfigProposal, 'formConfig'>,
+  key: string,
+): RegistrationFieldChoice {
+  const fields = proposal.formConfig.fields as
+    Record<string, { state?: RegistrationFieldChoice } | undefined> | undefined;
+  return fields?.[key]?.state ?? registrationFieldDefaultState(key);
+}
 
 export interface EventConfigProposal {
   organization: {
@@ -41,6 +56,8 @@ export interface EventConfigProposal {
     waitlist: boolean;
   };
   classes: OnboardingClass[];
+  /** Participant languages, German first. */
+  languages: EventLanguage[];
   /** Merges into the event's registration form configuration (#21). */
   formConfig: RegistrationFormConfigPatch;
   documents: ProposedDocument[];
@@ -154,6 +171,13 @@ export function suggestEventConfig(
     reason('emergencyContact', 'safety-emergency-contact');
   }
 
+  // Optional fields the member turned off; required ones stay because the form needs them.
+  for (const key of answers.hiddenFields) {
+    if (!(registrationFieldKeys as readonly string[]).includes(key)) continue;
+    const state = fields[key] ?? registrationFieldDefaultState(key);
+    if (state !== 'required') fields[key] = 'hidden';
+  }
+
   const capacity = Math.ceil(r.expectedStarters / 10) * 10;
   reason('capacity', 'capacity-from-expected');
   reason('waitlist', r.waitlist ? 'waitlist-on' : 'waitlist-off');
@@ -204,6 +228,7 @@ export function suggestEventConfig(
       waitlist: r.waitlist,
     },
     classes: r.classes,
+    languages: r.languages,
     formConfig: {
       branding: {
         logoLightObjectId: null,

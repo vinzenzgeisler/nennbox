@@ -82,6 +82,10 @@
   margin: 0 auto;
   padding: 56px 36px var(--nb-space-7);
 }
+.nb-onb.is-wide .nb-onb-content {
+  max-width: 1120px;
+  justify-content: flex-start;
+}
 .nb-onb-dock {
   position: sticky;
   bottom: 0;

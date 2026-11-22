@@ -108,6 +108,28 @@ describe('ChoiceCard', () => {
     expect(card.querySelector('.nb-choice-card-badge')).toBeNull();
     expect(card.querySelector<HTMLInputElement>('input')!.disabled).toBe(true);
   });
+  it('shows a locked card as chosen with its own label instead of the tick', () => {
+    const view = mount(
+      <ChoiceGroup mode="multiple" aria-label="Sprachen">
+        <ChoiceCard
+          value="de"
+          checked
+          onChange={() => undefined}
+          title="Deutsch"
+          description="x"
+          lockedLabel="Hauptsprache"
+        />
+      </ChoiceGroup>,
+    );
+    const card = view.querySelector('.nb-choice-card')!;
+    expect(card.classList.contains('is-selected')).toBe(true);
+    expect(card.classList.contains('is-locked')).toBe(true);
+    expect(card.classList.contains('is-unavailable')).toBe(false);
+    expect(card.querySelector('.nb-choice-card-badge')?.textContent).toBe(
+      'Hauptsprache',
+    );
+    expect(card.querySelector('.nb-choice-card-tick')).toBeNull();
+  });
   it('renders multiple choice as a checkbox group', () => {
     const html = renderToStaticMarkup(
       <ChoiceGroup mode="multiple" aria-label="Ausstattung">
@@ -433,6 +455,35 @@ describe('actions, sections, emerging list, fields and shell', () => {
     expect(html).toContain('aria-invalid="true"');
     expect(html).toMatch(/aria-describedby="[^"]+-error"/);
     expect(html).toContain('.nennbox.com');
+  });
+  it('keeps the label of a list-row switch for assistive technology only', () => {
+    const view = mount(
+      <OnboardingSwitch
+        label="Telefon anzeigen"
+        hideLabel
+        checked
+        onChange={() => undefined}
+      />,
+    );
+    const label = view.querySelector('label')!;
+    expect(label.textContent).toBe('Telefon anzeigen');
+    expect(label.querySelector('.nb-visually-hidden')).not.toBeNull();
+  });
+  it('uses the whole middle column for wide screens such as the summary', () => {
+    const view = mount(
+      <OnboardingShell
+        brand="NENNBOX"
+        title="Einrichten"
+        progress={1}
+        progressLabel="Fortschritt"
+        wide
+      >
+        <p>Zusammenfassung</p>
+      </OnboardingShell>,
+    );
+    expect(view.querySelector('.nb-onb')!.classList.contains('is-wide')).toBe(
+      true,
+    );
   });
   it('exposes the switch with its role and reports changes', () => {
     const onChange = vi.fn();
