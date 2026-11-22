@@ -201,9 +201,7 @@ async function click(predicate: (button: HTMLButtonElement) => boolean) {
 const byText = (text: string) => (button: HTMLButtonElement) =>
   button.textContent?.trim() === text;
 async function switchEvent(id: string) {
-  const selector = narrow
-    ? '.nb-admin-mobile-event-picker select'
-    : '.nb-admin-event-picker select';
+  const selector = '.nb-app-breadcrumb select';
   const select = container.querySelector<HTMLSelectElement>(selector)!;
   await act(async () => {
     select.value = id;
@@ -214,11 +212,13 @@ async function switchEvent(id: string) {
 }
 const textOf = () => container.textContent ?? '';
 async function openDetailWide() {
-  await click(byText('Vollständig öffnen'));
-  expect(container.querySelector('.nb-detail')).not.toBeNull();
+  await click(
+    (button) => button.getAttribute('aria-label') === 'Nennung öffnen',
+  );
+  expect(container.querySelector('.nb-entry-page')).not.toBeNull();
 }
 function expectEmptyEventView() {
-  expect(container.querySelector('.nb-detail')).toBeNull();
+  expect(container.querySelector('.nb-entry-page')).toBeNull();
   expect(textOf()).not.toContain('Alex Driver');
   expect(textOf()).toContain('Keine Nennungen für diese Filter.');
   expect(container.querySelector('#admin-entries-title')?.textContent).toBe(
@@ -235,7 +235,7 @@ beforeEach(() => {
   previewAvailable = true;
   listedEntries = [alex];
   window.matchMedia = ((query: string) => ({
-    matches: previewAvailable && !narrow && query.includes('1680'),
+    matches: previewAvailable && !narrow && query.includes('1101'),
     media: query,
     addEventListener: () => undefined,
     removeEventListener: () => undefined,
@@ -258,7 +258,7 @@ describe('AdminApplication event switch and detail access', () => {
     expectEmptyEventView();
     // Going back to the first event shows the list again, not the old detail.
     await switchEvent(eventA);
-    expect(container.querySelector('.nb-detail')).toBeNull();
+    expect(container.querySelector('.nb-entry-page')).toBeNull();
     expect(textOf()).toContain('Alex Driver');
   });
 
@@ -280,10 +280,17 @@ describe('AdminApplication event switch and detail access', () => {
         });
         await click(byText('Speichern'));
       } else if (action === 'payment') {
+        await act(async () =>
+          container
+            .querySelector<HTMLElement>(
+              '.nb-entry-header-actions .nb-menu summary',
+            )!
+            .click(),
+        );
         await click(
           (button) =>
             button.textContent === 'Zahlung erfassen' &&
-            button.closest('.nb-detail-rail') !== null,
+            button.closest('.nb-entry-header-actions .nb-menu') !== null,
         );
         const reason =
           container.querySelector<HTMLTextAreaElement>('dialog textarea')!;
@@ -337,22 +344,20 @@ describe('AdminApplication event switch and detail access', () => {
     // No preview opens by itself; the list stays the start view.
     expect(container.querySelector('.is-mobile-open')).toBeNull();
     expect(textOf()).toContain('Alex Driver');
-    expect(
-      container.querySelector('.nb-admin-mobile-event-picker select'),
-    ).not.toBeNull();
+    expect(container.querySelector('.nb-app-breadcrumb select')).not.toBeNull();
     await click((button) => button.hasAttribute('data-entry-action'));
     expect(container.querySelector('.is-mobile-open')).toBeNull();
-    expect(container.querySelector('.nb-detail')).not.toBeNull();
+    expect(container.querySelector('.nb-entry-page')).not.toBeNull();
     await switchEvent(eventB);
     expectEmptyEventView();
     expect(container.querySelector('.is-mobile-open')).toBeNull();
   });
 
-  it('opens the detail directly from a row in the 1280–1679 viewport band', async () => {
+  it('opens the detail directly from a row below the 1101 px preview threshold', async () => {
     previewAvailable = false;
     await mount();
     await click((button) => button.hasAttribute('data-entry-action'));
-    expect(container.querySelector('.nb-detail')).not.toBeNull();
+    expect(container.querySelector('.nb-entry-page')).not.toBeNull();
   });
 
   it('carries a successful preview status into the detail record and actions', async () => {
@@ -369,10 +374,12 @@ describe('AdminApplication event switch and detail access', () => {
       [...container.querySelectorAll('.nb-preview-actions button')].map(
         (button) => button.textContent,
       ),
-    ).toEqual(['Nachricht', 'Vollständig öffnen']);
+    ).toEqual(['Unterlagen anfordern']);
     expect(container.querySelector('.nb-preview-hint')).toBeNull();
-    await click(byText('Vollständig öffnen'));
-    const detail = container.querySelector('.nb-detail')!;
+    await click(
+      (button) => button.getAttribute('aria-label') === 'Nennung öffnen',
+    );
+    const detail = container.querySelector('.nb-entry-page')!;
     expect(detail.textContent).toContain('Zugelassen');
     expect(detail.textContent).not.toContain('Zulassen');
   });
@@ -431,28 +438,30 @@ describe('AdminApplication event switch and detail access', () => {
     expectEmptyEventView();
   });
 
-  it('opens the preview on its own on a wide screen and offers both ways into the detail', async () => {
+  it('opens the preview on its own on a wide screen and opens detail through its header', async () => {
     await mount();
     expect(container.querySelector('.nb-preview-panel h2')?.textContent).toBe(
       'Alex Driver',
     );
-    await click(byText('Vollständig öffnen'));
-    expect(container.querySelector('.nb-detail')).not.toBeNull();
+    await click(
+      (button) => button.getAttribute('aria-label') === 'Nennung öffnen',
+    );
+    expect(container.querySelector('.nb-entry-page')).not.toBeNull();
     await click(
       (button) =>
         button.textContent?.includes('Nennungen') === true &&
-        button.classList.contains('nb-detail-back'),
+        button.closest('.nb-entry-page-navigation') !== null,
     );
-    expect(container.querySelector('.nb-detail')).toBeNull();
+    expect(container.querySelector('.nb-entry-page')).toBeNull();
     await openDetailWide();
   });
 
-  it('keeps workflow navigation in the account group but out of mobile navigation', async () => {
+  it('keeps workflow navigation in the event group but out of mobile navigation', async () => {
     narrow = true;
     await mount();
 
     expect(
-      container.querySelector('.nb-admin-nav-group[aria-label="Konto"]')
+      container.querySelector('.nb-admin-nav-group[aria-label="Veranstaltung"]')
         ?.textContent,
     ).toContain('Nennungsablauf');
     expect(

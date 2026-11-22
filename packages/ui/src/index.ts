@@ -4,3 +4,4 @@ export * from './brand/Wordmark.js';
 export * from './components.js';
 
 export * from './workspace/useWorkspacePreview.js';
+export * from './app-primitives/AppPrimitives.js';

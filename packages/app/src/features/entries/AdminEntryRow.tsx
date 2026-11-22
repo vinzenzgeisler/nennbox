@@ -1,40 +1,18 @@
+import { assignedNumber } from './entryStartNumber.js';
+import { EntryDataHints } from './EntryDataHints.js';
 import type { Dispatch, SetStateAction } from 'react';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import {
+  CompletionDots,
   EntryListRow,
+  EntryStatusMenu,
   HintLabel,
   Menu,
   MenuItem,
-  StatusLabel,
 } from '@nennbox/ui';
+import { completionStates } from './completionStates.js';
 import type { WorkflowView } from './AdminEntriesModel.js';
-import { dimensionStatus } from './dimensionStatus.js';
-import { EntryStatusBadge } from './EntryStatusBadge.js';
-import { documentStatusView, uploadLines } from './documents/documentLines.js';
 type Selection = { eventId: string; ids: Set<string> };
-function Dimension({
-  entry,
-  keyName,
-}: {
-  entry: Entry;
-  keyName: 'payment' | 'technical_inspection' | 'waiver';
-}) {
-  const dimension = entry.statusProjection?.dimensions.find(
-    (item) => item.key === keyName,
-  );
-  return dimension ? (
-    <StatusLabel
-      status={
-        dimension.meaning === 'not_relevant'
-          ? 'empty'
-          : dimensionStatus(keyName, dimension.meaning)
-      }
-      label={dimension.label.de}
-    />
-  ) : (
-    <span>—</span>
-  );
-}
 export function AdminEntryRow({
   entry,
   eventId,
@@ -44,6 +22,8 @@ export function AdminEntryRow({
   classes,
   workflow,
   openEntry,
+  openDetail,
+  onChangeStatus,
 }: {
   entry: Entry;
   eventId: string;
@@ -53,11 +33,13 @@ export function AdminEntryRow({
   classes: Array<{ id: string; name: string }>;
   workflow: WorkflowView | null;
   openEntry: (id: string) => Promise<void>;
+  openDetail?: ((id: string) => Promise<void>) | undefined;
+  onChangeStatus: (entry: Entry, status: string) => Promise<void>;
 }) {
   const details = entry.adminDetails;
   const name = details?.driver.name ?? 'Name nicht verfügbar';
   const vehicle = details
-    ? `${details.vehicle.make} ${details.vehicle.model}${entry.orgaCode ? ` · ${entry.orgaCode}` : ''}`
+    ? `${details.vehicle.make} ${details.vehicle.model}`
     : 'Fahrzeug nicht verfügbar';
   return (
     <EntryListRow
@@ -70,36 +52,7 @@ export function AdminEntryRow({
           {entry.waitlistPosition != null && (
             <HintLabel>Warteliste · Platz {entry.waitlistPosition}</HintLabel>
           )}
-          {entry.statusProjection?.hints
-            .filter((hint) => hint.present)
-            .map((hint) => (
-              <HintLabel key={hint.key}>
-                {hint.key === 'double_starter'
-                  ? 'Doppelstarter'
-                  : hint.key === 'passenger'
-                    ? 'Beifahrer'
-                    : 'Nachnennung'}
-              </HintLabel>
-            ))}
-          {entry.documentProjection &&
-            entry.documentProjection.requiredCount > 0 && (
-              <span
-                className="nb-entry-list-document-count"
-                title={uploadLines(entry)
-                  .map(
-                    (line) =>
-                      `${line.label}: ${documentStatusView(line.status).label}`,
-                  )
-                  .join(' · ')}
-              >
-                <HintLabel>
-                  <span className="nb-entry-list-document-label">
-                    Unterlagen{' '}
-                  </span>
-                  {`${entry.documentProjection.uploadedRequiredCount}/${entry.documentProjection.requiredCount}`}
-                </HintLabel>
-              </span>
-            )}
+          <EntryDataHints entry={entry} />
         </>
       }
       className={
@@ -107,9 +60,12 @@ export function AdminEntryRow({
         classes.find((item) => item.id === entry.classId)?.name ??
         '—'
       }
-      number={entry.requestedStartNumber ?? details?.startNumber ?? null}
-      orgaCode={entry.orgaCode ?? null}
+      number={assignedNumber(entry)}
       selected={selected?.id === entry.id}
+      dimmed={['rejected', 'withdrawn'].includes(
+        workflow?.statuses.find((item) => item.key === entry.acceptanceStatus)
+          ?.category ?? '',
+      )}
       checked={selectedIds.has(entry.id)}
       selectLabel={`${name} auswählen`}
       onSelect={(checked) =>
@@ -121,20 +77,43 @@ export function AdminEntryRow({
         })
       }
       onOpen={() => void openEntry(entry.id)}
+      onOpenDetail={() => void openDetail?.(entry.id)}
       status={
-        <EntryStatusBadge
-          status={workflow?.statuses.find(
-            (status) => status.key === entry.acceptanceStatus,
+        <EntryStatusMenu
+          label={
+            workflow?.statuses.find(
+              (item) => item.key === entry.acceptanceStatus,
+            )?.labels.de ?? entry.acceptanceStatus
+          }
+          tone={statusTone(
+            workflow?.statuses.find(
+              (item) => item.key === entry.acceptanceStatus,
+            )?.category,
           )}
-          fallback={entry.acceptanceStatus}
+          options={(workflow?.transitions ?? [])
+            .filter((item) => item.from === entry.acceptanceStatus)
+            .map((item) => {
+              const target = workflow?.statuses.find(
+                (status) => status.key === item.to,
+              );
+              return {
+                key: item.to,
+                label: target?.labels.de ?? item.to,
+                tone: statusTone(target?.category),
+              };
+            })}
+          onChange={(status) => void onChangeStatus(entry, status)}
         />
       }
-      payment={<Dimension entry={entry} keyName="payment" />}
-      inspection={<Dimension entry={entry} keyName="technical_inspection" />}
-      waiver={<Dimension entry={entry} keyName="waiver" />}
+      completion={<CompletionDots states={completionStates(entry)} />}
       openActionId={entry.id}
       menu={
         <Menu label={`Weitere Aktionen für ${name}`}>
+          {openDetail && (
+            <MenuItem onClick={() => void openDetail(entry.id)}>
+              Öffnen
+            </MenuItem>
+          )}
           <MenuItem onClick={() => void openEntry(entry.id)}>
             Vorschau öffnen
           </MenuItem>
@@ -142,4 +121,14 @@ export function AdminEntryRow({
       }
     />
   );
+}
+
+function statusTone(
+  category: string | undefined,
+): 'offen' | 'vor' | 'zu' | 'neg' | 'ab' {
+  if (category === 'accepted') return 'zu';
+  if (category === 'waitlisted') return 'vor';
+  if (category === 'rejected') return 'neg';
+  if (category === 'withdrawn') return 'ab';
+  return 'offen';
 }

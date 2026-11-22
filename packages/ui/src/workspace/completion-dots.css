@@ -1,0 +1,8 @@
+.nb-completion {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--nb-space-2);
+  color: var(--nb-fg-muted);
+  font-size: var(--nb-text-sm);
+  white-space: nowrap;
+}

@@ -6,7 +6,8 @@
     ".": "./dist/index.js",
     "./tokens.css": "./src/tokens.css",
     "./base.css": "./src/base.css",
-    "./components.css": "./src/components.css"
+    "./components.css": "./src/components.css",
+    "./app-tokens.css": "./src/app-tokens.css"
   },
   "scripts": {
     "test": "vitest run"
@@ -15,6 +16,8 @@
     "@fontsource-variable/archivo": "^5.3.0",
     "@fontsource/ibm-plex-mono": "^5.2.7",
     "@fontsource/ibm-plex-sans": "^5.2.7",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
     "react": "^19.3.1"
   },
   "devDependencies": {
@@ -30,6 +33,7 @@
     "src/**/*.css",
     "src/brand/signet.svg",
     "src/brand/app-icon.svg",
-    "TRADEMARKS.md"
+    "TRADEMARKS.md",
+    "src/app-tokens.css"
   ]
 }

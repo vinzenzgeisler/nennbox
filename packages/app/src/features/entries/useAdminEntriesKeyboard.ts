@@ -21,13 +21,31 @@ export function useAdminEntriesKeyboard({
   useEffect(() => {
     const handleKeys = (event: KeyboardEvent) => {
       if (
+        event.defaultPrevented ||
+        document.querySelector('dialog[open], [role=dialog], details[open]') ||
         !items.length ||
         (event.target instanceof HTMLElement &&
-          ['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName))
+          (event.target.isContentEditable ||
+            ['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)))
       )
         return;
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
+        return;
       if (isDetailOpen) {
-        // The detail view scrolls and has its own dialogs; only Escape leaves it.
+        const direction = ['ArrowDown', 'j'].includes(event.key)
+          ? 1
+          : ['ArrowUp', 'k'].includes(event.key)
+            ? -1
+            : 0;
+        if (direction) {
+          const index = items.findIndex((item) => item.id === selected?.id);
+          const next = index + direction;
+          if (index >= 0 && next >= 0 && next < items.length) {
+            event.preventDefault();
+            void openEntry(items[next]!.id);
+          }
+        }
+        // Open menus and dialogs keep their own keys; Escape otherwise leaves the detail.
         if (event.key === 'Escape' && !document.querySelector('dialog[open]'))
           closeDetail();
         return;
@@ -52,7 +70,7 @@ export function useAdminEntriesKeyboard({
         !(
           event.target instanceof HTMLElement &&
           event.target.closest(
-            'a, [role=tab], summary, [role=menuitem], input, select, textarea',
+            'a, button:not([data-entry-action]), [role=tab], summary, [role=menuitem], input, select, textarea',
           )
         )
       ) {

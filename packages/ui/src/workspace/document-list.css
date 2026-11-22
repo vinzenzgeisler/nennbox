@@ -1,36 +1,75 @@
-.nb-document-list ul,
-.nb-history-timeline ol {
-  margin: 0;
-  padding: 0;
+.nb-document-list {
+  color: var(--nb-fg);
+  font: 400 var(--nb-text-base)/1.45 var(--nb-font);
+}
+.nb-document-list ul {
   list-style: none;
+  padding: 0;
+  margin: 0;
 }
 .nb-document-list li {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  min-height: 39px;
-  padding: 9px 0;
-  border-top: 1px solid var(--color-line);
+  gap: 14px;
+  min-height: var(--nb-control-h-lg);
+  padding: var(--nb-space-3) 0;
+  border-bottom: 1px solid var(--nb-border-row);
 }
-.nb-document-list li.is-emphasis > span:first-child {
-  font-weight: var(--weight-semibold);
+.nb-document-list-label {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: var(--nb-space-1);
+  overflow-wrap: anywhere;
+}
+.nb-document-list-label a {
+  border-radius: var(--nb-radius-sm);
+  color: var(--nb-fg);
+  text-decoration: none;
+}
+.nb-document-list-label a:hover {
+  color: var(--nb-brand);
+  text-decoration: underline;
+}
+.nb-document-list-label small {
+  color: var(--nb-fg-muted);
+  font: 400 var(--nb-text-sm)/1.45 var(--nb-font);
 }
 .nb-document-list-end {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--space-4);
-  text-align: right;
+  gap: var(--nb-space-3);
+}
+@media (width < 768px) {
+  .nb-document-list li {
+    flex-wrap: wrap;
+  }
 }
 
-.nb-document-list-label {
+.nb-document-list-icon {
+  width: var(--nb-control-h-lg);
+  height: var(--nb-control-h-lg);
+  border-radius: var(--nb-radius-md);
+  background: var(--nb-bg-hover);
+  color: var(--nb-fg-muted);
   display: grid;
-  min-width: 0;
+  place-items: center;
+  flex: none;
 }
-.nb-document-list-label small {
-  color: var(--color-graphite);
-  font: var(--text-label);
-  overflow-wrap: anywhere;
+.nb-document-list-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.nb-document-list-end .nb-button {
+  height: 30px;
+  min-height: 30px;
+  padding-inline: var(--nb-button-px);
+  border: 1px solid var(--nb-border-strong);
+  border-radius: var(--nb-radius-md);
+  background: var(--nb-bg);
+  color: var(--nb-fg);
+  font: 500 var(--nb-text-base)/1.45 var(--nb-font);
 }

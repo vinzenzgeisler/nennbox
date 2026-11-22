@@ -1,5 +1,4 @@
-.nb-status,
-.nb-hint {
+.nb-status {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -38,10 +37,14 @@
   background: transparent;
 }
 .nb-hint {
-  border-color: var(--color-line);
-  color: var(--color-graphite);
-  background: var(--color-ivory);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--nb-fg-muted, var(--color-graphite));
+  font: 400 var(--nb-text-sm, 13px)/1.45 var(--nb-font, var(--font-plex));
+  white-space: nowrap;
 }
+
 .nb-status {
   min-height: 0;
   padding: 3px var(--space-2);

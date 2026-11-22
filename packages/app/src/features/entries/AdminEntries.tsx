@@ -1,5 +1,8 @@
+import { EntryDetailHost } from './detail/EntryDetailHost.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { SelectField } from '@nennbox/ui';
+import { EntryEventPicker } from './EntryEventPicker.js';
+import { EntryStatusToast } from './EntryStatusToast.js';
+import { useEntryListStatusChanges } from './useEntryListStatusChanges.js';
 import {
   applyEntrySort,
   initialQuery,
@@ -7,7 +10,6 @@ import {
   type EntryQuery,
 } from './AdminEntriesModel.js';
 import { AdminEntriesState } from './AdminEntriesState.js';
-import { AdminEntryDetail } from './AdminEntryDetail.js';
 import { AdminEntryList } from './AdminEntryList.js';
 import { useAdminEntryActions } from './useAdminEntryActions.js';
 import { useAdminEntriesData } from './useAdminEntriesData.js';
@@ -131,6 +133,8 @@ function AdminEntriesView({
     transition,
     eligibleSelectedItems,
     bulkAccept,
+    bulkNotice,
+    clearBulkNotice,
     invalidateActionRequests,
   } = useAdminEntryActions({
     eventId,
@@ -143,6 +147,14 @@ function AdminEntriesView({
     setRefreshRevision,
     setActionError,
   });
+  const { changeStatus, notice, clearNotice, showNotice } =
+    useEntryListStatusChanges({
+      eventId,
+      workflow,
+      setSelected,
+      setRefreshRevision,
+      setActionError,
+    });
   const openEntryDetail = useOpenEntryDetail(selected, openEntry, openDetail);
   useEffect(() => {
     if (
@@ -211,11 +223,8 @@ function AdminEntriesView({
   }
 
   // A reload while the detail is open must not replace it: it would lose open dialogs such as a freshly created link.
-  if (
-    events.length === 0 &&
-    apiState !== 'ready' &&
-    !(isDetailOpen && selected)
-  )
+  const waitingForEvents = !events.length && apiState !== 'ready';
+  if (waitingForEvents && !(isDetailOpen && selected))
     return <AdminEntriesState state={apiState} />;
 
   return (
@@ -227,25 +236,16 @@ function AdminEntriesView({
         Nennungen
       </h2>
       {!onSharedEventChange && (
-        <SelectField
-          label="Veranstaltung"
-          aria-label="Veranstaltung"
-          value={eventId}
-          onChange={(e) => changeEvent(e.target.value)}
-        >
-          <option value="">Veranstaltung wählen</option>
-          {events.map((event) => (
-            <option key={event.id} value={event.id}>
-              {event.name}
-            </option>
-          ))}
-        </SelectField>
+        <EntryEventPicker
+          events={events}
+          eventId={eventId}
+          onChange={changeEvent}
+        />
       )}
       {!(isDetailOpen && selected) && (
         <AdminEntryList
           preview={preview}
           mobilePreviewOpen={mobilePreviewOpen}
-          wide={autoPreview}
           eventId={eventId}
           apiState={apiState}
           draft={draft}
@@ -260,6 +260,8 @@ function AdminEntriesView({
           selectedIds={selectedIds}
           setSelection={setSelection}
           openEntry={autoPreview ? openEntry : openEntryDetail}
+          openDetail={openEntryDetail}
+          onChangeStatus={changeStatus}
           eligibleSelectedItems={eligibleSelectedItems}
           busy={busy}
           clearSelection={clearSelection}
@@ -270,7 +272,7 @@ function AdminEntriesView({
         />
       )}
       {isDetailOpen && selected && (
-        <AdminEntryDetail
+        <EntryDetailHost
           key={selected.id}
           selected={selected}
           classes={classes}
@@ -279,13 +281,24 @@ function AdminEntriesView({
           error={actionError}
           transition={transition}
           onBack={closeDetail}
+          onOpenRelated={openEntryDetail}
           onMessage={onMessage}
-          onUpdated={(entry, refresh = true) => {
-            setSelected(entry);
-            if (refresh) setRefreshRevision((value) => value + 1);
-          }}
+          onChangeStatus={changeStatus}
+          onNotice={showNotice}
+          items={items}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          openEntry={openEntry}
+          setSelected={setSelected}
+          setRefreshRevision={setRefreshRevision}
         />
       )}
+
+      <EntryStatusToast
+        notice={notice ?? bulkNotice}
+        clear={notice ? clearNotice : clearBulkNotice}
+      />
       {actionError && !(isDetailOpen && selected) && (
         <p role="alert">{actionError}</p>
       )}

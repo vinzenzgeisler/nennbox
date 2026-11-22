@@ -1,0 +1,74 @@
+.nb-question {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nb-space-5);
+}
+.nb-question:focus-within {
+  outline: 0;
+}
+.nb-question-head {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.nb-question-eyebrow {
+  margin: 0;
+  color: var(--nb-fg-muted);
+  font-size: var(--nb-text-sm);
+  font-weight: 500;
+}
+.nb-question-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.nb-question-title:focus {
+  outline: 0;
+}
+.nb-question-lead {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--nb-fg-secondary);
+  font-size: var(--nb-text-md);
+  font-weight: 400;
+  line-height: 1.5;
+}
+.nb-question-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nb-space-4);
+}
+.nb-question-example {
+  display: flex;
+  gap: var(--nb-space-3);
+  align-items: baseline;
+  padding: 14px var(--nb-space-4);
+  border-radius: var(--nb-radius-lg);
+  background: var(--nb-brand-subtle);
+  color: var(--nb-onb-tint-text);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.nb-question-example p {
+  margin: 0;
+}
+.nb-question-example-label {
+  flex: none;
+  color: var(--nb-onb-tint-fg);
+  font-size: 11px;
+  font-weight: 600;
+}
+.nb-question-note {
+  margin: 0;
+  color: var(--nb-fg-faint);
+  font-size: var(--nb-text-sm);
+}
+
+/* O5Fertig: a result heading is larger than the question heading. */
+.nb-question-title.is-result {
+  font-size: 34px;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}

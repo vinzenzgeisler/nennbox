@@ -1,7 +1,12 @@
+import { GalleryEntryDetail } from './features/gallery/GalleryEntryDetail.js';
 import { useState } from 'react';
+import { GalleryAppPrimitives } from './features/gallery/GalleryAppPrimitives.js';
 import { GalleryAdvancedComponents } from './features/gallery/GalleryAdvancedComponents.js';
+import { GalleryOnboardingComponents } from './features/gallery/GalleryOnboardingComponents.js';
 import { GalleryWorkspaceComponents } from './features/gallery/GalleryWorkspaceComponents.js';
+import { GalleryCommandPalette } from './features/gallery/GalleryCommandPalette.js';
 import './features/gallery/gallery-advanced.css';
+import './features/gallery/gallery-onboarding.css';
 import {
   Button,
   Checkbox,
@@ -29,7 +34,7 @@ export function ComponentGallery() {
   const [toast, setToast] = useState(false);
   const [selected, setSelected] = useState(false);
   return (
-    <main className="shell nb-gallery">
+    <main className="shell nb-gallery nb-app-design">
       <header className="masthead">
         <div>
           <p className="eyebrow">NENNBOX · M6 / A2</p>
@@ -37,6 +42,9 @@ export function ComponentGallery() {
           <p>Review-Galerie der Basis- und App-Komponenten.</p>
         </div>
       </header>
+      <GalleryAppPrimitives selected={selected} onSelect={setSelected} />
+      <GalleryCommandPalette />
+      <GalleryEntryDetail />
       <section>
         <h2>Buttons</h2>
         <div className="nb-gallery-row">
@@ -187,6 +195,11 @@ export function ComponentGallery() {
               'filter',
               'more',
               'next',
+              'overview',
+              'export',
+              'check',
+              'settings',
+              'switch',
             ] as const
           ).map((name) => (
             <span className="nb-icon-sample" key={name}>
@@ -257,6 +270,7 @@ export function ComponentGallery() {
       </section>
       <GalleryAdvancedComponents />
       <GalleryWorkspaceComponents />
+      <GalleryOnboardingComponents />
       {selected && (
         <SelectionBar
           label="Auswahlaktionen"

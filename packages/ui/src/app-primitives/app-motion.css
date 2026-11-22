@@ -1,0 +1,50 @@
+@keyframes nb-app-slide {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes nb-app-pop {
+  from {
+    transform: translateY(-4px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes nb-app-up {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes nb-app-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.nb-app-slide {
+  animation: nb-app-slide var(--nb-duration-panel) var(--nb-ease-out) both;
+}
+.nb-app-pop {
+  animation: nb-app-pop var(--nb-duration-menu) var(--nb-ease-out) both;
+}
+.nb-app-up {
+  animation: nb-app-up var(--nb-duration-panel) var(--nb-ease-out) both;
+}
+.nb-app-fade {
+  animation: nb-app-fade var(--nb-duration-menu) var(--nb-ease-out) both;
+}

@@ -1,10 +1,11 @@
+import { relativeEntryTime } from './relativeEntryTime.js';
 import {
+  AppButton,
   DetailSection,
-  MessageTable,
+  EntryMessageList,
   StatusLabel,
-  TechnicalLabel,
 } from '@nennbox/ui';
-import { formatShortDateTime } from './entryDetailModel.js';
+
 import type { EntryMessage } from './useEntryDetailReads.js';
 
 const STATUS = {
@@ -17,26 +18,34 @@ const STATUS = {
 export function EntryMessagesSection({
   messages,
   failed,
+  onWrite,
 }: {
   messages: EntryMessage[] | null;
   failed: boolean;
+  onWrite?: (() => void) | undefined;
 }) {
   return (
-    <DetailSection title="Nachrichten">
+    <DetailSection
+      title="Nachrichten"
+      action={
+        onWrite && (
+          <AppButton tone="secondary" onClick={onWrite}>
+            Nachricht schreiben
+          </AppButton>
+        )
+      }
+    >
       {failed ? (
-        <p role="alert">Die Nachrichten konnten nicht geladen werden.</p>
+        <p role="alert">
+          Die Nachrichten konnten nicht geladen werden. Öffne die Nennung
+          erneut.
+        </p>
       ) : messages === null ? (
         <p role="status">Nachrichten werden geladen …</p>
       ) : (
-        <MessageTable
-          headers={{
-            status: 'Status',
-            subject: 'Betreff',
-            template: 'Vorlage',
-            sent: 'Gesendet',
-          }}
+        <EntryMessageList
           empty={<p>Zu dieser Nennung wurden noch keine E-Mails erzeugt.</p>}
-          rows={messages.map((message) => ({
+          items={messages.map((message) => ({
             id: message.id,
             status: (
               <StatusLabel
@@ -45,8 +54,10 @@ export function EntryMessagesSection({
               />
             ),
             subject: message.subject,
-            template: <TechnicalLabel>{message.templateKey}</TechnicalLabel>,
-            sent: message.sentAt ? formatShortDateTime(message.sentAt) : '—',
+            template: message.templateKey,
+            recipient: message.recipient,
+            dateTime: message.sentAt ?? message.createdAt,
+            time: relativeEntryTime(message.sentAt ?? message.createdAt),
           }))}
         />
       )}

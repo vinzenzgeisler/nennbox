@@ -1,0 +1,38 @@
+.nb-gallery-onboarding {
+  display: grid;
+  gap: var(--nb-space-4);
+}
+
+.nb-gallery-onboarding > h2 {
+  margin: var(--nb-space-6) 0 0;
+}
+
+.nb-gallery-onboarding > h3 {
+  margin: var(--nb-space-4) 0 0;
+  font-size: var(--nb-text-md);
+  font-weight: var(--weight-semibold);
+}
+
+.nb-gallery-onboarding-frame {
+  display: flex;
+  max-width: 28rem;
+  border: 1px solid var(--nb-border);
+}
+
+.nb-gallery-onboarding-frame .nb-onb-sections,
+.nb-gallery-onboarding-frame .nb-emerging {
+  position: static;
+  height: auto;
+  width: 100%;
+  border: 0;
+}
+
+.nb-gallery-onboarding-frame .nb-onb {
+  min-height: 0;
+}
+
+.nb-gallery-onboarding-fields {
+  display: grid;
+  gap: var(--nb-space-4);
+  max-width: 32rem;
+}

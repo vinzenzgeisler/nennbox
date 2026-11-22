@@ -1,3 +1,5 @@
+import { usePreviewStatusChange } from './usePreviewStatusChange.js';
+import { EntryStatusToast } from '../entries/EntryStatusToast.js';
 import { PreviewPanel, useWorkspacePreview } from '@nennbox/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
@@ -14,11 +16,12 @@ import { RegistrationFormSettings } from '../registration/RegistrationFormSettin
 import { EventDocumentSettings } from '../event-documents/EventDocumentSettings.js';
 import { AdminWorkflow } from '../workflow/AdminWorkflow.js';
 import { EventSetup } from '../event-setup/EventSetup.js';
-import { adminFetch, getAdminIdentity } from '../../auth.js';
+import { adminFetch } from '../../auth.js';
+import { useAdminIdentity } from './useAdminIdentity.js';
 
 export function AdminApplication() {
   const previewViewport = useWorkspacePreview();
-  const [identity, setIdentity] = useState(getAdminIdentity());
+  const identity = useAdminIdentity();
   const [events, setEvents] = useState<
     Array<{
       id: string;
@@ -56,28 +59,21 @@ export function AdminApplication() {
     setPreviewOpen(true);
     setPreviewBusy(false);
   }, []);
-  useEffect(() => {
-    let active = true;
-    void adminFetch('/admin/session', { cache: 'no-store' })
-      .then((response) =>
-        response.ok ? (response.json() as Promise<{ role: string }>) : null,
-      )
-      .then((session) => {
-        if (active && (session?.role === 'admin' || session?.role === 'member'))
-          setIdentity((current) =>
-            current
-              ? {
-                  ...current,
-                  role: session.role === 'admin' ? 'Admin' : 'Mitglied',
-                }
-              : null,
-          );
-      })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, []);
+  const selectPaletteEntry = useCallback(
+    (entry: Entry) => {
+      if (entry.eventId !== activeEvent.current) return;
+      setSelectedEntry(entry);
+      setDetailOpen(!previewViewport);
+      setPreviewOpen(previewViewport);
+      setEntriesTarget((current) => ({
+        revision: current.revision + 1,
+        filters: {
+          search: entry.adminDetails?.driver.name ?? entry.orgaCode ?? '',
+        },
+      }));
+    },
+    [previewViewport],
+  );
   const handleSelectionChange = useCallback((entry: Entry | null) => {
     setSelectedEntry(entry);
     if (entry) setPreviewOpen(true);
@@ -151,52 +147,40 @@ export function AdminApplication() {
     setDetailOpen(false);
     setPreviewOpen(false);
   }, []);
+  const previewStatus = usePreviewStatusChange({
+    selectedEntry,
+    activeEvent,
+    setPreviewBusy,
+    setSelectedEntry,
+    previewAccepted,
+    entriesChanged,
+  });
   const entryPreview = selectedEntry ? (
     <EntryPreview
       entry={selectedEntry}
       workflow={previewWorkflow}
       busy={previewBusy}
       onClose={closePreview}
-      onMessage={() => openMessages({ entryId: selectedEntry.id })}
+      onMessage={() =>
+        openMessages({
+          entryId: selectedEntry.id,
+          subject: 'Bitte reiche deine Unterlagen nach',
+          body: 'Hallo {{firstName}},\n\nbitte reiche die noch fehlenden Unterlagen für deine Nennung nach, damit wir sie vollständig bearbeiten können.',
+        })
+      }
       onOpenDetail={() => {
         setDetailOpen(true);
         setPreviewOpen(false);
       }}
-      onNextAction={async (status) => {
-        const requestedEvent = activeEvent.current;
-        const requestedEntry = selectedEntry.id;
-        setPreviewBusy(true);
-        try {
-          const response = await adminFetch(
-            `/admin/entries/${selectedEntry.id}/transitions`,
-            {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({
-                transition: 'acceptance',
-                status,
-                reason: 'In der Nennungsvorschau entschieden',
-              }),
-            },
-          );
-          if (response.ok) {
-            const updated = (await response.json()) as Entry;
-            // The answer may only update the entry that is still open in the same event.
-            if (activeEvent.current === requestedEvent) {
-              setSelectedEntry((current) =>
-                current?.id === requestedEntry ? updated : current,
-              );
-              previewAccepted({
-                eventId: requestedEvent,
-                entryId: requestedEntry,
-              });
-            }
-            entriesChanged();
-          }
-        } finally {
-          if (activeEvent.current === requestedEvent) setPreviewBusy(false);
-        }
-      }}
+      onNextAction={previewStatus.changeStatus}
+      feedback={
+        previewStatus.notice && (
+          <EntryStatusToast
+            notice={previewStatus.notice}
+            clear={previewStatus.clearNotice}
+          />
+        )
+      }
     />
   ) : (
     <PreviewPanel eyebrow="Vorschau" title="Nennung auswählen" />
@@ -210,6 +194,15 @@ export function AdminApplication() {
       entryCount={entryCount}
       entriesNavigationRevision={entriesTarget.revision}
       onEventChange={changeEvent}
+      onEntrySelect={selectPaletteEntry}
+      onEntrySearch={(search) => {
+        setSelectedEntry(null);
+        setDetailOpen(false);
+        setEntriesTarget((current) => ({
+          revision: current.revision + 1,
+          filters: { search },
+        }));
+      }}
       previewOpen={previewOpen && !detailOpen}
       detailOpen={detailOpen}
       identity={identity}

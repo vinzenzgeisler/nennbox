@@ -226,7 +226,7 @@ export const classes = [
   },
 ];
 
-export function gradientImage(index: number): string {
+function gradientImage(index: number): string {
   const palettes = [
     ['#788479', '#333d38'],
     ['#a59e83', '#46514a'],
@@ -237,6 +237,19 @@ export function gradientImage(index: number): string {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient></defs><rect width="640" height="400" fill="url(#g)"/></svg>`;
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }
+/** Exact historical seed placeholders only; never match arbitrary SVGs or uploads. */
+export const legacyDemoGradientImages = Array.from({ length: 4 }, (_, index) =>
+  gradientImage(index),
+);
+
+export function demoRequestedStartNumber(index: number): string | null {
+  const row = rows[index]!;
+  return row[5] === 'accepted' ||
+    ((row[5] === 'pending' || row[5] === 'waitlisted') && index % 2 === 1)
+    ? row[4]
+    : null;
+}
+
 export function demoCreatedAt(index: number): Date {
   const day = index < 12 ? 4 : 3;
   return new Date(Date.UTC(2026, 10, day, 12, 0) - index * 60_000);

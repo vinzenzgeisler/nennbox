@@ -1,0 +1,31 @@
+import type { ReasonCode } from '@nennbox/contracts';
+
+/** Half-sentence reasons for the "Das entsteht" column; the long forms live in reasons.ts. */
+export const shortReasons: Record<ReasonCode, string> = {
+  'license-required': 'Weil nur Lizenzfahrer starten',
+  'license-optional': 'Wer eine hat, trägt sie ein',
+  'license-hidden': 'Gäste brauchen keine Lizenz',
+  'vehicle-pass-historic': 'Für alle historischen Fahrzeuge',
+  'vehicle-pass-mixed': 'Freiwillig, nur bis zur Baujahrgrenze',
+  'displacement-classes': 'Eure Klassen richten sich nach dem Hubraum',
+  'start-number-wish': 'Ihr gebt die Nummer frei',
+  'start-number-assigned': 'Ihr vergebt die Nummern selbst',
+  'start-number-automatic': 'NENNBOX zählt hoch',
+  'capacity-from-expected': 'Aufgerundet auf volle Zehner',
+  'waitlist-on': 'Absagen werden nachbesetzt',
+  'waitlist-off': 'Bei kleinen Feldern selten nötig',
+  'co-driver-on': 'Mit eigenen Daten',
+  'co-driver-off': 'Nur der Fahrer',
+  'double-start-on': 'Mehrere Startmeldungen pro Fahrer',
+  'double-start-off': 'Eine Startmeldung pro Fahrer',
+  'payment-online': 'Zahlung bei der Nennung',
+  'payment-transfer': 'Ihr ordnet Überweisungen zu',
+  'payment-both': 'Teilnehmer wählen selbst',
+  'deadline-14-days': '14 Tage vorher bleibt Zeit für Prüfung',
+  'timing-transponder': 'Nur bei elektronischer Zeitnahme',
+  'safety-emergency-contact': 'Aus Sicherheitsgründen',
+  'template-classes': 'Standard der Vorlage',
+  'template-terms': 'Mustertext, bitte prüfen',
+  'brand-from-logo': 'Farben aus eurem Logo',
+  'brand-default': 'NENNBOX-Farben ohne Logo',
+};

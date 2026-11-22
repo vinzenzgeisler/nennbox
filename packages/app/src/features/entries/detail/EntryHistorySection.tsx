@@ -1,5 +1,6 @@
+import { relativeEntryTime } from './relativeEntryTime.js';
 import { DetailSection, HistoryTimeline } from '@nennbox/ui';
-import { formatShortDateTime, type TimelineItem } from './entryDetailModel.js';
+import { type TimelineItem } from './entryDetailModel.js';
 
 export function EntryHistorySection({ items }: { items: TimelineItem[] }) {
   return (
@@ -8,7 +9,7 @@ export function EntryHistorySection({ items }: { items: TimelineItem[] }) {
         items={items.map((item) => ({
           id: item.id,
           title: item.title,
-          time: formatShortDateTime(item.occurredAt),
+          time: relativeEntryTime(item.occurredAt),
           dateTime: item.occurredAt,
           actor: item.actor,
           tone: item.tone,

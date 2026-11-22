@@ -1,0 +1,115 @@
+/* NENNBOX App · Design Tokens · Version 1.0
+   Gilt für die Verwaltungs-App. Website und Nennformular haben eigene Tokens. */
+
+.nb-admin-workspace,
+.nb-app-design {
+  /* Neutral */
+  --nb-bg: #ffffff;
+  --nb-bg-subtle: #f7f7f5; /* Seitenleiste, ruhige Bereiche */
+  --nb-bg-hover: #f2f3f1; /* Hover von Zeilen und Menüpunkten */
+  --nb-bg-hover-nav: #ecedea; /* Hover in der Seitenleiste */
+  --nb-bg-row-hover: #fafaf9;
+  --nb-border: #eaebe8; /* Trenner */
+  --nb-border-row: #f0f1ee; /* Linie zwischen Listenzeilen */
+  --nb-border-strong: #dcdeda; /* Felder, Sekundärknopf */
+  --nb-fg: #18201c;
+  --nb-fg-secondary: #454d48;
+  --nb-fg-muted: #6e7570; /* 4,8 : 1 auf Weiß */
+  --nb-fg-faint: #8a918c; /* nur ab 16 px oder für Dekor */
+
+  /* Marke */
+  --nb-brand: #193b30; /* Racing Green, nur Hauptaktion */
+  --nb-brand-hover: #0f2219;
+  --nb-brand-subtle: #f2f7f4; /* gewählte Zeile */
+  --nb-brand-accent: #b5e0ca; /* Mint, Logo und Links auf dunkel */
+  --nb-focus: #3fb97a;
+
+  /* Rückmeldung */
+  --nb-ok: #2fa866;
+  --nb-ok-fg: #156339;
+  --nb-warn: #e07a1f;
+  --nb-warn-fg: #b45309;
+  --nb-warn-bg: #fdf3ea;
+  --nb-danger: #b42318;
+  --nb-inverse-bg: #18201c; /* Hinweis und Sammelleiste */
+
+  /* Status einer Nennung · Fläche, Text, Punkt */
+  --nb-status-offen-bg: #f1f2f0;
+  --nb-status-offen-fg: #454d48;
+  --nb-status-offen-dot: #9aa19c;
+  --nb-status-vor-bg: #eaf1fd;
+  --nb-status-vor-fg: #1e4ba6;
+  --nb-status-vor-dot: #3b7bea;
+  --nb-status-zu-bg: #e4f3eb;
+  --nb-status-zu-fg: #156339;
+  --nb-status-zu-dot: #2fa866;
+  --nb-status-neg-bg: #fcece9;
+  --nb-status-neg-fg: #9c2f1c;
+  --nb-status-neg-dot: #e0533a;
+  --nb-status-ab-bg: transparent;
+  --nb-status-ab-fg: #6e7570;
+  --nb-status-ab-dot: #b8beba; /* plus Rahmen #E3E5E1 */
+
+  /* Schrift */
+  --nb-font: Inter, 'Helvetica Neue', Arial, sans-serif;
+  --nb-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --nb-text-2xl: 28px; /* 600, -0.02em · Titel einer Nennung */
+  --nb-text-xl: 24px; /* 600, -0.015em · Seitentitel */
+  --nb-text-lg: 18px; /* 600 · Vorschau, Abschnitte */
+  --nb-text-md: 15px; /* 600 · Zwischentitel */
+  --nb-text-base: 14px; /* 400 · Grundschrift, Zeilenhöhe 1.45 */
+  --nb-text-sm: 12.5px; /* 500 · Metadaten, Spaltenköpfe */
+  --nb-text-code: 12px; /* Mono · Orga-Code */
+
+  /* Abstand · Raster 4 px */
+  --nb-space-1: 4px;
+  --nb-space-2: 8px;
+  --nb-space-3: 12px; /* Mindestluft zum Rand jeder Hover-Fläche */
+  --nb-space-4: 16px;
+  --nb-space-5: 20px;
+  --nb-space-6: 24px;
+  --nb-space-7: 28px; /* Seitenrand der Liste */
+  --nb-space-10: 40px;
+
+  /* Größen */
+  --nb-control-h: 32px; /* Knopf, Feld, Navigation */
+  --nb-control-h-lg: 36px; /* Knöpfe in der Vorschau */
+  --nb-control-h-sm: 28px;
+  --nb-button-px: 14px; /* seitlicher Innenabstand Knopf */
+  --nb-item-px: 12px; /* Menüpunkt, Navigation, Reiter, Feld */
+  --nb-row-h: 60px; /* Listenzeile */
+  --nb-thumb-sm: 32px;
+  --nb-thumb: 40px;
+  --nb-sidebar-w: 232px;
+  --nb-preview-w: 392px;
+
+  /* Ecken */
+  --nb-radius-sm: 6px; /* Status, Kürzel */
+  --nb-radius-md: 8px; /* Knopf, Feld, Navigation, Bild klein */
+  --nb-radius-lg: 12px; /* Menü, Hinweis, Bild groß */
+  --nb-radius-full: 999px;
+
+  /* Ebenen */
+  --nb-shadow-raised: 0 0 0 1px #e3e5e1, 0 1px 2px rgba(16, 24, 20, 0.05);
+  --nb-shadow-popover:
+    0 0 0 1px rgba(16, 24, 20, 0.07), 0 12px 32px -6px rgba(16, 24, 20, 0.18);
+  --nb-shadow-dialog:
+    0 0 0 1px rgba(16, 24, 20, 0.07), 0 24px 64px -12px rgba(16, 24, 20, 0.3);
+  --nb-overlay: rgba(16, 24, 20, 0.28);
+  --nb-focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #3fb97a;
+
+  /* Bewegung */
+  --nb-duration-fast: 120ms; /* Hover, Farbe */
+  --nb-duration-menu: 160ms; /* Menüs, Suchen und springen */
+  --nb-duration-panel: 220ms; /* Vorschau, Hinweis */
+  --nb-ease-out: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-admin-workspace,
+  .nb-app-design {
+    --nb-duration-fast: 0ms;
+    --nb-duration-menu: 0ms;
+    --nb-duration-panel: 0ms;
+  }
+}

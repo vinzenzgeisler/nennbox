@@ -1,31 +1,67 @@
-.nb-dialog footer .nb-confirm-primary {
-  background: var(--color-green);
-  color: var(--color-ivory);
-}
-.nb-dialog footer .nb-confirm-primary:disabled {
-  border-color: var(--color-line);
-  background: var(--color-sage);
-  color: var(--color-graphite);
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-dialog
+  footer
+  .nb-confirm-danger:disabled {
   cursor: not-allowed;
 }
-.nb-dialog footer .nb-confirm-danger {
-  border-color: var(--color-marshal-text);
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-dialog
+  footer
+  .nb-confirm-primary:disabled {
+  cursor: not-allowed;
+}
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-dialog
+  footer
+  .nb-confirm-primary {
+  border-color: var(--nb-brand);
+  border-radius: var(--nb-radius-md);
+  background: var(--nb-brand);
+  color: var(--nb-bg);
+}
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-dialog
+  footer
+  .nb-confirm-primary:hover:not(:disabled) {
+  background: var(--nb-brand-hover);
+}
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-dialog
+  footer
+  .nb-confirm-danger {
+  border-color: var(--nb-danger);
+  border-radius: var(--nb-radius-md);
   background: transparent;
-  color: var(--color-marshal-text);
+  color: var(--nb-danger);
 }
-.nb-dialog footer .nb-confirm-danger:disabled {
-  border-color: var(--color-line);
-  background: var(--color-sage);
-  color: var(--color-graphite);
-  cursor: not-allowed;
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-dialog
+  footer
+  .nb-confirm-danger:hover:not(:disabled) {
+  background: var(--nb-status-neg-bg);
 }
-.nb-reason-body {
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-dialog
+  footer
+  .nb-confirm-primary:disabled,
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-dialog
+  footer
+  .nb-confirm-danger:disabled {
+  border-color: var(--nb-border);
+  background: var(--nb-bg-subtle);
+  color: var(--nb-fg-muted);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-reason-body {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--nb-space-3);
+  color: var(--nb-fg-secondary);
+  font: 400 var(--nb-text-base)/1.45 var(--nb-font);
 }
-.nb-reason-body p {
+:where(.nb-admin-workspace, .nb-app-design) .nb-reason-error {
+  color: var(--nb-danger);
+}
+
+:where(.nb-admin-workspace, .nb-app-design) .nb-reason-body p {
   margin: 0;
-}
-.nb-reason-error {
-  color: var(--color-marshal-text);
 }

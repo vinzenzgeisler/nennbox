@@ -2,7 +2,12 @@ import React, { useId } from 'react';
 export type FileUploadProps = Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   'type'
-> & { label: string; hint?: string; error?: string; selectedFileName?: string };
+> & {
+  label: string;
+  hint?: string | undefined;
+  error?: string | undefined;
+  selectedFileName?: string | undefined;
+};
 export function FileUpload({
   label,
   hint,

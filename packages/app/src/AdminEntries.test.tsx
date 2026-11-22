@@ -37,6 +37,8 @@ const entry = (id: string, eventId: string, classId: string) => ({
   verificationStatus: 'unverified',
   acceptanceStatus: 'pending',
   requestedStartNumber: null,
+  assignedStartNumber: id === entryA ? '42' : null,
+  startNumberStatus: id === entryA ? 'assigned' : 'unassigned',
   priceSnapshotVersion: null,
   formSnapshotVersion: null,
   priceSnapshot: null,
@@ -229,22 +231,44 @@ async function openDetail() {
   await flush();
   expect(container.querySelector('.admin-detail-view')).not.toBeNull();
 }
+async function selectDetailTab(label: string) {
+  const tab = [
+    ...container.querySelectorAll<HTMLButtonElement>(
+      '.nb-entry-page-tabs button',
+    ),
+  ].find((button) => button.textContent?.startsWith(label));
+  expect(tab).toBeDefined();
+  await act(async () => tab!.click());
+  await flush();
+  expect(tab!.getAttribute('aria-pressed')).toBe('true');
+}
+async function openDetailMenu() {
+  const menu = container.querySelector<HTMLDetailsElement>(
+    '.nb-entry-header-actions .nb-menu',
+  )!;
+  await act(async () => menu.querySelector('summary')!.click());
+  await flush();
+  expect(menu.open).toBe(true);
+}
 async function closeDetail() {
   await act(async () =>
-    container.querySelector<HTMLButtonElement>('.nb-detail-back')!.click(),
+    container
+      .querySelector<HTMLButtonElement>('.nb-entry-page-navigation button')!
+      .click(),
   );
   await flush();
   expect(container.querySelector('.admin-detail-view')).toBeNull();
 }
 function detailEntryId() {
   return container
-    .querySelector('.nb-detail-head-title h2')
+    .querySelector('.nb-entry-identity h1')
     ?.textContent?.split(' · ')[0]
     ?.trim();
 }
-/** Status changes go through the reason dialog of the action rail. */
+/** These fixtures have no inverse transition, so status changes require a reason. */
 async function changeStatus(action: string, reason = 'Reviewed') {
   await click(action);
+  expect(container.querySelector('dialog textarea')).not.toBeNull();
   await setInput('Begründung', reason);
   await click('Status ändern');
 }
@@ -512,7 +536,7 @@ describe('AdminEntries', () => {
     expect(firstRow.textContent).toContain('Alex Driver');
     expect(firstRow.textContent).toContain('Porsche 911');
     expect(firstRow.textContent).toContain('Touring A');
-    expect(firstRow.textContent).toContain('42');
+    expect(firstRow.textContent).toContain('Nr. 42');
     expect(firstRow.textContent).not.toContain(entryA);
     expect(firstRow.querySelectorAll('.nb-entry-list-open')).toHaveLength(1);
     expect(
@@ -558,6 +582,7 @@ describe('AdminEntries', () => {
     expect(
       container.querySelector('.admin-detail-view')?.textContent,
     ).toContain('MSC Beispielstadt');
+    await selectDetailTab('Unterlagen');
     const download = container.querySelector(
       '.admin-detail-view a[href*="registration-form-uploads"]',
     ) as HTMLAnchorElement | null;
@@ -801,16 +826,24 @@ describe('AdminEntries', () => {
     await openDetail();
     const actions = [
       ...container.querySelectorAll<HTMLButtonElement>(
-        '.nb-detail-rail button',
+        '.nb-entry-header-actions > button',
       ),
     ];
     expect(actions).toHaveLength(1);
     expect(actions[0]?.textContent).toContain('Zulassen');
+    await openDetailMenu();
     expect(
-      actions.some((button) =>
-        button.textContent?.includes('E-Mail verifizieren'),
-      ),
+      [
+        ...container.querySelectorAll(
+          '.nb-entry-header-actions .nb-menu button',
+        ),
+      ].some((button) => button.textContent?.includes('E-Mail verifizieren')),
     ).toBe(false);
+    expect(
+      [...container.querySelectorAll('.nb-entry-status-options button')].map(
+        (button) => button.textContent,
+      ),
+    ).toEqual(['Angenommen']);
   });
 
   it('applies search immediately and resets to page one for filters and sorting', async () => {
@@ -907,6 +940,7 @@ describe('AdminEntries', () => {
     await click('Speichern');
     expect(bodies.driver).toEqual({ phone: '+49 1' });
     expect(container.textContent).toContain('+49 1');
+    await selectDetailTab('Unterlagen');
     await click('Zahlung erfassen');
     await setInput('Betrag', '50,00');
     await setInput('Begründung', 'Überweisung');
@@ -919,9 +953,10 @@ describe('AdminEntries', () => {
       amountCents: 5000,
       reason: 'Überweisung',
     });
-    expect(container.querySelector('.nb-detail-rail')?.textContent).toContain(
-      'Zahlung erfassen',
-    );
+    await openDetailMenu();
+    expect(
+      container.querySelector('.nb-entry-header-actions .nb-menu')?.textContent,
+    ).toContain('Zahlung erfassen');
   });
 
   it('keeps multi-part names intact when only the phone number changes', async () => {
@@ -1072,9 +1107,11 @@ describe('AdminEntries', () => {
     await chooseEvent(eventA);
     await click(entryA);
     await openDetail();
+    await selectDetailTab('Nachrichten');
     // A sent mail is not a delivery receipt.
     expect(container.textContent).toContain('Gesendet');
     expect(container.textContent).not.toContain('Zugestellt');
+    await selectDetailTab('Übersicht');
     await click('Bearbeiten');
     for (const label of ['Vorname', 'Nachname', 'Geburtsdatum', 'Land'])
       expect(
@@ -1134,13 +1171,14 @@ describe('AdminEntries', () => {
     await chooseEvent(eventA);
     await click(entryA);
     await openDetail();
+    expect(container.textContent).toContain('Motorrad');
+    await selectDetailTab('Unterlagen');
     const text = container.textContent ?? '';
     expect(text).toContain('Einwilligungen');
     expect(text).toContain('participation');
     expect(text).toContain('Version 1 · Deutsch · Erforderlich');
     expect(text).toContain('Ich akzeptiere die Teilnahmebedingungen.');
     expect(text).toContain('nicht mehr hinterlegt');
-    expect(text).toContain('Motorrad');
     // Without stored evidence the detail says so instead of implying consent.
     current = {
       ...withEvidence,
@@ -1149,6 +1187,7 @@ describe('AdminEntries', () => {
     await closeDetail();
     await click(entryA);
     await openDetail();
+    await selectDetailTab('Unterlagen');
     expect(container.textContent).toContain(
       'kein Einwilligungsnachweis gespeichert',
     );

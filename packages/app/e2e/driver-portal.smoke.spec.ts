@@ -238,12 +238,16 @@ test('driver requests a Mailpit link, uploads a document, and the office sees it
   const row = page.getByRole('row').filter({ hasText: `Fahrerin ${suffix}` });
   await row
     .getByRole('button', { name: new RegExp(`Fahrerin ${suffix}.*Lancia`) })
-    .click();
+    .dblclick();
   const detail = page.getByRole('region', {
     name: 'Nennung im Detail',
     exact: true,
   });
   await expect(detail).toBeVisible();
+  await detail
+    .getByRole('navigation', { name: 'Bereiche der Nennung' })
+    .getByRole('button', { name: /^Unterlagen/ })
+    .click();
   const documents = detail.getByRole('region', {
     name: 'Unterlagen und Zahlung',
   });

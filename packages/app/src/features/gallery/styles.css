@@ -122,3 +122,13 @@
     grid-template-columns: 1fr;
   }
 }
+
+.nb-gallery-command-sidebar {
+  display: flex;
+  width: var(--nb-sidebar-w);
+  height: 640px;
+}
+
+.nb-gallery-command-sidebar > .nb-admin-nav {
+  flex: 1;
+}

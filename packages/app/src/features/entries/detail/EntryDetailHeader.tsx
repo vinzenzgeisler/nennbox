@@ -1,39 +1,47 @@
-import { DetailHeader } from '@nennbox/ui';
+import { assignedNumber, numberWish } from '../entryStartNumber.js';
+import { AppThumb } from '@nennbox/ui';
+import type { ReactNode } from 'react';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
-import type { WorkflowView } from '../AdminEntriesModel.js';
-import { formatDateTime, lastChangeAt } from './entryDetailModel.js';
-import { EntryDetailLabels } from './EntryDetailLabels.js';
-
 export function EntryDetailHeader({
   entry,
-  workflow,
-  onBack,
+  actions,
 }: {
   entry: Entry;
-  workflow: WorkflowView | null;
-  onBack: () => void;
+  actions: ReactNode;
 }) {
   const details = entry.adminDetails!;
-  const changed = lastChangeAt(entry);
   return (
-    <DetailHeader
-      backLabel="Nennungen"
-      onBack={onBack}
-      number={entry.requestedStartNumber ?? details.startNumber}
-      title={`${details.driver.name} · ${details.vehicle.make} ${details.vehicle.model}`}
-      subtitle={[
-        `Klasse ${details.eventClass.name}`,
-        entry.orgaCode ? `Orga-Code ${entry.orgaCode}` : null,
-      ]
-        .filter(Boolean)
-        .join(' · ')}
-      meta={
-        <>
-          Eingang {formatDateTime(entry.createdAt)}
-          {changed && <> · Geändert {formatDateTime(changed)}</>}
-        </>
-      }
-      labels={<EntryDetailLabels entry={entry} workflow={workflow} />}
-    />
+    <>
+      <div className="nb-entry-identity">
+        {details.vehicle.imageUrl ? (
+          <img
+            className="nb-entry-identity-image"
+            src={details.vehicle.imageUrl}
+            alt="Fahrzeugbild"
+          />
+        ) : (
+          <AppThumb className="nb-entry-identity-image" />
+        )}
+        <div>
+          <h1>{details.driver.name}</h1>
+          <p>
+            {assignedNumber(entry)
+              ? `Nr. ${assignedNumber(entry)}`
+              : numberWish(entry)
+                ? `Wunsch: ${numberWish(entry)}`
+                : 'Ohne Startnummer'}{' '}
+            · {details.vehicle.make} {details.vehicle.model} ·{' '}
+            {details.eventClass.name}
+            {entry.orgaCode && (
+              <>
+                {' '}
+                · <code>{entry.orgaCode}</code>
+              </>
+            )}
+          </p>
+        </div>
+      </div>
+      <div className="nb-entry-header-actions">{actions}</div>
+    </>
   );
 }

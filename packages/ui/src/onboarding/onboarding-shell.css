@@ -1,0 +1,182 @@
+/*
+ * Guided setup in the app design. Colors, type, radii and motion come from the
+ * scoped --nb-* tokens (app-tokens.css). The few mint tints below exist only in the
+ * onboarding reference and are kept local so no second token source appears.
+ */
+.nb-onb {
+  --nb-onb-top-h: 56px;
+  --nb-onb-sections-w: 248px;
+  --nb-onb-emerging-w: 364px;
+  --nb-onb-tint: #dcebe2;
+  --nb-onb-tint-fg: #19543c;
+  --nb-onb-tint-text: #1f4a3a;
+  --nb-onb-todo: #c3c8c4;
+  --nb-onb-track: #edeeeb;
+  --nb-onb-soft-fg: #565e59;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--nb-bg);
+}
+.nb-onb-top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: var(--nb-space-3);
+  height: var(--nb-onb-top-h);
+  flex: none;
+  box-sizing: border-box;
+  padding: 0 var(--nb-space-5);
+  border-bottom: 1px solid var(--nb-border);
+  background: var(--nb-bg);
+}
+.nb-onb-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--nb-border);
+}
+.nb-onb-title {
+  color: var(--nb-fg-muted);
+  font-size: 13.5px;
+}
+.nb-onb-spacer {
+  flex: 1;
+}
+.nb-onb-position {
+  color: var(--nb-fg-faint);
+  font-size: var(--nb-text-sm);
+}
+.nb-onb-progress {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+}
+.nb-onb-progress span {
+  display: block;
+  height: 100%;
+  background: var(--nb-brand);
+  transition: width var(--nb-duration-panel) var(--nb-ease-out);
+}
+.nb-onb-frame {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.nb-onb-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.nb-onb-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.nb-onb-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: safe center;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 828px;
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 56px 36px var(--nb-space-7);
+}
+.nb-onb.is-wide .nb-onb-content {
+  max-width: 1120px;
+  justify-content: flex-start;
+}
+.nb-onb-dock {
+  flex: none;
+  z-index: 4;
+  background: var(--nb-bg);
+}
+
+/* Foot bar */
+.nb-step-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--nb-space-3);
+  padding: 14px 32px;
+  border-top: 1px solid var(--nb-border-row);
+  background: var(--nb-bg);
+}
+.nb-step-actions-start,
+.nb-step-actions-end {
+  display: flex;
+  align-items: center;
+  gap: var(--nb-space-3);
+}
+.nb-step-actions-end {
+  margin-left: auto;
+}
+.nb-step-actions svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.nb-step-skip {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  height: auto;
+  padding-block: 4px;
+  line-height: 1.25;
+}
+.nb-step-skip small {
+  color: var(--nb-fg-faint);
+  font-size: 11.5px;
+  font-weight: 400;
+}
+.nb-step-actions-hint {
+  color: var(--nb-fg-faint);
+  font-size: var(--nb-text-sm);
+}
+.nb-step-continue:disabled {
+  background: var(--nb-onb-track);
+  color: var(--nb-fg-faint);
+  cursor: not-allowed;
+}
+
+/* Narrow screens: no section bar below 980 px, "Das entsteht" becomes a bar below 1240 px. */
+@media (max-width: 980px) {
+  .nb-onb-sections {
+    display: none;
+  }
+  .nb-onb-title,
+  .nb-onb-divider,
+  .nb-onb-hide-narrow {
+    display: none;
+  }
+  .nb-onb-content {
+    padding: var(--nb-space-6) var(--nb-space-4) var(--nb-space-5);
+  }
+  .nb-step-actions {
+    padding: var(--nb-space-3) var(--nb-space-4);
+  }
+  .nb-step-actions-hint {
+    display: none;
+  }
+  .nb-step-actions-end {
+    flex: 1;
+    margin-left: 0;
+  }
+  .nb-step-continue {
+    flex: 1;
+    height: 44px;
+  }
+}

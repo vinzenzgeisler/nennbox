@@ -82,4 +82,97 @@ describe('AppShell', () => {
     );
     await act(async () => root.unmount());
   });
+  it('opens „Suchen und springen“ with ⌘K and routes a free-text entry search', async () => {
+    const onEntrySearch = vi.fn();
+    const onClosePreview = vi.fn();
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    await act(async () =>
+      root.render(
+        <AppShell
+          onEntrySearch={onEntrySearch}
+          onClosePreview={onClosePreview}
+          previewOpen
+        >
+          <p>Content</p>
+        </AppShell>,
+      ),
+    );
+    await act(async () =>
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'k',
+          metaKey: true,
+          bubbles: true,
+        }),
+      ),
+    );
+    const input = container.querySelector<HTMLInputElement>(
+      'input[aria-label="Suchen und springen"]',
+    )!;
+    expect(document.activeElement).toBe(input);
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value',
+      )!.set!.call(input, 'Mustermann');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(container.textContent).toContain(
+      'Nennungen nach „Mustermann“ suchen',
+    );
+    await act(async () =>
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+      ),
+    );
+    expect(onEntrySearch).toHaveBeenCalledWith('Mustermann');
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+    // Escape inside the palette closes only the palette, not the preview.
+    await act(async () =>
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'k',
+          ctrlKey: true,
+          bubbles: true,
+        }),
+      ),
+    );
+    await act(async () =>
+      container
+        .querySelector('input[role="combobox"]')!
+        .dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+        ),
+    );
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+    expect(onClosePreview).not.toHaveBeenCalled();
+    await act(async () => root.unmount());
+    container.remove();
+  });
+  it('jumps to a setting from the sidebar search', async () => {
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    await act(async () =>
+      root.render(<AppShell>{(view) => <p>View {view}</p>}</AppShell>),
+    );
+    const search = container.querySelector<HTMLButtonElement>(
+      '.nb-admin-nav-search',
+    )!;
+    expect(search.textContent).toContain('Strg K');
+    search.focus();
+    await act(async () => search.click());
+    const option = [
+      ...container.querySelectorAll<HTMLElement>('[role="option"]'),
+    ].find((entry) =>
+      entry.textContent?.includes('Nennungsablauf bearbeiten'),
+    )!;
+    await act(async () => option.click());
+    expect(container.textContent).toContain('View workflow');
+    expect(document.activeElement).toBe(search);
+    await act(async () => root.unmount());
+    container.remove();
+  });
 });

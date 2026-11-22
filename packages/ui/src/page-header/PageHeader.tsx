@@ -10,7 +10,7 @@ export function PageHeader({
   ...props
 }: React.HTMLAttributes<HTMLElement> & {
   title: string;
-  eyebrow?: string;
+  eyebrow?: React.ReactNode;
   description?: string | undefined;
   views?: Array<{ id: string; label: string }>;
   selectedView?: string;

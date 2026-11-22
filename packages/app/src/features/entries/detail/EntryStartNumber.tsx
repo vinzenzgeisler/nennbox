@@ -1,3 +1,5 @@
+import { EntryResponse } from '@nennbox/contracts';
+import { assignedNumber } from '../entryStartNumber.js';
 import { useState } from 'react';
 import { Button, DetailSection, Banner, Field } from '@nennbox/ui';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
@@ -10,7 +12,7 @@ export function EntryStartNumber({
   entry: Entry;
   onUpdated: (entry: Entry) => void;
 }) {
-  const [value, setValue] = useState(entry.requestedStartNumber ?? '');
+  const [value, setValue] = useState(assignedNumber(entry) ?? '');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const save = async () => {
@@ -26,7 +28,16 @@ export function EntryStartNumber({
         },
       );
       if (!response.ok) throw new Error();
-      onUpdated({ ...entry, requestedStartNumber: value.trim() || null });
+      try {
+        const detail = await adminFetch(
+          `/admin/entries/${encodeURIComponent(entry.id)}`,
+        );
+        if (!detail.ok) throw new Error();
+        onUpdated(EntryResponse.parse(await detail.json()));
+      } catch {
+        setMessage('Startnummer gespeichert. Bitte lade die Nennung neu.');
+        return;
+      }
       setMessage('Startnummer gespeichert.');
     } catch {
       setMessage('Nummer belegt oder außerhalb des konfigurierten Bereichs.');
@@ -36,7 +47,10 @@ export function EntryStartNumber({
   };
   return (
     <DetailSection title="Startnummer">
-      <p>Wunschnummer oder manuelle Vergabe durch den Veranstalter.</p>
+      <p>
+        Bestätigte Startnummer vergeben oder entfernen. Der Wunsch bleibt
+        erhalten.
+      </p>
       {message && (
         <Banner
           tone={

@@ -14,7 +14,7 @@ async function signIn(page: import('@playwright/test').Page) {
   await page.locator('#kc-login').click();
   await expect(
     page.getByRole('heading', { level: 1, name: 'Nennungen' }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 30_000 });
   await page
     .getByRole('combobox', { name: 'Veranstaltung' })
     .selectOption({ label: 'Historischer Bergpreis 2027' });
@@ -33,20 +33,24 @@ test('Admin reviews and rejects real documents; list and preview refresh', async
   await signIn(page);
   await page.getByRole('searchbox', { name: 'Suche' }).fill('Anja Richter');
   const row = page.getByRole('row').filter({ hasText: 'Anja Richter' });
-  await expect(row).toContainText('Unterlagen 2/2', { timeout: 90_000 });
-  await expect(row.locator('.nb-entry-list-orga')).toHaveText(
-    /^[2-9A-HJKMNP-TV-Z]{5}$/,
+  await expect(row.locator('.nb-app-dots i').nth(1)).toHaveClass(
+    'nb-app-dot-ok',
+    { timeout: 90_000 },
   );
   await row.locator('button[data-entry-action]').click();
   const preview = page.getByRole('complementary', { name: 'Nennungsvorschau' });
   await expect(preview).toContainText('Hochgeladen');
   await expect(preview).toContainText(/Orga-Code [2-9A-HJKMNP-TV-Z]{5}/);
-  await preview.getByRole('button', { name: 'Vollständig öffnen' }).click();
+  await preview.getByRole('button', { name: 'Nennung öffnen' }).click();
   const detail = page.getByRole('region', {
     name: 'Nennung im Detail',
     exact: true,
   });
   await expect(detail).toBeVisible();
+  await detail
+    .getByRole('navigation', { name: 'Bereiche der Nennung' })
+    .getByRole('button', { name: /^Unterlagen/ })
+    .click();
   await documentRow(page, 'Fahrerlizenz')
     .getByRole('button', { name: 'Prüfen' })
     .click();
@@ -65,11 +69,10 @@ test('Admin reviews and rejects real documents; list and preview refresh', async
     'Dokument ist unleserlich.',
   );
   await detail.getByRole('button', { name: /Nennungen$/ }).click();
-  await expect(row).toContainText('Unterlagen 1/2');
-  await expect(row.locator('[title]')).toHaveAttribute(
-    'title',
-    /Fahrerlizenz: Geprüft.*Fahrzeugschein: Abgelehnt/,
+  await expect(row.locator('.nb-app-dots i').nth(1)).toHaveClass(
+    'nb-app-dot-missing',
   );
+  await expect(row).not.toContainText('Unterlagen 1/2');
   await expect(preview).toContainText('Geprüft');
   await expect(preview).toContainText('Abgelehnt');
 });
@@ -80,15 +83,17 @@ test('Bergpreis documents match the A7/A4 reference at three widths', async ({
   test.setTimeout(180_000);
   await signIn(page);
   const row = page.getByRole('row').filter({ hasText: 'Thomas Berger' });
-  await expect(row).toContainText('Unterlagen 1/2', { timeout: 90_000 });
+  await expect(row.locator('.nb-app-dots i').nth(1)).toHaveClass(
+    'nb-app-dot-missing',
+    { timeout: 90_000 },
+  );
   await row.locator('button[data-entry-action]').click();
   const preview = page.getByRole('complementary', { name: 'Nennungsvorschau' });
   await expect(preview).toContainText('Fahrerlizenz');
   await expect(preview).toContainText('Fahrzeugschein');
   const dir = process.env.DOCUMENTS_SCREENSHOT_DIR;
   if (dir) mkdirSync(dir, { recursive: true });
-  // The inline preview only exists from 1680px (A7); below that the list
-  // links straight to the detail, so the list row is the surface to compare.
+  // The reference preview starts at 1101px; below that rows open the detail.
   if (dir)
     await page.screenshot({
       path: `${dir}/ist-preview-1920x1080.png`,
@@ -99,7 +104,9 @@ test('Bergpreis documents match the A7/A4 reference at three widths', async ({
     [390, 844],
   ] as const) {
     await page.setViewportSize({ width, height });
-    await expect(row).toContainText('Unterlagen 1/2');
+    await expect(row.locator('.nb-app-dots i').nth(1)).toHaveClass(
+      'nb-app-dot-missing',
+    );
     if (dir)
       await page.screenshot({
         path: `${dir}/ist-list-${width}x${height}.png`,
@@ -107,12 +114,16 @@ test('Bergpreis documents match the A7/A4 reference at three widths', async ({
       });
   }
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await preview.getByRole('button', { name: 'Vollständig öffnen' }).click();
+  await preview.getByRole('button', { name: 'Nennung öffnen' }).click();
   const detail = page.getByRole('region', {
     name: 'Nennung im Detail',
     exact: true,
   });
-  await expect(detail).toContainText(/Orga-Code [2-9A-HJKMNP-TV-Z]{5}/);
+  await expect(detail.locator('code')).toHaveText(/^[2-9A-HJKMNP-TV-Z]{5}$/);
+  await detail
+    .getByRole('navigation', { name: 'Bereiche der Nennung' })
+    .getByRole('button', { name: /^Unterlagen/ })
+    .click();
   await expect(documentRow(page, 'Fahrerlizenz')).toContainText('Geprüft');
   await expect(documentRow(page, 'Fahrzeugschein')).toContainText('Fehlt');
   for (const [width, height] of [
@@ -150,7 +161,9 @@ test('Admin configures document activation persistently', async ({ page }) => {
   await page.getByRole('button', { name: 'Nennungen', exact: true }).click();
   await page.getByRole('searchbox', { name: 'Suche' }).fill('Thomas Berger');
   const row = page.getByRole('row').filter({ hasText: 'Thomas Berger' });
-  await expect(row).toContainText('Unterlagen 1/1');
+  await expect(row.locator('.nb-app-dots i').nth(1)).toHaveClass(
+    'nb-app-dot-ok',
+  );
   await row.locator('button[data-entry-action]').click();
   await expect(
     page.getByRole('complementary', { name: 'Nennungsvorschau' }),

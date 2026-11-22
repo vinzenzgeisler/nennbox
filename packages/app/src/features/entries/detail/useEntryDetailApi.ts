@@ -76,6 +76,7 @@ export type EntryAdminAction =
 export function useEntryDetailApi(
   entry: Entry,
   onUpdated: (entry: Entry | null, refresh?: boolean) => void,
+  onSaved?: () => void,
 ) {
   const [busy, setBusy] = useState(false);
   const entryId = entry.id;
@@ -149,6 +150,7 @@ export function useEntryDetailApi(
         if (!fresh.success || fresh.data.id !== entryId)
           return { ok: false, message: 'Die Antwort war unvollständig.' };
         onUpdated(fresh.data);
+        onSaved?.();
         return { ok: true, body };
       } catch {
         return signal.aborted
@@ -158,7 +160,7 @@ export function useEntryDetailApi(
         if (!signal.aborted) setBusy(false);
       }
     },
-    [entryId, entryPath, onUpdated],
+    [entryId, entryPath, onUpdated, onSaved],
   );
   return {
     busy,

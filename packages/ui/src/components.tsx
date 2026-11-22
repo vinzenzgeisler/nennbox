@@ -31,6 +31,7 @@ export * from './empty-state/EmptyState.js';
 export * from './layout/Layout.js';
 export * from './layout/SplitPane.js';
 export * from './workspace/AdminNavigation.js';
+export * from './workspace/CommandPalette.js';
 export * from './workspace/AdminWorkspace.js';
 export * from './workspace/WorkspaceSplit.js';
 export * from './workspace/EntryListRow.js';
@@ -51,3 +52,11 @@ export * from './detail/EvidenceList.js';
 export * from './message-layout/MessageLayout.js';
 export * from './metric/Metric.js';
 export * from './occupancy/OccupancyBar.js';
+
+export * from './workspace/CompletionDots.js';
+export * from './workspace/EntryStatusMenu.js';
+
+export * from './detail/EntryDetailPage.js';
+
+export * from './detail/EntryMessageList.js';
+export * from './onboarding/index.js';

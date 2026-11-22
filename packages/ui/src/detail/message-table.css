@@ -55,3 +55,38 @@
     text-align: left;
   }
 }
+
+/* N3 app presentation; shared registration styles above stay unchanged. */
+:where(.nb-admin-workspace, .nb-app-design) .nb-message-table {
+  color: var(--nb-fg);
+  font: 400 var(--nb-text-base)/1.45 var(--nb-font);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-message-table th {
+  padding: var(--nb-space-3) var(--nb-space-3) var(--nb-space-3) 0;
+  border-bottom: 1px solid var(--nb-border);
+  color: var(--nb-fg-muted);
+  font: 500 var(--nb-text-sm)/1.45 var(--nb-font);
+  letter-spacing: normal;
+  text-transform: none;
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-message-table td {
+  height: var(--nb-row-h);
+  padding: var(--nb-space-3) var(--nb-space-3) var(--nb-space-3) 0;
+  border-color: var(--nb-border-row);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-message-table td:nth-child(3),
+:where(.nb-admin-workspace, .nb-app-design) .nb-message-table td:nth-child(4) {
+  color: var(--nb-fg-muted);
+  font: 400 var(--nb-text-sm)/1.45 var(--nb-font);
+  letter-spacing: normal;
+}
+@media (width < 768px) {
+  :where(.nb-admin-workspace, .nb-app-design) .nb-message-table tr {
+    padding: var(--nb-space-3) 0;
+    border-color: var(--nb-border-row);
+  }
+  :where(.nb-admin-workspace, .nb-app-design) .nb-message-table td {
+    height: auto;
+    padding: var(--nb-space-1) 0;
+  }
+}

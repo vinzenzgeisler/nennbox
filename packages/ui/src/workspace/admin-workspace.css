@@ -1,38 +1,26 @@
 .nb-admin-workspace {
-  --nb-nav-width: 248px;
-
+  --nb-nav-width: var(--nb-sidebar-w);
   display: grid;
   grid-template-columns: var(--nb-nav-width) minmax(0, 1fr);
   min-height: 100vh;
-  background: var(--surface-page);
-  color: var(--color-ink);
-  font: var(--text-body);
   align-items: stretch;
+  background: var(--nb-bg);
+  color: var(--nb-fg);
 }
-.nb-admin-workspace > .nb-admin-nav {
-  min-height: 100%;
-}
-.nb-admin-workspace-body {
-  min-width: 0;
-}
+.nb-admin-workspace-body,
 .nb-admin-workspace-main {
   min-width: 0;
 }
 .nb-admin-workspace-main.is-inset {
-  padding: 0 var(--space-4) var(--space-4);
+  padding: 0 var(--nb-space-4) var(--nb-space-4);
 }
-@media (width < 1280px) and (width >= 768px) {
-  .nb-admin-workspace {
-    --nb-nav-width: 64px;
-  }
-}
-@media (width < 768px) {
+@media (width <= 860px) {
   .nb-admin-workspace {
     display: block;
     padding-bottom: 56px;
   }
   .nb-admin-workspace-main.is-inset {
-    padding: var(--space-3);
+    padding: var(--nb-space-3);
   }
   .nb-admin-workspace .nb-table,
   .nb-admin-workspace .nb-table tbody {
@@ -42,4 +30,9 @@
   .nb-admin-workspace .nb-table thead {
     display: none;
   }
+}
+.nb-app-detail-breadcrumb {
+  padding: var(--nb-space-4) var(--nb-space-7) 0;
+  color: var(--nb-fg-muted);
+  font-size: 13px;
 }

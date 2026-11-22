@@ -1,10 +1,17 @@
+import { assignedNumber } from '../entries/entryStartNumber.js';
+import { EntryDataHints } from '../entries/EntryDataHints.js';
+import { formatEntryHistoryLabel } from '../entries/EntryHistoryLabel.js';
+import { completionStates } from '../entries/completionStates.js';
+import { useState, type ReactNode } from 'react';
 import { dimensionStatus } from '../entries/dimensionStatus.js';
 import type {
   EntryResponse as Entry,
   EntryWorkflowCategory,
 } from '@nennbox/contracts';
 import {
-  Button,
+  AppButton,
+  AdmissionChecklist,
+  AppStatusPill,
   DocumentList,
   KeyboardHintBar,
   PreviewPanel,
@@ -42,6 +49,7 @@ export function EntryPreview({
   onOpenDetail,
   onMessage,
   busy,
+  feedback,
 }: {
   entry: Entry;
   workflow: WorkflowView | null;
@@ -50,7 +58,9 @@ export function EntryPreview({
   onOpenDetail: () => void;
   onMessage: () => void;
   busy: boolean;
+  feedback?: ReactNode;
 }) {
+  const [now] = useState(() => Date.now());
   const details = entry.adminDetails;
   const status = entry.statusProjection?.dimensions;
   const next = status?.find((item) => item.key === 'entry')?.nextAction;
@@ -125,14 +135,13 @@ export function EntryPreview({
   return (
     <PreviewPanel
       eyebrow="Vorschau"
-      number={entry.requestedStartNumber ?? details?.startNumber ?? null}
+      number={assignedNumber(entry)}
       title={details?.driver.name ?? 'Name nicht verfügbar'}
       subtitle={
         details
           ? [
               `${details.vehicle.make} ${details.vehicle.model}`,
               details.eventClass.name,
-              entry.orgaCode ? `Orga-Code ${entry.orgaCode}` : null,
             ]
               .filter(Boolean)
               .join(' · ')
@@ -140,31 +149,56 @@ export function EntryPreview({
       }
       imageUrl={details?.vehicle.imageUrl ?? null}
       imageAlt="Fahrzeugbild"
-      labels={status
-        ?.filter((item) => ['entry', 'payment'].includes(item.key))
-        .map((item) => (
-          <StatusLabel
-            key={item.key}
+      labels={
+        <>
+          <AppStatusPill
             status={
-              item.key === 'payment' && item.meaning === 'not_relevant'
-                ? 'empty'
-                : item.meaning
+              (
+                {
+                  accepted: 'zu',
+                  waitlisted: 'vor',
+                  rejected: 'neg',
+                  withdrawn: 'ab',
+                } as const
+              )[
+                workflow?.statuses.find(
+                  (item) => item.key === entry.acceptanceStatus,
+                )?.category as
+                  'accepted' | 'waitlisted' | 'rejected' | 'withdrawn'
+              ] ?? 'offen'
             }
-            label={item.label.de}
-          />
-        ))}
+          >
+            {status?.find((item) => item.key === 'entry')?.label.de ??
+              workflow?.statuses.find(
+                (item) => item.key === entry.acceptanceStatus,
+              )?.labels.de ??
+              entry.acceptanceStatus}
+          </AppStatusPill>
+          <EntryDataHints entry={entry} />
+          {entry.orgaCode && (
+            <span className="nb-preview-code">
+              Orga-Code <code>{entry.orgaCode}</code>
+            </span>
+          )}
+        </>
+      }
       onClose={onClose}
+      onOpen={onOpenDetail}
       closeLabel="Vorschau schließen"
       footer={
         <div className="nb-preview-actions">
-          {canAdvance && nextStatus && next && (
-            <Button
-              disabled={busy}
-              onClick={() => void onNextAction(nextStatus)}
-            >
-              {nextStatus === 'accepted' ? 'Zulassen' : next.label.de}
-            </Button>
-          )}
+          <div className="nb-preview-action-row">
+            {canAdvance && nextStatus && next && (
+              <AppButton
+                tone="primary"
+                disabled={busy}
+                onClick={() => void onNextAction(nextStatus)}
+              >
+                {nextStatus === 'accepted' ? 'Zulassen' : next.label.de}
+              </AppButton>
+            )}
+            <AppButton onClick={onMessage}>Unterlagen anfordern</AppButton>
+          </div>
           {canAdvance && canAcceptNext && nextStatus && missing.length > 0 && (
             <p className="nb-preview-hint">
               {missing.length === 1
@@ -172,15 +206,45 @@ export function EntryPreview({
                 : `${missing.join(', ')} fehlen noch. Du kannst trotzdem zulassen.`}
             </p>
           )}
-          <div className="nb-preview-secondary-actions">
-            <Button variant="secondary" onClick={onMessage}>
-              Nachricht
-            </Button>
-            <Button variant="secondary" onClick={onOpenDetail}>
-              Vollständig öffnen
-            </Button>
-          </div>
         </div>
+      }
+      recent={
+        <section className="nb-preview-recent">
+          <h3>Zuletzt</h3>
+          {(entry.adminHistory ?? [])
+            .slice(-3)
+            .reverse()
+            .map((item) => (
+              <p key={item.id}>
+                <span>
+                  {formatEntryHistoryLabel(item.kind, item.label, workflow)}
+                </span>
+                <time dateTime={item.occurredAt}>
+                  {new Intl.RelativeTimeFormat('de', {
+                    numeric: 'auto',
+                  }).format(
+                    Math.round(
+                      (new Date(item.occurredAt).getTime() - now) / 3600000,
+                    ),
+                    'hour',
+                  )}
+                </time>
+              </p>
+            ))}
+          {!(entry.adminHistory ?? []).length && (
+            <p>
+              <span>Nennung eingereicht</span>
+              <time dateTime={entry.createdAt}>
+                {new Intl.RelativeTimeFormat('de', { numeric: 'auto' }).format(
+                  Math.round(
+                    (new Date(entry.createdAt).getTime() - now) / 86400000,
+                  ),
+                  'day',
+                )}
+              </time>
+            </p>
+          )}
+        </section>
       }
       hints={
         <KeyboardHintBar
@@ -192,13 +256,14 @@ export function EntryPreview({
         />
       }
     >
-      <DocumentList
-        title="Unterlagen"
-        items={allDocuments}
-        empty={
-          <p>Für diese Veranstaltung sind keine Unterlagen eingerichtet.</p>
-        }
-      />
+      {feedback}
+      <AdmissionChecklist states={completionStates(entry)} />
+      {allDocuments.length > 0 && (
+        <details className="nb-preview-documents">
+          <summary>Unterlagen ansehen</summary>
+          <DocumentList title="Unterlagen" items={allDocuments} />
+        </details>
+      )}
     </PreviewPanel>
   );
 }

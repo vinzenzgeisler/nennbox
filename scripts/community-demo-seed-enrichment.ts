@@ -10,7 +10,10 @@ import {
   emailTemplateVersions,
   saveMailTemplateVersion,
 } from '@nennbox/adapter-postgres';
-import { demoCreatedAt, gradientImage } from './community-demo-data.js';
+import {
+  demoCreatedAt,
+  legacyDemoGradientImages,
+} from './community-demo-data.js';
 import { demoPassenger } from './community-demo-profiles.js';
 
 type Db = Awaited<ReturnType<typeof createDatabase>>['db'];
@@ -143,7 +146,10 @@ export async function updateExistingDemoEntry(
   await db
     .update(vehicles)
     .set({
-      imageUrl: sql`coalesce(${vehicles.imageUrl}, ${gradientImage(index)})`,
+      imageUrl: sql`case when ${vehicles.imageUrl} in (${sql.join(
+        legacyDemoGradientImages.map((url) => sql`${url}`),
+        sql`, `,
+      )}) then null else ${vehicles.imageUrl} end`,
       displacementCc: profile.displacementCc,
       cylinders: profile.cylinders,
       transponderNumber: profile.transponderNumber,

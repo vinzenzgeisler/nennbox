@@ -1,11 +1,19 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { usePreviewEscape } from './usePreviewEscape.js';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
+import { usePaletteEntries } from './usePaletteEntries.js';
+import { useState, type ReactNode } from 'react';
 import {
   AdminNavigation,
+  AppButton,
   AdminWorkspace,
+  CommandPalette,
   PageHeader,
-  Wordmark,
+  Signet,
+  SelectField,
   type IconName,
 } from '@nennbox/ui';
+import { entrySearchCommand, shellCommands } from './shellCommands.js';
+import { useCommandShortcut } from './useCommandShortcut.js';
 
 export type ShellModule = {
   id: string;
@@ -59,6 +67,12 @@ export const APP_NAVIGATION_REGISTRY: Array<{
       },
       { id: 'entries', label: 'Nennungen', icon: 'list' },
       {
+        id: 'workflow',
+        label: 'Nennungsablauf',
+        icon: 'check',
+        mobile: false,
+      },
+      {
         id: 'setup',
         label: 'Einrichten',
         mobileLabel: 'Event',
@@ -85,13 +99,7 @@ export const APP_NAVIGATION_REGISTRY: Array<{
         id: 'account',
         label: 'Einstellungen',
         mobileLabel: 'Konto',
-        icon: 'more',
-      },
-      {
-        id: 'workflow',
-        label: 'Nennungsablauf',
-        icon: 'approval',
-        mobile: false,
+        icon: 'settings',
       },
     ],
   },
@@ -109,11 +117,14 @@ export function AppShell({
   messageEntryId,
   onClearMessageSelection,
   entriesNavigationRevision,
+  onEntrySearch,
+  onEntrySelect,
 }: {
   children: ReactNode | ((view: View) => ReactNode);
   previewOpen?: boolean;
   detailOpen?: boolean;
-  identity?: { name: string; role: string } | null;
+  /** `organization` replaces the role under the name once it is known. */
+  identity?: { name: string; role: string; organization?: string } | null;
   onClosePreview?: () => void;
   activeEvent?: string;
   events?: EventOption[];
@@ -122,7 +133,12 @@ export function AppShell({
   messageEntryId?: string | null;
   onClearMessageSelection?: () => void;
   entriesNavigationRevision?: number;
+  /** Opens the entries filtered by a text typed into „Suchen und springen“. */
+  onEntrySearch?: (search: string) => void;
+  onEntrySelect?: (entry: Entry) => void;
 }) {
+  const [commandOpen, setCommandOpen] = useState(false);
+  useCommandShortcut(() => setCommandOpen((open) => !open));
   const [selection, setSelection] = useState<{ view: View; revision: number }>({
     view: 'entries',
     revision: 0,
@@ -133,36 +149,90 @@ export function AppShell({
       : selection.view;
   const currentView = messageEntryId && view === 'entries' ? 'messages' : view;
   const selectedEvent = events.find((event) => event.id === activeEvent);
-  useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && previewOpen) {
-        onClosePreview?.();
-        document
-          .querySelector<HTMLButtonElement>('[data-selected-entry]')
-          ?.focus();
-      }
-    };
-    document.addEventListener('keydown', closeOnEscape);
-    return () => document.removeEventListener('keydown', closeOnEscape);
-  }, [onClosePreview, previewOpen]);
-  const closeDate = selectedEvent?.registrationClosesAt
-    ? new Intl.DateTimeFormat('de-DE', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'Europe/Berlin',
-      }).format(new Date(selectedEvent.registrationClosesAt))
+  usePreviewEscape(onClosePreview, previewOpen);
+  const [now] = useState(() => Date.now());
+  const deadlineDays = selectedEvent?.registrationClosesAt
+    ? Math.ceil(
+        (new Date(selectedEvent.registrationClosesAt).getTime() - now) /
+          86400000,
+      )
     : null;
+  const eventBreadcrumb = (
+    <span className="nb-app-breadcrumb">
+      <SelectField
+        label="Veranstaltung"
+        labelHidden
+        id="nb-header-event"
+        value={activeEvent}
+        onChange={(event) => onEventChange?.(event.target.value)}
+      >
+        <option value="">Veranstaltung wählen</option>
+        {events.map((event) => (
+          <option key={event.id} value={event.id}>
+            {event.name}
+          </option>
+        ))}
+      </SelectField>
+      <span aria-hidden="true">/</span>
+      <span>{VIEW_TITLES[currentView]}</span>
+    </span>
+  );
+  const navigationItems = APP_NAVIGATION_REGISTRY.flatMap(
+    (group) => group.items,
+  );
+  const navigate = (id: string) => {
+    onClearMessageSelection?.();
+    const item = navigationItems.find((entry) => entry.id === id);
+    if (item)
+      setSelection({
+        view: item.id,
+        revision: entriesNavigationRevision ?? 0,
+      });
+  };
+  const entryCommands = usePaletteEntries(
+    commandOpen,
+    activeEvent,
+    onEntrySelect,
+  );
+  const palette = (
+    <CommandPalette
+      open={commandOpen}
+      onClose={() => setCommandOpen(false)}
+      items={[
+        ...shellCommands({
+          navigation: navigationItems,
+          events,
+          activeEvent,
+          navigate,
+          changeEvent: (id) => onEventChange?.(id),
+        }),
+        ...entryCommands,
+      ]}
+      {...(onEntrySearch
+        ? {
+            queryItems: entrySearchCommand((search) => {
+              onClearMessageSelection?.();
+              onEntrySearch(search);
+            }),
+          }
+        : {})}
+    />
+  );
   return (
     <AdminWorkspace
       navigation={
         <AdminNavigation
           brand={
-            <Wordmark variant="on-green" signetSize="20px" tracking="0.04em" />
+            <span className="nb-app-brand">
+              <span className="nb-app-brand-icon">
+                <Signet />
+              </span>
+              <strong>NENNBOX</strong>
+            </span>
           }
           ariaLabel="Hauptnavigation"
+          eventInHeader
+          onSearch={() => setCommandOpen(true)}
           eventLabel="Veranstaltung"
           eventPlaceholder="Veranstaltung wählen"
           events={events.map((event) => ({ id: event.id, label: event.name }))}
@@ -176,17 +246,7 @@ export function AppShell({
             })),
           }))}
           current={currentView}
-          onNavigate={(id) => {
-            onClearMessageSelection?.();
-            const item = APP_NAVIGATION_REGISTRY.flatMap(
-              (group) => group.items,
-            ).find((entry) => entry.id === id);
-            if (item)
-              setSelection({
-                view: item.id,
-                revision: entriesNavigationRevision ?? 0,
-              });
-          }}
+          onNavigate={navigate}
           user={
             identity ? (
               <span className="nb-user-identity">
@@ -200,7 +260,7 @@ export function AppShell({
                 </b>
                 <span>
                   <strong>{identity.name}</strong>
-                  <small>{identity.role}</small>
+                  <small>{identity.organization ?? identity.role}</small>
                 </span>
               </span>
             ) : undefined
@@ -208,18 +268,31 @@ export function AppShell({
         />
       }
       header={
-        detailOpen && currentView === 'entries' ? null : (
+        detailOpen && currentView === 'entries' ? (
+          <div className="nb-app-detail-breadcrumb">{eventBreadcrumb}</div>
+        ) : (
           <PageHeader
             title={VIEW_TITLES[currentView]}
+            actions={
+              currentView === 'entries' ? (
+                <AppButton tone="primary" onClick={() => navigate('messages')}>
+                  Nachricht schreiben
+                </AppButton>
+              ) : undefined
+            }
+            eyebrow={eventBreadcrumb}
             description={
-              currentView === 'entries' && closeDate
-                ? `Nennungsschluss  ${closeDate.replace(', ', ' · ')}`
+              currentView === 'entries' && deadlineDays !== null
+                ? deadlineDays >= 0
+                  ? `Nennungsschluss in ${deadlineDays} Tagen`
+                  : 'Nennungsschluss vorbei'
                 : undefined
             }
           />
         )
       }
       inset={currentView !== 'entries'}
+      overlay={palette}
     >
       {typeof children === 'function' ? children(currentView) : children}
     </AdminWorkspace>

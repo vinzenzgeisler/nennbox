@@ -2,8 +2,8 @@ import React, { useId } from 'react';
 export type TextareaProps =
   React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
     label: string;
-    hint?: string;
-    error?: string;
+    hint?: string | undefined;
+    error?: string | undefined;
   };
 export function Textarea({ label, hint, error, id, ...props }: TextareaProps) {
   const generated = useId();

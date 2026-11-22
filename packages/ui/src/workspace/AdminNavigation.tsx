@@ -24,6 +24,9 @@ export function AdminNavigation({
   user,
   ariaLabel,
   compact = false,
+  eventInHeader = false,
+  onSearch,
+  searchLabel = 'Suchen',
 }: {
   brand: ReactNode;
   eventLabel: string;
@@ -37,6 +40,10 @@ export function AdminNavigation({
   user?: ReactNode;
   ariaLabel: string;
   compact?: boolean;
+  eventInHeader?: boolean;
+  /** Shows the search field that opens „Suchen und springen“. */
+  onSearch?: () => void;
+  searchLabel?: string;
 }) {
   const items = groups
     .flatMap((group) => group.items)
@@ -83,8 +90,26 @@ export function AdminNavigation({
       >
         <div className="nb-admin-nav-top">
           <div className="nb-admin-nav-brand">{brand}</div>
-          {eventPicker}
+          {!eventInHeader && eventPicker}
         </div>
+        {onSearch && (
+          <button
+            type="button"
+            className="nb-admin-nav-search"
+            aria-haspopup="dialog"
+            aria-keyshortcuts="Meta+K Control+K"
+            onClick={onSearch}
+          >
+            <Icon name="search" />
+            <span>{searchLabel}</span>
+            <kbd className="nb-app-kbd" aria-hidden="true">
+              {typeof navigator !== 'undefined' &&
+              /Mac|iPhone|iPad/.test(navigator.platform)
+                ? '⌘K'
+                : 'Strg K'}
+            </kbd>
+          </button>
+        )}
         <nav>
           {groups.map((group) => (
             <section
@@ -99,16 +124,18 @@ export function AdminNavigation({
         </nav>
         {user && <div className="nb-admin-nav-user">{user}</div>}
       </aside>
-      <div className="nb-admin-mobile-event-picker">
-        <strong>
-          {
-            groups
-              .flatMap((group) => group.items)
-              .find((entry) => entry.id === current)?.label
-          }
-        </strong>
-        {eventPicker}
-      </div>
+      {!eventInHeader && (
+        <div className="nb-admin-mobile-event-picker">
+          <strong>
+            {
+              groups
+                .flatMap((group) => group.items)
+                .find((entry) => entry.id === current)?.label
+            }
+          </strong>
+          {eventPicker}
+        </div>
+      )}
       <nav className="nb-admin-mobile-nav" aria-label={ariaLabel}>
         {items.map((entry) => item(entry, true))}
       </nav>
