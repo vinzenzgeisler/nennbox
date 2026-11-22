@@ -450,7 +450,7 @@ test('Community registration and admin lifecycle with API setup', async ({
         'unverified' &&
       new URL(request.url()).searchParams.get('eventId') === event.id,
   );
-  await page.getByRole('button', { name: 'Nennungen anzeigen' }).click();
+  await page.getByRole('button', { name: 'Anzeigen' }).click();
   await filteredRequest;
   await expect(
     page.getByRole('row').filter({ hasText: participantName }),
@@ -464,7 +464,7 @@ test('Community registration and admin lifecycle with API setup', async ({
   ).toHaveValue(';');
   await page.getByRole('button', { name: 'Erstellen' }).click();
   const downloadButton = page
-    .getByRole('button', { name: 'CSV herunterladen' })
+    .getByRole('button', { name: 'Herunterladen' })
     .first();
   await expect(downloadButton).toBeVisible({ timeout: 30_000 });
   const [csvDownload] = await Promise.all([

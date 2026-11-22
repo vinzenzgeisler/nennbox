@@ -55,6 +55,7 @@ Community-Smoke und Dokumentenabläufe werden ausschließlich in GitHub geprüft
 Keine Screenshots, Pixeldiffs oder lokalen Browser-/Smoke-Läufe verwenden.
 
 Bewusst angepasste E2E-Selektoren beschränken sich auf die verkürzten Knopftexte:
-`CSV-Export erstellen` → `Erstellen` und `Unterlagen speichern` → `Speichern`.
+`CSV-Export erstellen` → `Erstellen`, `Unterlagen speichern` → `Speichern`,
+`Nennungen anzeigen` → `Anzeigen` und `CSV herunterladen` → `Herunterladen`.
 Die Assertions auf Download, Persistenz, Aktivierung und Dokumentstatus bleiben
 unverändert.
