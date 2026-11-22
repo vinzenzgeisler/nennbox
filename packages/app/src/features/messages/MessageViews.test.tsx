@@ -100,19 +100,17 @@ it('applies templates and preserves PDF upload constraints', () => {
 it('retries failed messages, refreshes the outbox and renders relative times', async () => {
   const host = document.createElement('div');
   const root = createRoot(host);
-  const retry = vi
-    .spyOn(messagesApi, 'retry')
-    .mockResolvedValue({
-      id: 'campaign-1',
-      eventId: 'event-1',
-      subject: 'Unterlagen fehlen',
-      status: 'planned',
-      createdAt: new Date().toISOString(),
-      total: 2,
-      sent: 1,
-      failed: 0,
-      recipients: [],
-    });
+  const retry = vi.spyOn(messagesApi, 'retry').mockResolvedValue({
+    id: 'campaign-1',
+    eventId: 'event-1',
+    subject: 'Unterlagen fehlen',
+    status: 'planned',
+    createdAt: new Date().toISOString(),
+    total: 2,
+    sent: 1,
+    failed: 0,
+    recipients: [],
+  });
   const refresh = vi.fn();
   const createdAt = new Date(Date.now() - 60000).toISOString();
   act(() =>
