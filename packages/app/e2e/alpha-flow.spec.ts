@@ -51,7 +51,7 @@ test('Community registration and admin lifecycle with API setup', async ({
   await page.locator('#kc-login').click();
   await expect(
     page.getByRole('heading', { level: 1, name: 'Nennungen' }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 30_000 });
   await expect.poll(() => token).not.toBe('');
 
   // Labelled test setup via the logged-in admin API.

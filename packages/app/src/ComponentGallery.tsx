@@ -2,9 +2,11 @@ import { GalleryEntryDetail } from './features/gallery/GalleryEntryDetail.js';
 import { useState } from 'react';
 import { GalleryAppPrimitives } from './features/gallery/GalleryAppPrimitives.js';
 import { GalleryAdvancedComponents } from './features/gallery/GalleryAdvancedComponents.js';
+import { GalleryOnboardingComponents } from './features/gallery/GalleryOnboardingComponents.js';
 import { GalleryWorkspaceComponents } from './features/gallery/GalleryWorkspaceComponents.js';
 import { GalleryCommandPalette } from './features/gallery/GalleryCommandPalette.js';
 import './features/gallery/gallery-advanced.css';
+import './features/gallery/gallery-onboarding.css';
 import {
   Button,
   Checkbox,
@@ -268,6 +270,7 @@ export function ComponentGallery() {
       </section>
       <GalleryAdvancedComponents />
       <GalleryWorkspaceComponents />
+      <GalleryOnboardingComponents />
       {selected && (
         <SelectionBar
           label="Auswahlaktionen"

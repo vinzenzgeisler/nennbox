@@ -59,3 +59,4 @@ export * from './workspace/EntryStatusMenu.js';
 export * from './detail/EntryDetailPage.js';
 
 export * from './detail/EntryMessageList.js';
+export * from './onboarding/index.js';
