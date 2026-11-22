@@ -5,13 +5,14 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { EventSetupClasses } from './EventSetupClasses.js';
 import { StartNumberRanges } from './StartNumberRanges.js';
 import { initialState } from './eventSetupState.js';
+import type { SetupDraft } from './eventSetupApi.js';
 import type { Range } from './startNumberApi.js';
 
 beforeEach(() => vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true));
 afterEach(() => vi.unstubAllGlobals());
 it('collapses saved classes, opens new classes and retains values while toggling', () => {
   function Classes() {
-    const [draft, setDraft] = useState(() => ({
+    const [draft, setDraft] = useState<SetupDraft>(() => ({
       ...initialState().draft,
       classes: [
         {
