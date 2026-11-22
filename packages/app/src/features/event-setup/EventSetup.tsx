@@ -6,8 +6,8 @@ import {
   AppSettingsLayout,
   AppSettingsNav,
   AppPreviewCard,
-  AppNotice as Banner,
-  AppEmptyState as EmptyState,
+  AppNotice,
+  AppEmptyState,
 } from '@nennbox/ui';
 import type { SetupEvent } from './eventSetupApi.js';
 import { loadRecipient } from './eventRecipientApi.js';
@@ -99,10 +99,7 @@ export function EventSetup({
   };
 
   return (
-    <section
-      className={`event-setup${view === 'event' ? '' : ` is-${view}`}`}
-      aria-label="Veranstaltung einrichten"
-    >
+    <section aria-label="Veranstaltung einrichten">
       <AppView>
         <AppSettingsLayout
           navigation={
@@ -192,9 +189,9 @@ export function EventSetup({
                 onSubmit={submit}
               />
               {setup.message && (
-                <Banner tone={setup.link ? 'success' : 'warning'}>
+                <AppNotice tone={setup.link ? 'success' : 'warning'}>
                   {setup.message}
-                </Banner>
+                </AppNotice>
               )}
               {setup.link && (
                 <p className="nb-app-wrap">
@@ -214,7 +211,7 @@ export function EventSetup({
                     slug={setup.draft.slug}
                   />
                 ) : (
-                  <EmptyState
+                  <AppEmptyState
                     title="Fahrer-Portal"
                     description="Speichere die Veranstaltung zuerst als Entwurf, dann legst du die korrigierbaren Felder fest."
                   />
@@ -230,7 +227,7 @@ export function EventSetup({
                     embedded
                   />
                 ) : (
-                  <EmptyState
+                  <AppEmptyState
                     title="Formularfelder"
                     description="Speichere die Veranstaltung zuerst als Entwurf, dann legst du hier die Formularfelder fest."
                   />
@@ -245,7 +242,7 @@ export function EventSetup({
                     eventId={setup.draft.id}
                   />
                 ) : (
-                  <EmptyState
+                  <AppEmptyState
                     title="Startnummern & Warteliste"
                     description="Speichere die Veranstaltung zuerst als Entwurf, dann legst du hier Nummernbereiche und die Warteliste fest."
                   />

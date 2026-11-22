@@ -21,7 +21,11 @@
   background: var(--nb-bg-subtle);
 }
 .nb-app-settings-nav a {
-  padding: var(--nb-space-2) var(--nb-item-px);
+  display: flex;
+  align-items: center;
+  min-height: var(--nb-control-h);
+  padding: 0 var(--nb-item-px);
+  font-weight: 500;
   border-radius: var(--nb-radius-md);
   color: var(--nb-fg-secondary);
   text-decoration: none;
