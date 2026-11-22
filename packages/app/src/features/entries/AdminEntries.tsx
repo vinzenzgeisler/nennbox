@@ -269,7 +269,7 @@ function AdminEntriesView({
           selectedIds={selectedIds}
           setSelection={setSelection}
           openEntry={autoPreview ? openEntry : openEntryDetail}
-          openDetail={openDetail}
+          openDetail={openEntryDetail}
           onChangeStatus={changeStatus}
           eligibleSelectedItems={eligibleSelectedItems}
           busy={busy}

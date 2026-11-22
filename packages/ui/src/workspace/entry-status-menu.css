@@ -3,6 +3,7 @@
   display: inline-block;
 }
 .nb-entry-status-menu summary {
+  min-height: 0;
   list-style: none;
   cursor: pointer;
   transition: filter var(--nb-duration-fast);

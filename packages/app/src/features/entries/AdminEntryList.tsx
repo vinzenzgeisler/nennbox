@@ -36,7 +36,7 @@ type Props = {
   selectedIds: Set<string>;
   setSelection: Dispatch<SetStateAction<Selection>>;
   openEntry: (id: string) => Promise<void>;
-  openDetail?: () => void;
+  openDetail?: (id: string) => Promise<void>;
   onChangeStatus: (entry: Entry, status: string) => Promise<void>;
   eligibleSelectedItems: Entry[];
   busy: boolean;

@@ -57,6 +57,21 @@ export function AdminApplication() {
     setPreviewOpen(true);
     setPreviewBusy(false);
   }, []);
+  const selectPaletteEntry = useCallback(
+    (entry: Entry) => {
+      if (entry.eventId !== activeEvent.current) return;
+      setSelectedEntry(entry);
+      setDetailOpen(!previewViewport);
+      setPreviewOpen(previewViewport);
+      setEntriesTarget((current) => ({
+        revision: current.revision + 1,
+        filters: {
+          search: entry.adminDetails?.driver.name ?? entry.orgaCode ?? '',
+        },
+      }));
+    },
+    [previewViewport],
+  );
   const handleSelectionChange = useCallback((entry: Entry | null) => {
     setSelectedEntry(entry);
     if (entry) setPreviewOpen(true);
@@ -189,6 +204,7 @@ export function AdminApplication() {
       entryCount={entryCount}
       entriesNavigationRevision={entriesTarget.revision}
       onEventChange={changeEvent}
+      onEntrySelect={selectPaletteEntry}
       onEntrySearch={(search) => {
         setSelectedEntry(null);
         setDetailOpen(false);

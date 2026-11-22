@@ -11,6 +11,7 @@ export function PreviewPanel({
   labels,
   children,
   footer,
+  recent,
   hints,
   onClose,
   closeLabel,
@@ -25,6 +26,7 @@ export function PreviewPanel({
   labels?: ReactNode;
   children?: ReactNode;
   footer?: ReactNode;
+  recent?: ReactNode;
   hints?: ReactNode;
   onClose?: () => void;
   closeLabel?: string;
@@ -85,6 +87,7 @@ export function PreviewPanel({
         {labels && <div className="nb-preview-labels">{labels}</div>}
         <div className="nb-preview-body">{children}</div>
         {footer && <footer className="nb-preview-footer">{footer}</footer>}
+        {recent}
       </div>
       {hints && <div className="nb-preview-hints">{hints}</div>}
     </section>

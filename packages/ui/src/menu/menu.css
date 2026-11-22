@@ -3,6 +3,7 @@
   display: inline-block;
 }
 .nb-menu summary {
+  min-height: 0;
   display: grid;
   place-items: center;
   width: 30px;

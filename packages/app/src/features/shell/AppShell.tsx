@@ -1,4 +1,7 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { usePreviewEscape } from './usePreviewEscape.js';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
+import { usePaletteEntries } from './usePaletteEntries.js';
+import { useState, type ReactNode } from 'react';
 import {
   AdminNavigation,
   AppButton,
@@ -115,6 +118,7 @@ export function AppShell({
   onClearMessageSelection,
   entriesNavigationRevision,
   onEntrySearch,
+  onEntrySelect,
 }: {
   children: ReactNode | ((view: View) => ReactNode);
   previewOpen?: boolean;
@@ -131,6 +135,7 @@ export function AppShell({
   entriesNavigationRevision?: number;
   /** Opens the entries filtered by a text typed into „Suchen und springen“. */
   onEntrySearch?: (search: string) => void;
+  onEntrySelect?: (entry: Entry) => void;
 }) {
   const [commandOpen, setCommandOpen] = useState(false);
   useCommandShortcut(() => setCommandOpen((open) => !open));
@@ -144,23 +149,7 @@ export function AppShell({
       : selection.view;
   const currentView = messageEntryId && view === 'entries' ? 'messages' : view;
   const selectedEvent = events.find((event) => event.id === activeEvent);
-  useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (
-        event.key === 'Escape' &&
-        previewOpen &&
-        !event.defaultPrevented &&
-        !document.querySelector('dialog[open], [role=dialog], details[open]')
-      ) {
-        onClosePreview?.();
-        document
-          .querySelector<HTMLButtonElement>('[data-selected-entry]')
-          ?.focus();
-      }
-    };
-    document.addEventListener('keydown', closeOnEscape);
-    return () => document.removeEventListener('keydown', closeOnEscape);
-  }, [onClosePreview, previewOpen]);
+  usePreviewEscape(onClosePreview, previewOpen);
   const [now] = useState(() => Date.now());
   const deadlineDays = selectedEvent?.registrationClosesAt
     ? Math.ceil(
@@ -200,17 +189,25 @@ export function AppShell({
         revision: entriesNavigationRevision ?? 0,
       });
   };
+  const entryCommands = usePaletteEntries(
+    commandOpen,
+    activeEvent,
+    onEntrySelect,
+  );
   const palette = (
     <CommandPalette
       open={commandOpen}
       onClose={() => setCommandOpen(false)}
-      items={shellCommands({
-        navigation: navigationItems,
-        events,
-        activeEvent,
-        navigate,
-        changeEvent: (id) => onEventChange?.(id),
-      })}
+      items={[
+        ...shellCommands({
+          navigation: navigationItems,
+          events,
+          activeEvent,
+          navigate,
+          changeEvent: (id) => onEventChange?.(id),
+        }),
+        ...entryCommands,
+      ]}
       {...(onEntrySearch
         ? {
             queryItems: entrySearchCommand((search) => {

@@ -1,3 +1,4 @@
+import { formatEntryHistoryLabel } from '../entries/EntryHistoryLabel.js';
 import { completionStates } from '../entries/completionStates.js';
 import { useState } from 'react';
 import { dimensionStatus } from '../entries/dimensionStatus.js';
@@ -148,13 +149,19 @@ export function EntryPreview({
         <>
           <AppStatusPill
             status={
-              nextCategory === 'accepted'
-                ? 'offen'
-                : workflow?.statuses.find(
-                      (item) => item.key === entry.acceptanceStatus,
-                    )?.category === 'accepted'
-                  ? 'zu'
-                  : 'offen'
+              (
+                {
+                  accepted: 'zu',
+                  waitlisted: 'vor',
+                  rejected: 'neg',
+                  withdrawn: 'ab',
+                } as const
+              )[
+                workflow?.statuses.find(
+                  (item) => item.key === entry.acceptanceStatus,
+                )?.category as
+                  'accepted' | 'waitlisted' | 'rejected' | 'withdrawn'
+              ] ?? 'offen'
             }
           >
             {status?.find((item) => item.key === 'entry')?.label.de ??
@@ -200,6 +207,44 @@ export function EntryPreview({
           </div>
         </div>
       }
+      recent={
+        <section className="nb-preview-recent">
+          <h3>Zuletzt</h3>
+          {(entry.adminHistory ?? [])
+            .slice(-3)
+            .reverse()
+            .map((item) => (
+              <p key={item.id}>
+                <span>
+                  {formatEntryHistoryLabel(item.kind, item.label, workflow)}
+                </span>
+                <time dateTime={item.occurredAt}>
+                  {new Intl.RelativeTimeFormat('de', {
+                    numeric: 'auto',
+                  }).format(
+                    Math.round(
+                      (new Date(item.occurredAt).getTime() - now) / 3600000,
+                    ),
+                    'hour',
+                  )}
+                </time>
+              </p>
+            ))}
+          {!(entry.adminHistory ?? []).length && (
+            <p>
+              <span>Nennung eingereicht</span>
+              <time dateTime={entry.createdAt}>
+                {new Intl.RelativeTimeFormat('de', { numeric: 'auto' }).format(
+                  Math.round(
+                    (new Date(entry.createdAt).getTime() - now) / 86400000,
+                  ),
+                  'day',
+                )}
+              </time>
+            </p>
+          )}
+        </section>
+      }
       hints={
         <KeyboardHintBar
           items={[
@@ -217,38 +262,6 @@ export function EntryPreview({
           <DocumentList title="Unterlagen" items={allDocuments} />
         </details>
       )}
-      <section className="nb-preview-recent">
-        <h3>Zuletzt</h3>
-        {(entry.adminHistory ?? [])
-          .slice(-3)
-          .reverse()
-          .map((item) => (
-            <p key={item.id}>
-              <span>{item.label}</span>
-              <time dateTime={item.occurredAt}>
-                {new Intl.RelativeTimeFormat('de', { numeric: 'auto' }).format(
-                  Math.round(
-                    (new Date(item.occurredAt).getTime() - now) / 3600000,
-                  ),
-                  'hour',
-                )}
-              </time>
-            </p>
-          ))}
-        {!(entry.adminHistory ?? []).length && (
-          <p>
-            <span>Nennung eingereicht</span>
-            <time dateTime={entry.createdAt}>
-              {new Intl.RelativeTimeFormat('de', { numeric: 'auto' }).format(
-                Math.round(
-                  (new Date(entry.createdAt).getTime() - now) / 86400000,
-                ),
-                'day',
-              )}
-            </time>
-          </p>
-        )}
-      </section>
     </PreviewPanel>
   );
 }

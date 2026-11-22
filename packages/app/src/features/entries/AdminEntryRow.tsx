@@ -32,7 +32,7 @@ export function AdminEntryRow({
   classes: Array<{ id: string; name: string }>;
   workflow: WorkflowView | null;
   openEntry: (id: string) => Promise<void>;
-  openDetail?: (() => void) | undefined;
+  openDetail?: ((id: string) => Promise<void>) | undefined;
   onChangeStatus: (entry: Entry, status: string) => Promise<void>;
 }) {
   const details = entry.adminDetails;
@@ -58,7 +58,7 @@ export function AdminEntryRow({
                 {hint.key === 'double_starter'
                   ? 'Doppelstarter'
                   : hint.key === 'passenger'
-                    ? 'Beifahrer'
+                    ? 'mit Beifahrer'
                     : 'Nachnennung'}
               </HintLabel>
             ))}
@@ -105,7 +105,7 @@ export function AdminEntryRow({
         })
       }
       onOpen={() => void openEntry(entry.id)}
-      onOpenDetail={openDetail}
+      onOpenDetail={() => void openDetail?.(entry.id)}
       status={
         <EntryStatusMenu
           label={
@@ -137,6 +137,11 @@ export function AdminEntryRow({
       openActionId={entry.id}
       menu={
         <Menu label={`Weitere Aktionen für ${name}`}>
+          {openDetail && (
+            <MenuItem onClick={() => void openDetail(entry.id)}>
+              Öffnen
+            </MenuItem>
+          )}
           <MenuItem onClick={() => void openEntry(entry.id)}>
             Vorschau öffnen
           </MenuItem>

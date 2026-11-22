@@ -165,10 +165,12 @@ it('separates selection, preview, double-click and row status interaction', () =
   );
   expect(status).toHaveBeenCalledWith('accepted');
   expect(preview).not.toHaveBeenCalled();
-  act(() => host.querySelector('tr')!.click());
+  act(() =>
+    host.querySelector<HTMLTableRowElement>('.nb-entry-list-row')!.click(),
+  );
   act(() =>
     host
-      .querySelector('tr')!
+      .querySelector('.nb-entry-list-row')!
       .dispatchEvent(new MouseEvent('dblclick', { bubbles: true })),
   );
   expect(preview).toHaveBeenCalledOnce();
