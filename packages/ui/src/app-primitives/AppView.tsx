@@ -22,14 +22,16 @@ export function AppSection({
   title,
   description,
   children,
+  role,
 }: {
+  role?: 'group';
   title: string;
   description?: string;
   children: ReactNode;
 }) {
   const id = useId();
   return (
-    <section className="nb-app-section" aria-labelledby={id}>
+    <section className="nb-app-section" role={role} aria-labelledby={id}>
       <header>
         <h2 id={id}>{title}</h2>
         {description && <p>{description}</p>}

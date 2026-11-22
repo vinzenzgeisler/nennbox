@@ -6,7 +6,9 @@ export function Dialog({
   onClose,
   children,
   actions,
+  appearance,
 }: {
+  appearance?: 'app';
   open: boolean;
   title: string;
   closeLabel: string;
@@ -26,7 +28,7 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className="nb-dialog"
+      className={appearance === 'app' ? 'nb-app-dialog' : 'nb-dialog'}
       aria-labelledby={titleId}
       onClose={onClose}
       onCancel={(event) => {

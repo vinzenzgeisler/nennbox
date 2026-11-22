@@ -5,7 +5,7 @@ import type {
   ReactNode,
 } from 'react';
 
-type ActionTone = 'primary' | 'secondary' | 'ghost';
+type ActionTone = 'primary' | 'secondary' | 'ghost' | 'danger';
 export function AppButton({
   tone = 'secondary',
   type = 'button',
