@@ -1,0 +1,135 @@
+.nb-app-settings {
+  display: grid;
+  grid-template-columns: var(--nb-sidebar-w) minmax(0, 1fr);
+  gap: var(--nb-space-6);
+  align-items: start;
+  min-width: 0;
+}
+.nb-app-settings.has-aside {
+  grid-template-columns: var(--nb-sidebar-w) minmax(0, 1fr) minmax(
+      0,
+      var(--nb-sidebar-w)
+    );
+}
+.nb-app-settings-nav {
+  position: sticky;
+  top: var(--nb-space-4);
+  display: grid;
+  gap: var(--nb-space-1);
+  padding: var(--nb-space-2);
+  border-radius: var(--nb-radius-md);
+  background: var(--nb-bg-subtle);
+}
+.nb-app-settings-nav a {
+  padding: var(--nb-space-2) var(--nb-item-px);
+  border-radius: var(--nb-radius-md);
+  color: var(--nb-fg-secondary);
+  text-decoration: none;
+  transition:
+    background var(--nb-duration-fast),
+    box-shadow var(--nb-duration-fast);
+}
+.nb-app-settings-nav a:hover {
+  background: var(--nb-bg-hover-nav);
+}
+.nb-app-settings-nav a[aria-current='true'] {
+  color: var(--nb-fg);
+  background: var(--nb-bg);
+  box-shadow: var(--nb-shadow-raised);
+}
+.nb-app-preview-card {
+  display: grid;
+  gap: var(--nb-space-3);
+  padding: var(--nb-space-4);
+  border-radius: var(--nb-radius-lg);
+  background: var(--nb-bg-subtle);
+  overflow-wrap: anywhere;
+}
+.nb-app-input small {
+  font-size: var(--nb-text-sm);
+  color: var(--nb-fg-muted);
+}
+@media (width < 1280px) {
+  .nb-app-settings.has-aside {
+    grid-template-columns: var(--nb-sidebar-w) minmax(0, 1fr);
+  }
+  .nb-app-settings > aside {
+    grid-column: 2;
+  }
+}
+@media (width < 768px) {
+  .nb-app-settings,
+  .nb-app-settings.has-aside {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nb-app-settings > aside {
+    grid-column: auto;
+  }
+  .nb-app-settings-nav {
+    position: static;
+    display: flex;
+    overflow-x: auto;
+    min-width: 0;
+  }
+  .nb-app-settings-nav a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+}
+
+.nb-app-anchor {
+  scroll-margin-block-start: var(--nb-space-4);
+}
+.nb-app-wrap {
+  overflow-wrap: anywhere;
+}
+
+.nb-app-stack[hidden] {
+  display: none;
+}
+
+.nb-app-radio-segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--nb-radius-md);
+  background: var(--nb-bg-hover);
+}
+.nb-app-radio-option {
+  position: relative;
+  cursor: pointer;
+}
+.nb-app-radio-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+.nb-app-radio-option span {
+  display: flex;
+  align-items: center;
+  min-height: var(--nb-control-h-sm);
+  padding: 0 var(--nb-item-px);
+  border-radius: var(--nb-radius-sm);
+  color: var(--nb-fg-secondary);
+  font-size: var(--nb-text-sm);
+}
+.nb-app-radio-option input:checked + span {
+  background: var(--nb-bg);
+  color: var(--nb-fg);
+  box-shadow: var(--nb-shadow-raised);
+}
+.nb-app-radio-option input:focus-visible + span {
+  box-shadow: var(--nb-focus-ring);
+}
+.nb-app-radio-option input:disabled + span {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.nb-app-settings.has-aside > .nb-app-stack {
+  max-width: calc(var(--nb-space-10) * 18);
+}

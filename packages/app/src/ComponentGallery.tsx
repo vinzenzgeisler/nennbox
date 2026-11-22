@@ -1,3 +1,4 @@
+import { GalleryAppSettings } from './features/gallery/GalleryAppSettings.js';
 import { GalleryAdminEditors } from './features/gallery/GalleryAdminEditors.js';
 import { GalleryAppViews } from './features/gallery/GalleryAppViews.js';
 import { GalleryEntryDetail } from './features/gallery/GalleryEntryDetail.js';
@@ -47,6 +48,7 @@ export function ComponentGallery() {
       <GalleryAppPrimitives selected={selected} onSelect={setSelected} />
       <GalleryAppViews />
       <GalleryAdminEditors />
+      <GalleryAppSettings />
       <GalleryCommandPalette />
       <GalleryEntryDetail />
       <section>

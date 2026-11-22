@@ -12,18 +12,31 @@ export function SegmentedControl<Value extends string>({
   options,
   onChange,
   disabled = false,
+  appearance = 'default',
 }: {
   label: string;
   value: Value;
   options: Array<SegmentedOption<Value>>;
   onChange: (value: Value) => void;
   disabled?: boolean;
+  appearance?: 'default' | 'app';
 }) {
   const name = useId();
   return (
-    <div role="radiogroup" aria-label={label} className="nb-segmented">
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className={
+        appearance === 'app' ? 'nb-app-radio-segmented' : 'nb-segmented'
+      }
+    >
       {options.map((option) => (
-        <label key={option.value} className="nb-segmented-option">
+        <label
+          key={option.value}
+          className={
+            appearance === 'app' ? 'nb-app-radio-option' : 'nb-segmented-option'
+          }
+        >
           <input
             type="radio"
             name={name}

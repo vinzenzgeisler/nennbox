@@ -127,12 +127,20 @@ export function AppTable({
 }
 export function AppTextInput({
   label,
+  hint,
   ...props
-}: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+}: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string }) {
+  const hintId = useId();
   return (
     <label className="nb-app-input">
       <span>{label}</span>
-      <input {...props} className="nb-app-field" />
+      <input
+        {...props}
+        aria-label={props['aria-label'] ?? label}
+        aria-describedby={hint ? hintId : props['aria-describedby']}
+        className="nb-app-field"
+      />
+      {hint && <small id={hintId}>{hint}</small>}
     </label>
   );
 }
@@ -151,12 +159,23 @@ export function AppSelect({
 }
 export function AppTextarea({
   label,
+  hint,
   ...props
-}: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string }) {
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  label: string;
+  hint?: string;
+}) {
+  const hintId = useId();
   return (
     <label className="nb-app-input">
       <span>{label}</span>
-      <textarea {...props} className="nb-app-field" />
+      <textarea
+        {...props}
+        aria-label={props['aria-label'] ?? label}
+        aria-describedby={hint ? hintId : props['aria-describedby']}
+        className="nb-app-field"
+      />
+      {hint && <small id={hintId}>{hint}</small>}
     </label>
   );
 }
