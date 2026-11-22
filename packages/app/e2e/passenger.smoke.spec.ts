@@ -267,7 +267,7 @@ test('A co-driver completes data and consents through the personal link; the off
     .click();
   await page
     .getByRole('complementary', { name: 'Nennungsvorschau' })
-    .getByRole('button', { name: 'Vollständig öffnen' })
+    .getByRole('button', { name: 'Nennung öffnen' })
     .click();
   const detail = page.getByRole('region', {
     name: 'Nennung im Detail',
@@ -373,7 +373,7 @@ test('A co-driver completes data and consents through the personal link; the off
     .click();
   await page
     .getByRole('complementary', { name: 'Nennungsvorschau' })
-    .getByRole('button', { name: 'Vollständig öffnen' })
+    .getByRole('button', { name: 'Nennung öffnen' })
     .click();
   const lateDetail = page.getByRole('region', {
     name: 'Nennung im Detail',

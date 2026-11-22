@@ -501,12 +501,12 @@ test('Community registration and admin lifecycle with API setup', async ({
   await expect(preview).toContainText('Ada Lovelace');
   await shots('admin-entry-preview');
   const nextActionButton = preview
-    .locator('.nb-preview-actions > button')
+    .locator('.nb-preview-action-row > .nb-app-btn-primary')
     .first();
   await expect(nextActionButton).toBeVisible();
   await nextActionButton.click();
   await expect(preview).toContainText('Angenommen');
-  await preview.getByRole('button', { name: 'Vollständig öffnen' }).click();
+  await preview.getByRole('button', { name: 'Nennung öffnen' }).click();
   const entryDetail = page.locator('.nb-entry-page');
   const detailTabs = entryDetail.getByRole('navigation', {
     name: 'Bereiche der Nennung',

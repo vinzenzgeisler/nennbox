@@ -285,7 +285,7 @@ test('admin creates a class, terms and opens its public registration in the UI',
       // widths open the preview first; open the detail again until it stays.
       await expect(async () => {
         if (!(await detail.isVisible())) {
-          const full = page.getByRole('button', { name: 'Vollständig öffnen' });
+          const full = page.getByRole('button', { name: 'Nennung öffnen' });
           if (await full.isVisible()) await full.click();
           else await row.locator('button[data-entry-action]').dblclick();
         }
