@@ -154,7 +154,7 @@ export function NumberAndWaitlistSettings({ eventId }: { eventId: string }) {
       <AppDialog
         open={pendingAssign !== null}
         title="Startnummern vergeben?"
-        closeLabel="AppDialog schließen"
+        closeLabel="Dialog schließen"
         onClose={() => setPendingAssign(null)}
         actions={
           <>
