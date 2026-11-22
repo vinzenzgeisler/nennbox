@@ -10,7 +10,6 @@ import {
 } from '@nennbox/ui';
 import { completionStates } from './completionStates.js';
 import type { WorkflowView } from './AdminEntriesModel.js';
-import { documentStatusView, uploadLines } from './documents/documentLines.js';
 type Selection = { eventId: string; ids: Set<string> };
 export function AdminEntryRow({
   entry,
@@ -62,25 +61,6 @@ export function AdminEntryRow({
                     : 'Nachnennung'}
               </HintLabel>
             ))}
-          {entry.documentProjection &&
-            entry.documentProjection.requiredCount > 0 && (
-              <span
-                className="nb-entry-list-document-count"
-                title={uploadLines(entry)
-                  .map(
-                    (line) =>
-                      `${line.label}: ${documentStatusView(line.status).label}`,
-                  )
-                  .join(' · ')}
-              >
-                <HintLabel>
-                  <span className="nb-entry-list-document-label">
-                    Unterlagen{' '}
-                  </span>
-                  {`${entry.documentProjection.uploadedRequiredCount}/${entry.documentProjection.requiredCount}`}
-                </HintLabel>
-              </span>
-            )}
         </>
       }
       className={

@@ -1,0 +1,55 @@
+.nb-entry-filters.nb-filter-bar > .nb-filter-fields {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--nb-space-2);
+}
+
+.nb-entry-search {
+  position: relative;
+  flex: 1 1 200px;
+  max-width: 300px;
+}
+
+.nb-entry-search > svg {
+  position: absolute;
+  left: var(--nb-item-px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.nb-entry-filters svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nb-entry-search .nb-text-input > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.nb-entry-filters .nb-entry-search input {
+  width: 100%;
+  padding-left: 32px;
+}
+
+.nb-entry-sort {
+  margin-left: auto;
+}
+
+.nb-entry-filter-options:not([hidden]) {
+  display: flex;
+  flex: 1 0 100%;
+  gap: var(--nb-space-3);
+  flex-wrap: wrap;
+}

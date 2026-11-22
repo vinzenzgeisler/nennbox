@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Banner,
+  AppButton,
   Button,
   DetailSection,
   FieldGrid,
@@ -104,9 +105,9 @@ export function EntryVehicleSection({
       title="Fahrzeug"
       action={
         !editing ? (
-          <Button variant="text" size={32} onClick={start}>
+          <AppButton tone="ghost" onClick={start}>
             Bearbeiten
-          </Button>
+          </AppButton>
         ) : undefined
       }
     >

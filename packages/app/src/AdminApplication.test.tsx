@@ -212,7 +212,9 @@ async function switchEvent(id: string) {
 }
 const textOf = () => container.textContent ?? '';
 async function openDetailWide() {
-  await click(byText('Vollständig öffnen'));
+  await click(
+    (button) => button.getAttribute('aria-label') === 'Nennung öffnen',
+  );
   expect(container.querySelector('.nb-entry-page')).not.toBeNull();
 }
 function expectEmptyEventView() {
@@ -372,9 +374,11 @@ describe('AdminApplication event switch and detail access', () => {
       [...container.querySelectorAll('.nb-preview-actions button')].map(
         (button) => button.textContent,
       ),
-    ).toEqual(['Nachricht', 'Vollständig öffnen']);
+    ).toEqual(['Unterlagen anfordern']);
     expect(container.querySelector('.nb-preview-hint')).toBeNull();
-    await click(byText('Vollständig öffnen'));
+    await click(
+      (button) => button.getAttribute('aria-label') === 'Nennung öffnen',
+    );
     const detail = container.querySelector('.nb-entry-page')!;
     expect(detail.textContent).toContain('Zugelassen');
     expect(detail.textContent).not.toContain('Zulassen');
@@ -434,12 +438,14 @@ describe('AdminApplication event switch and detail access', () => {
     expectEmptyEventView();
   });
 
-  it('opens the preview on its own on a wide screen and offers both ways into the detail', async () => {
+  it('opens the preview on its own on a wide screen and opens detail through its header', async () => {
     await mount();
     expect(container.querySelector('.nb-preview-panel h2')?.textContent).toBe(
       'Alex Driver',
     );
-    await click(byText('Vollständig öffnen'));
+    await click(
+      (button) => button.getAttribute('aria-label') === 'Nennung öffnen',
+    );
     expect(container.querySelector('.nb-entry-page')).not.toBeNull();
     await click(
       (button) =>

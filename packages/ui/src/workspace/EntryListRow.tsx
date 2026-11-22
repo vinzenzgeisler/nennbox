@@ -1,3 +1,4 @@
+import { AppThumb } from '../app-primitives/AppPrimitives.js';
 import type { ReactNode } from 'react';
 import { Checkbox } from '../choice/Choice.js';
 export function EntryListRow({
@@ -72,9 +73,7 @@ export function EntryListRow({
           {imageUrl ? (
             <img src={imageUrl} alt={imageAlt} />
           ) : (
-            <span className="nb-entry-list-image-empty" aria-label={imageAlt}>
-              —
-            </span>
+            <AppThumb className="nb-entry-list-image-empty" />
           )}
           {onOpen ? (
             <button
