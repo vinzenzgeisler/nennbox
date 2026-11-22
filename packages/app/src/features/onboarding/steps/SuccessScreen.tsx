@@ -30,6 +30,7 @@ async function copyLink(url: string): Promise<boolean> {
 function useQrCode(url: string) {
   const [svg, setSvg] = useState('');
   useEffect(() => {
+    if (!url) return;
     let current = true;
     import('qrcode')
       .then(({ default: qr }) =>
@@ -73,7 +74,7 @@ export function SuccessScreen({
 }) {
   const url = proposal.registrationUrl;
   const open = outcome === 'open';
-  const qr = useQrCode(url);
+  const qr = useQrCode(open ? url : '');
   const [copied, setCopied] = useState(false);
   const share = async () => {
     if (typeof navigator.share === 'function') {
@@ -183,12 +184,15 @@ export function SuccessScreen({
             >
               {copied ? 'Link kopiert' : 'Link kopieren'}
             </AppButton>
-            <AppButton onClick={() => void share()}>Teilen</AppButton>
+            <AppButton onClick={() => go('summary')}>
+              Vorschau ansehen
+            </AppButton>
+            {open && <AppButton onClick={() => void share()}>Teilen</AppButton>}
           </div>
           <p className="nb-onb-note">
             {open
               ? 'Prototyp: Diese Adresse wird erst mit der Anbindung an NENNBOX aktiv.'
-              : 'Nur wer diesen Link hat, sieht die Seite. Prototyp: Die Adresse wird erst mit der Anbindung an NENNBOX aktiv.'}
+              : 'Prototyp: Der Entwurf bleibt auf diesem Gerät. Die Adresse wird erst mit der Anbindung an NENNBOX aktiv.'}
           </p>
         </div>
         {open && qr ? (

@@ -32,6 +32,18 @@ Rules that follow from the reference:
 
 Open according to the reference (placeholders in use): drawings for the cards, final key bindings (Esc), logo/colour derivation step, legal participation terms, dark mode, leaving and coming back.
 
+Implementation boundaries of the local prototype:
+
+- Participant languages are German and English, matching the existing public form. Other reference languages stay unavailable with an explanation. Interface language is independently indicated as DE in the header; an interactive interface-language switch awaits translated setup copy (there is no English administrative interface yet). Do not make the participant-language choice change the office language.
+- The form screen groups actual registration fields and only switches off optional fields. Required fields stay protected in `suggestEventConfig`, including after the event type changes.
+- The summary alone renders proposal-based participant previews. Enter uses the same completion action as the footer; draft is the default, opening requires a deliberate choice. The draft's “Vorschau ansehen” returns to that local preview, not to an inactive external address.
+- No server draft, private sharing token, demo entries, team invitations or mail-based return flow is invented. Links and publication are still local simulations; the draft explains this. QR output is generated only after the simulated opening.
+- “Das übersetzt ihr selbst” counts the event title, each class name and participation terms per additional language as open. No missing translation blocks completion.
+- Mobile retains the functional back button in the footer, alongside full-width forward navigation; the reference's separate top back arrow is not duplicated. Card rows, hidden descriptions, breakpoints (1240/980 px), sheet and summary stacking follow the reference CSS.
+
+Verification for onboarding uses unit/route tests and CI. Do not take screenshots, compare pixels or start a local browser-smoke stack for this design work; final visual acceptance belongs to the lead. Inspect `quelle/O1Richtung.dc.html`, `quelle/O8Bausteine.dc.html`, the individual `quelle/*.dc.html` screens and `referenz/onboarding-bausteine.css` from the design handoff when changing these components.
+
+
 This repository contains two separate design foundations: the new administrative app tokens above and the established public website/registration tokens below. The complete NENNBOX brandbook is maintained in the private design repository.
 
 ## Public website and registration tokens

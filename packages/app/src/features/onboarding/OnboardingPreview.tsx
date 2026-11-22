@@ -114,7 +114,7 @@ export function OnboardingPreview() {
     resolved,
     proposal,
     patch,
-    next,
+    next: isSummary ? () => publish(way) : next,
     canContinue: allowed,
     eyebrow,
     accepted,
@@ -198,6 +198,13 @@ export function OnboardingPreview() {
       progressLabel="Fortschritt der Einrichtung"
       headerEnd={
         <>
+          <span
+            className="nb-onb-position"
+            aria-label="Oberflächensprache: Deutsch"
+            title="Das Einrichten ist bisher auf Deutsch verfügbar. Die Sprachen für Teilnehmer wählt ihr separat."
+          >
+            DE
+          </span>
           {state.savedAt && (
             <span className="nb-onb-position nb-onb-hide-narrow">
               {`Gespeichert · ${formatTime(state.savedAt)}`}

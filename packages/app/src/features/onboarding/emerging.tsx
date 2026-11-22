@@ -255,7 +255,7 @@ export function buildEmerging(input: EmergingInput): {
   if (translations.length)
     groups.push({
       id: 'translations',
-      title: 'Das übersetzt ihr selbst',
+      title: `Das übersetzt ihr selbst · ${(proposal.classes.length + 2) * extraLanguages} offen`,
       icon: <OnboardingIcon path={icons.translate} />,
       rows: translations.map(fieldRow),
     });

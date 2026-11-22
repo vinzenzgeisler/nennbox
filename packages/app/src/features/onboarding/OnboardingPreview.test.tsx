@@ -260,7 +260,9 @@ describe('onboarding prototype', () => {
     expect(row('Sprachen')?.value).toBe('noch offen');
     pick('Englisch');
     expect(row('Sprachen')?.value).toBe('Deutsch, Englisch');
-    expect(container.textContent).toContain('Das übersetzt ihr selbst');
+    expect(container.textContent).toContain(
+      'Das übersetzt ihr selbst · 6 offen',
+    );
     expect(container.textContent).toContain('Klassennamen');
   });
 
@@ -314,6 +316,19 @@ describe('onboarding prototype', () => {
     );
     act(() => phone.click());
     expect(rowOf('Telefon').classList.contains('is-off')).toBe(false);
+  });
+
+  it('finishes the summary with Enter and opens the local preview from the draft', () => {
+    walkTo('Alles bereit zum Öffnen?');
+    press('Enter');
+    expect(heading()).toBe('Euer Entwurf steht.');
+    expect(container.querySelector('.nb-onb-qr')).toBeNull();
+    click(button('Vorschau ansehen'));
+    expect(heading()).toBe('Alles bereit zum Öffnen?');
+    expect(container.querySelector('.nb-onb-browser')).not.toBeNull();
+    pick('Jetzt öffnen');
+    press('Enter');
+    expect(heading()).toBe('Eure Nennung ist offen.');
   });
 
   it('ends in a draft: summary with real preview tabs, then "Euer Entwurf steht"', () => {
