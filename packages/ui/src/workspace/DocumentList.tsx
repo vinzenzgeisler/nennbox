@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Icon } from '../icon/Icon.js';
 export function DocumentList({
   title,
   items,
@@ -26,6 +27,9 @@ export function DocumentList({
         <ul>
           {items.map((item) => (
             <li key={item.id} className={item.emphasis ? 'is-emphasis' : ''}>
+              <span className="nb-document-list-icon" aria-hidden="true">
+                <Icon name="document" />
+              </span>
               <span className="nb-document-list-label">
                 {item.href ? <a href={item.href}>{item.label}</a> : item.label}
                 {item.note && <small>{item.note}</small>}

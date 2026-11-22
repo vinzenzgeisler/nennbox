@@ -1,3 +1,4 @@
+import { GalleryEntryDetail } from './features/gallery/GalleryEntryDetail.js';
 import { useState } from 'react';
 import { GalleryAppPrimitives } from './features/gallery/GalleryAppPrimitives.js';
 import { GalleryAdvancedComponents } from './features/gallery/GalleryAdvancedComponents.js';
@@ -41,6 +42,7 @@ export function ComponentGallery() {
       </header>
       <GalleryAppPrimitives selected={selected} onSelect={setSelected} />
       <GalleryCommandPalette />
+      <GalleryEntryDetail />
       <section>
         <h2>Buttons</h2>
         <div className="nb-gallery-row">

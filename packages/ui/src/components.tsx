@@ -55,3 +55,7 @@ export * from './occupancy/OccupancyBar.js';
 
 export * from './workspace/CompletionDots.js';
 export * from './workspace/EntryStatusMenu.js';
+
+export * from './detail/EntryDetailPage.js';
+
+export * from './detail/EntryMessageList.js';

@@ -29,3 +29,55 @@
 .nb-reason-error {
   color: var(--color-marshal-text);
 }
+
+/* N3 app presentation; shared registration styles above stay unchanged. */
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-dialog
+  footer
+  .nb-confirm-primary {
+  border-color: var(--nb-brand);
+  border-radius: var(--nb-radius-md);
+  background: var(--nb-brand);
+  color: var(--nb-bg);
+}
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-dialog
+  footer
+  .nb-confirm-primary:hover:not(:disabled) {
+  background: var(--nb-brand-hover);
+}
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-dialog
+  footer
+  .nb-confirm-danger {
+  border-color: var(--nb-danger);
+  border-radius: var(--nb-radius-md);
+  background: transparent;
+  color: var(--nb-danger);
+}
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-dialog
+  footer
+  .nb-confirm-danger:hover:not(:disabled) {
+  background: var(--nb-status-neg-bg);
+}
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-dialog
+  footer
+  .nb-confirm-primary:disabled,
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-dialog
+  footer
+  .nb-confirm-danger:disabled {
+  border-color: var(--nb-border);
+  background: var(--nb-bg-subtle);
+  color: var(--nb-fg-muted);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-reason-body {
+  gap: var(--nb-space-3);
+  color: var(--nb-fg-secondary);
+  font: 400 var(--nb-text-base)/1.45 var(--nb-font);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-reason-error {
+  color: var(--nb-danger);
+}

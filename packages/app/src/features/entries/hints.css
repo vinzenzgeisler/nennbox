@@ -4,14 +4,21 @@
   display: block;
 }
 
+.entry-driver-name {
+  color: var(--nb-fg);
+}
+
 .entry-hint {
   align-self: flex-start;
-  padding: var(--space-1) var(--space-2);
-  box-shadow: inset 0 0 0 1px var(--color-ink);
-  font: var(--text-label);
+  padding: var(--nb-space-1) var(--nb-space-2);
+  border-radius: var(--nb-radius-sm);
+  background: var(--nb-warn-bg);
+  color: var(--nb-warn-fg);
+  font: inherit;
+  font-size: var(--nb-text-sm);
 }
 
 .entry-vehicle-name {
-  color: var(--color-graphite);
-  font-size: var(--type-small-size-app);
+  color: var(--nb-fg-muted);
+  font-size: var(--nb-text-sm);
 }

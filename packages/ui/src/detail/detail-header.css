@@ -65,3 +65,72 @@
     text-align: left;
   }
 }
+
+/* N3 app presentation; shared registration styles above stay unchanged. */
+:where(.nb-admin-workspace, .nb-app-design) .nb-detail-head {
+  gap: var(--nb-space-4);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--nb-space-2);
+  min-height: var(--nb-control-h);
+  padding: 0 var(--nb-item-px);
+  margin-inline-start: calc(-1 * var(--nb-item-px));
+  border-radius: var(--nb-radius-md);
+  color: var(--nb-fg-secondary);
+  font: 500 var(--nb-text-base)/1.45 var(--nb-font);
+  transition: background var(--nb-duration-fast);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-detail-back:hover {
+  background: var(--nb-bg-hover);
+  text-decoration: none;
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-detail-back:focus-visible {
+  outline: none;
+  box-shadow: var(--nb-focus-ring);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-detail-head-main {
+  align-items: center;
+  gap: var(--nb-space-4);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-detail-number {
+  display: grid;
+  place-items: center;
+  min-width: var(--nb-row-h);
+  min-height: var(--nb-row-h);
+  border-radius: var(--nb-radius-lg);
+  background: var(--nb-bg-subtle);
+  color: var(--nb-fg-secondary);
+  font: 600 var(--nb-text-xl)/1.1 var(--nb-font);
+  font-variation-settings: normal;
+  letter-spacing: -0.015em;
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-detail-head-title h2 {
+  color: var(--nb-fg);
+  font: 600 var(--nb-text-2xl)/1.1 var(--nb-font);
+  letter-spacing: -0.02em;
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-detail-head-title p {
+  margin-top: var(--nb-space-2);
+  color: var(--nb-fg-muted);
+  font: 400 var(--nb-text-base)/1.45 var(--nb-font);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-detail-meta {
+  margin: 0;
+  color: var(--nb-fg-muted);
+  font: 400 var(--nb-text-sm)/1.45 var(--nb-font);
+  letter-spacing: normal;
+  text-transform: none;
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-detail-labels {
+  gap: var(--nb-space-2);
+}
+@media (width < 768px) {
+  :where(.nb-admin-workspace, .nb-app-design) .nb-detail-head-main {
+    gap: var(--nb-space-3);
+  }
+  :where(.nb-admin-workspace, .nb-app-design) .nb-detail-head-title h2 {
+    font-size: var(--nb-text-xl);
+  }
+}

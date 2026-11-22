@@ -1,5 +1,6 @@
+import { EntryDetailHost } from './detail/EntryDetailHost.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { SelectField } from '@nennbox/ui';
+import { EntryEventPicker } from './EntryEventPicker.js';
 import { EntryStatusToast } from './EntryStatusToast.js';
 import { useEntryListStatusChanges } from './useEntryListStatusChanges.js';
 import {
@@ -9,7 +10,6 @@ import {
   type EntryQuery,
 } from './AdminEntriesModel.js';
 import { AdminEntriesState } from './AdminEntriesState.js';
-import { AdminEntryDetail } from './AdminEntryDetail.js';
 import { AdminEntryList } from './AdminEntryList.js';
 import { useAdminEntryActions } from './useAdminEntryActions.js';
 import { useAdminEntriesData } from './useAdminEntriesData.js';
@@ -235,19 +235,11 @@ function AdminEntriesView({
         Nennungen
       </h2>
       {!onSharedEventChange && (
-        <SelectField
-          label="Veranstaltung"
-          aria-label="Veranstaltung"
-          value={eventId}
-          onChange={(e) => changeEvent(e.target.value)}
-        >
-          <option value="">Veranstaltung wählen</option>
-          {events.map((event) => (
-            <option key={event.id} value={event.id}>
-              {event.name}
-            </option>
-          ))}
-        </SelectField>
+        <EntryEventPicker
+          events={events}
+          eventId={eventId}
+          onChange={changeEvent}
+        />
       )}
       {!(isDetailOpen && selected) && (
         <AdminEntryList
@@ -279,7 +271,7 @@ function AdminEntriesView({
         />
       )}
       {isDetailOpen && selected && (
-        <AdminEntryDetail
+        <EntryDetailHost
           key={selected.id}
           selected={selected}
           classes={classes}
@@ -289,12 +281,17 @@ function AdminEntriesView({
           transition={transition}
           onBack={closeDetail}
           onMessage={onMessage}
-          onUpdated={(entry, refresh = true) => {
-            setSelected(entry);
-            if (refresh) setRefreshRevision((value) => value + 1);
-          }}
+          onChangeStatus={changeStatus}
+          items={items}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          openEntry={openEntry}
+          setSelected={setSelected}
+          setRefreshRevision={setRefreshRevision}
         />
       )}
+
       <EntryStatusToast
         notice={notice ?? bulkNotice}
         clear={notice ? clearNotice : clearBulkNotice}

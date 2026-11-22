@@ -74,3 +74,78 @@
   gap: var(--space-3);
   margin-top: var(--space-4);
 }
+
+/* N3 app presentation; shared registration styles above stay unchanged. */
+:where(.nb-admin-workspace, .nb-app-design) .nb-detail-section {
+  padding: var(--nb-space-7) 0;
+  border: 0;
+}
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-detail-section
+  + .nb-detail-section {
+  padding-top: 0;
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-detail-section > header {
+  align-items: center;
+  gap: var(--nb-space-3);
+  margin-bottom: var(--nb-space-3);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-detail-section h3 {
+  color: var(--nb-fg);
+  font: 600 var(--nb-text-md)/1.45 var(--nb-font);
+  letter-spacing: normal;
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-field-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  margin: 0;
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-field-item {
+  display: grid;
+  grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0;
+  padding-block: var(--nb-space-2);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-field-item dt {
+  margin: 0;
+  color: var(--nb-fg-muted);
+  font: 400 var(--nb-text-base)/1.45 var(--nb-font);
+  letter-spacing: normal;
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-field-item dd {
+  margin: 0;
+  color: var(--nb-fg);
+  font: 400 var(--nb-text-base)/1.45 var(--nb-font);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-field-empty,
+:where(.nb-admin-workspace, .nb-app-design) .nb-field-item dd .nb-field-empty {
+  color: var(--nb-fg-muted);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-detail-note {
+  margin-top: var(--nb-space-3);
+  color: var(--nb-fg-muted);
+  font: 400 var(--nb-text-base)/1.45 var(--nb-font);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-form-grid {
+  gap: var(--nb-space-4) var(--nb-space-6);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-form-actions {
+  gap: var(--nb-space-3);
+  margin-top: var(--nb-space-4);
+}
+@media (width < 768px) {
+  :where(.nb-admin-workspace, .nb-app-design) .nb-field-item {
+    grid-template-columns: minmax(0, 110px) minmax(0, 1fr);
+    gap: var(--nb-space-3);
+  }
+}
+
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-entry-page-content
+  > .nb-detail-section {
+  padding: 0;
+}

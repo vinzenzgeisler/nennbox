@@ -1,43 +1,3 @@
-.admin-detail label {
-  display: grid;
-  gap: var(--space-1);
-  font: var(--text-label);
-}
-
-.admin-detail textarea,
-.admin-detail button {
-  font: var(--text-body);
-  min-height: var(--target-min);
-  padding: var(--space-2) var(--space-3);
-}
-
-.admin-actions {
-  display: flex;
-  align-items: end;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  margin-block: var(--space-4);
-}
-
-.admin-table-wrap {
-  overflow-x: auto;
-  border: 1px solid var(--color-line);
-  background: var(--color-sage);
-}
-
-.admin-table-wrap table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.admin-table-wrap th,
-.admin-table-wrap td {
-  padding: var(--space-3);
-  border-bottom: var(--space-1) solid var(--color-line);
-  white-space: nowrap;
-}
-
 .link-button {
   border: 0;
   background: none;
@@ -46,31 +6,9 @@
   cursor: pointer;
 }
 
-.admin-detail,
 .admin-state {
-  margin-block: var(--space-8);
-  padding: var(--space-4);
-  background: var(--color-sage);
-  border: 1px solid var(--color-line);
-  border-radius: 0;
-}
-
-.admin-detail dl {
-  display: grid;
-  grid-template-columns: minmax(10rem, 1fr) 2fr;
-  gap: var(--space-2) var(--space-4);
-  overflow-wrap: anywhere;
-}
-
-.admin-detail dt {
-  font: var(--text-label);
-}
-
-.admin-detail textarea {
-  min-height: 7rem;
-}
-
-.admin-dependency {
-  color: var(--color-graphite);
-  font-size: var(--type-small-size);
+  margin-block: var(--nb-space-7);
+  padding: var(--nb-space-4);
+  background: var(--nb-bg-subtle);
+  border-radius: var(--nb-radius-lg);
 }

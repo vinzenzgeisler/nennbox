@@ -59,3 +59,92 @@
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
 }
+
+/* N3 app presentation; shared registration styles above stay unchanged. */
+:where(.nb-admin-workspace, .nb-app-design) .nb-rail-label {
+  margin: 0 0 var(--nb-space-2);
+  color: var(--nb-fg-secondary);
+  font: 600 var(--nb-text-sm)/1.45 var(--nb-font);
+  letter-spacing: normal;
+  text-transform: none;
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-next-step {
+  padding-bottom: var(--nb-space-5);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-next-step p {
+  margin-top: var(--nb-space-3);
+  color: var(--nb-fg-muted);
+  font: 400 var(--nb-text-sm)/1.45 var(--nb-font);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-next-button {
+  height: var(--nb-control-h-lg);
+  min-height: var(--nb-control-h-lg);
+  padding-inline: var(--nb-button-px);
+  border: 0;
+  background: var(--nb-brand);
+  color: var(--nb-bg);
+  border-radius: var(--nb-radius-md);
+  font: 500 var(--nb-text-base)/1.45 var(--nb-font);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-action-group {
+  padding: var(--nb-space-5) 0;
+  border-color: var(--nb-border);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-action-group > div {
+  gap: var(--nb-space-1);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-rail-action {
+  min-height: var(--nb-control-h);
+  gap: var(--nb-space-2);
+  padding: var(--nb-space-1) var(--nb-item-px);
+  border: 0;
+  border-radius: var(--nb-radius-md);
+  background: transparent;
+  color: var(--nb-fg-secondary);
+  font: 500 var(--nb-text-base)/1.45 var(--nb-font);
+  transition:
+    background var(--nb-duration-fast),
+    color var(--nb-duration-fast);
+}
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-rail-action:hover:not(:disabled) {
+  background: var(--nb-bg-hover);
+  color: var(--nb-fg);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-rail-action:focus-visible {
+  outline: none;
+  box-shadow: var(--nb-focus-ring);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-rail-action:disabled {
+  color: var(--nb-fg-muted);
+  opacity: 0.55;
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-rail-danger,
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-rail-danger:hover:not(:disabled) {
+  color: var(--nb-danger);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-rail-note {
+  margin-top: var(--nb-space-4);
+  color: var(--nb-fg-muted);
+  font: 400 var(--nb-text-sm)/1.45 var(--nb-font);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+:where(.nb-admin-workspace, .nb-app-design) .nb-next-button::before,
+:where(.nb-admin-workspace, .nb-app-design) .nb-next-button .nb-button-signal {
+  display: none;
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-next-button:enabled:hover {
+  background: var(--nb-brand-hover);
+  color: var(--nb-bg);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-next-button:focus-visible {
+  outline: none;
+  box-shadow: var(--nb-focus-ring);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-next-button:disabled {
+  background: var(--nb-bg-hover);
+  color: var(--nb-fg-muted);
+}

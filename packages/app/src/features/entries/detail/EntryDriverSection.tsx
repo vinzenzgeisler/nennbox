@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  AppStatusPill,
   Banner,
   Button,
   DateInput,
@@ -245,7 +246,10 @@ export function EntryDriverSection({
             <Value>{countryName(driver.country)}</Value>
           </FieldItem>
           <FieldItem label="E-Mail">
-            <Value>{driver.email}</Value>
+            <Value>{driver.email}</Value>{' '}
+            {driver.emailVerified && (
+              <AppStatusPill status="zu">bestätigt</AppStatusPill>
+            )}
           </FieldItem>
           <FieldItem label="Blutgruppe">
             <Value>{driver.bloodGroup}</Value>

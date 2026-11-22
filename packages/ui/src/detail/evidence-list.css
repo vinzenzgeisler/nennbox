@@ -44,3 +44,47 @@
   font: var(--text-body);
   white-space: pre-wrap;
 }
+
+/* N3 app presentation; shared registration styles above stay unchanged. */
+:where(.nb-admin-workspace, .nb-app-design) .nb-evidence-list li {
+  padding: var(--nb-space-3) 0;
+  border-color: var(--nb-border-row);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-evidence-head {
+  flex-wrap: wrap;
+  gap: var(--nb-space-2);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-evidence-head strong {
+  color: var(--nb-fg);
+  font: 500 var(--nb-text-base)/1.45 var(--nb-font);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-evidence-head time {
+  color: var(--nb-fg-muted);
+  font: 400 var(--nb-text-sm)/1.45 var(--nb-font);
+  letter-spacing: normal;
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-evidence-list p {
+  margin-top: var(--nb-space-1);
+  color: var(--nb-fg-secondary);
+  font: 400 var(--nb-text-base)/1.55 var(--nb-font);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-evidence-list summary {
+  margin-top: var(--nb-space-2);
+  color: var(--nb-brand);
+}
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-evidence-list
+  summary:focus-visible {
+  outline: none;
+  border-radius: var(--nb-radius-sm);
+  box-shadow: var(--nb-focus-ring);
+}
+:where(.nb-admin-workspace, .nb-app-design) .nb-evidence-list blockquote {
+  margin-top: var(--nb-space-2);
+  padding: var(--nb-space-3) var(--nb-space-4);
+  border-color: var(--nb-border-strong);
+  border-radius: var(--nb-radius-md);
+  background: var(--nb-bg-subtle);
+  color: var(--nb-fg-secondary);
+  font: 400 var(--nb-text-base)/1.55 var(--nb-font);
+}

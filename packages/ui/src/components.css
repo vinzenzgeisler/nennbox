@@ -63,3 +63,5 @@
 
 @import url('./workspace/completion-dots.css');
 @import url('./workspace/entry-status-menu.css');
+
+@import url('./detail/entry-detail-page.css');

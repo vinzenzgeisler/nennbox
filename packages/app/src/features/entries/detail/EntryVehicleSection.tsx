@@ -185,6 +185,9 @@ export function EntryVehicleSection({
             <FieldItem label="Hersteller · Modell">
               <Value>{`${vehicle.make} ${vehicle.model}`.trim()}</Value>
             </FieldItem>
+            <FieldItem label="Klasse">
+              <Value>{eventClass?.name}</Value>
+            </FieldItem>
             <FieldItem label="Baujahr">
               <Value>{vehicle.year}</Value>
             </FieldItem>

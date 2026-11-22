@@ -1,29 +1,22 @@
+import { EntryDetailDialogs } from './detail/EntryDetailDialogs.js';
+import { entryStatusDialog } from './detail/entryStatusDialog.js';
+import { EntryDetailContent } from './detail/EntryDetailContent.js';
 import { useMemo, useState } from 'react';
-import { Banner, DetailLayout, ReasonDialog } from '@nennbox/ui';
+import { AppButton, EntryDetailPage, Menu } from '@nennbox/ui';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { Outcome, WorkflowView } from './AdminEntriesModel.js';
 import type { Pending } from './detail/EntryDetailPending.js';
-import { EntryAdminActionDialog } from './detail/EntryAdminActionDialog.js';
 import { EntryActionRail } from './detail/EntryActionRail.js';
-import { EntryDocumentsSection } from './detail/EntryDocumentsSection.js';
-import { EntryConsentsSection } from './detail/EntryConsentsSection.js';
-import { EntryPassengerFlow } from './detail/EntryPassengerDialog.js';
-import { EntryPassengerBlocks } from './detail/EntryPassengerSection.js';
-import { EntryCustomAnswers } from './detail/EntryCustomAnswers.js';
-import { EntryDriverSection } from './detail/EntryDriverSection.js';
-import { EntryHistorySection } from './detail/EntryHistorySection.js';
-import { EntryConfirmation } from './detail/EntryConfirmation.js';
-import { EntryDocumentRejectDialog } from './documents/EntryDocumentRejectDialog.js';
 import type { UploadLine } from './documents/documentLines.js';
 import { requestMessageSeed } from './documents/requestMessage.js';
 import { useEntryDocumentActions } from './documents/useEntryDocumentActions.js';
 import type { MessageSeed } from '../messages/messageSeed.js';
-import { EntryMessagesSection } from './detail/EntryMessagesSection.js';
-import { EntryStartNumber } from './detail/EntryStartNumber.js';
-import { EntryPaymentDialog } from './detail/EntryPaymentDialog.js';
-import { EntryRefundAction } from './detail/EntryRefundAction.js';
-import { EntryVehicleSection } from './detail/EntryVehicleSection.js';
 import { timelineFor } from './detail/entryDetailModel.js';
+import { EntryAdmissionProgress } from './detail/EntryAdmissionProgress.js';
+import { EntryProperties } from './detail/EntryProperties.js';
+import { EntryStatusToast } from './EntryStatusToast.js';
+import { uploadLines } from './documents/documentLines.js';
+import { EntryDetailActions } from './detail/EntryDetailActions.js';
 import { EntryDetailHeader } from './detail/EntryDetailHeader.js';
 import { useEntryDetailApi } from './detail/useEntryDetailApi.js';
 import {
@@ -41,7 +34,11 @@ export function AdminEntryDetail({
   onBack,
   onUpdated,
   onMessage,
+  navigation,
+  onChangeStatus,
 }: {
+  navigation?: import('react').ReactNode;
+  onChangeStatus?: (entry: Entry, status: string) => Promise<void>;
   selected: Entry;
   classes: Array<{ id: string; name: string; closed?: boolean }>;
   workflow: WorkflowView | null;
@@ -56,7 +53,12 @@ export function AdminEntryDetail({
   onUpdated: (entry: Entry | null, refresh?: boolean) => void;
   onMessage?: ((seed: MessageSeed) => void) | undefined;
 }) {
-  const api = useEntryDetailApi(selected, onUpdated);
+  const [tab, setTab] = useState('overview');
+  const [numberOpen, setNumberOpen] = useState(false);
+  const [notice, setNotice] = useState<{ message: string } | null>(null);
+  const api = useEntryDetailApi(selected, onUpdated, () =>
+    setNotice({ message: 'Änderung gespeichert' }),
+  );
   const documents = useEntryDocumentActions(api);
   const writeMessage = onMessage && (() => onMessage({ entryId: selected.id }));
   const requestDocument =
@@ -106,8 +108,10 @@ export function AdminEntryDetail({
         : pending.kind === 'status'
           ? await transition('acceptance', pending.step.to, reason)
           : null;
-    if (result?.ok) close();
-    else if (result) setDialogError(result.message);
+    if (result?.ok) {
+      setNotice({ message: 'Änderung gespeichert' });
+      close();
+    } else if (result) setDialogError(result.message);
   }
   async function confirmAdminAction(
     action: Parameters<typeof api.performAdminAction>[0],
@@ -119,166 +123,142 @@ export function AdminEntryDetail({
       onBack();
     } else close();
   }
-  const dialog: {
-    title: string;
-    message: string;
-    confirm: string;
-    danger?: boolean;
-  } | null =
-    pending?.kind === 'status'
-      ? {
-          title: pending.step.label.replace(/ …$/, ''),
-          message: `Die Nennung wird auf „${workflow?.statuses.find((item) => item.key === pending.step.to)?.labels.de ?? pending.step.to}“ gesetzt. Die Entscheidung wird im Verlauf protokolliert.`,
-          confirm: 'Status ändern',
-          danger: pending.step.danger,
-        }
-      : pending?.kind === 'verify'
-        ? {
-            title: 'E-Mail verifizieren',
-            message: 'Die E-Mail-Adresse wird als bestätigt markiert.',
-            confirm: 'Verifizieren',
-          }
-        : pending?.kind === 'dimension'
-          ? {
-              title: pending.action.label,
-              message: 'Die Änderung wird im Verlauf protokolliert.',
-              confirm: 'Speichern',
-            }
-          : null;
+  const dialog = entryStatusDialog(pending, workflow);
+  const changeDetailStatus = (
+    step: import('./detail/EntryActionRail.js').StatusStep,
+  ) => {
+    const edge = workflow?.transitions.find(
+      (item) => item.from === selected.acceptanceStatus && item.to === step.to,
+    );
+    const reversible =
+      edge &&
+      !edge.notify &&
+      workflow?.transitions.some(
+        (item) =>
+          item.from === step.to &&
+          item.to === selected.acceptanceStatus &&
+          !item.notify,
+      );
+    if (reversible && onChangeStatus) void onChangeStatus(selected, step.to);
+    else setPending({ kind: 'status', step });
+  };
+
   return (
     <section aria-label="Nennung im Detail" className="admin-detail-view">
-      <DetailLayout
-        railLabel="Aktionen"
+      <EntryDetailPage
+        navigation={
+          <>
+            <AppButton tone="ghost" onClick={onBack}>
+              ‹ Nennungen
+            </AppButton>
+            {navigation}
+          </>
+        }
+        tabs={[
+          { key: 'overview', label: 'Übersicht' },
+          {
+            key: 'documents',
+            label: 'Unterlagen',
+            count: uploadLines(selected).length,
+          },
+          {
+            key: 'messages',
+            label: 'Nachrichten',
+            ...(messages.items ? { count: messages.items.length } : {}),
+          },
+          { key: 'history', label: 'Verlauf' },
+        ]}
+        activeTab={tab}
+        onTab={setTab}
+        progress={<EntryAdmissionProgress entry={selected} />}
+        sidebar={
+          <EntryProperties
+            entry={selected}
+            busy={api.busy}
+            onNumber={() => setNumberOpen((value) => !value)}
+            saveNote={(text) =>
+              api.performAdminAction({
+                kind: 'note',
+                visibility: 'internal',
+                text,
+              })
+            }
+          />
+        }
         header={
           <EntryDetailHeader
             entry={selected}
-            onBack={onBack}
-            workflow={workflow}
-          />
-        }
-        rail={
-          <EntryActionRail
-            entry={selected}
-            workflow={workflow}
-            busy={busy || api.busy}
-            onStatus={(step) => setPending({ kind: 'status', step })}
-            onVerify={() => setPending({ kind: 'verify' })}
-            onPayment={() => setPending({ kind: 'payment' })}
-            onDimension={(action) => setPending({ kind: 'dimension', action })}
-            onAdminAction={(action) => setPending({ kind: 'admin', action })}
-            onPassenger={(action) => setPending({ kind: 'passenger', action })}
-            onMessage={writeMessage}
-            onRequestDocument={requestDocument}
+            actions={
+              <>
+                <EntryDetailActions
+                  selected={selected}
+                  workflow={workflow}
+                  busy={busy || api.busy}
+                  onStatus={(step) => {
+                    changeDetailStatus(step);
+                  }}
+                />
+                <Menu label="Weitere Aktionen">
+                  <EntryActionRail
+                    hidePrimary
+                    entry={selected}
+                    workflow={workflow}
+                    busy={busy || api.busy}
+                    onStatus={(step) => {
+                      changeDetailStatus(step);
+                    }}
+                    onVerify={() => setPending({ kind: 'verify' })}
+                    onPayment={() => setPending({ kind: 'payment' })}
+                    onDimension={(action) =>
+                      setPending({ kind: 'dimension', action })
+                    }
+                    onAdminAction={(action) =>
+                      setPending({ kind: 'admin', action })
+                    }
+                    onPassenger={(action) =>
+                      setPending({ kind: 'passenger', action })
+                    }
+                    onMessage={writeMessage}
+                    onRequestDocument={requestDocument}
+                  />
+                </Menu>
+              </>
+            }
           />
         }
       >
-        {error && !pending && <Banner tone="error">{error}</Banner>}
-        {documents.error && <Banner tone="error">{documents.error}</Banner>}
-        <EntryStartNumber
+        <EntryDetailContent
           entry={selected}
-          onUpdated={(entry) => onUpdated(entry, false)}
-        />
-        <EntryDriverSection
-          driver={details.driver}
-          passenger={details.passenger ?? null}
-          busy={api.busy}
-          onSave={api.saveDriver}
-        />
-        <EntryVehicleSection
-          vehicle={details.vehicle}
-          eventClass={details.eventClass}
-          busy={api.busy}
-          onSave={api.saveVehicle}
-        />
-        <EntryPassengerBlocks details={details} />
-        <EntryCustomAnswers answers={details.customAnswers} />
-        <EntryDocumentsSection
-          entry={selected}
-          busy={busy || api.busy}
-          onReviewDocument={(line) => void documents.review(line)}
-          onRejectDocument={documents.startReject}
-          onRequestDocument={requestDocument}
-          onDimensionAction={(action) =>
-            setPending({ kind: 'dimension', action })
-          }
-          onRecordPayment={() => setPending({ kind: 'payment' })}
-          onRefundPayment={() => setPending({ kind: 'refund' })}
-        />
-        <EntryConsentsSection
-          consents={details.consents ?? []}
-          passengerConsents={details.passenger?.consents}
-        />
-        <EntryMessagesSection
-          messages={messages.items}
-          failed={messages.failed}
-        />
-        <EntryConfirmation
-          eventId={selected.eventId}
-          groupId={selected.registrationGroupId}
-        />
-        <EntryHistorySection items={timeline} />
-      </DetailLayout>
-      {dialog && (
-        <ReasonDialog
-          open
-          title={dialog.title}
-          message={dialog.message}
-          reasonLabel="Begründung (für das Protokoll erforderlich)"
-          confirmLabel={dialog.confirm}
-          confirmTone={dialog.danger ? 'danger' : 'default'}
-          cancelLabel="Abbrechen"
-          closeLabel="Dialog schließen"
-          busy={busy || api.busy}
-          error={dialogError}
-          onConfirm={(reason) => void confirm(reason)}
-          onClose={close}
-        />
-      )}
-      <EntryDocumentRejectDialog
-        line={documents.rejecting}
-        busy={api.busy}
-        error={documents.dialogError}
-        onConfirm={(reason) => void documents.confirmReject(reason)}
-        onClose={documents.cancelReject}
-      />
-      {pending?.kind === 'admin' && (
-        <EntryAdminActionDialog
-          kind={pending.action}
-          entry={selected}
-          classes={classes}
-          busy={api.busy}
-          error={dialogError}
-          onConfirm={(action) => void confirmAdminAction(action)}
-          onClose={close}
-        />
-      )}
-      {pending?.kind === 'passenger' && (
-        <EntryPassengerFlow
-          kind={pending.action}
-          entry={selected}
+          tab={tab}
+          numberOpen={numberOpen}
+          error={error}
+          pending={pending}
+          busy={busy}
           api={api}
-          onClose={close}
+          documents={documents}
+          messages={messages}
+          timeline={timeline}
+          requestDocument={requestDocument}
+          onUpdated={onUpdated}
+          setNotice={setNotice}
+          setPending={setPending}
         />
-      )}
-      {pending?.kind === 'payment' && details.invoice && (
-        <EntryPaymentDialog
-          invoice={details.invoice}
-          busy={api.busy}
-          error={dialogError}
-          onConfirm={(cents, reason) => void confirm(reason, cents)}
-          onClose={close}
-        />
-      )}
-      {pending?.kind === 'refund' && details.invoice && (
-        <EntryRefundAction
-          invoice={details.invoice}
-          busy={api.busy}
-          error={dialogError}
-          refundPayment={api.refundPayment}
-          onError={setDialogError}
-          onClose={close}
-        />
-      )}
+      </EntryDetailPage>
+      <EntryStatusToast notice={notice} clear={() => setNotice(null)} />
+      <EntryDetailDialogs
+        entry={selected}
+        classes={classes}
+        pending={pending}
+        dialog={dialog}
+        busy={busy}
+        api={api}
+        documents={documents}
+        dialogError={dialogError}
+        confirm={confirm}
+        close={close}
+        confirmAdminAction={confirmAdminAction}
+        setDialogError={setDialogError}
+      />
     </section>
   );
 }

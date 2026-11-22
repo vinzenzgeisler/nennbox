@@ -72,6 +72,7 @@ export function EntryActionRail({
   entry,
   workflow,
   busy,
+  hidePrimary = false,
   onStatus,
   onVerify,
   onPayment,
@@ -84,6 +85,7 @@ export function EntryActionRail({
   entry: Entry;
   workflow: WorkflowView | null;
   busy: boolean;
+  hidePrimary?: boolean;
   onStatus: (step: StatusStep) => void;
   onVerify: () => void;
   onPayment: () => void;
@@ -111,7 +113,7 @@ export function EntryActionRail({
   const canLinkPassenger = entry.availableActions?.includes('passenger:link');
   return (
     <>
-      {primary && (
+      {primary && !hidePrimary && (
         <NextStep
           label="Nächster Schritt"
           action={
