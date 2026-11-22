@@ -17,11 +17,32 @@ const emptyDraft = (): SetupDraft => ({
   bic: '',
 });
 
+/** A notice shown below the setup form; errors are announced as alerts. */
+export type SetupMessage = {
+  tone: 'error' | 'success' | 'info';
+  text: string;
+} | null;
+export const setupError = (text: string): SetupMessage => ({
+  tone: 'error',
+  text,
+});
+export const setupSuccess = (text: string): SetupMessage => ({
+  tone: 'success',
+  text,
+});
+
+export const savedMessage = (open: boolean): SetupMessage =>
+  setupSuccess(
+    open
+      ? 'Veranstaltung gespeichert und Nennung geöffnet.'
+      : 'Entwurf gespeichert. Du kannst ihn jederzeit fortsetzen.',
+  );
+
 export type EventSetupState = {
   draft: SetupDraft;
   events: EventOption[];
   busy: boolean;
-  message: string;
+  message: SetupMessage;
   link: string;
   currentStep: number;
 };
@@ -33,7 +54,7 @@ type EventSetupAction =
     }
   | { type: 'events'; events: EventOption[] }
   | { type: 'busy'; busy: boolean }
-  | { type: 'message'; message: string }
+  | { type: 'message'; message: SetupMessage }
   | { type: 'link'; link: string }
   | { type: 'step'; step: number }
   | { type: 'reset' };
@@ -42,7 +63,7 @@ export const initialState = (): EventSetupState => ({
   draft: emptyDraft(),
   events: [],
   busy: false,
-  message: '',
+  message: null,
   link: '',
   currentStep: 0,
 });

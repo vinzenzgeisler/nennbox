@@ -9,7 +9,7 @@ export function AppDialog(
   return <Dialog {...props} appearance="app" />;
 }
 export function AppActions({ children }: { children: ReactNode }) {
-  return <div className="nb-app-inline">{children}</div>;
+  return <div className="nb-app-inline nb-app-actions">{children}</div>;
 }
 export function AppSelectionList({
   label,
@@ -49,7 +49,11 @@ export function AppFileInput({
         <span className="nb-app-btn nb-app-btn-secondary" aria-hidden="true">
           Datei auswählen
         </span>
-        <span className="nb-app-file-name" aria-hidden="true">
+        <span
+          className="nb-app-file-name"
+          aria-hidden="true"
+          {...(filename ? { 'data-selected': '', title: filename } : {})}
+        >
           {filename || 'Keine Datei ausgewählt'}
         </span>
       </span>

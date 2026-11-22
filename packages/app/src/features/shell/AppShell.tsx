@@ -10,10 +10,17 @@ import {
   PageHeader,
   Signet,
   SelectField,
-  type IconName,
 } from '@nennbox/ui';
 import { entrySearchCommand, shellCommands } from './shellCommands.js';
+import {
+  APP_NAVIGATION_REGISTRY,
+  VIEW_TITLES,
+  type View,
+} from './navigationRegistry.js';
 import { useCommandShortcut } from './useCommandShortcut.js';
+import { useHeadingFocusAfterPalette } from './useHeadingFocusAfterPalette.js';
+
+export { APP_NAVIGATION_REGISTRY } from './navigationRegistry.js';
 
 export type ShellModule = {
   id: string;
@@ -28,76 +35,6 @@ type EventOption = {
   slug?: string;
   registrationClosesAt?: string | null;
 };
-type View = keyof typeof VIEW_TITLES;
-const VIEW_TITLES = {
-  overview: 'Übersicht',
-  exports: 'Exporte',
-  entries: 'Nennungen',
-  workflow: 'Nennungsablauf',
-  setup: 'Veranstaltung einrichten',
-  account: 'Einstellungen',
-  messages: 'Nachrichten',
-  modules: 'Module',
-};
-type NavItem = {
-  id: View;
-  label: string;
-  icon: IconName;
-  mobile?: boolean;
-  mobileLabel?: string;
-};
-export const APP_NAVIGATION_REGISTRY: Array<{
-  label: string;
-  items: NavItem[];
-}> = [
-  {
-    label: 'Veranstaltung',
-    items: [
-      {
-        id: 'overview',
-        label: 'Übersicht',
-        mobileLabel: 'Start',
-        icon: 'overview',
-      },
-      { id: 'entries', label: 'Nennungen', icon: 'list' },
-      {
-        id: 'workflow',
-        label: 'Nennungsablauf',
-        icon: 'check',
-        mobile: false,
-      },
-      {
-        id: 'setup',
-        label: 'Einrichten',
-        mobileLabel: 'Event',
-        icon: 'calendar',
-      },
-    ],
-  },
-  {
-    label: 'Kommunikation',
-    items: [
-      {
-        id: 'messages',
-        label: 'Nachrichten',
-        mobileLabel: 'Post',
-        icon: 'mail',
-      },
-    ],
-  },
-  {
-    label: 'Konto',
-    items: [
-      { id: 'exports', label: 'Exporte', icon: 'export' },
-      {
-        id: 'account',
-        label: 'Einstellungen',
-        mobileLabel: 'Konto',
-        icon: 'settings',
-      },
-    ],
-  },
-];
 export function AppShell({
   children,
   canManageModules = false,
@@ -189,6 +126,10 @@ export function AppShell({
         revision: entriesNavigationRevision ?? 0,
       });
   };
+  const focusHeadingAfterJump = useHeadingFocusAfterPalette(
+    commandOpen,
+    currentView,
+  );
   const entryCommands = usePaletteEntries(
     commandOpen,
     activeEvent,
@@ -203,7 +144,10 @@ export function AppShell({
           navigation: navigationItems,
           events,
           activeEvent,
-          navigate,
+          navigate: (id) => {
+            focusHeadingAfterJump();
+            navigate(id);
+          },
           changeEvent: (id) => onEventChange?.(id),
         }),
         ...entryCommands,
@@ -211,6 +155,7 @@ export function AppShell({
       {...(onEntrySearch
         ? {
             queryItems: entrySearchCommand((search) => {
+              focusHeadingAfterJump();
               onClearMessageSelection?.();
               onEntrySearch(search);
             }),

@@ -159,6 +159,9 @@ describe('event setup', () => {
       )?.value,
     ).toBe('');
     expect(container.textContent).toContain('load failed');
+    const alert = container.querySelector('[role="alert"]');
+    expect(alert?.textContent).toBe('load failed');
+    expect(alert?.className).toContain('nb-app-notice-error');
   });
 
   it('keeps the latest selected draft when resume requests resolve in reverse order', async () => {

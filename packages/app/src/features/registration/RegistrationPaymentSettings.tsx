@@ -1,4 +1,4 @@
-import { AppCheckbox, AppChoiceGroup } from '@nennbox/ui';
+import { AppCheckbox, AppSection } from '@nennbox/ui';
 import type { RegistrationFormConfig } from '@nennbox/contracts';
 
 const methods = [
@@ -31,34 +31,32 @@ export function RegistrationPaymentSettings({
       },
     }));
   return (
-    <AppChoiceGroup label="Zahlungsarten für diese Veranstaltung">
-      <div className="nb-app-stack">
-        <p>
-          Überweisung bleibt zusätzlich verfügbar, wenn eine Bankverbindung
-          hinterlegt ist.
-        </p>
-        {methods.map(([method, label]) => (
-          <AppCheckbox
-            key={method}
-            label={label}
-            checked={config.payments.onlineMethods.includes(method)}
-            onChange={(event) => toggleMethod(method, event.target.checked)}
-          />
-        ))}
+    <AppSection role="group" title="Zahlungsarten für diese Veranstaltung">
+      <p>
+        Überweisung bleibt zusätzlich verfügbar, wenn eine Bankverbindung
+        hinterlegt ist.
+      </p>
+      {methods.map(([method, label]) => (
         <AppCheckbox
-          label="Überweisung anbieten"
-          checked={config.payments.bankTransfer}
-          onChange={(event) =>
-            updateConfig((current) => ({
-              ...current,
-              payments: {
-                ...current.payments,
-                bankTransfer: event.target.checked,
-              },
-            }))
-          }
+          key={method}
+          label={label}
+          checked={config.payments.onlineMethods.includes(method)}
+          onChange={(event) => toggleMethod(method, event.target.checked)}
         />
-      </div>
-    </AppChoiceGroup>
+      ))}
+      <AppCheckbox
+        label="Überweisung anbieten"
+        checked={config.payments.bankTransfer}
+        onChange={(event) =>
+          updateConfig((current) => ({
+            ...current,
+            payments: {
+              ...current.payments,
+              bankTransfer: event.target.checked,
+            },
+          }))
+        }
+      />
+    </AppSection>
   );
 }

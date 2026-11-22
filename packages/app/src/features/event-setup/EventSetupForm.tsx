@@ -172,7 +172,10 @@ export function EventSetupForm({
           busy={busy}
           onClearRecipient={onClearRecipient}
         />
-        <div id="event-setup-actions" className="nb-app-inline nb-app-anchor">
+        <div
+          id="event-setup-actions"
+          className="nb-app-inline nb-app-actions nb-app-anchor"
+        >
           <AppButton type="submit" tone="secondary" disabled={busy}>
             Entwurf speichern
           </AppButton>

@@ -22,7 +22,7 @@ export function PageHeader({
       {eyebrow && <p>{eyebrow}</p>}
       <div>
         <div>
-          <h1>{title}</h1>
+          <h1 tabIndex={-1}>{title}</h1>
           {description && <p>{description}</p>}
         </div>
         {(views?.length || actions) && (

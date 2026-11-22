@@ -1,0 +1,72 @@
+import type { IconName } from '@nennbox/ui';
+
+export type View = keyof typeof VIEW_TITLES;
+export const VIEW_TITLES = {
+  overview: 'Übersicht',
+  exports: 'Exporte',
+  entries: 'Nennungen',
+  workflow: 'Nennungsablauf',
+  setup: 'Veranstaltung einrichten',
+  account: 'Einstellungen',
+  messages: 'Nachrichten',
+  modules: 'Module',
+};
+export type NavItem = {
+  id: View;
+  label: string;
+  icon: IconName;
+  mobile?: boolean;
+  mobileLabel?: string;
+};
+export const APP_NAVIGATION_REGISTRY: Array<{
+  label: string;
+  items: NavItem[];
+}> = [
+  {
+    label: 'Veranstaltung',
+    items: [
+      {
+        id: 'overview',
+        label: 'Übersicht',
+        mobileLabel: 'Start',
+        icon: 'overview',
+      },
+      { id: 'entries', label: 'Nennungen', icon: 'list' },
+      {
+        id: 'workflow',
+        label: 'Nennungsablauf',
+        icon: 'check',
+        mobile: false,
+      },
+      {
+        id: 'setup',
+        label: 'Einrichten',
+        mobileLabel: 'Event',
+        icon: 'calendar',
+      },
+    ],
+  },
+  {
+    label: 'Kommunikation',
+    items: [
+      {
+        id: 'messages',
+        label: 'Nachrichten',
+        mobileLabel: 'Post',
+        icon: 'mail',
+      },
+    ],
+  },
+  {
+    label: 'Konto',
+    items: [
+      { id: 'exports', label: 'Exporte', icon: 'export' },
+      {
+        id: 'account',
+        label: 'Einstellungen',
+        mobileLabel: 'Konto',
+        icon: 'settings',
+      },
+    ],
+  },
+];

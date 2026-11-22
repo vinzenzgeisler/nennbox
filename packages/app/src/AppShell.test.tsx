@@ -171,8 +171,65 @@ describe('AppShell', () => {
     )!;
     await act(async () => option.click());
     expect(container.textContent).toContain('View workflow');
-    expect(document.activeElement).toBe(search);
+    const heading = container.querySelector('h1');
+    expect(heading?.textContent).toBe('Nennungsablauf');
+    expect(heading?.getAttribute('tabindex')).toBe('-1');
+    expect(document.activeElement).toBe(heading);
     await act(async () => root.unmount());
+    container.remove();
+  });
+});
+
+describe('focus after palette navigation', () => {
+  const press = (key: string, init: KeyboardEventInit = {}) =>
+    new KeyboardEvent('keydown', { key, bubbles: true, ...init });
+  async function mount() {
+    const container = document.createElement('div');
+    document.body.append(container);
+    const root = createRoot(container);
+    await act(async () =>
+      root.render(<AppShell>{(view) => <p>View {view}</p>}</AppShell>),
+    );
+    return { container, unmount: () => act(async () => root.unmount()) };
+  }
+  it('moves focus to the new page heading after Enter in the palette', async () => {
+    const { container, unmount } = await mount();
+    await act(async () =>
+      document.dispatchEvent(press('k', { metaKey: true })),
+    );
+    const input = container.querySelector<HTMLInputElement>(
+      'input[aria-label="Suchen und springen"]',
+    )!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        'value',
+      )!.set!.call(input, 'Nennformular');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await act(async () => input.dispatchEvent(press('Enter')));
+    expect(container.textContent).toContain('View account');
+    const heading = container.querySelector('h1');
+    expect(heading?.textContent).toBe('Einstellungen');
+    expect(document.activeElement).toBe(heading);
+    expect(document.activeElement?.closest('nav')).toBeNull();
+    await unmount();
+    container.remove();
+  });
+  it('still returns focus to the opener when the palette closes without navigating', async () => {
+    const { container, unmount } = await mount();
+    const search = container.querySelector<HTMLButtonElement>(
+      '.nb-admin-nav-search',
+    )!;
+    search.focus();
+    await act(async () => search.click());
+    await act(async () =>
+      container
+        .querySelector('input[role="combobox"]')!
+        .dispatchEvent(press('Escape')),
+    );
+    expect(document.activeElement).toBe(search);
+    await unmount();
     container.remove();
   });
 });

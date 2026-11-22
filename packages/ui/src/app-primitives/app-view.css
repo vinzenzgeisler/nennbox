@@ -177,3 +177,23 @@
 .nb-app-view p {
   margin: 0;
 }
+
+/*
+ * Section rhythm: stacked sections are separated by space-10 and an action row
+ * after section content by space-6. The container gap (space-6 in a view,
+ * space-4 in a stack or section) is already part of that distance.
+ */
+.nb-app-view + .nb-app-view {
+  margin-top: var(--nb-space-10);
+}
+.nb-app-view > * + :is(.nb-app-section, .nb-app-anchor:not(.nb-app-actions)) {
+  margin-top: calc(var(--nb-space-10) - var(--nb-space-6));
+}
+:is(.nb-app-stack, .nb-app-section)
+  > *
+  + :is(.nb-app-section, .nb-app-anchor:not(.nb-app-actions)) {
+  margin-top: calc(var(--nb-space-10) - var(--nb-space-4));
+}
+:is(.nb-app-stack, .nb-app-section) > * + .nb-app-actions {
+  margin-top: calc(var(--nb-space-6) - var(--nb-space-4));
+}

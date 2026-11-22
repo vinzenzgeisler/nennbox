@@ -11,6 +11,7 @@ import {
 } from '@nennbox/ui';
 import type { SetupEvent } from './eventSetupApi.js';
 import { loadRecipient } from './eventRecipientApi.js';
+import { setupError } from './eventSetupState.js';
 import { useEventSetup } from './useEventSetup.js';
 import { RegistrationFormSettings } from '../registration/RegistrationFormSettings.js';
 import { EventSetupForm } from './EventSetupForm.js';
@@ -122,7 +123,7 @@ export function EventSetup({
           aside={
             view === 'event' ? (
               <>
-                <AppSection title="Vor dem Öffnen" description="Hilfe">
+                <AppSection title="Vor dem Öffnen">
                   <p>
                     Mindestens eine offene Klasse braucht ein Startgeld.
                     Hinterlege veröffentlichte Teilnahmebedingungen, bevor du
@@ -133,7 +134,7 @@ export function EventSetup({
                     Online-Zahlung aus.
                   </p>
                 </AppSection>
-                <AppSection title="Öffentliche Nennung" description="Vorschau">
+                <AppSection title="Öffentliche Nennung">
                   <AppPreviewCard>
                     <strong>
                       {setup.draft.name || 'Name der Veranstaltung'}
@@ -178,9 +179,11 @@ export function EventSetup({
                 onResume={(id) =>
                   void setup.resume(id).catch((error: unknown) => {
                     setup.setMessage(
-                      error instanceof Error
-                        ? error.message
-                        : 'Entwurf konnte nicht geladen werden.',
+                      setupError(
+                        error instanceof Error
+                          ? error.message
+                          : 'Entwurf konnte nicht geladen werden.',
+                      ),
                     );
                   })
                 }
@@ -189,8 +192,8 @@ export function EventSetup({
                 onSubmit={submit}
               />
               {setup.message && (
-                <AppNotice tone={setup.link ? 'success' : 'warning'}>
-                  {setup.message}
+                <AppNotice tone={setup.message.tone}>
+                  {setup.message.text}
                 </AppNotice>
               )}
               {setup.link && (

@@ -76,6 +76,7 @@
 .nb-app-file-control {
   position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--nb-space-3);
   min-width: 0;
@@ -99,10 +100,15 @@
   cursor: not-allowed;
 }
 .nb-app-file-name {
+  flex: 1 1 calc(var(--nb-space-10) * 3);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--nb-fg-muted);
+}
+.nb-app-file-name[data-selected] {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--nb-fg-muted);
 }
 .nb-app-selection-list > span {
   color: var(--nb-fg-muted);

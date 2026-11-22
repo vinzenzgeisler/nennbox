@@ -1,4 +1,5 @@
 import {
+  AppActions,
   AppNotice,
   AppButton,
   AppCheckbox,
@@ -30,7 +31,7 @@ export function EventDocumentSettings({ eventId }: { eventId: string }) {
       ),
     );
   return (
-    <section aria-label="Nennungsunterlagen">
+    <section className="nb-app-view" aria-label="Nennungsunterlagen">
       <AppView>
         <AppSection
           title="Unterlagentypen"
@@ -93,7 +94,7 @@ export function EventDocumentSettings({ eventId }: { eventId: string }) {
             Unterlage hinzufügen
           </AppButton>
         </AppSection>
-        <div>
+        <AppActions>
           <AppButton
             tone="primary"
             type="button"
@@ -102,7 +103,7 @@ export function EventDocumentSettings({ eventId }: { eventId: string }) {
           >
             {settings.saving ? 'Wird gespeichert …' : 'Unterlagen speichern'}
           </AppButton>
-        </div>
+        </AppActions>
         {settings.message && (
           <AppNotice tone="error">{settings.message}</AppNotice>
         )}
