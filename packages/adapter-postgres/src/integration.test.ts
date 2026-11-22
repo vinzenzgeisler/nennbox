@@ -1676,6 +1676,11 @@ describe.skipIf(!url)('PostgreSQL integration', () => {
       });
       expect(pageA.items.map((entry) => entry.id)).toEqual([entryA!.id]);
       expect(pageA.total).toBe(1);
+      expect(pageA.items[0]).toMatchObject({
+        requestedStartNumber: 'A-01',
+        assignedStartNumber: 'A-01',
+        startNumberStatus: 'assigned',
+      });
       expect(Object.keys(pageA.items[0]!).sort()).toEqual(
         [
           'id',
@@ -1689,6 +1694,8 @@ describe.skipIf(!url)('PostgreSQL integration', () => {
           'verificationStatus',
           'acceptanceStatus',
           'requestedStartNumber',
+          'assignedStartNumber',
+          'startNumberStatus',
           'waitlistPosition',
           'waitlistConfirmationDeadline',
           'priceSnapshotVersion',

@@ -196,9 +196,10 @@ export async function persistRegistrationSubmission(args: {
         driverPersonId: personId,
         vehicleId: vehicle!.id,
         spareVehicleId: spare?.id ?? null,
-        requestedStartNumber:
-          automaticStartNumbers[entryIndex] ??
-          normalizeRequestedStartNumber(requestEntry.requestedStartNumber),
+        requestedStartNumber: normalizeRequestedStartNumber(
+          requestEntry.requestedStartNumber,
+        ),
+        assignedStartNumber: automaticStartNumbers[entryIndex] ?? null,
         priceSnapshotVersion: snapshot?.version ?? null,
         priceSnapshot: snapshot,
         formSnapshotVersion: payload.formVersion,
