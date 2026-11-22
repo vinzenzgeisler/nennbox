@@ -7,6 +7,8 @@ import {
   type OnboardingStepId,
 } from '@nennbox/contracts';
 
+import { skippedAnswers } from './skip-answers.js';
+
 export type Outcome = 'open' | 'draft';
 export type OnboardingState = {
   step: OnboardingStepId;
@@ -62,6 +64,7 @@ function reducer(state: OnboardingState, action: Action): OnboardingState {
       return {
         ...state,
         step: action.to ?? state.step,
+        answers: { ...state.answers, ...skippedAnswers(state.step) },
         skipped: state.skipped.includes(state.step)
           ? state.skipped
           : [...state.skipped, state.step],

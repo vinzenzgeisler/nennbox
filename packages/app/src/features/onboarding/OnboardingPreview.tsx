@@ -73,9 +73,13 @@ export function OnboardingPreview() {
     reset();
   };
   const { answers, step, skipped } = state;
-  // Leaving the language screen with nothing ticked means "only German", not "use the suggestion".
+  // No additional language means only German, unless the member already accepted the suggestion.
   const next = () => {
-    if (step === 'languages' && answers.languages === null)
+    if (
+      step === 'languages' &&
+      answers.languages === null &&
+      !skipped.includes('languages')
+    )
       patch({ languages: [] });
     advance();
   };
@@ -151,7 +155,14 @@ export function OnboardingPreview() {
       onBack={step === 'account' ? undefined : back}
       skipLabel="Überspringen"
       skipHint="Wir nehmen den Vorschlag"
-      onSkip={requiredSteps.includes(step) ? undefined : skip}
+      onSkip={
+        requiredSteps.includes(step)
+          ? undefined
+          : () => {
+              if (step === 'brand') setLogo(null);
+              skip();
+            }
+      }
       continueLabel={
         isSummary
           ? way === 'draft'

@@ -25,7 +25,7 @@ Building blocks live in `packages/ui/src/onboarding/` and are shown in `/compone
 Rules that follow from the reference:
 
 - No live preview. The only real preview is on the summary screen (tabs Veranstaltungsseite and Nennformular, built from the final proposal). Everything earlier shows lists.
-- Suggestions carry "Empfohlen" but are never pre-selected; "Weiter" waits for a choice, "Überspringen" accepts the suggestion (the answer stays `null`).
+- Suggestions carry "Empfohlen" but are never pre-selected; "Weiter" waits for a choice. "Überspringen" resets that screen’s answers (including follow-up controls) to the empty domain answers, so `null` accepts the current domain suggestion even after an explicit choice or cleared terms. Going back and continuing preserves an accepted language suggestion; only a first, unaccepted language screen with no selection means German alone.
 - What follows from answers is shown with its reason on the right, not asked again.
 - Setup ends in a draft ("Euer Entwurf steht"); opening is a separate, deliberate step.
 - Text in the du/ihr voice, present tense. The public registration form keeps its own design system.

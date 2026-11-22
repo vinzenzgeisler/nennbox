@@ -282,6 +282,61 @@ describe('onboarding prototype', () => {
     expect(row('Sprachen')?.value).toBe('Deutsch, Englisch');
   });
 
+  it('keeps the accepted English suggestion after skip, back and continue', () => {
+    walkTo('In welchen Sprachen nennt man bei euch?');
+    skip();
+    click(button('Zurück'));
+    expect(
+      container.querySelector<HTMLInputElement>('input[value="en"]')!.checked,
+    ).toBe(true);
+    click(button('Weiter'));
+    expect(row('Sprachen')?.value).toBe('Deutsch, Englisch');
+    expect(
+      JSON.parse(window.localStorage.getItem(storageKey)!).answers.languages,
+    ).toBeNull();
+  });
+
+  it('replaces an explicit starter choice with the promised domain suggestion on skip', () => {
+    walkTo('Wer startet bei euch?');
+    pick('Gäste ohne Lizenz');
+    expect(row('Starter')?.value).toBe('Gäste ohne Lizenz');
+    skip();
+    expect(row('Starter')?.value).toBe('Lizenzfahrer');
+    click(button('Zurück'));
+    expect(
+      container.querySelector<HTMLInputElement>('input[value="licensed"]')!
+        .checked,
+    ).toBe(true);
+    expect(
+      JSON.parse(window.localStorage.getItem(storageKey)!).answers.starters,
+    ).toBeNull();
+  });
+
+  it('restores the template when skipping previously cleared participation terms', () => {
+    walkTo('Das gilt für eure Teilnehmer');
+    const field = container.querySelector('textarea')!;
+    act(() => {
+      Object.getOwnPropertyDescriptor(
+        HTMLTextAreaElement.prototype,
+        'value',
+      )!.set!.call(field, '');
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(button('Weiter').disabled).toBe(true);
+    skip();
+    expect(heading()).toBe('Alles bereit zum Öffnen?');
+    expect(
+      JSON.parse(window.localStorage.getItem(storageKey)!).answers.terms,
+    ).toBeNull();
+    click(
+      container.querySelector('[aria-label="Teilnahmebedingungen ändern"]')!,
+    );
+    expect(
+      container.querySelector('textarea')!.value.trim().length,
+    ).toBeGreaterThan(0);
+    expect(button('Weiter').disabled).toBe(false);
+  });
+
   it('shows the whole registration form and lets optional fields be turned off, required ones not', () => {
     walkTo('Das füllen eure Teilnehmer aus');
     const names = () =>
