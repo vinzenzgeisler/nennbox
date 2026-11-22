@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   AppStatusPill,
   Banner,
+  AppButton,
   Button,
   DateInput,
   DetailNote,
@@ -121,9 +122,9 @@ export function EntryDriverSection({
       title="Fahrer"
       action={
         !editing ? (
-          <Button variant="text" size={32} onClick={start}>
+          <AppButton tone="ghost" onClick={start}>
             Bearbeiten
-          </Button>
+          </AppButton>
         ) : undefined
       }
     >

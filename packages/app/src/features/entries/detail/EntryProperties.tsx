@@ -3,7 +3,6 @@ import { AppButton, Banner, Textarea } from '@nennbox/ui';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { Outcome } from '../AdminEntriesModel.js';
 import { formatMoney } from './entryDetailModel.js';
-import { relativeEntryTime } from './relativeEntryTime.js';
 export function EntryProperties({
   entry,
   busy,
@@ -32,7 +31,15 @@ export function EntryProperties({
             </AppButton>
           </dd>
           <dt>Eingang</dt>
-          <dd>{relativeEntryTime(entry.createdAt)}</dd>
+          <dd>
+            {new Intl.DateTimeFormat('de-DE', {
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit',
+              timeZone: 'Europe/Berlin',
+            }).format(new Date(entry.createdAt))}
+          </dd>
           <dt>Startgeld</dt>
           <dd>
             {invoice ? formatMoney(invoice.totalCents, invoice.currency) : '—'}
@@ -72,9 +79,10 @@ export function EntryProperties({
             });
           }}
         >
-          <h2>Interne Notiz</h2>
+          <h2 id="entry-internal-note-title">Interne Notiz</h2>
           <Textarea
             label="Interne Notiz"
+            aria-labelledby="entry-internal-note-title"
             rows={3}
             maxLength={4000}
             placeholder="Nur für das Nennbüro sichtbar"

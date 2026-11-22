@@ -7,7 +7,7 @@ import type {
   EntryWorkflowCategory,
 } from '@nennbox/contracts';
 import {
-  Button,
+  AppButton,
   AdmissionChecklist,
   AppStatusPill,
   DocumentList,
@@ -184,14 +184,18 @@ export function EntryPreview({
       closeLabel="Vorschau schließen"
       footer={
         <div className="nb-preview-actions">
-          {canAdvance && nextStatus && next && (
-            <Button
-              disabled={busy}
-              onClick={() => void onNextAction(nextStatus)}
-            >
-              {nextStatus === 'accepted' ? 'Zulassen' : next.label.de}
-            </Button>
-          )}
+          <div className="nb-preview-action-row">
+            {canAdvance && nextStatus && next && (
+              <AppButton
+                tone="primary"
+                disabled={busy}
+                onClick={() => void onNextAction(nextStatus)}
+              >
+                {nextStatus === 'accepted' ? 'Zulassen' : next.label.de}
+              </AppButton>
+            )}
+            <AppButton onClick={onMessage}>Unterlagen anfordern</AppButton>
+          </div>
           {canAdvance && canAcceptNext && nextStatus && missing.length > 0 && (
             <p className="nb-preview-hint">
               {missing.length === 1
@@ -199,14 +203,6 @@ export function EntryPreview({
                 : `${missing.join(', ')} fehlen noch. Du kannst trotzdem zulassen.`}
             </p>
           )}
-          <div className="nb-preview-secondary-actions">
-            <Button variant="secondary" onClick={onMessage}>
-              Nachricht
-            </Button>
-            <Button variant="secondary" onClick={onOpenDetail}>
-              Vollständig öffnen
-            </Button>
-          </div>
         </div>
       }
       recent={

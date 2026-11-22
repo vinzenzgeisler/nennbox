@@ -1,3 +1,4 @@
+import { AppThumb } from '../app-primitives/AppPrimitives.js';
 import type { ReactNode } from 'react';
 
 /** Embedded entry preview: image leads, keyboard help stays pinned. */
@@ -64,12 +65,7 @@ export function PreviewPanel({
           {imageUrl ? (
             <img className="nb-preview-image" src={imageUrl} alt={imageAlt} />
           ) : (
-            <div
-              className="nb-preview-image nb-preview-image-empty"
-              aria-label={imageAlt}
-            >
-              —
-            </div>
+            <AppThumb className="nb-preview-image nb-preview-image-empty" />
           )}
           {imageUrl && (
             <span className="nb-preview-image-count">1 von 1 Bild</span>

@@ -150,7 +150,7 @@ test('Admin filters recipients, sends a message, and sees Mailpit delivery and s
     .click();
   await page
     .getByRole('complementary', { name: 'Nennungsvorschau' })
-    .getByRole('button', { name: 'Nachricht' })
+    .getByRole('button', { name: 'Unterlagen anfordern' })
     .click();
   await expect(
     page.getByRole('heading', { level: 1, name: 'Nachrichten' }),

@@ -62,8 +62,14 @@
   object-fit: cover;
   background: var(--nb-bg-hover);
 }
-.nb-preview-image-empty {
-  color: var(--nb-fg-muted);
+.nb-preview-image-empty.nb-app-thumb {
+  width: 100%;
+  height: auto;
+}
+.nb-preview-image-empty.nb-app-thumb svg {
+  width: 120px;
+  height: 120px;
+  stroke-width: 1.4;
 }
 .nb-preview-image-count {
   position: absolute;
@@ -106,23 +112,22 @@
   gap: var(--nb-space-2);
   width: 100%;
 }
-.nb-preview-actions > .nb-button {
-  width: 100%;
-  min-height: var(--nb-control-h-lg);
+.nb-preview-action-row {
+  display: flex;
+  gap: var(--nb-space-2);
+  flex-wrap: wrap;
+}
+.nb-preview-action-row > .nb-app-btn {
+  height: 36px;
+  min-height: 36px;
+}
+.nb-preview-action-row > .nb-app-btn-primary {
+  flex: 1;
 }
 .nb-preview-hint {
   margin: 0;
   color: var(--nb-fg-muted);
   font-size: var(--nb-text-sm);
-}
-.nb-preview-secondary-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--nb-space-2);
-}
-.nb-preview-secondary-actions > * {
-  width: 100%;
-  justify-content: center;
 }
 @keyframes nb-preview-slide {
   from {

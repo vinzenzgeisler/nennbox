@@ -161,7 +161,13 @@ export function AdminApplication() {
       workflow={previewWorkflow}
       busy={previewBusy}
       onClose={closePreview}
-      onMessage={() => openMessages({ entryId: selectedEntry.id })}
+      onMessage={() =>
+        openMessages({
+          entryId: selectedEntry.id,
+          subject: 'Bitte reiche deine Unterlagen nach',
+          body: 'Hallo {{firstName}},\n\nbitte reiche die noch fehlenden Unterlagen für deine Nennung nach, damit wir sie vollständig bearbeiten können.',
+        })
+      }
       onOpenDetail={() => {
         setDetailOpen(true);
         setPreviewOpen(false);
