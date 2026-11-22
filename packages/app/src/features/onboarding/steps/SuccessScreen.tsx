@@ -159,7 +159,7 @@ export function SuccessScreen({
         </AppStatusPill>
         <h1
           id="nb-onb-success-title"
-          className="nb-question-title"
+          className="nb-question-title is-result"
           tabIndex={-1}
           ref={(node) => node?.focus()}
         >
