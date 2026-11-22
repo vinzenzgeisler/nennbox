@@ -507,9 +507,9 @@ test('Community registration and admin lifecycle with API setup', async ({
   await nextActionButton.click();
   await expect(preview).toContainText('Angenommen');
   await preview.getByRole('button', { name: 'Vollständig öffnen' }).click();
-  const entryDetail = page.getByRole('region', {
-    name: 'Nennung im Detail',
-    exact: true,
+  const entryDetail = page.locator('.nb-entry-page');
+  const detailTabs = entryDetail.getByRole('navigation', {
+    name: 'Bereiche der Nennung',
   });
   await expect(entryDetail).toBeVisible();
   await expect(entryDetail).toContainText(participant);
@@ -525,6 +525,8 @@ test('Community registration and admin lifecycle with API setup', async ({
     'Auto',
   ])
     await expect(entryDetail).toContainText(value);
+  // Evidence, downloads and payment live on the explicit documents tab.
+  await detailTabs.getByRole('button', { name: /^Unterlagen\b/ }).click();
   // The accepted consent is shown from its stored evidence, with the exact wording.
   const consents = entryDetail.getByRole('region', { name: 'Einwilligungen' });
   await expect(consents).toContainText('participation');
@@ -555,6 +557,9 @@ test('Community registration and admin lifecycle with API setup', async ({
   if (!pdfPath) throw new Error('PDF download path is missing');
   expect(readFileSync(pdfPath).subarray(0, 4).toString()).toBe('%PDF');
   await shots('admin-entry-detail');
+  await detailTabs
+    .getByRole('button', { name: 'Verlauf', exact: true })
+    .click();
   await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
     /zugelassen|angenommen/i,
   );
@@ -678,26 +683,31 @@ test('admin records payment from entry detail UI', async ({
     .filter({ hasText: shared.participantName })
     .locator('button[data-entry-action]')
     .dblclick();
-  const entryDetail = page.getByRole('region', {
-    name: 'Nennung im Detail',
-    exact: true,
+  const entryDetail = page.locator('.nb-entry-page');
+  const detailTabs = entryDetail.getByRole('navigation', {
+    name: 'Bereiche der Nennung',
   });
   await expect(entryDetail).toBeVisible();
   await expect(entryDetail).toContainText(shared.participant);
 
   // Stripe-enabled runs reach the ledger through the signed browser webhook;
   // the baseline Community smoke records a bank/manual payment here.
-  await expect(entryDetail).toContainText('Startgeld');
+  await detailTabs.getByRole('button', { name: /^Unterlagen\b/ }).click();
+  const documents = entryDetail.getByRole('region', {
+    name: 'Unterlagen und Zahlung',
+    exact: true,
+  });
+  await expect(documents).toContainText('Startgeld');
   const stripeEnabled = Boolean(
     process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET,
   );
   let dialog: ReturnType<typeof page.getByRole>;
   if (stripeEnabled) {
-    await expect(entryDetail).toContainText('Bezahlt');
+    await expect(documents).toContainText('Bezahlt');
     await expect(
-      entryDetail.getByRole('button', { name: 'Erstattung auslösen' }),
+      documents.getByRole('button', { name: 'Erstattung auslösen' }),
     ).toBeVisible();
-    await entryDetail
+    await documents
       .getByRole('button', { name: 'Erstattung auslösen' })
       .click();
     dialog = page.getByRole('dialog');
@@ -707,29 +717,32 @@ test('admin records payment from entry detail UI', async ({
       .fill('Alpha E2E partial refund');
     await dialog.getByRole('button', { name: 'Erstattung auslösen' }).click();
     await expect(dialog).toHaveCount(0);
+    await detailTabs
+      .getByRole('button', { name: 'Verlauf', exact: true })
+      .click();
     await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
       'Zahlung erstattet',
     );
   } else {
-    await entryDetail
-      .getByRole('button', { name: 'Zahlung erfassen' })
-      .first()
-      .click();
+    await documents.getByRole('button', { name: 'Zahlung erfassen' }).click();
     dialog = page.getByRole('dialog');
     await expect(dialog.getByLabel(/Betrag/)).toHaveValue('10,00');
     await dialog
       .getByLabel('Begründung (für das Protokoll erforderlich)')
       .fill('Alpha E2E payment');
     await dialog.getByRole('button', { name: 'Zahlung erfassen' }).click();
-    await expect(entryDetail.locator('.nb-detail-labels')).toContainText(
-      /Zahlung · Bezahlt/i,
-    );
-    await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
-      'Zahlung eingegangen',
+    await expect(entryDetail.locator('.nb-entry-properties')).toContainText(
+      /Status\s*Bezahlt/i,
     );
     await expect(
       entryDetail.getByRole('button', { name: 'Zahlung erfassen' }),
     ).toHaveCount(0);
+    await detailTabs
+      .getByRole('button', { name: 'Verlauf', exact: true })
+      .click();
+    await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
+      'Zahlung eingegangen',
+    );
   }
   expect(token, 'bearer token captured from admin requests').not.toBe('');
   const detail = await request.fetch(
@@ -740,6 +753,7 @@ test('admin records payment from entry detail UI', async ({
     stripeEnabled ? /"paidCents":900/ : /"paidCents":1000/,
   );
 
+  await entryDetail.locator('summary[aria-label="Weitere Aktionen"]').click();
   await entryDetail.getByRole('button', { name: 'Klasse ändern' }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('Neue Klasse').selectOption({ label: 'Beta Class' });
@@ -747,11 +761,14 @@ test('admin records payment from entry detail UI', async ({
     .getByLabel('Begründung (für das Protokoll erforderlich)')
     .fill('Alpha E2E class change');
   await dialog.getByRole('button', { name: 'Klasse ändern' }).click();
-  await expect(entryDetail).toContainText('Klasse Beta Class');
+  await expect(entryDetail.locator('.nb-entry-identity')).toContainText(
+    'Lotus Seven · Beta Class',
+  );
   await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
     'Klasse geändert',
   );
 
+  await entryDetail.locator('summary[aria-label="Weitere Aktionen"]').click();
   await entryDetail.getByRole('button', { name: 'Betrag anpassen' }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByLabel(/Neuer Betrag/).fill('12,00');
@@ -763,6 +780,7 @@ test('admin records payment from entry detail UI', async ({
     'Betrag angepasst',
   );
 
+  await entryDetail.locator('summary[aria-label="Weitere Aktionen"]').click();
   await entryDetail.getByRole('button', { name: 'Notiz hinzufügen' }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('Sichtbarkeit').selectOption('internal');
@@ -771,6 +789,7 @@ test('admin records payment from entry detail UI', async ({
   await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
     'Alpha internal note',
   );
+  await entryDetail.locator('summary[aria-label="Weitere Aktionen"]').click();
   await entryDetail.getByRole('button', { name: 'Notiz hinzufügen' }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('Sichtbarkeit').selectOption('driver');
@@ -783,6 +802,7 @@ test('admin records payment from entry detail UI', async ({
     'Alpha driver note',
   );
 
+  await entryDetail.locator('summary[aria-label="Weitere Aktionen"]').click();
   await entryDetail.getByRole('button', { name: 'Nennung löschen …' }).click();
   dialog = page.getByRole('dialog');
   await dialog

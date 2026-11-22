@@ -44,6 +44,10 @@ test('Admin reviews and rejects real documents; list and preview refresh', async
     exact: true,
   });
   await expect(detail).toBeVisible();
+  await detail
+    .getByRole('navigation', { name: 'Bereiche der Nennung' })
+    .getByRole('button', { name: /^Unterlagen/ })
+    .click();
   await documentRow(page, 'Fahrerlizenz')
     .getByRole('button', { name: 'Prüfen' })
     .click();
@@ -108,7 +112,11 @@ test('Bergpreis documents match the A7/A4 reference at three widths', async ({
     name: 'Nennung im Detail',
     exact: true,
   });
-  await expect(detail).toContainText(/Orga-Code [2-9A-HJKMNP-TV-Z]{5}/);
+  await expect(detail.locator('code')).toHaveText(/^[2-9A-HJKMNP-TV-Z]{5}$/);
+  await detail
+    .getByRole('navigation', { name: 'Bereiche der Nennung' })
+    .getByRole('button', { name: /^Unterlagen/ })
+    .click();
   await expect(documentRow(page, 'Fahrerlizenz')).toContainText('Geprüft');
   await expect(documentRow(page, 'Fahrzeugschein')).toContainText('Fehlt');
   for (const [width, height] of [

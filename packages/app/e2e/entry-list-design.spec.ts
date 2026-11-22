@@ -45,9 +45,9 @@ test('reference entry list, embedded preview and selection interactions', async 
     .click();
   await target.locator('[data-entry-action]').focus();
   await page.keyboard.press('Enter');
-  await expect(page.locator('.nb-detail')).toBeVisible();
+  await expect(page.locator('.nb-entry-page')).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(page.locator('.nb-detail')).not.toBeVisible();
+  await expect(page.locator('.nb-entry-page')).not.toBeVisible();
   await rows.first().locator('[data-entry-action]').click();
   if (evidence) await page.screenshot({ path: `${evidence}/preview-1440.png` });
   await page.keyboard.press('Control+k');

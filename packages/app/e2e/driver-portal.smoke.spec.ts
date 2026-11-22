@@ -244,6 +244,10 @@ test('driver requests a Mailpit link, uploads a document, and the office sees it
     exact: true,
   });
   await expect(detail).toBeVisible();
+  await detail
+    .getByRole('navigation', { name: 'Bereiche der Nennung' })
+    .getByRole('button', { name: /^Unterlagen/ })
+    .click();
   const documents = detail.getByRole('region', {
     name: 'Unterlagen und Zahlung',
   });
