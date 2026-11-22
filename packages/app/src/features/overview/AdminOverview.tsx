@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import { EmptyState } from '@nennbox/ui';
+import { AppEmptyState, AppView, AppGrid } from '@nennbox/ui';
 import {
   LoadingNotice,
   NoEventSelected,
@@ -12,7 +12,6 @@ import { OverviewStatuses } from './OverviewStatuses.js';
 import { OverviewWarnings } from './OverviewWarnings.js';
 import { overviewApi } from './overviewApi.js';
 import { totalEntries, type EntryFilters } from './overviewModel.js';
-import './overview.css';
 
 type Props = {
   eventId: string;
@@ -34,7 +33,7 @@ export function AdminOverview({
       onTotalChange={onTotalChange}
     />
   ) : (
-    <NoEventSelected />
+    <NoEventSelected appDesign />
   );
 }
 
@@ -53,30 +52,35 @@ function OverviewForEvent({ eventId, onOpenEntries, onTotalChange }: Props) {
     return <LoadingNotice subject="Die Übersicht" />;
   if (state.status === 'error')
     return (
-      <RemoteError subject="Die Übersicht" kind={state.kind} onRetry={reload} />
+      <RemoteError
+        appDesign
+        subject="Die Übersicht"
+        kind={state.kind}
+        onRetry={reload}
+      />
     );
   const overview = state.data;
   const hasContent =
     totalEntries(overview.statuses) > 0 || overview.classes.length > 0;
   if (!hasContent)
     return (
-      <EmptyState
+      <AppEmptyState
         title="Noch keine Nennungen"
         description="Sobald die ersten Nennungen eingehen, erscheinen hier Kennzahlen, Belegung und Hinweise."
       />
     );
   return (
-    <div className="overview">
+    <AppView>
       <OverviewWarnings
         eventId={eventId}
         warnings={overview.warnings}
         onOpenEntries={onOpenEntries}
       />
       <OverviewMetrics overview={overview} />
-      <div className="overview-columns">
+      <AppGrid columns="two">
         <OverviewStatuses statuses={overview.statuses} />
         <OverviewClasses classes={overview.classes} />
-      </div>
-    </div>
+      </AppGrid>
+    </AppView>
   );
 }

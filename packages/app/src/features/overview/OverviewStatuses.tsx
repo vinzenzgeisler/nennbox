@@ -1,6 +1,19 @@
 import type { EventOverview } from '@nennbox/contracts';
-import { DataTable, DetailSection } from '@nennbox/ui';
+import {
+  AppValueRow,
+  AppStatusPill,
+  AppSection,
+  type AppStatus,
+} from '@nennbox/ui';
 import { statusRows } from './overviewModel.js';
+
+const STATUS_TONES: Record<string, AppStatus> = {
+  pending: 'offen',
+  waitlisted: 'vor',
+  accepted: 'zu',
+  rejected: 'neg',
+  withdrawn: 'ab',
+};
 
 export function OverviewStatuses({
   statuses,
@@ -9,19 +22,25 @@ export function OverviewStatuses({
 }) {
   const rows = statusRows(statuses);
   return (
-    <DetailSection title="Nennungen je Status">
+    <AppSection title="Nennungen je Status">
       {rows.length === 0 ? (
-        <p className="overview-empty">Noch keine Nennungen.</p>
+        <p>Noch keine Nennungen.</p>
       ) : (
-        <DataTable headers={['Status', 'Nennungen']} compact>
+        <div>
           {rows.map((row) => (
-            <tr key={row.key}>
-              <td>{row.label}</td>
-              <td className="overview-number">{row.count}</td>
-            </tr>
+            <AppValueRow
+              key={row.key}
+              label={
+                <AppStatusPill status={STATUS_TONES[row.key] ?? 'offen'}>
+                  {row.label}
+                </AppStatusPill>
+              }
+            >
+              {row.count}
+            </AppValueRow>
           ))}
-        </DataTable>
+        </div>
       )}
-    </DetailSection>
+    </AppSection>
   );
 }

@@ -1,5 +1,5 @@
 import type { EventOverview } from '@nennbox/contracts';
-import { DetailSection, OccupancyBar } from '@nennbox/ui';
+import { AppSection, OccupancyBar } from '@nennbox/ui';
 
 const valueText = (occupied: number, capacity: number | null): string =>
   capacity === null
@@ -12,13 +12,11 @@ export function OverviewClasses({
   classes: EventOverview['classes'];
 }) {
   return (
-    <DetailSection title="Belegung je Klasse">
+    <AppSection title="Belegung je Klasse">
       {classes.length === 0 ? (
-        <p className="overview-empty">
-          Für diese Veranstaltung sind noch keine Klassen angelegt.
-        </p>
+        <p>Für diese Veranstaltung sind noch keine Klassen angelegt.</p>
       ) : (
-        <div className="overview-classes">
+        <>
           {classes.map((item) => (
             <OccupancyBar
               key={item.classId}
@@ -30,8 +28,8 @@ export function OverviewClasses({
               valueText={valueText(item.occupied, item.capacity)}
             />
           ))}
-        </div>
+        </>
       )}
-    </DetailSection>
+    </AppSection>
   );
 }

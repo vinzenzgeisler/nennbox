@@ -462,7 +462,7 @@ test('Community registration and admin lifecycle with API setup', async ({
   await expect(
     page.getByRole('combobox', { name: 'Trennzeichen' }),
   ).toHaveValue(';');
-  await page.getByRole('button', { name: 'CSV-Export erstellen' }).click();
+  await page.getByRole('button', { name: 'Erstellen' }).click();
   const downloadButton = page
     .getByRole('button', { name: 'CSV herunterladen' })
     .first();

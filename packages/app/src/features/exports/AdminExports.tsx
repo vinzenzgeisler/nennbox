@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Banner } from '@nennbox/ui';
+import { AppNotice, AppView } from '@nennbox/ui';
 import type { ExportJob } from '@nennbox/contracts';
 import {
   LoadingNotice,
@@ -13,13 +13,12 @@ import { ExportHistory } from './ExportHistory.js';
 import { exportsApi } from './exportsApi.js';
 import { exportQuery, initialDraft, type ExportDraft } from './exportModel.js';
 import { useExportJobs } from './useExportJobs.js';
-import './exports.css';
 
 export function AdminExports({ eventId }: { eventId: string }) {
   return eventId ? (
     <ExportsForEvent key={eventId} eventId={eventId} />
   ) : (
-    <NoEventSelected />
+    <NoEventSelected appDesign />
   );
 }
 
@@ -85,7 +84,7 @@ function ExportsForEvent({ eventId }: { eventId: string }) {
     } catch (cause: unknown) {
       if (!request.signal.aborted)
         setError(
-          `Export konnte nicht gestartet werden (${errorKindOf(cause)}).`,
+          `Export konnte nicht gestartet werden (${errorKindOf(cause)}). Versuche es erneut.`,
         );
     } finally {
       if (!request.signal.aborted) setBusy(false);
@@ -105,7 +104,9 @@ function ExportsForEvent({ eventId }: { eventId: string }) {
       );
     } catch {
       if (!request.signal.aborted) {
-        setError('Die CSV-Datei konnte nicht heruntergeladen werden.');
+        setError(
+          'Die CSV-Datei konnte nicht heruntergeladen werden. Versuche es erneut.',
+        );
         jobs.reload();
       }
     } finally {
@@ -113,11 +114,12 @@ function ExportsForEvent({ eventId }: { eventId: string }) {
     }
   }
   return (
-    <div className="exports-view">
+    <AppView>
       {options.state.status === 'loading' ? (
         <LoadingNotice subject="Die Exportauswahl" />
       ) : options.state.status === 'error' ? (
         <RemoteError
+          appDesign
           subject="Die Exportauswahl"
           kind={options.state.kind}
           onRetry={options.reload}
@@ -132,12 +134,13 @@ function ExportsForEvent({ eventId }: { eventId: string }) {
           onSubmit={() => void create()}
         />
       )}
-      {error && <Banner tone="error">{error}</Banner>}
-      {notice && <Banner tone="success">{notice}</Banner>}
+      {error && <AppNotice tone="error">{error}</AppNotice>}
+      {notice && <AppNotice tone="success">{notice}</AppNotice>}
       {jobs.state.status === 'loading' ? (
         <LoadingNotice subject="Die Exportliste" />
       ) : jobs.state.status === 'error' ? (
         <RemoteError
+          appDesign
           subject="Die Exportliste"
           kind={jobs.state.kind}
           onRetry={jobs.reload}
@@ -151,6 +154,6 @@ function ExportsForEvent({ eventId }: { eventId: string }) {
           onDownload={(job, path) => void download(job, path)}
         />
       )}
-    </div>
+    </AppView>
   );
 }

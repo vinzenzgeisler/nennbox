@@ -1,13 +1,13 @@
 import {
-  Banner,
-  Button,
-  Checkbox,
-  FormItem,
-  FormSection,
-  PageHeader,
-  Stack,
-  TextInput,
-  Textarea,
+  AppNotice,
+  AppButton,
+  AppCheckbox,
+  AppSection,
+  AppView,
+  AppGrid,
+  AppSettingsGroup,
+  AppTextInput,
+  AppTextarea,
 } from '@nennbox/ui';
 import {
   MAX_DOCUMENT_TYPES,
@@ -22,7 +22,7 @@ export function EventDocumentSettings({ eventId }: { eventId: string }) {
   if (settings.state === 'loading')
     return <p role="status">Unterlagen werden geladen …</p>;
   if (settings.state === 'error')
-    return <Banner tone="error">{settings.message}</Banner>;
+    return <AppNotice tone="error">{settings.message}</AppNotice>;
   const update = (index: number, patch: Partial<DocumentTypeDraft>) =>
     settings.setTypes(
       settings.types.map((type, position) =>
@@ -30,40 +30,37 @@ export function EventDocumentSettings({ eventId }: { eventId: string }) {
       ),
     );
   return (
-    <section aria-labelledby="event-documents-title">
-      <Stack gap={4}>
-        <PageHeader
-          id="event-documents-title"
-          title="Nennungsunterlagen"
-          description="Orga-Codes werden automatisch kurz und NENNBOX-weit eindeutig vergeben."
-        />
-        <FormSection
-          title="Nennungsunterlagen"
-          description="Aktive Unterlagen erscheinen bei jeder Nennung. Deaktivierte Typen erscheinen nicht bei neuen Nennungen; vorhandene Uploads bleiben im Verlauf erhalten."
+    <section aria-label="Nennungsunterlagen">
+      <AppView>
+        <AppSection
+          title="Unterlagentypen"
+          description="Aktive Unterlagen erscheinen bei jeder Nennung. Deaktivierte Typen erscheinen nicht bei neuen Nennungen; vorhandene Uploads bleiben im Verlauf erhalten. Orga-Codes werden automatisch kurz und NENNBOX-weit eindeutig vergeben."
         >
           {settings.types.map((type, index) => (
-            <FormItem
+            <AppSettingsGroup
               key={type.saved ? type.key : `new-${index}`}
               label={`Unterlage ${index + 1}`}
             >
-              <TextInput
-                label="Name"
-                value={type.name}
-                maxLength={120}
-                disabled={settings.saving}
-                onChange={(event) =>
-                  update(index, { name: event.target.value })
-                }
-              />
-              <Checkbox
-                label="Pflichtunterlage"
-                checked={type.required}
-                disabled={settings.saving}
-                onChange={(event) =>
-                  update(index, { required: event.target.checked })
-                }
-              />
-              <Textarea
+              <AppGrid columns="two">
+                <AppTextInput
+                  label="Name"
+                  value={type.name}
+                  maxLength={120}
+                  disabled={settings.saving}
+                  onChange={(event) =>
+                    update(index, { name: event.target.value })
+                  }
+                />
+                <AppCheckbox
+                  label="Pflichtunterlage"
+                  checked={type.required}
+                  disabled={settings.saving}
+                  onChange={(event) =>
+                    update(index, { required: event.target.checked })
+                  }
+                />
+              </AppGrid>
+              <AppTextarea
                 label="Hinweis für Teilnehmende"
                 value={type.hint}
                 maxLength={500}
@@ -72,7 +69,7 @@ export function EventDocumentSettings({ eventId }: { eventId: string }) {
                   update(index, { hint: event.target.value })
                 }
               />
-              <Checkbox
+              <AppCheckbox
                 label="Aktiv"
                 checked={type.active}
                 disabled={settings.saving}
@@ -81,34 +78,36 @@ export function EventDocumentSettings({ eventId }: { eventId: string }) {
                 }
               />
               {settings.errors[index] && (
-                <Banner tone="error">{settings.errors[index]}</Banner>
+                <AppNotice tone="error">{settings.errors[index]}</AppNotice>
               )}
-            </FormItem>
+            </AppSettingsGroup>
           ))}
-          <Button
+          <AppButton
             type="button"
-            variant="secondary"
-            size={40}
+            tone="secondary"
             disabled={
               settings.saving || settings.types.length >= MAX_DOCUMENT_TYPES
             }
             onClick={() => settings.setTypes([...settings.types, newDraft()])}
           >
-            Unterlage hinzufügen
-          </Button>
-        </FormSection>
+            Hinzufügen
+          </AppButton>
+        </AppSection>
         <div>
-          <Button
+          <AppButton
+            tone="primary"
             type="button"
             disabled={settings.saving || !settings.valid}
             onClick={() => void settings.save()}
           >
-            {settings.saving ? 'Wird gespeichert …' : 'Unterlagen speichern'}
-          </Button>
+            {settings.saving ? 'Wird gespeichert …' : 'Speichern'}
+          </AppButton>
         </div>
-        {settings.message && <Banner tone="error">{settings.message}</Banner>}
+        {settings.message && (
+          <AppNotice tone="error">{settings.message}</AppNotice>
+        )}
         {settings.saved && <p role="status">Unterlagen gespeichert.</p>}
-      </Stack>
+      </AppView>
     </section>
   );
 }

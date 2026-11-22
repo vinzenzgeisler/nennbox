@@ -156,7 +156,7 @@ test('Admin configures document activation persistently', async ({ page }) => {
     'Fahrzeugschein',
   );
   await type.getByRole('checkbox', { name: 'Aktiv' }).uncheck();
-  await settings.getByRole('button', { name: 'Unterlagen speichern' }).click();
+  await settings.getByRole('button', { name: 'Speichern' }).click();
   await expect(settings.getByRole('status')).toContainText('gespeichert');
   await page.getByRole('button', { name: 'Nennungen', exact: true }).click();
   await page.getByRole('searchbox', { name: 'Suche' }).fill('Thomas Berger');
@@ -185,6 +185,6 @@ test('Admin configures document activation persistently', async ({ page }) => {
     .getByRole('group', { name: 'Unterlage 2' })
     .getByRole('checkbox', { name: 'Aktiv' })
     .check();
-  await settings.getByRole('button', { name: 'Unterlagen speichern' }).click();
+  await settings.getByRole('button', { name: 'Speichern' }).click();
   await expect(settings.getByRole('status')).toContainText('gespeichert');
 });

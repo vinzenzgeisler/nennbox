@@ -87,11 +87,11 @@ export const STATE_LABELS: Record<ExportJobState, string> = {
   failed: 'Fehlgeschlagen',
   expired: 'Abgelaufen',
 };
-export const STATE_MEANING = {
-  running: 'in_progress',
-  finished: 'done',
-  failed: 'missing',
-  expired: 'not_relevant',
+export const STATE_TONES = {
+  running: 'vor',
+  finished: 'zu',
+  failed: 'neg',
+  expired: 'ab',
 } as const;
 
 export const hasRunningJob = (jobs: readonly ExportJob[]): boolean =>
@@ -119,10 +119,3 @@ export function describeFilters(
   ].filter((part): part is string => Boolean(part));
   return parts.length ? parts.join(' · ') : 'Alle Nennungen';
 }
-
-export const formatDateTime = (iso: string): string =>
-  new Intl.DateTimeFormat('de-DE', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-    timeZone: 'Europe/Berlin',
-  }).format(new Date(iso));

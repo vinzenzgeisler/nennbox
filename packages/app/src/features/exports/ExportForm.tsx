@@ -1,9 +1,11 @@
 import {
-  Button,
-  Checkbox,
-  DetailSection,
-  SelectField,
-  TextInput,
+  AppButton,
+  AppGrid,
+  AppChoiceGroup,
+  AppCheckbox,
+  AppSection,
+  AppSelect,
+  AppTextInput,
 } from '@nennbox/ui';
 import type { ExportDraft } from './exportModel.js';
 import {
@@ -36,21 +38,21 @@ export function ExportForm({
   const update = (part: Partial<ExportDraft>) =>
     onChange({ ...draft, ...part });
   return (
-    <DetailSection title="Nennliste als CSV">
-      <div className="export-form">
+    <AppSection title="Nennliste als CSV">
+      <>
         <p>
           Wähle dieselben Filter wie in der Nennungsliste. Die Datei enthält
           UTF-8 mit BOM für Excel.
         </p>
-        <div className="export-filters">
-          <TextInput
+        <AppGrid>
+          <AppTextInput
             label="Suche"
             type="search"
             value={draft.search}
             maxLength={120}
             onChange={(event) => update({ search: event.target.value })}
           />
-          <SelectField
+          <AppSelect
             label="Klasse"
             value={draft.classId}
             onChange={(event) => update({ classId: event.target.value })}
@@ -61,8 +63,8 @@ export function ExportForm({
                 {item.label}
               </option>
             ))}
-          </SelectField>
-          <SelectField
+          </AppSelect>
+          <AppSelect
             label="Nennungsstatus"
             value={draft.acceptanceStatus}
             onChange={(event) =>
@@ -75,8 +77,8 @@ export function ExportForm({
                 {item.label}
               </option>
             ))}
-          </SelectField>
-          <SelectField
+          </AppSelect>
+          <AppSelect
             label="E-Mail-Prüfung"
             value={draft.verificationStatus}
             onChange={(event) =>
@@ -89,8 +91,8 @@ export function ExportForm({
                 {label}
               </option>
             ))}
-          </SelectField>
-          <SelectField
+          </AppSelect>
+          <AppSelect
             label="Zahlung"
             value={draft.paymentStatus}
             onChange={(event) => update({ paymentStatus: event.target.value })}
@@ -101,10 +103,10 @@ export function ExportForm({
                 {label}
               </option>
             ))}
-          </SelectField>
-        </div>
-        <div className="export-delimiter">
-          <SelectField
+          </AppSelect>
+        </AppGrid>
+        <AppGrid>
+          <AppSelect
             label="Trennzeichen"
             value={draft.delimiter}
             onChange={(event) =>
@@ -116,12 +118,11 @@ export function ExportForm({
                 {DELIMITER_LABELS[key]}
               </option>
             ))}
-          </SelectField>
-        </div>
-        <fieldset className="export-fields">
-          <legend>Spalten</legend>
+          </AppSelect>
+        </AppGrid>
+        <AppChoiceGroup label="Spalten">
           {ALL_FIELDS.map((field) => (
-            <Checkbox
+            <AppCheckbox
               key={field}
               label={FIELD_LABELS[field]}
               checked={draft.fields.includes(field)}
@@ -130,11 +131,17 @@ export function ExportForm({
               }
             />
           ))}
-        </fieldset>
-        <Button onClick={onSubmit} disabled={busy || draft.fields.length === 0}>
-          {busy ? 'Export wird erstellt …' : 'CSV-Export erstellen'}
-        </Button>
-      </div>
-    </DetailSection>
+        </AppChoiceGroup>
+        <div>
+          <AppButton
+            tone="primary"
+            onClick={onSubmit}
+            disabled={busy || draft.fields.length === 0}
+          >
+            {busy ? 'Wird erstellt …' : 'Erstellen'}
+          </AppButton>
+        </div>
+      </>
+    </AppSection>
   );
 }
