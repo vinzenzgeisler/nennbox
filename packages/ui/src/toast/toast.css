@@ -4,3 +4,20 @@
   max-width: calc(100vw - 32px);
   box-sizing: border-box;
 }
+
+.nb-admin-workspace .nb-toast {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  padding: var(--nb-space-3) var(--nb-space-4);
+  border: 0;
+  border-radius: var(--nb-radius-lg);
+  background: var(--nb-inverse-bg);
+  color: var(--nb-bg);
+  box-shadow: var(--nb-shadow-popover);
+}
+.nb-admin-workspace .nb-toast button {
+  border: 0;
+  background: transparent;
+  color: var(--nb-bg);
+}

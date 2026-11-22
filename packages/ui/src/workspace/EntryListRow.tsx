@@ -8,16 +8,15 @@ export function EntryListRow({
   imageAlt = '',
   className,
   number,
-  orgaCode,
   selected = false,
+  dimmed = false,
   checked = false,
   onSelect,
   onOpen,
+  onOpenDetail,
   openActionId,
   status,
-  payment,
-  inspection,
-  waiver,
+  completion,
   nextAction,
   menu,
   selectLabel,
@@ -29,25 +28,24 @@ export function EntryListRow({
   imageAlt?: string;
   className: string;
   number?: string | null;
-  /** Organisation code; the widest list stage shows it as its own column (A6 priority 4). */
-  orgaCode?: string | null;
   selected?: boolean;
+  dimmed?: boolean;
   checked?: boolean;
   onSelect?: (selected: boolean) => void;
   onOpen?: () => void;
+  onOpenDetail?: (() => void) | undefined;
   openActionId?: string;
   status: ReactNode;
-  payment?: ReactNode;
-  inspection?: ReactNode;
-  waiver?: ReactNode;
+  completion?: ReactNode;
   nextAction?: ReactNode;
   menu?: ReactNode;
   selectLabel: string;
 }) {
   return (
     <tr
-      className={`nb-entry-list-row${selected ? ' is-selected' : ''}`}
+      className={`nb-entry-list-row${selected ? ' is-selected' : ''}${dimmed ? ' is-dim' : ''}`}
       onClick={onOpen}
+      onDoubleClick={onOpenDetail}
     >
       <td data-column="person">
         <div className="nb-entry-list-person">
@@ -82,7 +80,10 @@ export function EntryListRow({
             >
               <strong>{name}</strong>
               <span className="nb-entry-list-meta">
-                <small>{vehicle}</small>
+                <small>
+                  {number ? `Nr. ${number} · ` : ''}
+                  {vehicle}
+                </small>
                 {hints}
               </span>
             </button>
@@ -90,7 +91,10 @@ export function EntryListRow({
             <span>
               <strong>{name}</strong>
               <span className="nb-entry-list-meta">
-                <small>{vehicle}</small>
+                <small>
+                  {number ? `Nr. ${number} · ` : ''}
+                  {vehicle}
+                </small>
                 {hints}
               </span>
             </span>
@@ -98,20 +102,8 @@ export function EntryListRow({
         </div>
       </td>
       <td data-priority="2">{className}</td>
-      <td data-priority="1" data-column="number">
-        <strong className="nb-entry-list-number">{number || '—'}</strong>
-      </td>
       <td data-column="status">{status}</td>
-      <td data-column="payment">{payment}</td>
-      <td data-priority="3" className="nb-entry-list-inspection">
-        {inspection}
-      </td>
-      <td data-priority="3" className="nb-entry-list-waiver">
-        {waiver}
-      </td>
-      <td data-priority="4" className="nb-entry-list-orga">
-        {orgaCode ?? '—'}
-      </td>
+      <td data-column="completion">{completion}</td>
       <td
         data-priority="1"
         data-column="actions"

@@ -103,7 +103,10 @@ export function AdminNavigation({
             <Icon name="search" />
             <span>{searchLabel}</span>
             <kbd className="nb-app-kbd" aria-hidden="true">
-              ⌘K
+              {typeof navigator !== 'undefined' &&
+              /Mac|iPhone|iPad/.test(navigator.platform)
+                ? '⌘K'
+                : 'Strg K'}
             </kbd>
           </button>
         )}

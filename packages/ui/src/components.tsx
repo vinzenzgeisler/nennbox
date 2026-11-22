@@ -52,3 +52,6 @@ export * from './detail/EvidenceList.js';
 export * from './message-layout/MessageLayout.js';
 export * from './metric/Metric.js';
 export * from './occupancy/OccupancyBar.js';
+
+export * from './workspace/CompletionDots.js';
+export * from './workspace/EntryStatusMenu.js';

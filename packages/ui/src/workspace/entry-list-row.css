@@ -1,37 +1,72 @@
+.nb-workspace-split-content .nb-table {
+  background: var(--nb-bg);
+  table-layout: fixed;
+}
+.nb-workspace-split-content .nb-table th {
+  height: 36px;
+  padding: 0 var(--nb-space-2);
+  border-bottom: 1px solid var(--nb-border);
+  background: var(--nb-bg);
+  color: var(--nb-fg-muted);
+  font: 500 var(--nb-text-sm) var(--nb-font);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.nb-workspace-split-content .nb-table th:nth-child(1) {
+  width: 43%;
+}
+.nb-workspace-split-content .nb-table th:nth-child(2) {
+  width: 13%;
+}
+.nb-workspace-split-content .nb-table th:nth-child(3) {
+  width: 15%;
+}
+.nb-workspace-split-content .nb-table th:nth-child(4) {
+  width: 22%;
+}
+.nb-workspace-split-content .nb-table th:nth-child(5) {
+  width: 7%;
+}
 .nb-entry-list-row {
-  height: 64px;
+  height: var(--nb-row-h);
   cursor: pointer;
 }
-.nb-entry-list-row.is-selected {
-  background: var(--color-ivory);
-  box-shadow: inset 3px 0 var(--color-green);
-}
 .nb-entry-list-row td {
-  height: 64px;
-  padding: 6px var(--space-2);
-  border-bottom: 1px solid var(--color-sage);
+  height: var(--nb-row-h);
+  box-sizing: border-box;
+  padding: 0 var(--nb-space-2);
+  border-bottom: 1px solid var(--nb-border-row);
   vertical-align: middle;
+  white-space: nowrap;
+  transition: background var(--nb-duration-fast);
+}
+.nb-entry-list-row:hover td {
+  background: var(--nb-bg-row-hover);
+}
+.nb-entry-list-row.is-selected td {
+  background: var(--nb-brand-subtle);
+}
+.nb-entry-list-row.is-dim td {
+  color: var(--nb-fg-faint);
+}
+.nb-entry-list-row.is-dim .nb-entry-list-person img {
+  opacity: 0.55;
 }
 .nb-entry-list-person {
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--nb-space-3);
   min-width: 0;
 }
 .nb-entry-list-select {
   position: absolute;
   z-index: 1;
   top: 50%;
-  left: 0;
+  left: calc(-1 * var(--nb-space-6));
   opacity: 0;
   transform: translateY(-50%);
-}
-/* The selection box sits in the row gutter so it never covers the photo. */
-@media (width >= 768px) {
-  .nb-entry-list-select {
-    left: calc(var(--space-6) * -1);
-  }
+  transition: opacity var(--nb-duration-fast);
 }
 .nb-entry-list-row:hover .nb-entry-list-select,
 .nb-entry-list-row:focus-within .nb-entry-list-select,
@@ -44,110 +79,68 @@
   display: grid;
   flex: none;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  width: var(--nb-thumb);
+  height: var(--nb-thumb);
+  border-radius: var(--nb-radius-md);
   object-fit: cover;
-  background: var(--color-sage);
-  color: var(--color-graphite);
+  background: var(--nb-bg-hover);
+  color: var(--nb-fg-muted);
 }
 .nb-entry-list-person > span:last-child {
   display: grid;
   min-width: 0;
 }
-.nb-entry-list-meta {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  min-width: 0;
-}
-.nb-entry-list-meta > small {
-  min-width: 0;
-}
-/* Hints such as "Unterlagen 1/2" read as a quiet suffix to the vehicle line, not as a second chip row. */
-.nb-entry-list-meta .nb-hint {
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-graphite);
-  font: 400 12px/1.3 var(--font-plex);
-  letter-spacing: normal;
-  white-space: nowrap;
-}
-.nb-entry-list-person strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font: 600 14px/1.3 var(--font-plex);
-}
-.nb-entry-list-person small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--color-graphite);
-  font: 400 12px/1.3 var(--font-plex);
-}
-.nb-entry-list-row td[data-priority='2'] {
-  font-size: 13px;
-}
-.nb-entry-list-number {
-  font: 900 20px/1 var(--font-archivo);
-  font-stretch: condensed;
-  font-variation-settings: 'wdth' 75;
-}
 .nb-entry-list-open {
   display: grid;
-  min-height: 0;
+  min-width: 0;
   padding: 0;
   border: 0;
   background: transparent;
   color: inherit;
   text-align: left;
-  text-decoration: none;
   cursor: pointer;
 }
-.nb-entry-list-row td:last-child {
+.nb-entry-list-person strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  text-align: center;
+  font: 600 var(--nb-text-base)/1.45 var(--nb-font);
 }
-.nb-entry-list-row td:last-child > * {
-  vertical-align: middle;
+.nb-entry-list-meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--nb-space-2);
+  min-width: 0;
 }
-.nb-entry-list-inspection,
-.nb-entry-list-waiver,
-.nb-entry-list-orga {
-  display: none;
+.nb-entry-list-meta small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--nb-fg-muted);
+  font: 400 var(--nb-text-sm)/1.45 var(--nb-font);
 }
-.nb-entry-list-orga {
-  font: var(--text-label);
-  letter-spacing: var(--tracking-label);
+.nb-entry-list-meta .nb-hint {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--nb-fg-muted);
+  font: 400 var(--nb-text-sm)/1.45 var(--nb-font);
+  letter-spacing: 0;
+  white-space: nowrap;
 }
-.nb-workspace-split.is-wide .nb-entry-list-inspection,
-.nb-workspace-split.is-wide .nb-entry-list-waiver {
-  display: table-cell;
+.nb-entry-list-row td:last-child {
+  text-align: right;
 }
-/* A6 priority 4: with the wide stage (2200 and up) or once the preview is closed. */
-@media (width >= 2200px) {
-  .nb-entry-list-orga {
-    display: table-cell;
-  }
-}
-@media (width >= 768px) {
-  .nb-workspace-split:not(.has-preview) .nb-entry-list-orga {
-    display: table-cell;
-  }
-}
-@media (width < 768px) {
+@media (width <= 860px) {
   .nb-entry-list-row {
     display: grid;
-    grid-template-columns: auto auto minmax(0, 1fr) auto;
-    gap: var(--space-1) var(--space-2);
-    min-height: 76px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--nb-space-2);
     height: auto;
-    margin: 0;
-    padding: var(--space-1) var(--space-4);
-    border: 0;
-    border-bottom: 1px solid var(--color-line);
+    min-height: var(--nb-row-h);
+    padding: var(--nb-space-2) var(--nb-space-4);
+    border-bottom: 1px solid var(--nb-border-row);
   }
   .nb-entry-list-row td {
     display: block;
@@ -155,50 +148,18 @@
     padding: 0;
     border: 0;
   }
-  .nb-entry-list-row td[data-column='actions'],
+  .nb-entry-list-row td[data-column='person'] {
+    grid-column: 1 / -1;
+  }
+  .nb-entry-list-row td[data-column='status'],
+  .nb-entry-list-row td[data-column='completion'] {
+    grid-row: 2;
+  }
   .nb-entry-list-row td[data-priority='2'],
-  .nb-entry-list-row td[data-priority='3'],
-  .nb-entry-list-row td[data-priority='4'] {
+  .nb-entry-list-row td[data-column='actions'] {
     display: none;
   }
-  .nb-entry-list-row td:first-child {
-    grid-column: 1 / 4;
-    grid-row: 1;
-  }
-  .nb-entry-list-row td[data-priority='1']:has(.nb-entry-list-number) {
-    grid-column: 4;
-    grid-row: 1;
-    text-align: end;
-  }
-  .nb-entry-list-row td[data-column='status'] {
-    grid-column: 1;
-    grid-row: 2;
-    margin-inline-start: 60px;
-  }
-  .nb-entry-list-row td[data-column='payment'] {
-    grid-column: 2;
-    grid-row: 2;
-  }
-  .nb-entry-list-number {
-    font: 700 28px/1 var(--font-plex);
-  }
-  .nb-entry-list-person {
-    gap: var(--space-3);
-    min-width: 0;
-  }
-  .nb-entry-list-document-count,
-  .nb-entry-list-row td[data-column='payment'] .nb-status-empty {
-    display: none;
-  }
-  .nb-entry-list-person img,
-  .nb-entry-list-image-empty {
-    width: 48px;
-    height: 48px;
-  }
-}
-
-@media (width >= 1680px) {
-  .nb-entry-list-document-count {
-    display: none;
+  .nb-entry-list-select {
+    left: 0;
   }
 }

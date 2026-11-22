@@ -233,7 +233,7 @@ beforeEach(() => {
   previewAvailable = true;
   listedEntries = [alex];
   window.matchMedia = ((query: string) => ({
-    matches: previewAvailable && !narrow && query.includes('1680'),
+    matches: previewAvailable && !narrow && query.includes('1101'),
     media: query,
     addEventListener: () => undefined,
     removeEventListener: () => undefined,
@@ -344,7 +344,7 @@ describe('AdminApplication event switch and detail access', () => {
     expect(container.querySelector('.is-mobile-open')).toBeNull();
   });
 
-  it('opens the detail directly from a row in the 1280–1679 viewport band', async () => {
+  it('opens the detail directly from a row below the 1101 px preview threshold', async () => {
     previewAvailable = false;
     await mount();
     await click((button) => button.hasAttribute('data-entry-action'));

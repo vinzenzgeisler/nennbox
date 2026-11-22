@@ -161,7 +161,7 @@ describe('AppShell', () => {
     const search = container.querySelector<HTMLButtonElement>(
       '.nb-admin-nav-search',
     )!;
-    expect(search.textContent).toContain('⌘K');
+    expect(search.textContent).toContain('Strg K');
     search.focus();
     await act(async () => search.click());
     const option = [

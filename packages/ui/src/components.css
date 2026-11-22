@@ -60,3 +60,6 @@
 @import './message-layout/message-layout.css';
 @import url('./metric/metric.css');
 @import url('./occupancy/occupancy.css');
+
+@import url('./workspace/completion-dots.css');
+@import url('./workspace/entry-status-menu.css');

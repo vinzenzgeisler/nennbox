@@ -28,10 +28,6 @@
     grid-template-columns: minmax(0, 1fr) var(--workspace-preview-width);
   }
   .nb-workspace-split[data-preview-available='true']
-    .nb-workspace-split-filters {
-    grid-column: 1 / -1;
-  }
-  .nb-workspace-split[data-preview-available='true']
     .nb-workspace-split-preview {
     display: block;
   }
@@ -57,7 +53,7 @@
   }
   .nb-workspace-split {
     height: 100%;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
   }
   .nb-workspace-split-content {
     overflow: auto;
@@ -113,5 +109,71 @@
     display: block;
     overflow: auto;
     background: var(--color-ivory);
+  }
+}
+.nb-workspace-split-filters .nb-filter-bar {
+  gap: var(--nb-space-3);
+  padding: var(--nb-space-4) var(--nb-space-7);
+  border-bottom: 1px solid var(--nb-border);
+  background: var(--nb-bg);
+}
+.nb-workspace-split-filters .nb-filter-bar.has-tabs {
+  padding-bottom: var(--nb-space-3);
+}
+.nb-workspace-split-filters .nb-filter-bar-tabs {
+  order: -1;
+  flex: 1 0 100%;
+  margin: 0;
+}
+.nb-workspace-split-filters .nb-tab-list {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 0;
+  border-radius: var(--nb-radius-md);
+  background: var(--nb-bg-hover);
+}
+.nb-workspace-split-filters .nb-tab-list [role='tab'] {
+  align-items: center;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 var(--nb-item-px);
+  border: 0;
+  border-radius: var(--nb-radius-sm);
+  color: var(--nb-fg-muted);
+  font: 500 var(--nb-text-sm) var(--nb-font);
+}
+.nb-workspace-split-filters .nb-tab-list [role='tab'][aria-selected='true'] {
+  background: var(--nb-bg);
+  box-shadow: var(--nb-shadow-raised);
+  color: var(--nb-fg);
+}
+.nb-workspace-split-filters .nb-tab-count {
+  font: 500 var(--nb-text-sm) var(--nb-font);
+  letter-spacing: 0;
+}
+.nb-workspace-split-filters .nb-filter-fields {
+  grid-template-columns: minmax(160px, 2fr) repeat(3, minmax(92px, 1fr));
+  gap: var(--nb-space-2);
+}
+.nb-workspace-split-filters .nb-filter-bar .nb-field input,
+.nb-workspace-split-filters .nb-filter-bar .nb-field select,
+.nb-workspace-split-filters .nb-filter-bar .nb-text-input input {
+  height: var(--nb-control-h);
+  min-height: var(--nb-control-h);
+  border-color: var(--nb-border-strong);
+  border-radius: var(--nb-radius-md);
+}
+.nb-workspace-split-filters .nb-active-filters button {
+  min-height: var(--nb-control-h-sm);
+  border: 0;
+  border-radius: var(--nb-radius-md);
+  background: var(--nb-bg-hover);
+  color: var(--nb-fg-secondary);
+  font: 500 var(--nb-text-sm) var(--nb-font);
+}
+@media (width <= 860px) {
+  .nb-workspace-split-filters .nb-filter-bar {
+    padding: var(--nb-space-2) var(--nb-space-4);
   }
 }

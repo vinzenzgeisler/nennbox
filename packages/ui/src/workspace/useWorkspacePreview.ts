@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
-export const WORKSPACE_PREVIEW_BREAKPOINT = 1680;
+export const WORKSPACE_PREVIEW_BREAKPOINT = 1101;
 const previewQuery = `(min-width: ${WORKSPACE_PREVIEW_BREAKPOINT}px)`;
 
 export function useWorkspacePreview() {

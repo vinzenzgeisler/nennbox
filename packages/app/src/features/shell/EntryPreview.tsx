@@ -1,3 +1,5 @@
+import { completionStates } from '../entries/completionStates.js';
+import { useState } from 'react';
 import { dimensionStatus } from '../entries/dimensionStatus.js';
 import type {
   EntryResponse as Entry,
@@ -5,6 +7,8 @@ import type {
 } from '@nennbox/contracts';
 import {
   Button,
+  AdmissionChecklist,
+  AppStatusPill,
   DocumentList,
   KeyboardHintBar,
   PreviewPanel,
@@ -51,6 +55,7 @@ export function EntryPreview({
   onMessage: () => void;
   busy: boolean;
 }) {
+  const [now] = useState(() => Date.now());
   const details = entry.adminDetails;
   const status = entry.statusProjection?.dimensions;
   const next = status?.find((item) => item.key === 'entry')?.nextAction;
@@ -132,7 +137,6 @@ export function EntryPreview({
           ? [
               `${details.vehicle.make} ${details.vehicle.model}`,
               details.eventClass.name,
-              entry.orgaCode ? `Orga-Code ${entry.orgaCode}` : null,
             ]
               .filter(Boolean)
               .join(' · ')
@@ -140,20 +144,34 @@ export function EntryPreview({
       }
       imageUrl={details?.vehicle.imageUrl ?? null}
       imageAlt="Fahrzeugbild"
-      labels={status
-        ?.filter((item) => ['entry', 'payment'].includes(item.key))
-        .map((item) => (
-          <StatusLabel
-            key={item.key}
+      labels={
+        <>
+          <AppStatusPill
             status={
-              item.key === 'payment' && item.meaning === 'not_relevant'
-                ? 'empty'
-                : item.meaning
+              nextCategory === 'accepted'
+                ? 'offen'
+                : workflow?.statuses.find(
+                      (item) => item.key === entry.acceptanceStatus,
+                    )?.category === 'accepted'
+                  ? 'zu'
+                  : 'offen'
             }
-            label={item.label.de}
-          />
-        ))}
+          >
+            {status?.find((item) => item.key === 'entry')?.label.de ??
+              workflow?.statuses.find(
+                (item) => item.key === entry.acceptanceStatus,
+              )?.labels.de ??
+              entry.acceptanceStatus}
+          </AppStatusPill>
+          {entry.orgaCode && (
+            <span className="nb-preview-code">
+              Orga-Code <code>{entry.orgaCode}</code>
+            </span>
+          )}
+        </>
+      }
       onClose={onClose}
+      onOpen={onOpenDetail}
       closeLabel="Vorschau schließen"
       footer={
         <div className="nb-preview-actions">
@@ -192,13 +210,45 @@ export function EntryPreview({
         />
       }
     >
-      <DocumentList
-        title="Unterlagen"
-        items={allDocuments}
-        empty={
-          <p>Für diese Veranstaltung sind keine Unterlagen eingerichtet.</p>
-        }
-      />
+      <AdmissionChecklist states={completionStates(entry)} />
+      {allDocuments.length > 0 && (
+        <details className="nb-preview-documents">
+          <summary>Unterlagen ansehen</summary>
+          <DocumentList title="Unterlagen" items={allDocuments} />
+        </details>
+      )}
+      <section className="nb-preview-recent">
+        <h3>Zuletzt</h3>
+        {(entry.adminHistory ?? [])
+          .slice(-3)
+          .reverse()
+          .map((item) => (
+            <p key={item.id}>
+              <span>{item.label}</span>
+              <time dateTime={item.occurredAt}>
+                {new Intl.RelativeTimeFormat('de', { numeric: 'auto' }).format(
+                  Math.round(
+                    (new Date(item.occurredAt).getTime() - now) / 3600000,
+                  ),
+                  'hour',
+                )}
+              </time>
+            </p>
+          ))}
+        {!(entry.adminHistory ?? []).length && (
+          <p>
+            <span>Nennung eingereicht</span>
+            <time dateTime={entry.createdAt}>
+              {new Intl.RelativeTimeFormat('de', { numeric: 'auto' }).format(
+                Math.round(
+                  (new Date(entry.createdAt).getTime() - now) / 86400000,
+                ),
+                'day',
+              )}
+            </time>
+          </p>
+        )}
+      </section>
     </PreviewPanel>
   );
 }

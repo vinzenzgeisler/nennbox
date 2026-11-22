@@ -46,7 +46,7 @@ export function SelectionBar({
       <button type="button" onClick={onAction} disabled={actionDisabled}>
         {actionLabel}
       </button>
-      <button type="button" onClick={onClear}>
+      <button type="button" onClick={onClear} aria-label={clearLabel}>
         {clearLabel}
       </button>
     </div>

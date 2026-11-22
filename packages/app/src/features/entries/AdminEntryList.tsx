@@ -36,6 +36,8 @@ type Props = {
   selectedIds: Set<string>;
   setSelection: Dispatch<SetStateAction<Selection>>;
   openEntry: (id: string) => Promise<void>;
+  openDetail?: () => void;
+  onChangeStatus: (entry: Entry, status: string) => Promise<void>;
   eligibleSelectedItems: Entry[];
   busy: boolean;
   clearSelection: () => void;
@@ -63,6 +65,8 @@ export function AdminEntryList(props: Props) {
     selectedIds,
     setSelection,
     openEntry,
+    openDetail,
+    onChangeStatus,
     eligibleSelectedItems,
     busy,
     clearSelection,
@@ -77,39 +81,7 @@ export function AdminEntryList(props: Props) {
     <>
       <AdminEntryListStatus apiState={apiState} total={total} />
       <DataTable
-        headers={[
-          'Nennung',
-          'Klasse',
-          'Nr.',
-          'Status',
-          'Zahlung',
-          'Abnahme',
-          'Haftverzicht',
-          'Orga-Code',
-          '',
-        ]}
-        headerCellPriorities={[
-          undefined,
-          2,
-          1,
-          undefined,
-          undefined,
-          3,
-          3,
-          4,
-          1,
-        ]}
-        headerCellClassNames={[
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          'nb-entry-list-inspection',
-          'nb-entry-list-waiver',
-          'nb-entry-list-orga',
-          undefined,
-        ]}
+        headers={['Nennung', 'Klasse', 'Status', 'Vollständigkeit', '']}
       >
         {apiState === 'ready' &&
           items.map((entry) => (
@@ -123,11 +95,13 @@ export function AdminEntryList(props: Props) {
               classes={classes}
               workflow={workflow}
               openEntry={openEntry}
+              openDetail={openDetail}
+              onChangeStatus={onChangeStatus}
             />
           ))}
         {apiState === 'ready' && !items.length && (
           <tr>
-            <td colSpan={9}>Keine Nennungen für diese Filter.</td>
+            <td colSpan={5}>Keine Nennungen für diese Filter.</td>
           </tr>
         )}
       </DataTable>

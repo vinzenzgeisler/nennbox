@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SelectField } from '@nennbox/ui';
+import { EntryStatusToast } from './EntryStatusToast.js';
+import { useEntryListStatusChanges } from './useEntryListStatusChanges.js';
 import {
   applyEntrySort,
   initialQuery,
@@ -143,6 +145,13 @@ function AdminEntriesView({
     setRefreshRevision,
     setActionError,
   });
+  const { changeStatus, notice, clearNotice } = useEntryListStatusChanges({
+    eventId,
+    workflow,
+    setSelected,
+    setRefreshRevision,
+    setActionError,
+  });
   const openEntryDetail = useOpenEntryDetail(selected, openEntry, openDetail);
   useEffect(() => {
     if (
@@ -260,6 +269,8 @@ function AdminEntriesView({
           selectedIds={selectedIds}
           setSelection={setSelection}
           openEntry={autoPreview ? openEntry : openEntryDetail}
+          openDetail={openDetail}
+          onChangeStatus={changeStatus}
           eligibleSelectedItems={eligibleSelectedItems}
           busy={busy}
           clearSelection={clearSelection}
@@ -286,6 +297,7 @@ function AdminEntriesView({
           }}
         />
       )}
+      {notice && <EntryStatusToast notice={notice} clear={clearNotice} />}
       {actionError && !(isDetailOpen && selected) && (
         <p role="alert">{actionError}</p>
       )}

@@ -21,6 +21,8 @@ export function useAdminEntriesKeyboard({
   useEffect(() => {
     const handleKeys = (event: KeyboardEvent) => {
       if (
+        event.defaultPrevented ||
+        document.querySelector('dialog[open], [role=dialog], details[open]') ||
         !items.length ||
         (event.target instanceof HTMLElement &&
           ['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName))
@@ -52,7 +54,7 @@ export function useAdminEntriesKeyboard({
         !(
           event.target instanceof HTMLElement &&
           event.target.closest(
-            'a, [role=tab], summary, [role=menuitem], input, select, textarea',
+            'a, button:not([data-entry-action]), [role=tab], summary, [role=menuitem], input, select, textarea',
           )
         )
       ) {

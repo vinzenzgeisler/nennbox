@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   AdminNavigation,
+  AppButton,
   AdminWorkspace,
   CommandPalette,
   PageHeader,
@@ -145,7 +146,12 @@ export function AppShell({
   const selectedEvent = events.find((event) => event.id === activeEvent);
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && previewOpen) {
+      if (
+        event.key === 'Escape' &&
+        previewOpen &&
+        !event.defaultPrevented &&
+        !document.querySelector('dialog[open], [role=dialog], details[open]')
+      ) {
         onClosePreview?.();
         document
           .querySelector<HTMLButtonElement>('[data-selected-entry]')
@@ -155,15 +161,12 @@ export function AppShell({
     document.addEventListener('keydown', closeOnEscape);
     return () => document.removeEventListener('keydown', closeOnEscape);
   }, [onClosePreview, previewOpen]);
-  const closeDate = selectedEvent?.registrationClosesAt
-    ? new Intl.DateTimeFormat('de-DE', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'Europe/Berlin',
-      }).format(new Date(selectedEvent.registrationClosesAt))
+  const [now] = useState(() => Date.now());
+  const deadlineDays = selectedEvent?.registrationClosesAt
+    ? Math.ceil(
+        (new Date(selectedEvent.registrationClosesAt).getTime() - now) /
+          86400000,
+      )
     : null;
   const eventBreadcrumb = (
     <span className="nb-app-breadcrumb">
@@ -273,10 +276,19 @@ export function AppShell({
         ) : (
           <PageHeader
             title={VIEW_TITLES[currentView]}
+            actions={
+              currentView === 'entries' ? (
+                <AppButton tone="primary" onClick={() => navigate('messages')}>
+                  Nachricht schreiben
+                </AppButton>
+              ) : undefined
+            }
             eyebrow={eventBreadcrumb}
             description={
-              currentView === 'entries' && closeDate
-                ? `Nennungsschluss  ${closeDate.replace(', ', ' · ')}`
+              currentView === 'entries' && deadlineDays !== null
+                ? deadlineDays >= 0
+                  ? `Nennungsschluss in ${deadlineDays} Tagen`
+                  : 'Nennungsschluss vorbei'
                 : undefined
             }
           />

@@ -13,12 +13,13 @@ export function Menu({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && detailsRef.current?.open) {
+        event.stopImmediatePropagation();
         detailsRef.current.open = false;
         summaryRef.current?.focus();
       }
     };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
   }, []);
   return (
     <details ref={detailsRef} className="nb-menu">

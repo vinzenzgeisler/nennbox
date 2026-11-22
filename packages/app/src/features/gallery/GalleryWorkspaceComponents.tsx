@@ -7,10 +7,11 @@ import {
   DataTable,
   DocumentList,
   EntryListRow,
+  CompletionDots,
+  AdmissionChecklist,
+  EntryStatusMenu,
   FilterBar,
   HistoryTimeline,
-  Menu,
-  MenuItem,
   PageHeader,
   PreviewPanel,
   SelectField,
@@ -82,6 +83,7 @@ export function GalleryWorkspaceComponents() {
       closeLabel="Vorschau schließen"
       footer={<Button variant="secondary">Vollständig öffnen</Button>}
     >
+      <AdmissionChecklist states={['done', 'missing', 'wait', 'missing']} />
       <DocumentList
         title="Unterlagen"
         items={[
@@ -212,15 +214,20 @@ export function GalleryWorkspaceComponents() {
                   setMobilePreviewOpen(true);
                 }}
                 selectLabel="Tom Probe auswählen"
-                status={<StatusLabel status="in_progress" label="Vorauswahl" />}
-                payment={<StatusLabel status="done" label="Bezahlt" />}
-                inspection={<StatusLabel status="missing" label="Ausstehend" />}
-                waiver={<StatusLabel status="missing" label="Ausstehend" />}
-                nextAction={<Button size={32}>Zulassen</Button>}
-                menu={
-                  <Menu label="Weitere Aktionen">
-                    <MenuItem>Vorschau öffnen</MenuItem>
-                  </Menu>
+                status={
+                  <EntryStatusMenu
+                    label="Vorauswahl"
+                    tone="vor"
+                    options={[
+                      { key: 'accepted', label: 'Zugelassen', tone: 'zu' },
+                    ]}
+                    onChange={() => {}}
+                  />
+                }
+                completion={
+                  <CompletionDots
+                    states={['done', 'missing', 'wait', 'missing']}
+                  />
                 }
               />
               <EntryListRow
@@ -232,18 +239,10 @@ export function GalleryWorkspaceComponents() {
                 onSelect={() => {}}
                 selectLabel="Piet Voorbeeld auswählen"
                 status={<StatusLabel status="done" label="Zugelassen" />}
-                payment={
-                  <StatusLabel
-                    status="not_relevant"
-                    label="Keine erforderlich"
+                completion={
+                  <CompletionDots
+                    states={['not_relevant', 'done', 'done', 'done']}
                   />
-                }
-                inspection={<StatusLabel status="done" label="Bestanden" />}
-                waiver={<StatusLabel status="done" label="Unterschrieben" />}
-                nextAction={
-                  <Button size={32} disabled>
-                    Zulassen
-                  </Button>
                 }
               />
               <EntryListRow
@@ -255,13 +254,15 @@ export function GalleryWorkspaceComponents() {
                 onSelect={() => {}}
                 selectLabel="Karel Ukázka auswählen"
                 status={<StatusLabel status="rejected" label="Abgesagt" />}
-                payment={<StatusLabel status="empty" label="Kein Wert" />}
-                inspection={<StatusLabel status="empty" label="Kein Wert" />}
-                waiver={<StatusLabel status="empty" label="Kein Wert" />}
-                nextAction={
-                  <Button size={32} disabled>
-                    Zulassen
-                  </Button>
+                completion={
+                  <CompletionDots
+                    states={[
+                      'not_relevant',
+                      'not_relevant',
+                      'not_relevant',
+                      'not_relevant',
+                    ]}
+                  />
                 }
               />
             </DataTable>
