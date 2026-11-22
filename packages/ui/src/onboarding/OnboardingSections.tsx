@@ -94,7 +94,7 @@ export function OnboardingSections({
         </ol>
       </nav>
       {note && (
-        <div className="nb-onb-note">
+        <div className="nb-onb-sections-note">
           <strong>{note.title}</strong>
           <span>{note.text}</span>
         </div>

@@ -84,7 +84,7 @@ button.nb-onb-section:hover {
   gap: 9px;
   padding: 5px 10px 5px 50px;
   color: var(--nb-fg-muted);
-  font-size: var(--nb-text-base);
+  font-size: 13px;
 }
 .nb-onb-screens i {
   flex: none;
@@ -103,7 +103,7 @@ button.nb-onb-section:hover {
 .nb-onb-screens .is-done i {
   background: var(--nb-ok);
 }
-.nb-onb-note {
+.nb-onb-sections-note {
   display: flex;
   flex-direction: column;
   gap: var(--nb-space-1);
@@ -113,11 +113,11 @@ button.nb-onb-section:hover {
   background: var(--nb-bg);
   box-shadow: var(--nb-shadow-raised);
 }
-.nb-onb-note strong {
+.nb-onb-sections-note strong {
   font-size: var(--nb-text-sm);
   font-weight: 600;
 }
-.nb-onb-note span {
+.nb-onb-sections-note span {
   color: var(--nb-fg-muted);
   font-size: 12px;
   line-height: 1.45;

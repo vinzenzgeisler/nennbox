@@ -17,6 +17,7 @@ const states = [
   { id: 'rest', title: 'Ruhe' },
   { id: 'recommended', title: 'Empfohlen', badge: 'Empfohlen' },
   { id: 'chosen', title: 'Gewählt', checked: true },
+  { id: 'locked', title: 'Immer dabei', lockedLabel: 'Hauptsprache' },
   {
     id: 'unavailable',
     title: 'Nicht möglich',
@@ -41,6 +42,7 @@ export function GalleryOnboardingComponents() {
             key={item.id}
             value={item.id}
             checked={'checked' in item}
+            lockedLabel={'lockedLabel' in item ? item.lockedLabel : undefined}
             onChange={() => undefined}
             title={item.title}
             description="Ein Satz, der die Art erklärt."

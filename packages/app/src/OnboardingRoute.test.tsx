@@ -23,6 +23,13 @@ describe('onboarding prototype route', () => {
       ),
     );
     expect(fetchSpy).not.toHaveBeenCalled();
+    // Frame of the new design: section bar and "Das entsteht" instead of a live preview.
+    expect(
+      container.querySelector('nav[aria-label="Abschnitte der Einrichtung"]'),
+    ).not.toBeNull();
+    expect(container.querySelector('.nb-emerging')).not.toBeNull();
+    expect(container.querySelector('.nb-live')).toBeNull();
+    expect(container.querySelector('.nb-onb.nb-app-design')).not.toBeNull();
     await act(async () => root.unmount());
     container.remove();
     vi.unstubAllGlobals();

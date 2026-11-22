@@ -99,7 +99,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--nb-space-3);
-  padding: 14px var(--nb-space-7);
+  padding: 14px 32px;
   border-top: 1px solid var(--nb-border-row);
   background: var(--nb-bg);
 }

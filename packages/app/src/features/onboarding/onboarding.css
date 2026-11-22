@@ -181,13 +181,6 @@
   font-weight: var(--weight-semibold);
 }
 
-.nb-onb-draft {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--nb-space-3);
-}
-
 .nb-onb-success {
   display: flex;
   flex-direction: column;
@@ -210,12 +203,6 @@
   align-items: flex-start;
   gap: var(--nb-space-3);
   min-width: 0;
-}
-
-.nb-onb-share-title {
-  margin: 0;
-  font-size: var(--nb-text-lg);
-  font-weight: var(--weight-semibold);
 }
 
 .nb-onb-share-url {
