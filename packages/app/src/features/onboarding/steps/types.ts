@@ -11,8 +11,10 @@ export type StepProps = {
   patch: (value: Partial<OnboardingAnswers>) => void;
   next: () => void;
   canContinue: boolean;
-  /** "Schritt 4 von 16 · Veranstaltung" */
+  /** "Abschnitt 3 · Veranstaltung" */
   eyebrow: string;
+  /** The suggestion was accepted with "Überspringen" on this screen. */
+  accepted: boolean;
 };
 
 export const sampleTakenSubdomains = [

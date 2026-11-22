@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Button,
+  AppButton,
   ChoiceCard,
   ChoiceGroup,
-  FileUpload,
-  Inline,
-  OnboardingSketch,
+  OnboardingFileButton,
+  OnboardingIcon,
   QuestionStep,
-  Stack,
 } from '@nennbox/ui';
 import { suggestBrandColors } from '@nennbox/contracts';
-import { reasonFor } from '../reasons.js';
+import { icons } from '../icons.js';
 import { sampleImageColors, sampleLogos } from './logo.js';
 import type { StepProps } from './types.js';
 
@@ -28,7 +26,7 @@ export function BrandStep({
   setLogo,
   ...step
 }: StepProps & { logo: LogoState; setLogo: (logo: LogoState) => void }) {
-  const { patch, resolved, proposal, next } = step;
+  const { patch, resolved, next } = step;
   const [error, setError] = useState<string>();
   const palettes = useMemo(
     () => suggestBrandColors(logo?.colors ?? []),
@@ -80,88 +78,94 @@ export function BrandStep({
 
   return (
     <QuestionStep
-      eyebrow={`${step.eyebrow} · Verein`}
+      eyebrow={step.eyebrow}
       title="Habt ihr ein Logo?"
       lead="Dann schlagen wir Farben daraus vor. Ohne Logo nutzt ihr zunächst die NENNBOX-Farben."
       onSubmit={next}
-      why={{
-        label: 'Warum dieser Vorschlag',
-        text: reasonFor(proposal.reasons, 'brand') ?? '',
-      }}
     >
-      <Stack gap={6}>
-        <div className="nb-onb-upload">
-          <div className="nb-onb-upload-art">
-            <OnboardingSketch name="brand-logo" />
-          </div>
-          <FileUpload
+      <div className="nb-onb-upload">
+        <span className="nb-onb-upload-art" aria-hidden="true">
+          {logo ? (
+            <img src={logo.url} alt="" />
+          ) : (
+            <OnboardingIcon path={icons.brand} />
+          )}
+        </span>
+        <div className="nb-onb-upload-text">
+          <OnboardingFileButton
             label="Logo hochladen"
-            hint="PNG, JPG, SVG oder WebP bis 2 MB. Ihr könnt es später austauschen."
             accept="image/png,image/jpeg,image/svg+xml,image/webp"
-            error={error}
-            selectedFileName={logo ? logo.name : undefined}
-            onChange={(event) => upload(event.target.files?.[0])}
+            onSelect={upload}
+            describedBy="nb-onb-upload-hint"
           />
+          <small id="nb-onb-upload-hint" className={error ? 'is-error' : ''}>
+            {error ??
+              (logo
+                ? logo.name
+                : 'PNG, JPG, SVG oder WebP bis 2 MB. Ihr könnt es später austauschen.')}
+          </small>
         </div>
-        <div>
-          <p className="nb-onb-subtitle">Oder ein Beispiellogo ausprobieren</p>
-          <Inline gap={3} className="nb-onb-samples">
-            {sampleLogos.map((sample) => (
-              <Button
-                key={sample.id}
-                variant="secondary"
-                size={48}
-                aria-pressed={logo?.url === sample.url}
-                onClick={() => choose(sample.id)}
-              >
-                <img src={sample.url} alt="" width={24} height={24} />
-                {sample.name}
-              </Button>
-            ))}
-            {logo && (
-              <Button
-                variant="text"
-                size={48}
-                onClick={() => {
-                  setLogo(null);
-                  patch({
-                    logoName: null,
-                    primaryColor: null,
-                    accentColor: null,
-                  });
-                }}
-              >
-                Logo entfernen
-              </Button>
-            )}
-          </Inline>
-        </div>
-        <ChoiceGroup layout="rows" columns={2} aria-label="Farben">
-          {palettes.map((palette, index) => (
-            <ChoiceCard
-              key={`${palette.primary}${palette.accent}`}
-              value={`${index}`}
-              checked={selected === index || (selected < 0 && index === 0)}
-              onChange={() =>
-                patch({
-                  primaryColor: palette.primary,
-                  accentColor: palette.accent,
-                })
-              }
-              title={logo ? `Palette ${index + 1}` : 'NENNBOX-Grün'}
-              description={
-                palette.adjusted
-                  ? 'Leicht abgedunkelt, damit Text darauf gut lesbar bleibt.'
-                  : `Hauptfarbe ${palette.primary}, Akzent ${palette.accent}`
-              }
-              illustration={
-                <Swatches primary={palette.primary} accent={palette.accent} />
-              }
-              badge={index === 0 && logo ? 'Empfohlen' : undefined}
-            />
+      </div>
+      <div>
+        <p className="nb-onb-subtitle">Oder ein Beispiellogo ausprobieren</p>
+        <div className="nb-onb-samples">
+          {sampleLogos.map((sample) => (
+            <AppButton
+              key={sample.id}
+              aria-pressed={logo?.url === sample.url}
+              onClick={() => choose(sample.id)}
+            >
+              <img src={sample.url} alt="" width={20} height={20} />
+              {sample.name}
+            </AppButton>
           ))}
-        </ChoiceGroup>
-      </Stack>
+          {logo && (
+            <AppButton
+              tone="ghost"
+              onClick={() => {
+                setLogo(null);
+                patch({
+                  logoName: null,
+                  primaryColor: null,
+                  accentColor: null,
+                });
+              }}
+            >
+              Logo entfernen
+            </AppButton>
+          )}
+        </div>
+      </div>
+      <ChoiceGroup columns={2} aria-label="Farben">
+        {palettes.map((palette, index) => (
+          <ChoiceCard
+            key={`${palette.primary}${palette.accent}`}
+            value={`${index}`}
+            checked={selected === index || (selected < 0 && index === 0)}
+            onChange={() =>
+              patch({
+                primaryColor: palette.primary,
+                accentColor: palette.accent,
+              })
+            }
+            title={logo ? `Palette ${index + 1}` : 'NENNBOX-Grün'}
+            description={
+              palette.adjusted
+                ? 'Leicht abgedunkelt, damit Text darauf gut lesbar bleibt.'
+                : `Hauptfarbe ${palette.primary}, Akzent ${palette.accent}`
+            }
+            illustration={
+              <Swatches primary={palette.primary} accent={palette.accent} />
+            }
+            consequence={
+              logo
+                ? 'Farben für Veranstaltungsseite und Nennformular'
+                : undefined
+            }
+            badge={index === 0 && logo ? 'Empfohlen' : undefined}
+          />
+        ))}
+      </ChoiceGroup>
     </QuestionStep>
   );
 }

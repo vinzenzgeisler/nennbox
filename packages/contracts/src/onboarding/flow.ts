@@ -11,20 +11,20 @@ const phaseOfStep: Record<OnboardingStepId, OnboardingPhase> = {
   account: 'account',
   club: 'club',
   brand: 'club',
-  kind: 'kind',
-  starters: 'details',
-  'vehicle-era': 'details',
-  'vehicle-type': 'details',
-  expected: 'details',
-  numbers: 'details',
-  codriver: 'details',
-  'double-start': 'details',
-  payment: 'details',
-  classes: 'classes',
-  when: 'when',
-  terms: 'when',
-  summary: 'done',
-  success: 'done',
+  kind: 'event',
+  starters: 'participants',
+  'vehicle-era': 'participants',
+  'vehicle-type': 'participants',
+  codriver: 'participants',
+  'double-start': 'participants',
+  numbers: 'participants',
+  expected: 'entry',
+  payment: 'entry',
+  classes: 'entry',
+  when: 'publish',
+  terms: 'publish',
+  summary: 'publish',
+  success: 'draft',
 };
 export const onboardingPhaseOf = (step: OnboardingStepId) => phaseOfStep[step];
 
@@ -50,11 +50,11 @@ export function onboardingSteps(
   steps.push('starters');
   if (kind !== 'kart') steps.push('vehicle-era');
   if (kind !== 'kart' && kind !== 'rally') steps.push('vehicle-type');
-  steps.push('expected', 'numbers');
   if (kind === 'rally' || kind === 'regularity' || kind === 'other')
     steps.push('codriver');
   if (kind !== 'rally' && kind !== 'regularity') steps.push('double-start');
-  steps.push('payment', 'classes', 'when', 'terms', 'summary', 'success');
+  steps.push('numbers', 'expected', 'payment', 'classes');
+  steps.push('when', 'terms', 'summary', 'success');
   return steps;
 }
 

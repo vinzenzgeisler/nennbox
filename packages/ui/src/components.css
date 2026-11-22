@@ -66,8 +66,8 @@
 
 @import url('./detail/entry-detail-page.css');
 @import url('./onboarding/onboarding-shell.css');
+@import url('./onboarding/sections.css');
+@import url('./onboarding/emerging.css');
 @import url('./onboarding/question-step.css');
 @import url('./onboarding/choice-card.css');
-@import url('./onboarding/live-preview.css');
-@import url('./onboarding/sketch.css');
-@import url('./onboarding/slider.css');
+@import url('./onboarding/fields.css');

@@ -2,122 +2,239 @@ import { useState } from 'react';
 import {
   ChoiceCard,
   ChoiceGroup,
-  LivePreview,
-  OnboardingProgress,
-  OnboardingSketch,
-  Slider,
-  sketchNames,
+  EmergingList,
+  NumberStepper,
+  OnboardingField,
+  OnboardingIcon,
+  OnboardingSections,
+  OnboardingSwitch,
+  OnboardingTextarea,
+  StepActions,
 } from '@nennbox/ui';
+import { icons } from '../onboarding/icons.js';
 
+const states = [
+  { id: 'rest', title: 'Ruhe' },
+  { id: 'recommended', title: 'Empfohlen', badge: 'Empfohlen' },
+  { id: 'chosen', title: 'Gewählt', checked: true },
+  {
+    id: 'unavailable',
+    title: 'Nicht möglich',
+    reason: 'Passt nicht zu Fahrzeugpass und Baujahr',
+  },
+] as const;
+
+/** Building blocks of the guided setup (#201), shown in all states of the reference. */
 export function GalleryOnboardingComponents() {
-  const [single, setSingle] = useState('b');
-  const [multi, setMulti] = useState<string[]>(['a']);
-  const [value, setValue] = useState(120);
-  const [view, setView] = useState('form');
-  const toggle = (id: string, on: boolean) =>
-    setMulti(on ? [...multi, id] : multi.filter((item) => item !== id));
+  const [chosen, setChosen] = useState('b');
+  const [on, setOn] = useState(true);
+  const [year, setYear] = useState(1990);
   return (
-    <section className="nb-gallery-onboarding">
+    <section className="nb-gallery-onboarding nb-app-design">
       <h2>Einrichtung (Onboarding)</h2>
-      <h3>Entscheidungskarten, Einfachauswahl</h3>
-      <ChoiceGroup aria-label="Einfachauswahl">
-        {(['a', 'b', 'c'] as const).map((id, index) => (
+      <h3>
+        Auswahlkarte, alle Zustände (Hover und Tastaturfokus am Rechner prüfen)
+      </h3>
+      <ChoiceGroup aria-label="Zustände der Auswahlkarte" columns={3}>
+        {states.map((item) => (
+          <ChoiceCard
+            key={item.id}
+            value={item.id}
+            checked={'checked' in item}
+            onChange={() => undefined}
+            title={item.title}
+            description="Ein Satz, der die Art erklärt."
+            illustration={<OnboardingIcon path={icons.hillclimb} />}
+            consequence="Folge für Formular, Klassen oder Unterlagen"
+            badge={'badge' in item ? item.badge : undefined}
+            unavailableReason={'reason' in item ? item.reason : undefined}
+          />
+        ))}
+      </ChoiceGroup>
+      <h3>Auswahlkarte, bedienbar (Zifferntasten 1–9 gelten im Frageschirm)</h3>
+      <ChoiceGroup aria-label="Einfachauswahl" columns={3}>
+        {['a', 'b', 'c'].map((id, index) => (
           <ChoiceCard
             key={id}
             value={id}
-            checked={single === id}
-            onChange={() => setSingle(id)}
+            checked={chosen === id}
+            onChange={() => setChosen(id)}
             title={['Bergrennen', 'Rallye', 'Slalom'][index]!}
             description="Ein Satz Erklärung, der die Entscheidung erleichtert."
             illustration={
-              <OnboardingSketch
-                name={(['hillclimb', 'rally', 'slalom'] as const)[index]!}
+              <OnboardingIcon
+                path={
+                  icons[(['hillclimb', 'rally', 'slalom'] as const)[index]!]
+                }
               />
             }
-            badge={id === 'b' ? 'Empfohlen' : undefined}
-            exampleLabel="Beispiel"
-            example="Ein konkretes Beispiel aus dem Vereinsalltag."
+            consequence="4 Klassen nach Hubraum, Nummern 1 bis 199"
+            badge={id === 'a' ? 'Empfohlen' : undefined}
           />
         ))}
       </ChoiceGroup>
-      <h3>Mehrfachauswahl, Zeilenansicht</h3>
-      <ChoiceGroup
-        mode="multiple"
-        layout="rows"
-        columns={2}
-        aria-label="Mehrfachauswahl"
-      >
-        {(['a', 'b'] as const).map((id) => (
-          <ChoiceCard
-            key={id}
-            value={id}
-            checked={multi.includes(id)}
-            onChange={(on) => toggle(id, on)}
-            title={id === 'a' ? 'Warteliste' : 'Beifahrer'}
-            description="Mehrere Karten können gleichzeitig gewählt sein."
-            illustration={
-              <OnboardingSketch name={id === 'a' ? 'waitlist' : 'codriver'} />
-            }
-          />
-        ))}
-      </ChoiceGroup>
-      <h3>Regler</h3>
-      <Slider
-        label="Erwartete Starter"
-        value={value}
-        min={10}
-        max={400}
-        step={5}
-        onChange={setValue}
-        minLabel="10"
-        maxLabel="400"
+      <h3>Abschnittsleiste</h3>
+      <div className="nb-gallery-onboarding-frame">
+        <OnboardingSections
+          label="Abschnitte"
+          doneLabel="erledigt"
+          onSelect={() => undefined}
+          note={{
+            title: 'Noch etwa acht Minuten',
+            text: 'Du kannst jederzeit aufhören. Angefangenes bleibt gespeichert.',
+          }}
+          sections={[
+            { id: 'a', label: 'Konto', state: 'done' },
+            { id: 'b', label: 'Verein', state: 'done' },
+            {
+              id: 'c',
+              label: 'Veranstaltung',
+              state: 'active',
+              screens: [{ label: 'Was veranstaltet ihr', state: 'active' }],
+            },
+            { id: 'd', label: 'Teilnehmer', state: 'todo' },
+            { id: 'e', label: 'Nennung', state: 'todo' },
+          ]}
+        />
+      </div>
+      <h3>Das entsteht (breite Spalte, am Handy eine Leiste)</h3>
+      <div className="nb-gallery-onboarding-frame">
+        <EmergingList
+          title="Das entsteht"
+          openLabel="noch offen"
+          closeLabel="Schließen"
+          footnote="Alles hier lässt sich nach dem Einrichten ändern."
+          groups={[
+            {
+              id: 'event',
+              title: 'Eure Veranstaltung',
+              rows: [
+                {
+                  kind: 'fact',
+                  id: 'k',
+                  label: 'Art',
+                  value: 'Bergrennen',
+                  signature: 'a',
+                },
+                {
+                  kind: 'fact',
+                  id: 'n',
+                  label: 'Nummern',
+                  value: '1 bis 199',
+                  derived: true,
+                  derivedLabel: 'abgeleitet',
+                  signature: 'b',
+                },
+                {
+                  kind: 'fact',
+                  id: 't',
+                  label: 'Termin',
+                  value: null,
+                  signature: 'c',
+                },
+              ],
+            },
+            {
+              id: 'form',
+              title: 'Das fragt das Nennformular',
+              rows: [
+                {
+                  kind: 'field',
+                  id: 'l',
+                  name: 'Lizenznummer',
+                  tag: 'Pflicht',
+                  tone: 'required',
+                  reason: 'Weil nur Lizenzfahrer starten',
+                  signature: 'a',
+                },
+                {
+                  kind: 'field',
+                  id: 'w',
+                  name: 'Wunschnummer',
+                  tag: 'Freiwillig',
+                  tone: 'optional',
+                  reason: 'Ihr gebt sie frei',
+                  signature: 'b',
+                },
+                {
+                  kind: 'field',
+                  id: 'p',
+                  name: 'Fahrzeugpass',
+                  tag: 'Datei',
+                  tone: 'file',
+                  reason: 'Für historische Fahrzeuge',
+                  signature: 'c',
+                },
+                {
+                  kind: 'field',
+                  id: 'x',
+                  name: 'Transpondernummer',
+                  tag: 'Abgeschaltet',
+                  tone: 'off',
+                  reason: 'Nur bei elektronischer Zeitnahme',
+                  signature: 'd',
+                },
+              ],
+            },
+          ]}
+        />
+      </div>
+      <h3>Fußleiste</h3>
+      <StepActions
+        backLabel="Zurück"
+        onBack={() => undefined}
+        skipLabel="Überspringen"
+        skipHint="Wir nehmen den Vorschlag"
+        onSkip={() => undefined}
+        continueLabel="Weiter"
+        onContinue={() => undefined}
+        hints={['↵ weiter', '1–9 wählen']}
       />
-      <h3>Fortschritt</h3>
-      <OnboardingProgress
-        label="Fortschritt"
-        position="Schritt 4 von 15 · Veranstaltung"
-        completedLabel="erledigt"
-        current={2}
-        segments={[
-          'Konto',
-          'Verein',
-          'Veranstaltung',
-          'Details',
-          'Klassen',
-          'Termin',
-          'Fertig',
-        ].map((label, index) => ({
-          label,
-          fill: index < 2 ? 1 : index === 2 ? 0.5 : 0,
-        }))}
+      <StepActions
+        backLabel="Zurück"
+        onBack={() => undefined}
+        continueLabel="Weiter"
+        onContinue={() => undefined}
+        continueDisabled
+        hints={['1–9 wählen']}
       />
-      <h3>Rahmen der Live-Vorschau</h3>
-      <LivePreview
-        label="Vorschau"
-        title="Vorschau"
-        statusLabel="Live"
-        viewsLabel="Ansicht"
-        views={[
-          { value: 'form', label: 'Nennformular' },
-          { value: 'event', label: 'Veranstaltungsseite' },
-        ]}
-        view={view}
-        onViewChange={setView}
-        address="verein.nennbox.com/events/beispiel"
-      >
-        <p className="nb-gallery-onboarding-note">
-          Inhalt der Seite, die der Verein gerade baut.
-        </p>
-      </LivePreview>
-      <h3>Skizzen</h3>
-      <ul className="nb-gallery-sketches">
-        {sketchNames.map((name) => (
-          <li key={name}>
-            <OnboardingSketch name={name} />
-            <code>{name}</code>
-          </li>
-        ))}
-      </ul>
+      <h3>Eingaben</h3>
+      <div className="nb-gallery-onboarding-fields">
+        <OnboardingField
+          label="Adresse"
+          defaultValue="msc-hohenstein"
+          suffix=".nennbox.com"
+          success="Adresse ist frei"
+        />
+        <OnboardingField
+          label="Adresse"
+          defaultValue="msc"
+          suffix=".nennbox.com"
+          error="Diese Adresse ist schon vergeben."
+        />
+        <NumberStepper
+          label="Historisch bis Baujahr"
+          hint="Jüngere Fahrzeuge brauchen keinen Fahrzeugpass."
+          value={year}
+          min={1930}
+          max={2005}
+          step={5}
+          lessLabel="Früher"
+          moreLabel="Später"
+          onChange={setYear}
+        />
+        <OnboardingSwitch
+          label="Warteliste aktivieren"
+          hint="Sagt jemand ab, rückt ihr den Nächsten nach."
+          checked={on}
+          onChange={(event) => setOn(event.target.checked)}
+        />
+        <OnboardingTextarea
+          label="Teilnahmebedingungen"
+          defaultValue="Mustertext"
+          rows={3}
+        />
+      </div>
     </section>
   );
 }

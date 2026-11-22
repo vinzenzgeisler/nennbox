@@ -2,12 +2,16 @@ import React, { useEffect, useId, useRef } from 'react';
 import { QuestionContext } from './QuestionContext.js';
 
 export type QuestionStepProps = {
-  /** Mono label above the question, e.g. "Frage 3 · Veranstaltung". */
+  /** Line above the question, e.g. "Abschnitt 3 · Veranstaltung". */
   eyebrow: string;
   title: string;
   lead?: React.ReactNode | undefined;
-  /** Why NENNBOX preset the answer; shown below the answers, with its own label. */
-  why?: { label: string; text: React.ReactNode } | undefined;
+  /** Concrete example of the chosen answer, shown below the answers. */
+  example?: { label: string; text: React.ReactNode } | undefined;
+  /** Quiet line below the answers, e.g. what to do to continue. */
+  note?: React.ReactNode | undefined;
+  /** Follow-up control below the example, e.g. the build-year limit. */
+  after?: React.ReactNode | undefined;
   /** Enter on a focused field or card continues; omitted while the step cannot continue. */
   onSubmit?: (() => void) | undefined;
   children: React.ReactNode;
@@ -27,7 +31,9 @@ export function QuestionStep({
   eyebrow,
   title,
   lead,
-  why,
+  example,
+  note,
+  after,
   onSubmit,
   children,
 }: QuestionStepProps) {
@@ -78,23 +84,27 @@ export function QuestionStep({
   return (
     <QuestionContext.Provider value={{ titleId }}>
       <section className="nb-question" ref={root} aria-labelledby={titleId}>
-        <p className="nb-question-eyebrow">{eyebrow}</p>
-        <h1
-          className="nb-question-title"
-          id={titleId}
-          ref={heading}
-          tabIndex={-1}
-        >
-          {title}
-        </h1>
-        {lead && <p className="nb-question-lead">{lead}</p>}
+        <header className="nb-question-head">
+          <p className="nb-question-eyebrow">{eyebrow}</p>
+          <h1
+            className="nb-question-title"
+            id={titleId}
+            ref={heading}
+            tabIndex={-1}
+          >
+            {title}
+          </h1>
+          {lead && <p className="nb-question-lead">{lead}</p>}
+        </header>
         <div className="nb-question-body">{children}</div>
-        {why && (
-          <aside className="nb-question-why">
-            <span className="nb-question-why-label">{why.label}</span>
-            <p>{why.text}</p>
+        {example && (
+          <aside className="nb-question-example">
+            <span className="nb-question-example-label">{example.label}</span>
+            <p>{example.text}</p>
           </aside>
         )}
+        {after}
+        {note && <p className="nb-question-note">{note}</p>}
       </section>
     </QuestionContext.Provider>
   );

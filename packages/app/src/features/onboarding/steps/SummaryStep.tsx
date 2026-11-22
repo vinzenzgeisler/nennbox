@@ -1,4 +1,4 @@
-import { Button, QuestionStep } from '@nennbox/ui';
+import { AppButton, QuestionStep } from '@nennbox/ui';
 import { formatEuro, type OnboardingStepId } from '@nennbox/contracts';
 import { choiceSteps } from '../choices.js';
 import { formatDay, formatRange } from '../format.js';
@@ -84,9 +84,9 @@ export function SummaryStep({
   ];
   return (
     <QuestionStep
-      eyebrow={`${eyebrow} · Zusammenfassung`}
+      eyebrow={eyebrow}
       title="Alles bereit zum Öffnen?"
-      lead="So sieht eure Nennung aus. Rechts seht ihr die Vorschau. Alles lässt sich später ändern."
+      lead="So sieht eure Nennung aus. Jede Zeile lässt sich einzeln ändern, auch später."
       onSubmit={canContinue ? next : undefined}
     >
       <dl className="nb-onb-summary">
@@ -94,21 +94,18 @@ export function SummaryStep({
           <div key={row.label} className="nb-onb-summary-row">
             <dt>{row.label}</dt>
             <dd>{row.value || '–'}</dd>
-            <Button
-              variant="text"
-              size={40}
+            <AppButton
+              tone="ghost"
               aria-label={`${row.label} ändern`}
               onClick={() => go(row.step)}
             >
               Ändern
-            </Button>
+            </AppButton>
           </div>
         ))}
       </dl>
       <div className="nb-onb-draft">
-        <Button variant="secondary" size={48} onClick={onDraft}>
-          Als Entwurf speichern
-        </Button>
+        <AppButton onClick={onDraft}>Als Entwurf speichern</AppButton>
         <p className="nb-onb-note">
           Im Entwurf sehen Teilnehmer nichts. Ihr könnt die Nennung jederzeit
           öffnen.

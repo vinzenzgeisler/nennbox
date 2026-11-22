@@ -2,27 +2,43 @@ import type { ReactNode } from 'react';
 import {
   ChoiceCard,
   ChoiceGroup,
-  OnboardingSketch,
+  OnboardingIcon,
   QuestionStep,
 } from '@nennbox/ui';
+import { resolveAnswers } from '@nennbox/contracts';
 import { choiceSteps, type ChoiceStep } from '../choices.js';
-import { reasonFor } from '../reasons.js';
+import { icons } from '../icons.js';
 import type { StepProps } from './types.js';
 
 export type ChoiceStepId = keyof typeof choiceSteps;
 
-/** Setting in the suggested configuration whose explanation belongs to a screen. */
-const settingFor: Partial<Record<ChoiceStepId, string[]>> = {
-  starters: ['licenseNumber'],
-  'vehicle-era': ['vehiclePassNumber'],
-  numbers: ['startNumbers'],
-  codriver: ['coDriver'],
-  'double-start': ['doubleStart'],
-  payment: ['payment'],
-};
 const askedDirectly: ChoiceStepId[] = ['account', 'kind'];
 
-/** Generic single-choice screen: sketch cards, recommended answer, "why" and the follow-up slot. */
+const asValue = (value: unknown): string | null =>
+  typeof value === 'boolean'
+    ? value
+      ? 'yes'
+      : 'no'
+    : (value as string | null);
+
+/** The card a member has chosen, or the suggested one after "Überspringen". */
+export function chosenOption(
+  id: ChoiceStepId,
+  {
+    answers,
+    resolved,
+    accepted,
+  }: Pick<StepProps, 'answers' | 'resolved' | 'accepted'>,
+): string | null {
+  const field = choiceSteps[id].field;
+  const given = asValue((answers as unknown as Record<string, unknown>)[field]);
+  if (given !== null) return given;
+  return accepted && !askedDirectly.includes(id)
+    ? asValue((resolved as unknown as Record<string, unknown>)[field])
+    : null;
+}
+
+/** Generic single-choice screen: cards with their consequence, the recommended answer and an example. */
 export function ChoiceStepView({
   id,
   extra,
@@ -30,37 +46,38 @@ export function ChoiceStepView({
 }: StepProps & { id: ChoiceStepId; extra?: ReactNode }) {
   const config: ChoiceStep = choiceSteps[id];
   const direct = askedDirectly.includes(id);
-  const source = (direct ? step.answers : step.resolved) as unknown as Record<
-    string,
-    unknown
-  >;
-  const value = source[config.field];
-  const current =
-    typeof value === 'boolean'
-      ? value
-        ? 'yes'
-        : 'no'
-      : (value as string | null);
-  const suggested =
-    !direct &&
-    (step.answers as unknown as Record<string, unknown>)[config.field] === null;
-  const why = reasonFor(step.proposal.reasons, ...(settingFor[id] ?? []));
+  const current = chosenOption(id, step);
+  // What NENNBOX would suggest if the member left this question open.
+  const suggested = direct
+    ? null
+    : asValue(
+        (
+          resolveAnswers({
+            ...step.answers,
+            [config.field]: null,
+          }) as unknown as Record<string, unknown>
+        )[config.field],
+      );
+  const selected = config.options.find((option) => option.value === current);
   return (
     <QuestionStep
-      eyebrow={`${step.eyebrow} · ${config.topic}`}
+      eyebrow={`${step.eyebrow}`}
       title={config.title}
       lead={config.lead}
       onSubmit={step.canContinue ? step.next : undefined}
-      why={
-        why
-          ? {
-              label: suggested ? 'Warum dieser Vorschlag' : 'Das bedeutet',
-              text: why,
-            }
+      after={extra}
+      example={
+        selected ? { label: 'Beispiel', text: selected.example } : undefined
+      }
+      note={
+        current === null
+          ? direct
+            ? 'Wähle eine Karte, damit es weitergeht.'
+            : 'Wähle eine Karte, damit es weitergeht. Unser Vorschlag ist mit „Empfohlen“ markiert.'
           : undefined
       }
     >
-      <ChoiceGroup layout={config.layout} columns={config.columns}>
+      <ChoiceGroup columns={config.columns}>
         {config.options.map((option) => (
           <ChoiceCard
             key={option.value}
@@ -75,16 +92,16 @@ export function ChoiceStepView({
             }
             title={option.title}
             description={option.description}
-            illustration={<OnboardingSketch name={option.sketch} />}
-            badge={
-              suggested && current === option.value ? 'Empfohlen' : undefined
+            illustration={<OnboardingIcon path={icons[option.icon]} />}
+            consequence={
+              typeof option.consequence === 'function'
+                ? option.consequence(step.resolved)
+                : option.consequence
             }
-            exampleLabel="Beispiel"
-            example={option.example}
+            badge={suggested === option.value ? 'Empfohlen' : undefined}
           />
         ))}
       </ChoiceGroup>
-      {extra}
     </QuestionStep>
   );
 }

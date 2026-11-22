@@ -94,15 +94,18 @@ export type OnboardingStepId =
   | 'summary'
   | 'success';
 
-/** The seven stations of the owner's flow; several screens can belong to one. */
+/**
+ * The six sections of the owner's flow plus the finished draft. Several screens can
+ * belong to one section; the app names the screens inside a section.
+ */
 export const onboardingPhases = [
   'account',
   'club',
-  'kind',
-  'details',
-  'classes',
-  'when',
-  'done',
+  'event',
+  'participants',
+  'entry',
+  'publish',
+  'draft',
 ] as const;
 export type OnboardingPhase = (typeof onboardingPhases)[number];
 

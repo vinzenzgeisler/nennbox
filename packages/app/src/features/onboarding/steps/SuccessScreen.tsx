@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Inline, Stack, StatusLabel } from '@nennbox/ui';
+import { AppButton, AppStatusPill } from '@nennbox/ui';
 import type { EventConfigProposal } from '@nennbox/contracts';
 import type { Outcome } from '../state.js';
 
@@ -106,23 +106,20 @@ export function SuccessScreen({
       </p>
       <div className="nb-onb-share">
         <div className="nb-onb-share-main">
-          <StatusLabel
-            status={open ? 'done' : 'in_progress'}
-            label={open ? 'Nennung offen' : 'Entwurf'}
-          />
+          <AppStatusPill status={open ? 'zu' : 'vor'}>
+            {open ? 'Nennung offen' : 'Entwurf'}
+          </AppStatusPill>
           <p className="nb-onb-share-title">{proposal.event.title}</p>
           <p className="nb-onb-share-url">{url}</p>
-          <Inline gap={3}>
-            <Button
-              size={48}
+          <div className="nb-onb-share-actions">
+            <AppButton
+              tone="primary"
               onClick={() => void copyLink(url).then(setCopied)}
             >
               {copied ? 'Link kopiert' : 'Link kopieren'}
-            </Button>
-            <Button variant="secondary" size={48} onClick={() => void share()}>
-              Teilen
-            </Button>
-          </Inline>
+            </AppButton>
+            <AppButton onClick={() => void share()}>Teilen</AppButton>
+          </div>
           <p className="nb-onb-note">
             Prototyp: Diese Adresse wird erst mit der Anbindung an NENNBOX
             aktiv.
@@ -137,7 +134,7 @@ export function SuccessScreen({
           />
         )}
       </div>
-      <Stack gap={4}>
+      <div className="nb-onb-after">
         <h2 className="nb-onb-followup-title">Als Nächstes</h2>
         <ol className="nb-onb-next">
           {steps.map((step) => (
@@ -151,11 +148,11 @@ export function SuccessScreen({
           Diese Schritte erscheinen als Checkliste auf eurer Startseite.
         </p>
         <div>
-          <Button variant="text" size={48} onClick={onReset}>
+          <AppButton tone="ghost" onClick={onReset}>
             Prototyp neu starten
-          </Button>
+          </AppButton>
         </div>
-      </Stack>
+      </div>
     </section>
   );
 }

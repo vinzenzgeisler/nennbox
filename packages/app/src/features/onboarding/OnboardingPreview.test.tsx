@@ -32,7 +32,7 @@ const button = (name: string | RegExp) =>
 const click = (element: Element) => act(() => (element as HTMLElement).click());
 const type = (label: string, value: string) => {
   const input = [...container.querySelectorAll<HTMLInputElement>('input')].find(
-    (item) => item.closest('label')?.textContent?.includes(label),
+    (item) => item.labels?.[0]?.textContent?.includes(label),
   )!;
   const setter = Object.getOwnPropertyDescriptor(
     HTMLInputElement.prototype,
@@ -54,6 +54,13 @@ const press = (key: string) =>
     window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
   });
 
+const rows = () =>
+  [...container.querySelectorAll('.nb-emerging-fact')].map((row) => ({
+    label: row.querySelector('.nb-emerging-label')!.textContent,
+    value: row.querySelector('.nb-emerging-value')!.textContent!,
+  }));
+const row = (label: string) => rows().find((item) => item.label === label);
+
 describe('onboarding prototype', () => {
   it('starts with the account question and cannot continue before an answer', () => {
     expect(heading()).toBe('Wie willst du dich anmelden?');
@@ -63,18 +70,34 @@ describe('onboarding prototype', () => {
     expect(button('Weiter').disabled).toBe(false);
   });
 
-  it('shows the live preview and keeps the progress bar in sync', () => {
-    const progress = container.querySelector(
-      'nav[aria-label="Fortschritt der Einrichtung"]',
+  it('shows six sections and "Das entsteht" instead of a live preview', () => {
+    const sections = container.querySelector(
+      'nav[aria-label="Abschnitte der Einrichtung"]',
     )!;
-    expect(progress.querySelectorAll('li')).toHaveLength(7);
+    const names = [...sections.querySelectorAll(':scope > ol > li')].map(
+      (item) => item.querySelector('.nb-onb-section')!.textContent,
+    );
+    expect(names).toEqual([
+      '1Konto',
+      '2Verein',
+      '3Veranstaltung',
+      '4Teilnehmer',
+      '5Nennung',
+      '6Veröffentlichen',
+    ]);
     expect(
-      progress.querySelector('[aria-current=step]')?.textContent,
+      sections.querySelector('[aria-current=step]')?.textContent,
     ).toContain('Konto');
-    expect(container.querySelector('.nb-live')).not.toBeNull();
+    expect(container.querySelector('.nb-live')).toBeNull();
+    expect(container.querySelector('.nb-emerging h2')?.textContent).toBe(
+      'Eure Veranstaltung',
+    );
+    expect(row('Art')?.value).toBe('noch offen');
+    expect(container.textContent).toContain('Noch etwa');
+    expect(container.textContent).toContain('Schirm 1 von');
   });
 
-  it('checks the club address, builds the preview and adapts the follow-up questions', () => {
+  it('checks the club address and adapts the follow-up questions', () => {
     press('1');
     press('Enter');
     expect(heading()).toBe('Wie heißt euer Verein?');
@@ -85,25 +108,74 @@ describe('onboarding prototype', () => {
     expect(container.textContent).toContain('Adresse ist frei');
     expect(button('Weiter').disabled).toBe(false);
     type('Vereinsname', 'MSC Hohenstein e. V.');
-    expect(container.querySelector('.nb-live-viewport')?.textContent).toContain(
-      'MSC Hohenstein e. V.',
-    );
+    expect(row('Verein')?.value).toBe('MSC Hohenstein e. V.');
     press('Enter');
-    click(button('Überspringen'));
+    click(button(/Überspringen/));
     expect(heading()).toBe('Was veranstaltet ihr?');
     pick('Kart');
+    expect(row('Art')?.value).toBe('Kart');
     press('Enter');
     expect(heading()).toBe('Wer startet bei euch?');
+    // Nothing chosen: Enter and "Weiter" wait, "Überspringen" takes the suggestion.
     press('Enter');
-    // Karts have no vehicle history questions: straight to the field size.
-    expect(heading()).toBe('Wie viele Starter erwartet ihr?');
+    expect(heading()).toBe('Wer startet bei euch?');
+    expect(button('Weiter').disabled).toBe(true);
+    click(button(/Überspringen/));
+    // Karts have no vehicle history questions: straight to the run.
+    expect(heading()).toBe('Darf ein Fahrer mehrfach starten?');
     click(button('Zurück'));
     click(button('Zurück'));
     expect(heading()).toBe('Was veranstaltet ihr?');
     pick('Rallye');
     press('Enter');
-    press('Enter');
+    click(button(/Überspringen/));
     expect(heading()).toBe('Welche Fahrzeuge starten?');
+  });
+
+  it('marks the recommendation and applies it with "Überspringen"', () => {
+    pick('Passkey');
+    click(button('Weiter'));
+    type('Vereinsname', 'MSC Hohenstein e. V.');
+    click(button('Weiter'));
+    click(button(/Überspringen/));
+    pick('Bergrennen');
+    click(button('Weiter'));
+    expect(heading()).toBe('Wer startet bei euch?');
+    const recommended = container.querySelector('.nb-choice-card-badge')!;
+    expect(recommended.textContent).toBe('Empfohlen');
+    expect(recommended.closest('.nb-choice-card')?.textContent).toContain(
+      'Lizenzfahrer',
+    );
+    expect(row('Starter')?.value).toBe('noch offen');
+    click(button(/Überspringen/));
+    expect(row('Starter')?.value).toBe('Lizenzfahrer');
+    click(button('Zurück'));
+    const checked = container.querySelector<HTMLInputElement>(
+      'input[type=radio]:checked',
+    )!;
+    expect(checked.value).toBe('licensed');
+    expect(button('Weiter').disabled).toBe(false);
+  });
+
+  it('shows the consequence on every card and the example of the chosen one', () => {
+    pick('Passkey');
+    click(button('Weiter'));
+    type('Vereinsname', 'MSC Hohenstein e. V.');
+    click(button('Weiter'));
+    click(button(/Überspringen/));
+    const first = container.querySelector('.nb-choice-card')!;
+    expect(
+      first
+        .querySelector('.nb-choice-card-consequence')
+        ?.textContent?.replaceAll('\u00a0', ' '),
+    ).toBe('4 Klassen nach Hubraum, ab 80 €, Nummern 1 bis 199');
+    pick('Bergrennen');
+    expect(
+      container.querySelector('.nb-question-example')?.textContent,
+    ).toContain('Historischer Bergpreis');
+    expect(row('Klassen')?.value.replaceAll('\u00a0', ' ')).toContain(
+      '4 vorgeschlagen, ab 80 €',
+    );
   });
 
   it('restores a selected logo and clears it when the prototype restarts', () => {
@@ -112,11 +184,12 @@ describe('onboarding prototype', () => {
     type('Vereinsname', 'MSC Hohenstein e. V.');
     click(button('Weiter'));
     click(button(/Blau und Gelb/));
-    expect(container.querySelector('.nb-pv-club img')).not.toBeNull();
+    expect(container.querySelector('.nb-onb-upload-art img')).not.toBeNull();
+    expect(row('Farben')?.value).toBe('Aus dem Logo');
     act(() => root!.unmount());
     root = createRoot(container);
     act(() => root!.render(<OnboardingPreview />));
-    expect(container.querySelector('.nb-pv-club img')).not.toBeNull();
+    expect(container.querySelector('.nb-onb-upload-art img')).not.toBeNull();
     click(button('Neu'));
     expect(heading()).toBe('Wie willst du dich anmelden?');
     expect(
@@ -135,5 +208,15 @@ describe('onboarding prototype', () => {
       'input[value="email-code"]',
     )!;
     expect(radio.checked).toBe(true);
+  });
+
+  it('parks the setup with "Später fortsetzen" and resumes where it stopped', () => {
+    pick('Passkey');
+    click(button('Weiter'));
+    click(button('Später fortsetzen'));
+    expect(heading()).toBe('Dein Stand ist gespeichert');
+    expect(container.querySelector('.nb-emerging')).toBeNull();
+    click(button('Weitermachen'));
+    expect(heading()).toBe('Wie heißt euer Verein?');
   });
 });

@@ -1,63 +1,67 @@
 .nb-question {
-  max-width: 48rem;
-  counter-reset: nb-choice;
+  display: flex;
+  flex-direction: column;
+  gap: var(--nb-space-5);
+}
+.nb-question:focus-within {
+  outline: 0;
+}
+.nb-question-head {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
 }
 .nb-question-eyebrow {
-  margin: 0 0 var(--space-4);
-  font: var(--text-label);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--color-graphite);
+  margin: 0;
+  color: var(--nb-fg-muted);
+  font-size: var(--nb-text-sm);
+  font-weight: 500;
 }
 .nb-question-title {
-  min-height: 0;
   margin: 0;
-  font-family: var(--font-archivo);
-  font-size: var(--type-h2-size-mobile);
-  font-stretch: var(--type-h2-stretch);
-  font-weight: 800;
-  line-height: var(--type-h2-line);
-  letter-spacing: var(--type-h2-tracking);
-  color: var(--color-green);
-  text-wrap: balance;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 .nb-question-title:focus {
-  outline: none;
+  outline: 0;
 }
 .nb-question-lead {
-  max-width: 44rem;
-  margin: var(--space-4) 0 0;
-  font-size: var(--type-body-l-size-mobile);
-  line-height: var(--type-body-l-line);
-  color: var(--color-graphite);
+  max-width: 62ch;
+  margin: 0;
+  color: var(--nb-fg-secondary);
+  font-size: var(--nb-text-md);
+  font-weight: 400;
+  line-height: 1.5;
 }
 .nb-question-body {
-  margin-top: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--nb-space-4);
 }
-.nb-question-why {
-  max-width: 44rem;
-  margin-top: var(--space-8);
-  padding: var(--space-4) var(--space-5);
-  background: var(--color-sage);
-  border-left: var(--line-section) solid var(--color-green);
+.nb-question-example {
+  display: flex;
+  gap: var(--nb-space-3);
+  align-items: baseline;
+  padding: 14px var(--nb-space-4);
+  border-radius: var(--nb-radius-lg);
+  background: var(--nb-brand-subtle);
+  color: var(--nb-onb-tint-text);
+  font-size: 13.5px;
+  line-height: 1.5;
 }
-.nb-question-why p {
-  margin: var(--space-1) 0 0;
-  font-size: var(--type-small-size);
-  line-height: var(--type-small-line);
-  color: var(--color-ink);
+.nb-question-example p {
+  margin: 0;
 }
-.nb-question-why-label {
-  font: var(--text-label);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--color-graphite);
+.nb-question-example-label {
+  flex: none;
+  color: var(--nb-onb-tint-fg);
+  font-size: 11px;
+  font-weight: 600;
 }
-@media (width >= 1100px) {
-  .nb-question-title {
-    font-size: var(--type-h1-size-mobile);
-  }
-  .nb-question-lead {
-    font-size: var(--type-body-l-size);
-  }
+.nb-question-note {
+  margin: 0;
+  color: var(--nb-fg-faint);
+  font-size: var(--nb-text-sm);
 }

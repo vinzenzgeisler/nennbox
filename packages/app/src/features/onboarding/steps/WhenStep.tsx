@@ -1,13 +1,11 @@
-import { DateInput, QuestionStep, Stack, Switch, TextInput } from '@nennbox/ui';
+import { OnboardingField, OnboardingSwitch, QuestionStep } from '@nennbox/ui';
 import { addDays, suggestEntryDeadline } from '@nennbox/contracts';
 import { formatDay } from '../format.js';
-import { reasonFor } from '../reasons.js';
 import type { StepProps } from './types.js';
 
 export function WhenStep({
   answers,
   resolved,
-  proposal,
   patch,
   next,
   canContinue,
@@ -29,32 +27,25 @@ export function WhenStep({
       : undefined;
   return (
     <QuestionStep
-      eyebrow={`${eyebrow} · Termin und Ort`}
+      eyebrow={eyebrow}
       title="Wann und wo findet es statt?"
       lead="Titel, Termin, Ort und Nennschluss erscheinen auf der Veranstaltungsseite und im Nennformular."
       onSubmit={canContinue ? next : undefined}
-      why={
-        answers.entryDeadline
-          ? undefined
-          : {
-              label: 'Warum dieser Vorschlag',
-              text: reasonFor(proposal.reasons, 'entryDeadline') ?? '',
-            }
-      }
     >
-      <Stack gap={6} className="nb-onb-fields">
-        <TextInput
+      <div className="nb-onb-fields">
+        <OnboardingField
           label="Name der Veranstaltung"
           value={answers.eventTitle ?? resolved.eventTitle}
           onChange={(event) => patch({ eventTitle: event.target.value })}
           hint="Er erscheint als Überschrift im Nennformular."
         />
-        <DateInput
+        <OnboardingField
+          type="date"
           label={multiDay ? 'Erster Veranstaltungstag' : 'Datum'}
           value={resolved.startDate ?? ''}
           onChange={(event) => patch({ startDate: event.target.value || null })}
         />
-        <Switch
+        <OnboardingSwitch
           label="Mehrtägig"
           checked={multiDay}
           onChange={(event) =>
@@ -67,21 +58,23 @@ export function WhenStep({
           }
         />
         {multiDay && (
-          <DateInput
+          <OnboardingField
+            type="date"
             label="Letzter Veranstaltungstag"
             value={resolved.endDate ?? ''}
             error={endError}
             onChange={(event) => patch({ endDate: event.target.value || null })}
           />
         )}
-        <TextInput
+        <OnboardingField
           label="Ort"
           value={answers.location}
           onChange={(event) => patch({ location: event.target.value })}
           placeholder="z. B. Bergstrecke Hohenstein"
           autoComplete="off"
         />
-        <DateInput
+        <OnboardingField
+          type="date"
           label="Nennschluss"
           value={resolved.entryDeadline ?? ''}
           error={deadlineError}
@@ -94,7 +87,7 @@ export function WhenStep({
             patch({ entryDeadline: event.target.value || null })
           }
         />
-      </Stack>
+      </div>
     </QuestionStep>
   );
 }

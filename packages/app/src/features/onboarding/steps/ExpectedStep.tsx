@@ -1,6 +1,5 @@
-import { QuestionStep, Slider, Stack, Switch } from '@nennbox/ui';
+import { NumberStepper, OnboardingSwitch, QuestionStep } from '@nennbox/ui';
 import { waitlistThreshold } from '@nennbox/contracts';
-import { reasonFor } from '../reasons.js';
 import type { StepProps } from './types.js';
 
 /** One square per ten expected starters, a quick feeling for the size of the field. */
@@ -26,46 +25,32 @@ export function ExpectedStep({
 }: StepProps) {
   return (
     <QuestionStep
-      eyebrow={`${eyebrow} · Starterfeld`}
+      eyebrow={eyebrow}
       title="Wie viele Starter erwartet ihr?"
       lead="Eine grobe Schätzung reicht. Daraus schlagen wir Plätze und eine Warteliste vor."
       onSubmit={canContinue ? next : undefined}
-      why={{
-        label: 'Warum dieser Vorschlag',
-        text: reasonFor(proposal.reasons, 'capacity', 'waitlist') ?? '',
-      }}
     >
-      <Stack gap={8}>
-        <Slider
-          label="Erwartete Starter"
-          value={answers.expectedStarters ?? resolved.expectedStarters}
-          min={10}
-          max={400}
-          step={5}
-          onChange={(expectedStarters) => patch({ expectedStarters })}
-          valueText={`${resolved.expectedStarters} Starter`}
-          minLabel="10"
-          maxLabel="400"
-        />
-        <FieldSize starters={resolved.expectedStarters} />
-        <p className="nb-onb-capacity">
-          NENNBOX plant mit <strong>{proposal.event.capacity} Plätzen</strong>.
-        </p>
-        <Stack gap={2}>
-          <Switch
-            label="Warteliste aktivieren"
-            checked={resolved.waitlist}
-            onChange={(event) => patch({ waitlist: event.target.checked })}
-          />
-          <p className="nb-onb-note">
-            Sind alle Plätze vergeben, tragen sich weitere Fahrer in eine
-            Warteliste ein. Sagt jemand ab, rückt ihr den Nächsten mit einem
-            Klick nach.
-            {resolved.expectedStarters < waitlistThreshold &&
-              ' Bei kleinen Feldern ist das selten nötig.'}
-          </p>
-        </Stack>
-      </Stack>
+      <NumberStepper
+        label="Erwartete Starter"
+        hint="Aus der Vorlage vorgeschlagen, ihr könnt sie verschieben."
+        value={answers.expectedStarters ?? resolved.expectedStarters}
+        min={10}
+        max={400}
+        step={5}
+        lessLabel="Weniger"
+        moreLabel="Mehr"
+        onChange={(expectedStarters) => patch({ expectedStarters })}
+      />
+      <FieldSize starters={resolved.expectedStarters} />
+      <p className="nb-onb-capacity">
+        NENNBOX plant mit <strong>{proposal.event.capacity} Plätzen</strong>.
+      </p>
+      <OnboardingSwitch
+        label="Warteliste aktivieren"
+        hint={`Sind alle Plätze vergeben, tragen sich weitere Fahrer in eine Warteliste ein. Sagt jemand ab, rückt ihr den Nächsten mit einem Klick nach.${resolved.expectedStarters < waitlistThreshold ? ' Bei kleinen Feldern ist das selten nötig.' : ''}`}
+        checked={resolved.waitlist}
+        onChange={(event) => patch({ waitlist: event.target.checked })}
+      />
     </QuestionStep>
   );
 }

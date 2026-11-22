@@ -4,13 +4,13 @@ import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ChoiceCard, ChoiceGroup } from './ChoiceCard.js';
-import { LivePreview } from './LivePreview.js';
-import { OnboardingProgress } from './OnboardingProgress.js';
+import { EmergingList } from './EmergingList.js';
+import { NumberStepper } from './NumberStepper.js';
+import { OnboardingField, OnboardingSwitch } from './OnboardingFields.js';
+import { OnboardingSections } from './OnboardingSections.js';
 import { OnboardingShell } from './OnboardingShell.js';
 import { QuestionStep } from './QuestionStep.js';
-import { Slider } from './Slider.js';
 import { StepActions } from './StepActions.js';
-import { OnboardingSketch, sketchNames } from './sketches/index.js';
 
 vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
 
@@ -34,9 +34,12 @@ function Question({ onSubmit }: { onSubmit?: () => void }) {
   const [value, setValue] = useState('');
   return (
     <QuestionStep
-      eyebrow="Schritt 1"
+      eyebrow="Abschnitt 3 · Veranstaltung"
       title="Was veranstaltet ihr?"
       onSubmit={onSubmit}
+      example={
+        value ? { label: 'Beispiel', text: `Beispiel ${value}` } : undefined
+      }
     >
       <ChoiceGroup>
         {['a', 'b', 'c'].map((id) => (
@@ -47,8 +50,8 @@ function Question({ onSubmit }: { onSubmit?: () => void }) {
             onChange={() => setValue(id)}
             title={`Titel ${id}`}
             description="Erklärung"
-            exampleLabel="Beispiel"
-            example="Ein Beispiel"
+            consequence={`Folge ${id}`}
+            badge={id === 'a' ? 'Empfohlen' : undefined}
           />
         ))}
       </ChoiceGroup>
@@ -62,7 +65,48 @@ describe('ChoiceCard', () => {
     expect(html).toContain('role="radiogroup"');
     expect(html).toMatch(/aria-labelledby="[^"]+"/);
     expect(html.match(/type="radio"/g)).toHaveLength(3);
-    expect(html).toContain('<summary>Beispiel</summary>');
+  });
+  it('always shows the consequence line on the card', () => {
+    const html = renderToStaticMarkup(<Question />);
+    expect(html.match(/nb-choice-card-consequence/g)).toHaveLength(3);
+    expect(html).toContain('Folge b');
+  });
+  it('shows the recommended badge until the card is chosen and then only the tick, never both', () => {
+    const view = mount(<Question />);
+    const first = view.querySelector('.nb-choice-card')!;
+    expect(first.querySelector('.nb-choice-card-badge')?.textContent).toBe(
+      'Empfohlen',
+    );
+    expect(first.querySelector('.nb-choice-card-tick')).toBeNull();
+    act(() => first.querySelector<HTMLInputElement>('input')!.click());
+    expect(first.classList.contains('is-selected')).toBe(true);
+    expect(first.querySelector('.nb-choice-card-badge')).toBeNull();
+    expect(first.querySelector('.nb-choice-card-tick')).not.toBeNull();
+    expect(view.querySelector('.nb-question-example')?.textContent).toContain(
+      'Beispiel a',
+    );
+  });
+  it('replaces the consequence with the reason when a card is not possible', () => {
+    const view = mount(
+      <ChoiceGroup aria-label="Art">
+        <ChoiceCard
+          value="kart"
+          checked={false}
+          onChange={() => undefined}
+          title="Kart"
+          description="x"
+          consequence="Folge"
+          badge="Empfohlen"
+          unavailableReason="Passt nicht zu Fahrzeugpass und Baujahr"
+        />
+      </ChoiceGroup>,
+    );
+    const card = view.querySelector('.nb-choice-card')!;
+    expect(card.classList.contains('is-unavailable')).toBe(true);
+    expect(card.textContent).toContain('Passt nicht zu Fahrzeugpass');
+    expect(card.textContent).not.toContain('Folge');
+    expect(card.querySelector('.nb-choice-card-badge')).toBeNull();
+    expect(card.querySelector<HTMLInputElement>('input')!.disabled).toBe(true);
   });
   it('renders multiple choice as a checkbox group', () => {
     const html = renderToStaticMarkup(
@@ -80,12 +124,6 @@ describe('ChoiceCard', () => {
     expect(html).toContain('aria-label="Ausstattung"');
     expect(html).toContain('type="checkbox"');
     expect(html).toContain('is-selected');
-  });
-  it('keeps the example disclosure outside the label so opening it does not select the card', () => {
-    const view = mount(<Question />);
-    const card = view.querySelector('.nb-choice-card')!;
-    expect(card.querySelector('label details')).toBeNull();
-    expect(card.querySelector('details')).not.toBeNull();
   });
 });
 
@@ -141,24 +179,7 @@ describe('QuestionStep keyboard', () => {
   });
 });
 
-describe('progress, actions, slider, preview and shell', () => {
-  it('marks the current phase and announces finished ones', () => {
-    const html = renderToStaticMarkup(
-      <OnboardingProgress
-        label="Fortschritt"
-        position="Schritt 2 von 5"
-        completedLabel="erledigt"
-        current={1}
-        segments={[
-          { label: 'Konto', fill: 1 },
-          { label: 'Verein', fill: 0.5 },
-        ]}
-      />,
-    );
-    expect(html).toContain('aria-current="step"');
-    expect(html).toContain('(erledigt)');
-    expect(html).toContain('width:50%');
-  });
+describe('actions, sections, emerging list, fields and shell', () => {
   it('explains a disabled continue button to assistive technology', () => {
     const html = renderToStaticMarkup(
       <StepActions
@@ -173,84 +194,257 @@ describe('progress, actions, slider, preview and shell', () => {
     expect(html).toMatch(/aria-describedby="nb-step-disabled-reason"/);
     expect(html).toContain('Bitte wählen');
   });
-  it('reports slider changes with the spoken value', () => {
-    const onChange = vi.fn();
-    const view = mount(
-      <Slider
-        label="Starter"
-        value={50}
-        min={10}
-        max={100}
-        onChange={onChange}
-        valueText="50 Starter"
+  it('offers "Überspringen" with its hint only where a skip is given', () => {
+    const withSkip = renderToStaticMarkup(
+      <StepActions
+        backLabel="Zurück"
+        skipLabel="Überspringen"
+        skipHint="Wir nehmen den Vorschlag"
+        onSkip={() => undefined}
+        continueLabel="Weiter"
+        onContinue={() => undefined}
+        hints={['↵ weiter', '1–9 wählen']}
       />,
     );
-    const input = view.querySelector('input')!;
-    expect(input.getAttribute('aria-valuetext')).toBe('50 Starter');
-    expect(view.querySelector('label')?.getAttribute('for')).toBe(input.id);
+    expect(withSkip).toContain('Wir nehmen den Vorschlag');
+    expect(withSkip).toContain('↵ weiter · 1–9 wählen');
+    const without = renderToStaticMarkup(
+      <StepActions
+        backLabel="Zurück"
+        continueLabel="Weiter"
+        onContinue={() => undefined}
+      />,
+    );
+    expect(without).not.toContain('Überspringen');
   });
-  it('switches the preview view', () => {
-    const onViewChange = vi.fn();
+  it('lists sections with ticks, only the active one with its screens, and jumps back', () => {
+    const onSelect = vi.fn();
     const view = mount(
-      <LivePreview
-        label="Vorschau"
-        title="Vorschau"
-        statusLabel="Live"
-        viewsLabel="Ansicht"
-        views={[
-          { value: 'a', label: 'A' },
-          { value: 'b', label: 'B' },
+      <OnboardingSections
+        label="Abschnitte"
+        doneLabel="erledigt"
+        onSelect={onSelect}
+        note={{
+          title: 'Noch etwa acht Minuten',
+          text: 'Du kannst jederzeit aufhören.',
+        }}
+        sections={[
+          { id: 'account', label: 'Konto', state: 'done' },
+          {
+            id: 'event',
+            label: 'Veranstaltung',
+            state: 'active',
+            screens: [{ label: 'Was veranstaltet ihr', state: 'active' }],
+          },
+          {
+            id: 'participants',
+            label: 'Teilnehmer',
+            state: 'todo',
+            screens: [{ label: 'Wer startet', state: 'todo' }],
+          },
         ]}
-        view="a"
-        onViewChange={onViewChange}
-        address="x.nennbox.com"
-      >
-        <p>Seite</p>
-      </LivePreview>,
+      />,
     );
+    expect(view.querySelectorAll('button.nb-onb-section')).toHaveLength(1);
+    expect(view.textContent).toContain('(erledigt)');
+    expect(view.querySelector('[aria-current=step]')?.textContent).toContain(
+      'Veranstaltung',
+    );
+    expect(view.textContent).toContain('Was veranstaltet ihr');
+    expect(view.textContent).not.toContain('Wer startet');
+    expect(view.textContent).toContain('Noch etwa acht Minuten');
     act(() =>
-      view.querySelectorAll<HTMLInputElement>('input[type=radio]')[1]!.click(),
+      view.querySelector<HTMLButtonElement>('button.nb-onb-section')!.click(),
     );
-    expect(onViewChange).toHaveBeenCalledWith('b');
+    expect(onSelect).toHaveBeenCalledWith('account');
   });
-  it('collapses the preview behind a labelled toggle', () => {
+  const groups = (value: string | null) => [
+    {
+      id: 'event',
+      title: 'Eure Veranstaltung',
+      rows: [
+        {
+          kind: 'fact' as const,
+          id: 'kind',
+          label: 'Art',
+          value,
+          signature: value ?? '',
+        },
+        {
+          kind: 'field' as const,
+          id: 'license',
+          name: 'Lizenznummer',
+          tag: 'Pflicht',
+          tone: 'required' as const,
+          reason: 'Weil nur Lizenzfahrer starten',
+          signature: 'x',
+        },
+      ],
+    },
+  ];
+  it('shows "noch offen" for missing values and the reason for form fields', () => {
     const view = mount(
       <OnboardingShell
         brand="NENNBOX"
-        preview={<p>Vorschau</p>}
-        previewToggleLabel="Vorschau anzeigen"
-        previewCloseLabel="Vorschau schließen"
+        title="Einrichten"
+        progress={0.3}
+        progressLabel="Fortschritt"
+        emerging={
+          <EmergingList
+            title="Das entsteht"
+            openLabel="noch offen"
+            closeLabel="Schließen"
+            groups={groups(null)}
+          />
+        }
+        emergingBar={{
+          title: 'Das entsteht',
+          summary: '0 von 1 Angaben',
+          open: 'Anzeigen',
+          close: 'Schließen',
+        }}
+      >
+        <p>Frage</p>
+      </OnboardingShell>,
+    );
+    expect(
+      view.querySelector('.nb-emerging-fact.is-open')?.textContent,
+    ).toContain('noch offen');
+    expect(view.querySelector('.nb-emerging-reason')?.textContent).toBe(
+      'Weil nur Lizenzfahrer starten',
+    );
+    expect(
+      view.querySelector('.nb-emerging')?.classList.contains('is-armed'),
+    ).toBe(true);
+  });
+  it('re-keys a row when its value changes so the highlight plays again', () => {
+    function Host() {
+      const [value, setValue] = useState<string | null>(null);
+      return (
+        <>
+          <button type="button" onClick={() => setValue('Bergrennen')}>
+            wählen
+          </button>
+          <EmergingList
+            title="Das entsteht"
+            openLabel="noch offen"
+            closeLabel="Schließen"
+            groups={groups(value)}
+          />
+        </>
+      );
+    }
+    const view = mount(<Host />);
+    const before = view.querySelector('.nb-emerging-fact');
+    act(() => view.querySelector('button')!.click());
+    const after = view.querySelector('.nb-emerging-fact');
+    expect(after).not.toBe(before);
+    expect(after?.textContent).toContain('Bergrennen');
+  });
+  it('collapses "Das entsteht" behind a labelled bar on narrow screens and closes with Escape', () => {
+    const view = mount(
+      <OnboardingShell
+        brand="NENNBOX"
+        title="Einrichten"
+        position="Schirm 4 von 13"
+        progress={0.3}
+        progressLabel="Fortschritt"
+        emerging={
+          <EmergingList
+            title="Das entsteht"
+            openLabel="noch offen"
+            closeLabel="Schließen"
+            groups={groups('Bergrennen')}
+          />
+        }
+        emergingBar={{
+          title: 'Das entsteht',
+          summary: '1 von 1 Angaben',
+          open: 'Anzeigen',
+          close: 'Schließen',
+        }}
       >
         <p>Frage</p>
       </OnboardingShell>,
     );
     const toggle = view.querySelector<HTMLButtonElement>(
-      '.nb-onb-preview-toggle',
+      '.nb-onb-emerging-bar',
     )!;
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(toggle.textContent).toContain('1 von 1 Angaben');
     expect(
-      view.querySelector('.nb-onb-preview')?.classList.contains('is-open'),
+      view.querySelector('.nb-emerging')?.classList.contains('is-open'),
     ).toBe(false);
     act(() => toggle.click());
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(toggle.textContent).toContain('Vorschau schließen');
     expect(
-      view.querySelector('.nb-onb-preview')?.classList.contains('is-open'),
+      view.querySelector('.nb-emerging')?.classList.contains('is-open'),
     ).toBe(true);
     act(() =>
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })),
     );
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
   });
-});
-
-describe('sketches', () => {
-  it('renders every sketch as decorative SVG without text alternatives', () => {
-    for (const name of sketchNames) {
-      const html = renderToStaticMarkup(<OnboardingSketch name={name} />);
-      expect(html, name).toContain('aria-hidden="true"');
-      expect(html, name).toContain('viewBox="0 0 160 100"');
-    }
-    expect(sketchNames.length).toBeGreaterThanOrEqual(30);
+  it('reports progress to assistive technology', () => {
+    const view = mount(
+      <OnboardingShell
+        brand="NENNBOX"
+        title="Einrichten"
+        progress={0.42}
+        progressLabel="Fortschritt"
+      >
+        <p>Frage</p>
+      </OnboardingShell>,
+    );
+    expect(
+      view.querySelector('[role=progressbar]')?.getAttribute('aria-valuenow'),
+    ).toBe('42');
+  });
+  it('steps a number within its bounds and never leaves the field empty', () => {
+    const onChange = vi.fn();
+    const view = mount(
+      <NumberStepper
+        label="Baujahr"
+        value={1990}
+        min={1985}
+        max={1995}
+        step={5}
+        lessLabel="Früher"
+        moreLabel="Später"
+        onChange={onChange}
+      />,
+    );
+    const [less, more] = view.querySelectorAll<HTMLButtonElement>('button');
+    act(() => less!.click());
+    expect(onChange).toHaveBeenLastCalledWith(1985);
+    act(() => more!.click());
+    expect(onChange).toHaveBeenLastCalledWith(1995);
+    expect(view.querySelector('output')?.textContent).toBe('1990');
+  });
+  it('connects field errors and the fixed address suffix to the input', () => {
+    const html = renderToStaticMarkup(
+      <OnboardingField
+        label="Adresse"
+        suffix=".nennbox.com"
+        error="Schon vergeben"
+        defaultValue="msc"
+      />,
+    );
+    expect(html).toContain('aria-invalid="true"');
+    expect(html).toMatch(/aria-describedby="[^"]+-error"/);
+    expect(html).toContain('.nennbox.com');
+  });
+  it('exposes the switch with its role and reports changes', () => {
+    const onChange = vi.fn();
+    const view = mount(
+      <OnboardingSwitch
+        label="Warteliste"
+        checked={false}
+        onChange={onChange}
+      />,
+    );
+    const input = view.querySelector<HTMLInputElement>('input[role=switch]')!;
+    act(() => input.click());
+    expect(onChange).toHaveBeenCalledOnce();
   });
 });

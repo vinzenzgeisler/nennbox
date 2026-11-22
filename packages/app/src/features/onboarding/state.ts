@@ -13,11 +13,17 @@ export type OnboardingState = {
   answers: OnboardingAnswers;
   outcome: Outcome | null;
   savedAt: number | null;
+  /** Screens left with "Überspringen": the suggestion counts as accepted. */
+  skipped: OnboardingStepId[];
+  /** "Später fortsetzen": the setup is parked until the member resumes. */
+  paused: boolean;
 };
 
 type Action =
   | { type: 'patch'; patch: Partial<OnboardingAnswers> }
   | { type: 'go'; step: OnboardingStepId }
+  | { type: 'skip'; to: OnboardingStepId | null }
+  | { type: 'pause'; paused: boolean }
   | { type: 'publish'; outcome: Outcome }
   | { type: 'reset' };
 
@@ -27,6 +33,8 @@ const initial = (): OnboardingState => ({
   answers: createOnboardingAnswers(),
   outcome: null,
   savedAt: null,
+  skipped: [],
+  paused: false,
 });
 
 function reducer(state: OnboardingState, action: Action): OnboardingState {
@@ -46,6 +54,17 @@ function reducer(state: OnboardingState, action: Action): OnboardingState {
     }
     case 'go':
       return { ...state, step: action.step };
+    case 'skip':
+      return {
+        ...state,
+        step: action.to ?? state.step,
+        skipped: state.skipped.includes(state.step)
+          ? state.skipped
+          : [...state.skipped, state.step],
+        savedAt: Date.now(),
+      };
+    case 'pause':
+      return { ...state, paused: action.paused, savedAt: Date.now() };
     case 'publish':
       return { ...state, step: 'success', outcome: action.outcome };
     case 'reset':
@@ -91,6 +110,16 @@ export function useOnboardingState() {
     const target = nextOnboardingStep(state.step, state.answers);
     if (target) dispatch({ type: 'go', step: target });
   }, [state.step, state.answers]);
+  const skip = useCallback(() => {
+    dispatch({
+      type: 'skip',
+      to: nextOnboardingStep(state.step, state.answers),
+    });
+  }, [state.step, state.answers]);
+  const pause = useCallback(
+    (paused: boolean) => dispatch({ type: 'pause', paused }),
+    [],
+  );
   const back = useCallback(() => {
     const target = previousOnboardingStep(state.step, state.answers);
     if (target) dispatch({ type: 'go', step: target });
@@ -100,5 +129,5 @@ export function useOnboardingState() {
     [],
   );
   const reset = useCallback(() => dispatch({ type: 'reset' }), []);
-  return { state, patch, go, next, back, publish, reset };
+  return { state, patch, go, next, skip, back, pause, publish, reset };
 }

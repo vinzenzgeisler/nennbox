@@ -107,12 +107,12 @@ describe('flow', () => {
   it('walks forwards and backwards over the same screens', () => {
     const a = answers({ kind: 'kart' });
     expect(nextOnboardingStep('kind', a)).toBe('starters');
-    expect(nextOnboardingStep('starters', a)).toBe('expected');
-    expect(previousOnboardingStep('expected', a)).toBe('starters');
+    expect(nextOnboardingStep('starters', a)).toBe('double-start');
+    expect(previousOnboardingStep('double-start', a)).toBe('starters');
     expect(previousOnboardingStep('account', a)).toBeNull();
     expect(nextOnboardingStep('success', a)).toBeNull();
   });
-  it('reports progress per phase', () => {
+  it('reports progress per section', () => {
     const a = answers({ kind: 'hillclimb' });
     expect(onboardingProgress('account', a)).toMatchObject({
       index: 0,
@@ -121,7 +121,9 @@ describe('flow', () => {
       ratio: 0,
     });
     expect(onboardingProgress('summary', a).ratio).toBe(1);
-    expect(onboardingProgress('payment', a).phase).toBe('details');
+    expect(onboardingProgress('payment', a).phase).toBe('entry');
+    expect(onboardingProgress('numbers', a).phase).toBe('participants');
+    expect(onboardingProgress('success', a).phase).toBe('draft');
   });
   it('blocks only screens that have no sensible suggestion', () => {
     const empty = createOnboardingAnswers();

@@ -1,32 +1,31 @@
 import {
   ChoiceCard,
   ChoiceGroup,
-  OnboardingSketch,
-  Slider,
-  Stack,
+  NumberStepper,
+  OnboardingIcon,
 } from '@nennbox/ui';
+import { icons } from '../icons.js';
 import type { StepProps } from './types.js';
 
 /** Follow-up under the vehicle-era cards: the build-year limit for historic vehicles. */
 export function CutoffYear({ answers, resolved, patch }: StepProps) {
   if (resolved.vehicleEra === 'modern') return null;
   return (
-    <div className="nb-onb-followup">
-      <Slider
-        label={
-          resolved.vehicleEra === 'historic'
-            ? 'Historisch bis Baujahr'
-            : 'Fahrzeugpass für Baujahre bis'
-        }
-        value={answers.historicCutoffYear ?? resolved.historicCutoffYear}
-        min={1930}
-        max={2005}
-        onChange={(historicCutoffYear) => patch({ historicCutoffYear })}
-        valueText={`Baujahr ${resolved.historicCutoffYear}`}
-        minLabel="1930"
-        maxLabel="2005"
-      />
-    </div>
+    <NumberStepper
+      label={
+        resolved.vehicleEra === 'historic'
+          ? 'Historisch bis Baujahr'
+          : 'Fahrzeugpass für Baujahre bis'
+      }
+      hint="Jüngere Fahrzeuge brauchen keinen Fahrzeugpass."
+      value={answers.historicCutoffYear ?? resolved.historicCutoffYear}
+      min={1930}
+      max={2005}
+      step={5}
+      lessLabel="Früher"
+      moreLabel="Später"
+      onChange={(historicCutoffYear) => patch({ historicCutoffYear })}
+    />
   );
 }
 
@@ -34,20 +33,16 @@ export function CutoffYear({ answers, resolved, patch }: StepProps) {
 export function StripeTiming({ resolved, patch }: StepProps) {
   if (resolved.paymentMode === 'transfer') return null;
   return (
-    <Stack gap={4} className="nb-onb-followup">
+    <div className="nb-onb-followup">
       <h2 className="nb-onb-followup-title">Online-Zahlung aktivieren</h2>
-      <ChoiceGroup
-        layout="rows"
-        columns={2}
-        aria-label="Online-Zahlung aktivieren"
-      >
+      <ChoiceGroup columns={2} aria-label="Online-Zahlung aktivieren">
         <ChoiceCard
           value="now"
           checked={resolved.stripeTiming === 'now'}
           onChange={() => patch({ stripeTiming: 'now' })}
           title="Jetzt aktivieren"
           description="Dauert etwa fünf Minuten, danach ist alles startklar."
-          illustration={<OnboardingSketch name="stripe-now" />}
+          illustration={<OnboardingIcon path={icons['stripe-now']} />}
         />
         <ChoiceCard
           value="later"
@@ -55,9 +50,9 @@ export function StripeTiming({ resolved, patch }: StepProps) {
           onChange={() => patch({ stripeTiming: 'later' })}
           title="Später"
           description="Ihr öffnet zuerst mit Überweisung und schaltet online später frei."
-          illustration={<OnboardingSketch name="stripe-later" />}
+          illustration={<OnboardingIcon path={icons['stripe-later']} />}
         />
       </ChoiceGroup>
-    </Stack>
+    </div>
   );
 }

@@ -1,30 +1,31 @@
 import { useLayoutEffect, useState } from 'react';
 import {
-  Button,
-  LivePreview,
-  OnboardingProgress,
+  AppButton,
+  EmergingList,
+  OnboardingSections,
   OnboardingShell,
+  Signet,
   StepActions,
-  Wordmark,
 } from '@nennbox/ui';
 import {
   canContinue,
   onboardingPhaseOf,
-  onboardingPhases,
   onboardingProgress,
   onboardingSteps,
   requiredSteps,
   resolveAnswers,
   suggestEventConfig,
-  type OnboardingPhase,
-  type OnboardingStepId,
 } from '@nennbox/contracts';
 import { choiceSteps } from './choices.js';
+import { buildEmerging, emergingOpenLabel } from './emerging.js';
 import { formatTime } from './format.js';
-import { EventPagePreview } from './preview/EventPagePreview.js';
-import { FormPreview } from './preview/FormPreview.js';
+import { remainingTime, sectionBar, sectionLabels } from './sections.js';
 import { BrandStep, type LogoState } from './steps/BrandStep.js';
-import { ChoiceStepView, type ChoiceStepId } from './steps/ChoiceStepView.js';
+import {
+  ChoiceStepView,
+  chosenOption,
+  type ChoiceStepId,
+} from './steps/ChoiceStepView.js';
 import { CutoffYear, StripeTiming } from './steps/ChoiceExtras.js';
 import { ClassesStep } from './steps/ClassesStep.js';
 import { ClubStep } from './steps/ClubStep.js';
@@ -36,18 +37,7 @@ import { sampleTakenSubdomains, type StepProps } from './steps/types.js';
 import { WhenStep } from './steps/WhenStep.js';
 import { useOnboardingState } from './state.js';
 import './onboarding.css';
-import './preview/preview.css';
 
-const phaseLabels: Record<OnboardingPhase, string> = {
-  account: 'Konto',
-  club: 'Verein',
-  kind: 'Veranstaltung',
-  details: 'Details',
-  classes: 'Klassen',
-  when: 'Termin',
-  done: 'Fertig',
-};
-type View = 'form' | 'event';
 const logoStorageKey = 'nennbox.onboarding-preview.logo.v1';
 
 function savedLogo(): LogoState {
@@ -58,14 +48,6 @@ function savedLogo(): LogoState {
     return null;
   }
 }
-const formSteps: OnboardingStepId[] = [
-  'starters',
-  'vehicle-era',
-  'vehicle-type',
-  'numbers',
-  'codriver',
-  'double-start',
-];
 
 /**
  * Clickable prototype of the guided onboarding (#201, phase 1). All data is local;
@@ -73,7 +55,8 @@ const formSteps: OnboardingStepId[] = [
  * with the organization, event-setup, form-field, start-number, waitlist and payment APIs.
  */
 export function OnboardingPreview() {
-  const { state, patch, go, next, back, publish, reset } = useOnboardingState();
+  const { state, patch, go, next, skip, back, pause, publish, reset } =
+    useOnboardingState();
   const [logo, setLogo] = useState<LogoState>(savedLogo);
   useLayoutEffect(() => {
     try {
@@ -88,35 +71,34 @@ export function OnboardingPreview() {
     setLogo(null);
     reset();
   };
-  const [override, setOverride] = useState<{
-    step: OnboardingStepId;
-    view: View;
-  } | null>(null);
-  const { answers, step } = state;
+  const { answers, step, skipped } = state;
   const resolved = resolveAnswers(answers);
   const proposal = suggestEventConfig(answers);
   const steps = onboardingSteps(answers);
   const progress = onboardingProgress(step, answers);
-  const allowed = canContinue(step, answers, sampleTakenSubdomains);
-  const view: View =
-    override?.step === step
-      ? override.view
-      : formSteps.includes(step)
-        ? 'form'
-        : 'event';
+  const isChoice = step in choiceSteps;
+  const accepted = skipped.includes(step);
+  const chosen =
+    !isChoice ||
+    chosenOption(step as ChoiceStepId, { answers, resolved, accepted }) !==
+      null;
+  const allowed = canContinue(step, answers, sampleTakenSubdomains) && chosen;
   const isSuccess = step === 'success';
 
-  const segments = onboardingPhases.map((phase, index) => {
-    const inPhase = steps.filter((id) => onboardingPhaseOf(id) === phase);
-    const position = inPhase.indexOf(step);
-    const fill =
-      index < progress.phaseIndex || step === 'success'
-        ? 1
-        : index > progress.phaseIndex
-          ? 0
-          : (position + 0.5) / inPhase.length;
-    return { label: phaseLabels[phase], fill };
-  });
+  const bar = sectionBar(step, answers);
+  const activeBar = bar.find((section) => section.state === 'active');
+  const here =
+    activeBar?.screens.findIndex((screen) => screen.state === 'active') ?? 0;
+  const eyebrow = activeBar
+    ? [
+        `Abschnitt ${bar.indexOf(activeBar) + 1} · ${activeBar.label}`,
+        activeBar.screens.length > 1
+          ? `${here + 1} von ${activeBar.screens.length}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : sectionLabels[onboardingPhaseOf(step)];
 
   const common: StepProps = {
     answers,
@@ -125,7 +107,8 @@ export function OnboardingPreview() {
     patch,
     next,
     canContinue: allowed,
-    eyebrow: `Schritt ${progress.index + 1} von ${progress.total - 1}`,
+    eyebrow,
+    accepted,
   };
   const choice = (id: ChoiceStepId, extra?: React.ReactNode) => (
     <ChoiceStepView key={id} id={id} extra={extra} {...common} />
@@ -165,92 +148,142 @@ export function OnboardingPreview() {
     }
   })();
 
-  const preview = isSuccess ? undefined : (
-    <LivePreview<View>
-      label="Live-Vorschau"
-      title="Vorschau"
-      statusLabel="Live"
-      viewsLabel="Ansicht der Vorschau"
-      views={[
-        { value: 'event', label: 'Veranstaltungsseite' },
-        { value: 'form', label: 'Nennformular' },
-      ]}
-      view={view}
-      onViewChange={(next) => setOverride({ step, view: next })}
-      address={
-        view === 'form'
-          ? proposal.registrationUrl.replace('https://', '')
-          : `${proposal.organization.subdomain || 'verein'}.nennbox.com/events/${proposal.event.slug}`
-      }
-    >
-      {view === 'form' ? (
-        <FormPreview proposal={proposal} logoUrl={logo?.url ?? null} />
-      ) : (
-        <EventPagePreview proposal={proposal} logoUrl={logo?.url ?? null} />
-      )}
-    </LivePreview>
-  );
+  const emerging = buildEmerging({
+    answers,
+    resolved,
+    proposal,
+    steps,
+    current: step,
+    skipped,
+  });
 
   const actions = isSuccess ? undefined : (
     <StepActions
       backLabel="Zurück"
       onBack={step === 'account' ? undefined : back}
       skipLabel="Überspringen"
-      onSkip={requiredSteps.includes(step) ? undefined : next}
+      skipHint="Wir nehmen den Vorschlag"
+      onSkip={requiredSteps.includes(step) ? undefined : skip}
       continueLabel={step === 'summary' ? 'Nennung öffnen' : 'Weiter'}
       onContinue={step === 'summary' ? () => publish('open') : next}
       continueDisabled={!allowed}
       disabledReason="Bitte erst die Angaben auf dieser Seite vervollständigen."
-      hint={
+      hints={
         step === 'summary'
-          ? 'Enter ↵ Nennung öffnen'
-          : step in choiceSteps
-            ? 'Enter ↵ weiter · 1–9 wählen'
-            : 'Enter ↵ weiter'
+          ? ['↵ Nennung öffnen']
+          : isChoice
+            ? chosen
+              ? ['↵ weiter', '1–9 wählen']
+              : ['1–9 wählen']
+            : ['↵ weiter']
       }
     />
   );
 
+  const paused = state.paused;
   return (
     <OnboardingShell
-      brand={<Wordmark style={{ fontSize: 18 }} />}
-      progress={
-        <OnboardingProgress
-          label="Fortschritt der Einrichtung"
-          segments={segments}
-          current={progress.phaseIndex}
-          position={`Schritt ${Math.min(progress.index + 1, progress.total - 1)} von ${progress.total - 1} · ${phaseLabels[progress.phase]}`}
-          completedLabel="erledigt"
-        />
+      brand={
+        <span className="nb-app-brand">
+          <span className="nb-app-brand-icon">
+            <Signet />
+          </span>
+          <strong>NENNBOX</strong>
+        </span>
       }
+      title="Einrichten"
+      position={
+        isSuccess ? undefined : (
+          <>
+            <span className="nb-onb-hide-narrow">Schirm </span>
+            {`${progress.index + 1} von ${progress.total - 1}`}
+          </>
+        )
+      }
+      progress={isSuccess ? 1 : progress.ratio}
+      progressLabel="Fortschritt der Einrichtung"
       headerEnd={
         <>
-          <span>
-            {state.savedAt ? (
-              <>
-                Gespeichert
-                <span className="nb-onb-saved-time">
-                  {' · '}
-                  {formatTime(state.savedAt)}
-                </span>
-              </>
-            ) : (
-              'Prototyp'
-            )}
-          </span>
+          {state.savedAt && (
+            <span className="nb-onb-position nb-onb-hide-narrow">
+              {`Gespeichert · ${formatTime(state.savedAt)}`}
+            </span>
+          )}
           {!isSuccess && step !== 'account' && (
-            <Button variant="text" size={40} onClick={restart}>
+            <AppButton
+              tone="ghost"
+              className="nb-onb-hide-narrow"
+              onClick={restart}
+            >
               Neu
-            </Button>
+            </AppButton>
+          )}
+          {!isSuccess && (
+            <AppButton tone="ghost" onClick={() => pause(!paused)}>
+              {paused ? 'Weitermachen' : 'Später fortsetzen'}
+            </AppButton>
           )}
         </>
       }
-      preview={preview}
-      previewToggleLabel="Vorschau anzeigen"
-      previewCloseLabel="Vorschau schließen"
-      actions={actions}
+      sections={
+        isSuccess || paused ? undefined : (
+          <OnboardingSections
+            label="Abschnitte der Einrichtung"
+            doneLabel="erledigt"
+            sections={bar.map((section) => ({
+              id: section.id,
+              label: section.label,
+              state: section.state,
+              screens: section.screens,
+            }))}
+            onSelect={(id) => {
+              const target = bar.find(
+                (section) => section.id === id,
+              )?.firstStep;
+              if (target) go(target);
+            }}
+            note={{
+              title: remainingTime(step, answers),
+              text: 'Du kannst jederzeit aufhören. Angefangenes bleibt gespeichert.',
+            }}
+          />
+        )
+      }
+      emerging={
+        isSuccess || paused ? undefined : (
+          <EmergingList
+            title="Das entsteht"
+            openLabel={emergingOpenLabel}
+            groups={emerging.groups}
+            footnote="Alles hier lässt sich nach dem Einrichten ändern, auch wenn die Nennung schon offen ist."
+            closeLabel="Schließen"
+          />
+        )
+      }
+      emergingBar={{
+        title: 'Das entsteht',
+        summary: `${emerging.known} von ${emerging.total} Angaben`,
+        open: 'Anzeigen',
+        close: 'Schließen',
+      }}
+      actions={paused ? undefined : actions}
     >
-      {body}
+      {paused ? (
+        <section className="nb-onb-paused" aria-labelledby="nb-onb-paused">
+          <h1 id="nb-onb-paused" className="nb-question-title">
+            Dein Stand ist gespeichert
+          </h1>
+          <p className="nb-question-lead">
+            Du kannst hier jederzeit weitermachen. Alle Antworten bleiben auf
+            diesem Gerät erhalten.
+          </p>
+          <AppButton tone="primary" onClick={() => pause(false)}>
+            Weitermachen
+          </AppButton>
+        </section>
+      ) : (
+        body
+      )}
     </OnboardingShell>
   );
 }

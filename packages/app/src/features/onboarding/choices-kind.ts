@@ -1,4 +1,19 @@
+import { eventTemplate, formatEuro } from '@nennbox/contracts';
+import type { EventKind } from '@nennbox/contracts';
 import type { ChoiceStep } from './choices.js';
+
+/** What a template brings, read from the real template so the card never promises more. */
+export function kindConsequence(kind: EventKind): string {
+  const template = eventTemplate(kind);
+  const fees = template.classes.map((item) => item.feeCents);
+  const parts = [
+    `${template.classes.length} Klassen${template.displacementClasses ? ' nach Hubraum' : ''}`,
+    `ab ${formatEuro(Math.min(...fees))}`,
+    ...(template.defaults.coDriver ? ['Beifahrer im Formular'] : []),
+    `Nummern ${template.startNumberRange.from} bis ${template.startNumberRange.to}`,
+  ];
+  return parts.join(', ');
+}
 
 export const kindStep: ChoiceStep = {
   topic: 'Veranstaltung',
@@ -9,7 +24,8 @@ export const kindStep: ChoiceStep = {
   options: [
     {
       value: 'hillclimb',
-      sketch: 'hillclimb',
+      icon: 'hillclimb',
+      consequence: kindConsequence('hillclimb'),
       title: 'Bergrennen',
       description:
         'Einzelstarts auf gesperrter Bergstrecke, die schnellste Zeit gewinnt.',
@@ -18,7 +34,8 @@ export const kindStep: ChoiceStep = {
     },
     {
       value: 'rally',
-      sketch: 'rally',
+      icon: 'rally',
+      consequence: kindConsequence('rally'),
       title: 'Rallye',
       description:
         'Wertungsprüfungen und Etappen, Fahrer und Beifahrer als Team.',
@@ -27,7 +44,8 @@ export const kindStep: ChoiceStep = {
     },
     {
       value: 'slalom',
-      sketch: 'slalom',
+      icon: 'slalom',
+      consequence: kindConsequence('slalom'),
       title: 'Slalom',
       description:
         'Pylonenparcours auf einem Platz. Leichter Einstieg für Gäste.',
@@ -36,7 +54,8 @@ export const kindStep: ChoiceStep = {
     },
     {
       value: 'regularity',
-      sketch: 'regularity',
+      icon: 'regularity',
+      consequence: kindConsequence('regularity'),
       title: 'Gleichmäßigkeit / Oldtimer',
       description:
         'Gewonnen wird mit der gleichmäßigsten Zeit, nicht der schnellsten.',
@@ -45,7 +64,8 @@ export const kindStep: ChoiceStep = {
     },
     {
       value: 'kart',
-      sketch: 'kart',
+      icon: 'kart',
+      consequence: kindConsequence('kart'),
       title: 'Kart',
       description: 'Rennen auf der Kartbahn, oft mit Nachwuchsklassen.',
       example:
@@ -53,7 +73,8 @@ export const kindStep: ChoiceStep = {
     },
     {
       value: 'circuit',
-      sketch: 'circuit',
+      icon: 'circuit',
+      consequence: kindConsequence('circuit'),
       title: 'Rundstrecke / Trackday',
       description: 'Freies Fahren oder Rennen auf der Rundstrecke in Gruppen.',
       example:
@@ -61,7 +82,8 @@ export const kindStep: ChoiceStep = {
     },
     {
       value: 'other',
-      sketch: 'other',
+      icon: 'other',
+      consequence: kindConsequence('other'),
       title: 'Sonstiges',
       description: 'Ihr startet mit einer neutralen Vorlage.',
       example: 'Clubtreffen mit Anmeldung, Sichtungstag oder eine Mischform.',
