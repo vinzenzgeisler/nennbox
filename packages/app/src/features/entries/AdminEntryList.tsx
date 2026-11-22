@@ -21,7 +21,6 @@ type Selection = { eventId: string; ids: Set<string> };
 type Props = {
   preview?: ReactNode;
   mobilePreviewOpen?: boolean | undefined;
-  wide?: boolean | undefined;
   eventId: string;
   apiState: ApiState;
   draft: EntryQuery;
@@ -50,7 +49,6 @@ export function AdminEntryList(props: Props) {
   const {
     preview,
     mobilePreviewOpen,
-    wide,
     eventId,
     apiState,
     draft,
@@ -133,7 +131,6 @@ export function AdminEntryList(props: Props) {
       previewLabel="Nennungsvorschau"
       preview={preview}
       mobilePreviewOpen={mobilePreviewOpen}
-      wide={wide}
       filters={
         <AdminEntryFilters
           draft={draft}

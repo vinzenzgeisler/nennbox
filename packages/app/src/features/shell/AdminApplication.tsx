@@ -1,3 +1,5 @@
+import { usePreviewStatusChange } from './usePreviewStatusChange.js';
+import { EntryStatusToast } from '../entries/EntryStatusToast.js';
 import { PreviewPanel, useWorkspacePreview } from '@nennbox/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
@@ -145,6 +147,14 @@ export function AdminApplication() {
     setDetailOpen(false);
     setPreviewOpen(false);
   }, []);
+  const previewStatus = usePreviewStatusChange({
+    selectedEntry,
+    activeEvent,
+    setPreviewBusy,
+    setSelectedEntry,
+    previewAccepted,
+    entriesChanged,
+  });
   const entryPreview = selectedEntry ? (
     <EntryPreview
       entry={selectedEntry}
@@ -156,41 +166,15 @@ export function AdminApplication() {
         setDetailOpen(true);
         setPreviewOpen(false);
       }}
-      onNextAction={async (status) => {
-        const requestedEvent = activeEvent.current;
-        const requestedEntry = selectedEntry.id;
-        setPreviewBusy(true);
-        try {
-          const response = await adminFetch(
-            `/admin/entries/${selectedEntry.id}/transitions`,
-            {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({
-                transition: 'acceptance',
-                status,
-                reason: 'In der Nennungsvorschau entschieden',
-              }),
-            },
-          );
-          if (response.ok) {
-            const updated = (await response.json()) as Entry;
-            // The answer may only update the entry that is still open in the same event.
-            if (activeEvent.current === requestedEvent) {
-              setSelectedEntry((current) =>
-                current?.id === requestedEntry ? updated : current,
-              );
-              previewAccepted({
-                eventId: requestedEvent,
-                entryId: requestedEntry,
-              });
-            }
-            entriesChanged();
-          }
-        } finally {
-          if (activeEvent.current === requestedEvent) setPreviewBusy(false);
-        }
-      }}
+      onNextAction={previewStatus.changeStatus}
+      feedback={
+        previewStatus.notice && (
+          <EntryStatusToast
+            notice={previewStatus.notice}
+            clear={previewStatus.clearNotice}
+          />
+        )
+      }
     />
   ) : (
     <PreviewPanel eyebrow="Vorschau" title="Nennung auswählen" />

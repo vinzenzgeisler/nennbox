@@ -45,7 +45,16 @@ export function EntryListRow({
     <tr
       className={`nb-entry-list-row${selected ? ' is-selected' : ''}${dimmed ? ' is-dim' : ''}`}
       onClick={onOpen}
-      onDoubleClick={onOpenDetail}
+      onDoubleClick={(event) => {
+        if (
+          event.target instanceof Element &&
+          event.target.closest(
+            'input, summary, [role=menuitem], button:not(.nb-entry-list-open), a',
+          )
+        )
+          return;
+        onOpenDetail?.();
+      }}
     >
       <td data-column="person">
         <div className="nb-entry-list-person">

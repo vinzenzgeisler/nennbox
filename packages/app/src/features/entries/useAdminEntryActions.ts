@@ -33,6 +33,10 @@ export function useAdminEntryActions({
   setRefreshRevision: Dispatch<SetStateAction<number>>;
 }) {
   const [reason, setReason] = useState('');
+  const [bulkNotice, setBulkNotice] = useState<{ message: string } | null>(
+    null,
+  );
+  const clearBulkNotice = useCallback(() => setBulkNotice(null), []);
   const [busy, setBusy] = useState(false);
   const detailGate = useRef<Gate>({ generation: 0, controller: null });
   const transitionGate = useRef<Gate>({ generation: 0, controller: null });
@@ -199,6 +203,7 @@ export function useAdminEntryActions({
       if (responses.some((response) => !response.ok))
         throw new Error('bulk transition rejected');
       clearSelection();
+      setBulkNotice({ message: `${eligible.length} Nennungen zugelassen` });
       setRefreshRevision((revision) => revision + 1);
     } catch {
       setActionError(
@@ -221,5 +226,7 @@ export function useAdminEntryActions({
     acceptedStatusKey,
     eligibleSelectedItems,
     bulkAccept,
+    bulkNotice,
+    clearBulkNotice,
   };
 }

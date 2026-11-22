@@ -1,6 +1,6 @@
 import { formatEntryHistoryLabel } from '../entries/EntryHistoryLabel.js';
 import { completionStates } from '../entries/completionStates.js';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { dimensionStatus } from '../entries/dimensionStatus.js';
 import type {
   EntryResponse as Entry,
@@ -47,6 +47,7 @@ export function EntryPreview({
   onOpenDetail,
   onMessage,
   busy,
+  feedback,
 }: {
   entry: Entry;
   workflow: WorkflowView | null;
@@ -55,6 +56,7 @@ export function EntryPreview({
   onOpenDetail: () => void;
   onMessage: () => void;
   busy: boolean;
+  feedback?: ReactNode;
 }) {
   const [now] = useState(() => Date.now());
   const details = entry.adminDetails;
@@ -255,6 +257,7 @@ export function EntryPreview({
         />
       }
     >
+      {feedback}
       <AdmissionChecklist states={completionStates(entry)} />
       {allDocuments.length > 0 && (
         <details className="nb-preview-documents">

@@ -156,6 +156,12 @@ it('separates selection, preview, double-click and row status interaction', () =
     </DataTable>,
   );
   act(() => host.querySelector<HTMLInputElement>('input')!.click());
+  act(() =>
+    host
+      .querySelector('input')!
+      .dispatchEvent(new MouseEvent('dblclick', { bubbles: true })),
+  );
+  expect(detail).not.toHaveBeenCalled();
   expect(select).toHaveBeenCalledWith(true);
   expect(preview).not.toHaveBeenCalled();
   act(() =>

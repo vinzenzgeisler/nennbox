@@ -133,6 +133,8 @@ function AdminEntriesView({
     transition,
     eligibleSelectedItems,
     bulkAccept,
+    bulkNotice,
+    clearBulkNotice,
     invalidateActionRequests,
   } = useAdminEntryActions({
     eventId,
@@ -254,7 +256,6 @@ function AdminEntriesView({
         <AdminEntryList
           preview={preview}
           mobilePreviewOpen={mobilePreviewOpen}
-          wide={autoPreview}
           eventId={eventId}
           apiState={apiState}
           draft={draft}
@@ -297,7 +298,10 @@ function AdminEntriesView({
           }}
         />
       )}
-      {notice && <EntryStatusToast notice={notice} clear={clearNotice} />}
+      <EntryStatusToast
+        notice={notice ?? bulkNotice}
+        clear={notice ? clearNotice : clearBulkNotice}
+      />
       {actionError && !(isDetailOpen && selected) && (
         <p role="alert">{actionError}</p>
       )}

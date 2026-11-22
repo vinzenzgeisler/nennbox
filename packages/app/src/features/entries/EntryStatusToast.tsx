@@ -3,12 +3,13 @@ export function EntryStatusToast({
   notice,
   clear,
 }: {
-  notice: { message: string; undo?: () => void };
+  notice: { id?: number; message: string; undo?: () => void } | null;
   clear: () => void;
 }) {
+  if (!notice) return null;
   return (
     <Toast
-      key={notice.message}
+      key={notice.id ?? notice.message}
       duration={5000}
       dismissLabel="Hinweis schließen"
       onDismiss={clear}
