@@ -1,0 +1,34 @@
+.nb-app-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--nb-space-2);
+  cursor: pointer;
+}
+.nb-app-checkbox input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.nb-app-checkbox > span {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--nb-radius-sm);
+  box-shadow: inset 0 0 0 1.5px var(--nb-border-strong);
+  background: var(--nb-bg);
+}
+.nb-app-checkbox input:checked + span {
+  background: var(--nb-brand);
+  box-shadow: none;
+}
+.nb-app-checkbox input:checked + span::after {
+  content: '✓';
+  color: var(--nb-bg);
+  font-size: 12px;
+  line-height: 1;
+}
+.nb-app-checkbox input:focus-visible + span {
+  box-shadow: var(--nb-focus-ring);
+}
