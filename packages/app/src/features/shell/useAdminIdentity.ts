@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { adminFetch, getAdminIdentity, type AuthIdentity } from '../../auth.js';
 
-export type ShellIdentity = AuthIdentity & { organization?: string };
+export type ShellIdentity = AuthIdentity & {
+  organization?: string;
+  canManageModules?: boolean;
+};
 
 /**
  * The signed-in person for the sidebar card: the role from the session and,
@@ -25,6 +28,7 @@ export function useAdminIdentity(): ShellIdentity | null {
               ? {
                   ...current,
                   role: session.role === 'admin' ? 'Admin' : 'Mitglied',
+                  canManageModules: session.role === 'admin',
                 }
               : null,
           );

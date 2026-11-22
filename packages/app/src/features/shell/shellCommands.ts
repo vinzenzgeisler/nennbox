@@ -18,6 +18,13 @@ const SETTING_COMMANDS: Array<{
   keywords: string[];
 }> = [
   {
+    id: 'modules',
+    target: 'modules',
+    label: 'Module verwalten',
+    detail: 'Erweiterungen und Konfiguration',
+    keywords: ['Modul', 'Erweiterungen'],
+  },
+  {
     id: 'workflow',
     target: 'workflow',
     label: 'Nennungsablauf bearbeiten',

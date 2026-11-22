@@ -1,4 +1,4 @@
-import { Button, Dialog } from '@nennbox/ui';
+import { AppButton, AppSection, AppDialog } from '@nennbox/ui';
 import { SchemaFields } from './ModuleSchemaFields.js';
 import { words, type ModuleLocale } from './moduleWords.js';
 import type { Module } from './AdminModules.js';
@@ -24,39 +24,45 @@ export function ModuleConfigDialog({
   const t = words[locale];
   const actions: ReactNode = (
     <>
-      <Button variant="secondary" onClick={onClose}>
+      <AppButton tone="secondary" onClick={onClose}>
         {t.close}
-      </Button>
-      <Button variant="primary" onClick={onSave}>
+      </AppButton>
+      <AppButton tone="primary" onClick={onSave}>
         {t.save}
-      </Button>
+      </AppButton>
     </>
   );
   return (
-    <Dialog
+    <AppDialog
       open
       title={selected.gallery.name[locale]}
       closeLabel={t.close}
       onClose={onClose}
       actions={actions}
     >
-      <p>{selected.gallery.longDescription[locale]}</p>
-      <p>
-        {selected.gallery.editions
-          .map((edition) => t.editions[edition] ?? edition)
-          .join(', ')}{' '}
-        ·{' '}
-        {t.entitlements[
-          selected.gallery.entitlement as keyof typeof t.entitlements
-        ] ?? selected.gallery.entitlement}
-      </p>
-      <SchemaFields
-        schema={selected.configSchema}
-        value={config}
-        path=""
-        errors={configErrors}
-        onChange={onChange}
-      />
-    </Dialog>
+      <div className="nb-app-stack">
+        <AppSection
+          title={t.description}
+          description={selected.gallery.longDescription[locale]}
+        >
+          <p>
+            {selected.gallery.editions
+              .map((edition) => t.editions[edition] ?? edition)
+              .join(', ')}{' '}
+            ·{' '}
+            {t.entitlements[
+              selected.gallery.entitlement as keyof typeof t.entitlements
+            ] ?? selected.gallery.entitlement}
+          </p>
+        </AppSection>
+        <SchemaFields
+          schema={selected.configSchema}
+          value={config}
+          path=""
+          errors={configErrors}
+          onChange={onChange}
+        />
+      </div>
+    </AppDialog>
   );
 }

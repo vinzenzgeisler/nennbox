@@ -1,7 +1,13 @@
 import { useId, useState } from 'react';
 import './filters.css';
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
-import { AppButton, FilterBar, SelectField, TextInput } from '@nennbox/ui';
+import {
+  AppButton,
+  Icon,
+  FilterBar,
+  SelectField,
+  TextInput,
+} from '@nennbox/ui';
 import type { EntryQuery } from './AdminEntriesModel.js';
 
 export function AdminEntryFilters({
@@ -56,10 +62,7 @@ export function AdminEntryFilters({
       onRemoveFilter={(id) => setDraft((value) => ({ ...value, [id]: '' }))}
     >
       <div className="nb-entry-search">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="11" cy="11" r="6" />
-          <path d="M20 20l-4.5-4.5" />
-        </svg>
+        <Icon name="search" />
         <TextInput
           label="Suche"
           type="search"

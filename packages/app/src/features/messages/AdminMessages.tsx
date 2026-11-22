@@ -1,5 +1,14 @@
 import { useRef, useState } from 'react';
-import { Button, Dialog, MessageLayout } from '@nennbox/ui';
+import {
+  AppButton,
+  AppDialog,
+  AppView,
+  AppSection,
+  AppSelectionList,
+  AppActions,
+  AppNotice,
+  MessageLayout,
+} from '@nennbox/ui';
 import {
   MessageRecipientFilterSchema,
   type MessageAttachmentRecord,
@@ -102,7 +111,7 @@ export function AdminMessages({
         setError(
           caught instanceof MessageApiError
             ? `${caught.message}${caught.details.length ? `: ${caught.details.join(', ')}` : ''}`
-            : 'Versand fehlgeschlagen.',
+            : 'Versand fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.',
         );
     } finally {
       if (activeEvent.current === currentEvent) {
@@ -112,163 +121,163 @@ export function AdminMessages({
     }
   }
   return (
-    <MessageLayout
-      editor={
-        <>
-          {error && (
-            <p role="alert" className="nb-message-alert">
-              {error}
-            </p>
-          )}
-          {notice && <p role="status">{notice}</p>}
-          <MessageRecipients
-            filter={filter}
-            onChange={changeFilter}
-            classes={data.classes.value}
-            candidates={data.candidates.value}
-            selection={data.selection.value}
-            loading={data.selection.loading}
-            search={search}
-            onSearch={setSearch}
-            addresses={addresses}
-            onAddresses={(value) => {
-              setAddresses(value);
-              changeFilter({
-                ...filter,
-                additionalAddresses: value
-                  .split(/[\s,;]+/)
-                  .filter(Boolean)
-                  .filter((item) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item)),
-              });
-            }}
-          />
-          {addressesError && (
-            <p role="alert" className="nb-message-alert">
-              {addressesError}
-            </p>
-          )}
-          <MessageComposer
-            eventId={eventId}
-            templates={data.templates.value}
-            subject={subject}
-            text={body}
-            onSubject={(value) => updateContent(setSubject, value)}
-            onText={(value) => updateContent(setBody, value)}
-            attachments={attachments}
-            onAttachments={(value) => {
-              setAttachments(value);
-              key.current = crypto.randomUUID();
-            }}
-          />
-          <div className="nb-message-actions">
-            <Button disabled={!canSend} onClick={() => setConfirm('send')}>
-              Nachricht senden
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setConfirm('resend-verification')}
-            >
-              Verifizierung erneut senden
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setConfirm('remind-open-payments')}
-            >
-              Offene Zahlungen erinnern
-            </Button>
-          </div>
-        </>
-      }
-      aside={
-        <>
-          <section className="nb-message-help">
-            <h2>Empfängervorschau</h2>
-            <p>
-              {data.selection.loading
-                ? 'Wird geladen…'
-                : `${data.selection.value.count} Empfänger`}
-            </p>
-            <ul>
-              {data.selection.value.recipients.map((item) => (
-                <li key={item.email}>
-                  {item.name || item.email} · {item.email}
-                </li>
-              ))}
-            </ul>
-          </section>
-          <section className="nb-message-help">
-            <h2>Nachrichtenvorschau</h2>
-            <p>
-              Platzhalter: {'{{firstName}}'}, {'{{lastName}}'}, {'{{fullName}}'}
-              , {'{{email}}'}, {'{{eventName}}'}, {'{{className}}'},{' '}
-              {'{{entryNumber}}'}
-            </p>
-            {data.rendered.loading && (
-              <p role="status">Vorschau wird geladen…</p>
+    <AppView>
+      <MessageLayout
+        editor={
+          <>
+            {error && <AppNotice tone="error">{error}</AppNotice>}
+            {notice && <p role="status">{notice}</p>}
+            <MessageRecipients
+              filter={filter}
+              onChange={changeFilter}
+              classes={data.classes.value}
+              candidates={data.candidates.value}
+              selection={data.selection.value}
+              loading={data.selection.loading}
+              search={search}
+              onSearch={setSearch}
+              addresses={addresses}
+              onAddresses={(value) => {
+                setAddresses(value);
+                changeFilter({
+                  ...filter,
+                  additionalAddresses: value
+                    .split(/[\s,;]+/)
+                    .filter(Boolean)
+                    .filter((item) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(item)),
+                });
+              }}
+            />
+            {addressesError && (
+              <AppNotice tone="error">{addressesError}</AppNotice>
             )}
-            {data.rendered.error && (
-              <p role="alert" className="nb-message-alert">
-                {data.rendered.error}
+            <MessageComposer
+              eventId={eventId}
+              templates={data.templates.value}
+              subject={subject}
+              text={body}
+              onSubject={(value) => updateContent(setSubject, value)}
+              onText={(value) => updateContent(setBody, value)}
+              attachments={attachments}
+              onAttachments={(value) => {
+                setAttachments(value);
+                key.current = crypto.randomUUID();
+              }}
+            />
+            <AppActions>
+              <AppButton
+                tone="primary"
+                disabled={!canSend}
+                onClick={() => setConfirm('send')}
+              >
+                Nachricht senden
+              </AppButton>
+              <AppButton
+                tone="secondary"
+                onClick={() => setConfirm('resend-verification')}
+              >
+                Verifizierung erneut senden
+              </AppButton>
+              <AppButton
+                tone="secondary"
+                onClick={() => setConfirm('remind-open-payments')}
+              >
+                Offene Zahlungen erinnern
+              </AppButton>
+            </AppActions>
+          </>
+        }
+        aside={
+          <>
+            <AppSection title="Empfängervorschau">
+              <p>
+                {data.selection.loading
+                  ? 'Wird geladen…'
+                  : `${data.selection.value.count} Empfänger`}
               </p>
-            )}
-            {data.rendered.value && (
-              <>
-                <p>
-                  An: {data.rendered.value.recipient.name} ·{' '}
-                  {data.rendered.value.recipient.email}
-                </p>
-                <h3>{data.rendered.value.subject}</h3>
-                <p>{data.rendered.value.text}</p>
-              </>
-            )}
-          </section>
-        </>
-      }
-      footer={
-        <>
-          <MessageOutbox
-            campaigns={data.campaigns.value}
-            onChanged={() => setRevision((value) => value + 1)}
-          />
-          <Dialog
-            open={Boolean(confirm)}
-            title={
-              confirm === 'send'
-                ? 'Nachricht senden?'
-                : confirm === 'resend-verification'
-                  ? 'Verifizierung erneut senden?'
-                  : 'Offene Zahlungen erinnern?'
-            }
-            closeLabel="Schließen"
-            onClose={() => {
-              if (!busy) setConfirm(null);
-            }}
-            actions={
-              <>
-                <Button
-                  variant="secondary"
-                  disabled={busy}
-                  onClick={() => setConfirm(null)}
-                >
-                  Abbrechen
-                </Button>
-                <Button
-                  disabled={busy || (confirm === 'send' && !canSend)}
-                  onClick={() => void execute()}
-                >
-                  Jetzt senden
-                </Button>
-              </>
-            }
-          >
-            <p>
-              {confirm === 'send'
-                ? `Diese Nachricht geht an ${data.selection.value.count} Empfänger.`
-                : 'Die Aktion erstellt eine Nachricht an die betroffenen Empfänger.'}
-            </p>
-          </Dialog>
-        </>
-      }
-    />
+              <AppSelectionList label="Empfängervorschau">
+                {data.selection.value.recipients.slice(0, 8).map((item) => (
+                  <span key={item.email}>
+                    {item.name || item.email} · {item.email}
+                  </span>
+                ))}
+              </AppSelectionList>
+              {data.selection.value.count > 8 && (
+                <p>und {data.selection.value.count - 8} weitere</p>
+              )}
+            </AppSection>
+            <AppSection title="Nachrichtenvorschau">
+              <p>
+                Platzhalter: {'{{firstName}}'}, {'{{lastName}}'},{' '}
+                {'{{fullName}}'}, {'{{email}}'}, {'{{eventName}}'},{' '}
+                {'{{className}}'}, {'{{entryNumber}}'}
+              </p>
+              {data.rendered.loading && (
+                <p role="status">Vorschau wird geladen…</p>
+              )}
+              {data.rendered.error && (
+                <AppNotice tone="error">{data.rendered.error}</AppNotice>
+              )}
+              {data.rendered.value && (
+                <>
+                  <p>
+                    An: {data.rendered.value.recipient.name} ·{' '}
+                    {data.rendered.value.recipient.email}
+                  </p>
+                  <h3>{data.rendered.value.subject}</h3>
+                  <p>{data.rendered.value.text}</p>
+                </>
+              )}
+            </AppSection>
+          </>
+        }
+        footer={
+          <>
+            <MessageOutbox
+              campaigns={data.campaigns.value}
+              onChanged={() => setRevision((value) => value + 1)}
+            />
+            <AppDialog
+              open={Boolean(confirm)}
+              title={
+                confirm === 'send'
+                  ? 'Nachricht senden?'
+                  : confirm === 'resend-verification'
+                    ? 'Verifizierung erneut senden?'
+                    : 'Offene Zahlungen erinnern?'
+              }
+              closeLabel="Schließen"
+              onClose={() => {
+                if (!busy) setConfirm(null);
+              }}
+              actions={
+                <>
+                  <AppButton
+                    tone="secondary"
+                    disabled={busy}
+                    onClick={() => setConfirm(null)}
+                  >
+                    Abbrechen
+                  </AppButton>
+                  <AppButton
+                    tone="primary"
+                    disabled={busy || (confirm === 'send' && !canSend)}
+                    onClick={() => void execute()}
+                  >
+                    Jetzt senden
+                  </AppButton>
+                </>
+              }
+            >
+              <p>
+                {confirm === 'send'
+                  ? `Diese Nachricht geht an ${data.selection.value.count} Empfänger.`
+                  : 'Die Aktion erstellt eine Nachricht an die betroffenen Empfänger.'}
+              </p>
+            </AppDialog>
+          </>
+        }
+      />
+    </AppView>
   );
 }

@@ -1,0 +1,180 @@
+.nb-app-selection-list {
+  display: grid;
+  gap: var(--nb-space-3);
+  max-height: calc(var(--nb-row-h) * 4);
+  overflow: auto;
+  padding: var(--nb-space-3);
+  border-radius: var(--nb-radius-md);
+  background: var(--nb-bg-subtle);
+}
+.nb-app-dialog {
+  box-sizing: border-box;
+  width: min(
+    calc(var(--nb-preview-w) + var(--nb-space-10) * 4),
+    calc(100vw - var(--nb-space-6) * 2)
+  );
+  max-height: calc(100dvh - var(--nb-space-6) * 2);
+  padding: var(--nb-space-6);
+  border: 0;
+  border-radius: var(--nb-radius-lg);
+  background: var(--nb-bg);
+  color: var(--nb-fg);
+  box-shadow: var(--nb-shadow-dialog);
+  font: 400 var(--nb-text-base)/1.45 var(--nb-font);
+}
+.nb-app-dialog::backdrop {
+  background: var(--nb-overlay);
+}
+.nb-app-dialog header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 0;
+  gap: var(--nb-space-4);
+}
+.nb-app-dialog h2 {
+  margin: 0;
+  font: 600 var(--nb-text-lg)/1.45 var(--nb-font);
+}
+.nb-app-dialog header button {
+  min-width: var(--nb-control-h);
+  min-height: var(--nb-control-h);
+  border: 0;
+  border-radius: var(--nb-radius-md);
+  color: var(--nb-fg-secondary);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+.nb-app-dialog header button:hover {
+  background: var(--nb-bg-hover);
+}
+.nb-app-dialog > div {
+  display: grid;
+  gap: var(--nb-space-4);
+  padding-block: var(--nb-space-6);
+}
+.nb-app-dialog footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: var(--nb-space-2);
+}
+.nb-app-dialog :is(button, input, select, textarea):focus-visible {
+  outline: none;
+  box-shadow: var(--nb-focus-ring);
+}
+
+.nb-app-btn-danger {
+  background: transparent;
+  color: var(--nb-danger);
+}
+.nb-app-btn-danger:hover {
+  background: var(--nb-status-neg-bg);
+}
+
+.nb-app-file-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--nb-space-3);
+  min-width: 0;
+}
+.nb-app-file-control input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.nb-app-file-control:focus-within {
+  border-radius: var(--nb-radius-md);
+  box-shadow: var(--nb-focus-ring);
+}
+.nb-app-file-control:has(input:disabled) {
+  opacity: 0.5;
+}
+.nb-app-file-control input:disabled {
+  cursor: not-allowed;
+}
+.nb-app-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--nb-fg-muted);
+}
+.nb-app-selection-list > span {
+  color: var(--nb-fg-muted);
+  font-size: var(--nb-text-sm);
+  overflow-wrap: anywhere;
+}
+.nb-app-editor-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--nb-space-3);
+  width: 100%;
+  min-height: var(--nb-row-h);
+  border: 0;
+  border-radius: var(--nb-radius-md);
+  padding: var(--nb-space-3);
+  background: transparent;
+  color: var(--nb-fg);
+  text-align: left;
+  cursor: pointer;
+}
+.nb-app-editor-summary:hover {
+  background: var(--nb-bg-row-hover);
+}
+.nb-app-editor-description {
+  flex: 1;
+  color: var(--nb-fg-muted);
+  font-size: var(--nb-text-sm);
+}
+.nb-app-editor-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--nb-space-2);
+  margin-left: auto;
+  color: var(--nb-fg-secondary);
+  font-size: var(--nb-text-sm);
+}
+.nb-app-editor-toggle svg {
+  width: 16px;
+  height: 16px;
+  transition: transform var(--nb-duration-menu) var(--nb-ease-out);
+}
+.nb-app-editor-summary[aria-expanded='true'] svg {
+  transform: rotate(90deg);
+}
+.nb-app-editor-disclosure {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition:
+    grid-template-rows var(--nb-duration-menu) var(--nb-ease-out),
+    visibility var(--nb-duration-menu);
+}
+.nb-app-editor-disclosure[data-open='true'] {
+  grid-template-rows: 1fr;
+  visibility: visible;
+}
+.nb-app-editor-content {
+  min-height: 0;
+  overflow: hidden;
+}
+.nb-app-editor-content > div {
+  padding: var(--nb-space-3);
+}
+.nb-app-workflow-pill {
+  color: var(--nb-fg-secondary);
+  background: var(--nb-bg-subtle);
+}
+.nb-app-workflow-pill i {
+  background: var(--nb-fg-muted);
+}
+.nb-app-input input[type='color'] {
+  width: var(--nb-control-h);
+  padding: var(--nb-space-1);
+}

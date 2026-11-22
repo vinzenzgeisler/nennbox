@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react';
 import {
-  Checkbox,
-  Field,
-  FormSection,
-  SelectField,
-  TextInput,
-  Textarea,
+  AppCheckbox,
+  AppNotice,
+  AppSection,
+  AppSelect,
+  AppTextInput,
+  AppTextarea,
 } from '@nennbox/ui';
 
 type JsonSchema = {
@@ -69,7 +70,7 @@ export function SchemaFields({
       schema.title ??
       (path ? humanize(path.split('.').at(-1)!) : 'Moduleinstellungen');
     return (
-      <FormSection
+      <AppSection
         title={title}
         {...(schema.description ? { description: schema.description } : {})}
       >
@@ -86,22 +87,29 @@ export function SchemaFields({
             />
           );
         })}
-      </FormSection>
+      </AppSection>
     );
   }
   const id = 'module-config-' + (path || 'root');
   const label =
     schema.title ?? humanize(path.split('.').at(-1) ?? 'Konfiguration');
   const error = errors[path];
+  const feedback = {
+    id,
+    ...(error ? { error } : {}),
+  };
+  const accessibility = {
+    'aria-invalid': error ? true : undefined,
+    'aria-describedby': error ? id + '-error' : undefined,
+  };
   if (schema.enum)
     return (
-      <div>
-        <SelectField
+      <FieldFeedback {...feedback}>
+        <AppSelect
           id={id}
           label={label}
           value={String(value ?? '')}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? id + '-error' : undefined}
+          {...accessibility}
           onChange={(event) => onChange(path, event.target.value)}
         >
           <option value="">—</option>
@@ -110,75 +118,106 @@ export function SchemaFields({
               {humanize(String(option))}
             </option>
           ))}
-        </SelectField>
-        {error && (
-          <small id={id + '-error'} role="alert">
-            {error}
-          </small>
-        )}
-      </div>
+        </AppSelect>
+      </FieldFeedback>
     );
   if (schema.type === 'boolean')
     return (
-      <div>
-        <Checkbox
+      <FieldFeedback {...feedback}>
+        <AppCheckbox
+          id={id}
           label={label}
-          aria-describedby={error ? id + '-error' : undefined}
-          aria-invalid={error ? true : undefined}
+          {...accessibility}
           checked={Boolean(value)}
           onChange={(event) => onChange(path, event.target.checked)}
         />
-        {error && (
-          <small id={id + '-error'} role="alert">
-            {error}
-          </small>
-        )}
-      </div>
+      </FieldFeedback>
     );
   if (schema.type === 'string')
     return (
-      <TextInput
-        id={id}
-        label={label}
-        type="text"
-        value={String(value ?? '')}
-        {...(error ? { error } : {})}
+      <FieldFeedback
+        {...feedback}
         {...(schema.description ? { hint: schema.description } : {})}
-        onChange={(event) => onChange(path, event.target.value)}
-      />
+      >
+        <AppTextInput
+          id={id}
+          label={label}
+          type="text"
+          value={String(value ?? '')}
+          {...accessibility}
+          aria-describedby={
+            error
+              ? id + '-error'
+              : schema.description
+                ? id + '-hint'
+                : undefined
+          }
+          onChange={(event) => onChange(path, event.target.value)}
+        />
+      </FieldFeedback>
     );
   if (schema.type === 'number' || schema.type === 'integer')
     return (
-      <Field
-        id={id}
-        label={label}
-        type="number"
-        value={typeof value === 'number' ? value : ''}
-        {...(error ? { error } : {})}
-        {...(schema.minimum !== undefined ? { min: schema.minimum } : {})}
-        {...(schema.maximum !== undefined ? { max: schema.maximum } : {})}
-        step={schema.type === 'integer' ? 1 : 'any'}
-        onChange={(event) =>
-          onChange(
-            path,
-            event.target.value === '' ? undefined : Number(event.target.value),
-          )
-        }
-      />
+      <FieldFeedback {...feedback}>
+        <AppTextInput
+          id={id}
+          label={label}
+          type="number"
+          value={typeof value === 'number' ? value : ''}
+          {...accessibility}
+          {...(schema.minimum !== undefined ? { min: schema.minimum } : {})}
+          {...(schema.maximum !== undefined ? { max: schema.maximum } : {})}
+          step={schema.type === 'integer' ? 1 : 'any'}
+          onChange={(event) =>
+            onChange(
+              path,
+              event.target.value === ''
+                ? undefined
+                : Number(event.target.value),
+            )
+          }
+        />
+      </FieldFeedback>
     );
   return (
-    <Textarea
-      id={id}
-      label={label}
-      {...(error ? { error } : {})}
-      value={JSON.stringify(value ?? {}, null, 2)}
-      onChange={(event) => {
-        try {
-          onChange(path, JSON.parse(event.target.value));
-        } catch {
-          /* Server-side validation remains authoritative. */
-        }
-      }}
-    />
+    <FieldFeedback {...feedback}>
+      <AppTextarea
+        id={id}
+        label={label}
+        {...accessibility}
+        value={JSON.stringify(value ?? {}, null, 2)}
+        onChange={(event) => {
+          try {
+            onChange(path, JSON.parse(event.target.value));
+          } catch {
+            /* Server-side validation remains authoritative. */
+          }
+        }}
+      />
+    </FieldFeedback>
+  );
+}
+
+function FieldFeedback({
+  id,
+  error,
+  hint,
+  children,
+}: {
+  id: string;
+  error?: string;
+  hint?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="nb-app-stack">
+      {children}
+      {hint && !error && <small id={id + '-hint'}>{hint}</small>}
+      {error && (
+        <AppNotice tone="error">
+          <span id={id + '-error'}>{error}</span>
+        </AppNotice>
+      )}
+    </div>
   );
 }

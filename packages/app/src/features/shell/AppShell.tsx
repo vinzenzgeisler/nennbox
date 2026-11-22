@@ -28,15 +28,8 @@ type EventOption = {
   slug?: string;
   registrationClosesAt?: string | null;
 };
-type View =
-  | 'overview'
-  | 'entries'
-  | 'workflow'
-  | 'setup'
-  | 'account'
-  | 'exports'
-  | 'messages';
-const VIEW_TITLES: Record<View, string> = {
+type View = keyof typeof VIEW_TITLES;
+const VIEW_TITLES = {
   overview: 'Übersicht',
   exports: 'Exporte',
   entries: 'Nennungen',
@@ -44,6 +37,7 @@ const VIEW_TITLES: Record<View, string> = {
   setup: 'Veranstaltung einrichten',
   account: 'Einstellungen',
   messages: 'Nachrichten',
+  modules: 'Module',
 };
 type NavItem = {
   id: View;
@@ -106,6 +100,7 @@ export const APP_NAVIGATION_REGISTRY: Array<{
 ];
 export function AppShell({
   children,
+  canManageModules = false,
   previewOpen = true,
   detailOpen = false,
   identity,
@@ -121,6 +116,7 @@ export function AppShell({
   onEntrySelect,
 }: {
   children: ReactNode | ((view: View) => ReactNode);
+  canManageModules?: boolean;
   previewOpen?: boolean;
   detailOpen?: boolean;
   /** `organization` replaces the role under the name once it is known. */
@@ -179,6 +175,10 @@ export function AppShell({
   );
   const navigationItems = APP_NAVIGATION_REGISTRY.flatMap(
     (group) => group.items,
+  ).concat(
+    canManageModules
+      ? [{ id: 'modules', label: 'Module', icon: 'settings' }]
+      : [],
   );
   const navigate = (id: string) => {
     onClearMessageSelection?.();

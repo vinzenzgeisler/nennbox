@@ -1,10 +1,16 @@
+import { useState } from 'react';
 import {
-  Button,
-  Checkbox,
-  FormSection,
-  SelectField,
-  TextInput,
+  AppButton,
+  AppCheckbox,
+  AppChoiceGroup,
+  AppGrid,
+  AppSection,
+  AppSelect,
+  AppTextInput,
+  AppEditorRow,
+  AppWorkflowPill,
 } from '@nennbox/ui';
+import { WorkflowRemoveButton } from './WorkflowRemoveButton.js';
 import type { Transition, Workflow } from './AdminWorkflow.js';
 
 export function WorkflowTransitionsEditor({
@@ -16,15 +22,56 @@ export function WorkflowTransitionsEditor({
   updateTransition: (index: number, patch: Partial<Transition>) => void;
   updateWorkflow: (workflow: Workflow) => void;
 }) {
+  const [expanded, setExpanded] = useState<number | null>(null);
   return (
-    <FormSection
+    <AppSection
       title="Erlaubte Übergänge"
       description="Bestimme, welche Statusänderungen möglich sind."
     >
       {workflow.transitions.map((edge, index) => (
-        <FormSection key={index} title={'Übergang ' + (index + 1)}>
-          <div className="workflow-fields">
-            <SelectField
+        <AppEditorRow
+          key={index}
+          label={'Übergang ' + (index + 1) + ' bearbeiten'}
+          preview={
+            <>
+              <AppWorkflowPill
+                label={
+                  workflow.statuses.find((status) => status.key === edge.from)
+                    ?.labels.de || edge.from
+                }
+                color={
+                  workflow.statuses.find((status) => status.key === edge.from)
+                    ?.color
+                }
+              />
+              <span aria-hidden="true">→</span>
+              <AppWorkflowPill
+                label={
+                  workflow.statuses.find((status) => status.key === edge.to)
+                    ?.labels.de || edge.to
+                }
+                color={
+                  workflow.statuses.find((status) => status.key === edge.to)
+                    ?.color
+                }
+              />
+            </>
+          }
+          description={[
+            edge.reasonRequired && 'Begründung nötig',
+            edge.notify && 'Mail',
+            ...(edge.roles?.map((role) =>
+              role === 'admin' ? 'Veranstaltungsleitung' : 'Teammitglied',
+            ) ?? []),
+            edge.permission || (!edge.roles?.length && 'Nennung bearbeiten'),
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+          open={expanded === index}
+          onToggle={() => setExpanded(expanded === index ? null : index)}
+        >
+          <AppGrid>
+            <AppSelect
               label="Von"
               aria-label={'Übergang ' + (index + 1) + ' von'}
               value={edge.from}
@@ -37,8 +84,8 @@ export function WorkflowTransitionsEditor({
                   {status.labels.de}
                 </option>
               ))}
-            </SelectField>
-            <SelectField
+            </AppSelect>
+            <AppSelect
               label="Zu"
               aria-label={'Übergang ' + (index + 1) + ' zu'}
               value={edge.to}
@@ -51,8 +98,10 @@ export function WorkflowTransitionsEditor({
                   {status.labels.de}
                 </option>
               ))}
-            </SelectField>
-            <Checkbox
+            </AppSelect>
+          </AppGrid>
+          <AppChoiceGroup label="Optionen">
+            <AppCheckbox
               aria-label={
                 'Übergang ' + (index + 1) + ' Begründung erforderlich'
               }
@@ -64,7 +113,7 @@ export function WorkflowTransitionsEditor({
                 })
               }
             />
-            <Checkbox
+            <AppCheckbox
               aria-label={'Übergang ' + (index + 1) + ' Fahrer benachrichtigen'}
               label="Teilnehmende per E-Mail benachrichtigen"
               checked={edge.notify ?? false}
@@ -72,66 +121,62 @@ export function WorkflowTransitionsEditor({
                 updateTransition(index, { notify: event.target.checked })
               }
             />
-            <FormSection title="Zulässige Rollen">
-              {(['admin', 'member'] as const).map((role) => (
-                <Checkbox
-                  key={role}
-                  aria-label={'Übergang ' + (index + 1) + ' Rolle ' + role}
-                  label={
-                    role === 'admin' ? 'Veranstaltungsleitung' : 'Teammitglied'
-                  }
-                  checked={edge.roles?.includes(role) ?? false}
-                  onChange={(event) => {
-                    const roles = new Set(edge.roles ?? []);
-                    if (event.target.checked) roles.add(role);
-                    else roles.delete(role);
-                    updateTransition(index, {
-                      roles: roles.size ? [...roles] : undefined,
-                    });
-                  }}
-                />
-              ))}
-              <p>Ohne Auswahl gilt die Berechtigung „Nennung bearbeiten“.</p>
-            </FormSection>
-            <TextInput
-              label="Technischer Berechtigungsschlüssel (optional)"
-              aria-label={'Übergang ' + (index + 1) + ' Berechtigung'}
-              value={edge.permission ?? ''}
-              onChange={(event) =>
-                updateTransition(index, { permission: event.target.value })
-              }
-              placeholder="entry:write"
-            />
-            <Button
-              variant="danger"
-              size={40}
-              confirmation={{
-                title: 'Übergang entfernen?',
-                message: 'Diese Statusänderung ist danach nicht mehr möglich.',
-                reasonLabel: 'Grund',
-                cancelLabel: 'Abbrechen',
-                confirmLabel: 'Übergang entfernen',
-                closeLabel: 'Dialog schließen',
-              }}
-              onDangerConfirm={() =>
-                updateWorkflow({
-                  ...workflow,
-                  transitions: workflow.transitions.filter(
-                    (_, i) => i !== index,
-                  ),
-                })
-              }
-            >
-              Übergang entfernen
-            </Button>
-          </div>
-        </FormSection>
+          </AppChoiceGroup>
+          <AppChoiceGroup label="Zulässige Rollen">
+            {(['admin', 'member'] as const).map((role) => (
+              <AppCheckbox
+                key={role}
+                aria-label={'Übergang ' + (index + 1) + ' Rolle ' + role}
+                label={
+                  role === 'admin' ? 'Veranstaltungsleitung' : 'Teammitglied'
+                }
+                checked={edge.roles?.includes(role) ?? false}
+                onChange={(event) => {
+                  const roles = new Set(edge.roles ?? []);
+                  if (event.target.checked) roles.add(role);
+                  else roles.delete(role);
+                  updateTransition(index, {
+                    roles: roles.size ? [...roles] : undefined,
+                  });
+                }}
+              />
+            ))}
+          </AppChoiceGroup>
+          <p>Ohne Auswahl gilt die Berechtigung „Nennung bearbeiten“.</p>
+          <AppTextInput
+            label="Technischer Berechtigungsschlüssel (optional)"
+            aria-label={'Übergang ' + (index + 1) + ' Berechtigung'}
+            value={edge.permission ?? ''}
+            onChange={(event) =>
+              updateTransition(index, { permission: event.target.value })
+            }
+            placeholder="entry:write"
+          />
+          <WorkflowRemoveButton
+            confirmation={{
+              title: 'Übergang entfernen?',
+              message: 'Diese Statusänderung ist danach nicht mehr möglich.',
+              reasonLabel: 'Grund',
+              cancelLabel: 'Abbrechen',
+              confirmLabel: 'Übergang entfernen',
+              closeLabel: 'Dialog schließen',
+            }}
+            onConfirm={() => {
+              setExpanded(null);
+              updateWorkflow({
+                ...workflow,
+                transitions: workflow.transitions.filter((_, i) => i !== index),
+              });
+            }}
+          >
+            Übergang entfernen
+          </WorkflowRemoveButton>
+        </AppEditorRow>
       ))}
-      <Button
-        variant="secondary"
-        size={40}
+      <AppButton
         disabled={workflow.statuses.length < 2}
         onClick={() => {
+          setExpanded(workflow.transitions.length);
           const from = workflow.statuses[0]?.key;
           const to = workflow.statuses[1]?.key;
           if (from && to)
@@ -145,7 +190,7 @@ export function WorkflowTransitionsEditor({
         }}
       >
         Übergang hinzufügen
-      </Button>
-    </FormSection>
+      </AppButton>
+    </AppSection>
   );
 }

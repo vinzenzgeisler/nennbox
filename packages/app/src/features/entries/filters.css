@@ -19,7 +19,7 @@
   z-index: 1;
 }
 
-.nb-entry-filters svg {
+.nb-entry-filters svg:not(.nb-icon) {
   width: 15px;
   height: 15px;
   fill: none;
@@ -52,4 +52,10 @@
   flex: 1 0 100%;
   gap: var(--nb-space-3);
   flex-wrap: wrap;
+}
+
+.nb-entry-search > .nb-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.6;
 }

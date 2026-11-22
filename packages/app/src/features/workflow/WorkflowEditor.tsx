@@ -1,11 +1,19 @@
-import { Button, PageHeader, TextInput } from '@nennbox/ui';
+import { useId } from 'react';
+import {
+  AppButton,
+  AppEmptyState,
+  AppNotice,
+  AppSection,
+  AppTextInput,
+  AppValueRow,
+  AppView,
+} from '@nennbox/ui';
 import { WorkflowStatusesEditor } from './WorkflowStatusesEditor.js';
 import { WorkflowTransitionsEditor } from './WorkflowTransitionsEditor.js';
 import type { WorkflowEditorProps } from './WorkflowEditorProps.js';
 
 export function WorkflowEditor({
   eventId,
-  events,
   loading,
   workflow,
   revision,
@@ -18,44 +26,39 @@ export function WorkflowEditor({
   save,
   message,
 }: WorkflowEditorProps) {
-  const selectedEvent = events.find((event) => event.id === eventId);
+  const reasonHintId = useId();
   if (!eventId) {
     return (
-      <section className="admin-workflow" aria-labelledby="workflow-title">
-        <PageHeader id="workflow-title" title="Nennungsablauf" />
-        <p>Wähle zuerst eine Veranstaltung aus.</p>
-      </section>
+      <AppView>
+        <AppEmptyState
+          title="Keine Veranstaltung ausgewählt"
+          description="Wähle zuerst eine Veranstaltung aus."
+        />
+      </AppView>
     );
   }
   if (loading) {
     return (
-      <section className="admin-workflow" aria-labelledby="workflow-title">
-        <PageHeader id="workflow-title" title="Nennungsablauf" />
+      <AppView>
         <p role="status">Ablauf wird geladen …</p>
-      </section>
+      </AppView>
     );
   }
   if (!workflow) {
     return (
-      <section className="admin-workflow" aria-labelledby="workflow-title">
-        <PageHeader id="workflow-title" title="Nennungsablauf" />
-        <p role="alert">
+      <AppView>
+        <AppNotice tone="error">
           Der Nennungsablauf ist ungültig oder konnte nicht geladen werden.
-        </p>
-      </section>
+        </AppNotice>
+      </AppView>
     );
   }
 
   return (
-    <section className="admin-workflow" aria-labelledby="workflow-title">
-      <PageHeader
-        id="workflow-title"
-        title="Nennungsablauf"
-        {...(selectedEvent?.name ? { description: selectedEvent.name } : {})}
-      />
-      <p className="workflow-revision">
-        Aktive Version {revision?.version ?? 'nicht verfügbar'}
-      </p>
+    <AppView>
+      <AppValueRow label="Aktive Version">
+        {revision?.version ?? 'nicht verfügbar'}
+      </AppValueRow>
 
       <WorkflowStatusesEditor
         workflow={workflow}
@@ -68,24 +71,29 @@ export function WorkflowEditor({
         updateWorkflow={updateWorkflow}
       />
 
-      <TextInput
-        label="Begründung für die Aktivierung"
-        hint="Die Begründung wird im Änderungsprotokoll gespeichert."
-        aria-label="Begründung für die Aktivierung"
-        value={reason}
-        maxLength={1000}
-        onChange={(event) => setReason(event.target.value)}
-      />
-      <Button
-        variant="primary"
-        disabled={busy || !reason.trim()}
-        onClick={() => void save()}
-      >
-        Ablauf prüfen und aktivieren
-      </Button>
-      <p role="status" aria-live="polite">
-        {message}
-      </p>
-    </section>
+      <AppSection title="Ablauf aktivieren">
+        <AppTextInput
+          label="Begründung für die Aktivierung"
+          aria-describedby={reasonHintId}
+          aria-label="Begründung für die Aktivierung"
+          value={reason}
+          maxLength={1000}
+          onChange={(event) => setReason(event.target.value)}
+        />
+        <p id={reasonHintId}>
+          Die Begründung wird im Änderungsprotokoll gespeichert.
+        </p>
+        <AppButton
+          tone="primary"
+          disabled={busy || !reason.trim()}
+          onClick={() => void save()}
+        >
+          Ablauf prüfen und aktivieren
+        </AppButton>
+        <p role="status" aria-live="polite">
+          {message}
+        </p>
+      </AppSection>
+    </AppView>
   );
 }

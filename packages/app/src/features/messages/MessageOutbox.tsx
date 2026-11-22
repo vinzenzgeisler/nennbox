@@ -1,4 +1,12 @@
-import { Button, DataTable, StatusLabel } from '@nennbox/ui';
+import { relativeEntryTime } from '../entries/detail/relativeEntryTime.js';
+import {
+  AppButton,
+  AppTable,
+  AppStatusPill,
+  AppSection,
+  AppActions,
+  AppNotice,
+} from '@nennbox/ui';
 import type { MessageCampaignRecord } from '@nennbox/contracts';
 import { messagesApi } from './messagesApi.js';
 import { useState } from 'react';
@@ -19,50 +27,45 @@ export function MessageOutbox({
   const [error, setError] = useState('');
   const [busy, setBusy] = useState('');
   return (
-    <section className="nb-message-section" aria-label="Postausgang">
-      <div className="nb-message-actions">
-        <h2>Postausgang</h2>
-        <Button variant="secondary" onClick={onChanged}>
+    <AppSection title="Postausgang">
+      <AppActions>
+        <AppButton tone="secondary" onClick={onChanged}>
           Postausgang aktualisieren
-        </Button>
-      </div>
-      {error && (
-        <p role="alert" className="nb-message-alert">
-          {error}
-        </p>
-      )}
-      <DataTable
+        </AppButton>
+      </AppActions>
+      {error && <AppNotice tone="error">{error}</AppNotice>}
+      <AppTable
         headers={['Betreff', 'Status', 'Empfänger', 'Erstellt', 'Aktion']}
       >
         {campaigns.map((campaign) => (
           <tr key={campaign.id}>
             <td>{campaign.subject}</td>
             <td>
-              <StatusLabel
-                label={statusLabels[campaign.status]}
+              <AppStatusPill
                 status={
                   campaign.status === 'sent'
-                    ? 'done'
+                    ? 'zu'
                     : campaign.status === 'failed'
-                      ? 'rejected'
-                      : 'in_progress'
+                      ? 'neg'
+                      : 'vor'
                 }
-              />
+              >
+                {statusLabels[campaign.status]}
+              </AppStatusPill>
             </td>
             <td>
               {campaign.sent}/{campaign.total}
               {campaign.failed ? ` · ${campaign.failed} fehlgeschlagen` : ''}
             </td>
             <td>
-              {new Intl.DateTimeFormat('de-DE', {
-                dateStyle: 'short',
-                timeStyle: 'short',
-              }).format(new Date(campaign.createdAt))}
+              <time dateTime={campaign.createdAt}>
+                {relativeEntryTime(campaign.createdAt)}
+              </time>
             </td>
             <td>
               {campaign.status === 'failed' && (
-                <Button
-                  variant="secondary"
+                <AppButton
+                  tone="secondary"
                   disabled={Boolean(busy)}
                   onClick={() => {
                     setBusy(campaign.id);
@@ -70,18 +73,22 @@ export function MessageOutbox({
                     void messagesApi
                       .retry(campaign.id)
                       .then(onChanged)
-                      .catch(() => setError('Erneutes Senden fehlgeschlagen.'))
+                      .catch(() =>
+                        setError(
+                          'Erneutes Senden fehlgeschlagen. Prüfe deine Verbindung und versuche es erneut.',
+                        ),
+                      )
                       .finally(() => setBusy(''));
                   }}
                 >
                   Fehlgeschlagene erneut senden
-                </Button>
+                </AppButton>
               )}
             </td>
           </tr>
         ))}
-      </DataTable>
+      </AppTable>
       {!campaigns.length && <p>Noch keine Nachrichten versendet.</p>}
-    </section>
+    </AppSection>
   );
 }
