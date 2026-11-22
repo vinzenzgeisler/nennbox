@@ -2,7 +2,7 @@
   display: grid;
   align-content: center;
   min-height: 94px;
-  padding: 20px var(--nb-space-7) 16px;
+  padding: 20px var(--nb-page-gutter, var(--nb-space-7)) 16px;
   background: var(--nb-bg);
 }
 .nb-page-header > p {
@@ -78,11 +78,6 @@
   background: var(--nb-bg);
   color: var(--nb-fg);
   box-shadow: var(--nb-shadow-raised);
-}
-@media (width <= 860px) {
-  .nb-page-header {
-    padding-inline: var(--nb-space-4);
-  }
 }
 @media (width <= 600px) {
   .nb-page-header > div {

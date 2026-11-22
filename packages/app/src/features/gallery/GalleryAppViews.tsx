@@ -98,6 +98,9 @@ export function GalleryAppViews() {
                 checked={required}
                 onChange={(e) => setRequired(e.target.checked)}
               />
+              <AppCheckbox label="Fahrer" defaultChecked />
+              <AppCheckbox label="Fahrzeug" />
+              <AppCheckbox label="Nicht verfügbar" disabled />
             </AppChoiceGroup>
             <AppButton tone="primary" onClick={() => setSaved(true)}>
               Speichern

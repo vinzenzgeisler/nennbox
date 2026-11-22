@@ -1,5 +1,6 @@
 @import url('./app-tokens.css');
 @import url('./app-primitives/app-primitives.css');
+@import url('./app-primitives/app-checkbox.css');
 @import url('./button/button.css');
 @import url('./status/status.css');
 @import url('./field/field.css');

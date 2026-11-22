@@ -3,10 +3,17 @@
 .nb-app-section {
   display: grid;
   min-width: 0;
+  align-content: start;
   gap: var(--nb-space-6);
 }
 .nb-app-view {
   max-width: 100%;
+  padding-inline: calc(
+    var(--nb-page-gutter, var(--nb-space-7)) - var(--nb-content-inset, 0px)
+  );
+}
+.nb-app-view .nb-app-view {
+  padding-inline: 0;
 }
 .nb-app-stack {
   gap: var(--nb-space-4);
@@ -26,6 +33,7 @@
 }
 .nb-app-grid {
   display: grid;
+  align-items: start;
   gap: var(--nb-space-6);
   min-width: 0;
 }
@@ -93,6 +101,27 @@
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
+}
+.nb-app-select-control {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+.nb-app-select-control::after {
+  content: '';
+  position: absolute;
+  top: calc(50% - 4px);
+  right: var(--nb-item-px);
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--nb-fg-muted);
+  border-bottom: 1.5px solid var(--nb-fg-muted);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.nb-app-select {
+  appearance: none;
+  padding-right: calc(var(--nb-item-px) * 3);
 }
 .nb-app-input textarea {
   min-height: calc(var(--nb-control-h) * 3);

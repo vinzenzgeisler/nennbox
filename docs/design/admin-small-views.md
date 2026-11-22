@@ -23,6 +23,29 @@ Die Formulare behalten bestehende Hooks, API-Aufrufe, Validierung, Filter,
 Download-Prüfungen und Abbruchsteuerung. Zeiten im Exportverlauf nutzen denselben
 relativen Formatierer wie die Nennungsdetailseite.
 
+## Seitenrand, Felder und Statuszeilen
+
+`AppView` ergänzt den vorhandenen Workspace-Inset bis zum gemeinsamen Seitenrand
+`--nb-page-gutter` (`--nb-space-7`, mobil `--nb-space-4`). Der Seitenkopf nutzt
+denselben Wert; verschachtelte `AppView`-Gruppen erhalten keinen zweiten Rand.
+`AppGrid` und `AppSection` richten ihre Inhalte oben aus, damit eine längere
+Nachbarspalte keine leeren Flächen zwischen Abschnittstitel und Status erzeugt.
+Statuszeilen behalten auch Nullwerte und eigene Kategorien mit sichtbarem Label;
+ein leerer Kategoriename erscheint als „Unbekannter Status“.
+
+`AppSelect` verwendet das gemeinsame 32-px-Feld mit eigenem, nicht interaktivem
+Pfeil. `AppCheckbox` aus der Nennungsliste wird mit seinem Stylesheet ausgeliefert:
+16-px-Kästchen, 5-px-Ecke, grüner Auswahlzustand und Label rechts daneben.
+Die Galerie zeigt ausgewählte, leere und deaktivierte Formular-Checkboxen.
+
+## Nennungsunterlagen öffnen
+
+In der laufenden Verwaltungs-App (`/app` bzw. `/admin`) zuerst eine Veranstaltung
+wählen, dann **Konto → Einstellungen** öffnen. Dort steht „Unterlagentypen“ vor
+den Nennformular-Einstellungen. Alternativ über **⌘K → Nennungsunterlagen
+bearbeiten** springen. Die Ansicht ist intern `account`; es gibt keine eigene
+Unterlagen-URL und sie liegt nicht unter „Einrichten“.
+
 ## Öffentliche Grenzen und verbliebene Altgestaltung
 
 `/passenger` wird in `App.tsx` außerhalb der Verwaltungs-App gerendert, nutzt

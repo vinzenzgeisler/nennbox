@@ -141,7 +141,9 @@ export function AppSelect({
   return (
     <label className="nb-app-input">
       <span>{label}</span>
-      <select {...props} className="nb-app-field" />
+      <span className="nb-app-select-control">
+        <select {...props} className="nb-app-field nb-app-select" />
+      </span>
     </label>
   );
 }

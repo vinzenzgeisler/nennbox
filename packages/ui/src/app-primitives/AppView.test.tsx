@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import {
   AppChoiceGroup,
+  AppView,
   AppNotice,
   AppSection,
   AppSelect,
@@ -13,6 +14,7 @@ import {
   AppTextInput,
 } from './AppView.js';
 import { FormItem } from '../form-section/FormItem.js';
+import { AppCheckbox } from './AppPrimitives.js';
 import { Metric, MetricGrid } from '../metric/Metric.js';
 
 describe('app view patterns', () => {
@@ -53,6 +55,43 @@ describe('app view patterns', () => {
     expect(input.value).toBe('Lizenz');
     expect(host.querySelector('select')?.value).toBe('a');
     expect(host.querySelector('textarea')?.maxLength).toBe(500);
+    act(() => root.unmount());
+  });
+  it('retains native select and checkbox behavior inside a padded view', () => {
+    const host = document.createElement('div');
+    const root = createRoot(host);
+    const changes: string[] = [];
+    act(() =>
+      root.render(
+        <AppView>
+          <AppSelect
+            label="Trennzeichen"
+            defaultValue=";"
+            onChange={(event) => changes.push(event.target.value)}
+          >
+            <option value=";">Semikolon</option>
+            <option value=",">Komma</option>
+          </AppSelect>
+          <AppCheckbox
+            label="Fahrer"
+            defaultChecked
+            onChange={(event) => changes.push(String(event.target.checked))}
+          />
+          <AppCheckbox label="Fahrzeug" disabled />
+        </AppView>,
+      ),
+    );
+    const select = host.querySelector('select')!;
+    expect(select.closest('label')?.textContent).toContain('Trennzeichen');
+    expect(select.closest('.nb-app-select-control')).not.toBeNull();
+    act(() => {
+      select.value = ',';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      host.querySelector('input')!.click();
+      host.querySelectorAll('input')[1]!.click();
+    });
+    expect(changes).toEqual([',', 'false']);
+    expect(host.querySelectorAll('input')[1]?.disabled).toBe(true);
     act(() => root.unmount());
   });
   it('exposes feedback urgency and tabular column headers', () => {
