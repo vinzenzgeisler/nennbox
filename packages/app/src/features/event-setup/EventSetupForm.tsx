@@ -1,25 +1,14 @@
 import {
-  Button,
-  DateInput,
-  FormSection,
-  SelectField,
-  TextInput,
-  Textarea,
+  AppButton,
+  AppTextInput,
+  AppSection,
+  AppSelect,
+  AppTextarea,
 } from '@nennbox/ui';
+import { EventSetupClasses } from './EventSetupClasses.js';
 import type { FormEvent } from 'react';
 import { EventOrganizerFields } from './EventOrganizerFields.js';
-import type {
-  PassengerMode,
-  SetupDraft,
-  VehicleType,
-} from './eventSetupApi.js';
-
-const vehicleTypes: Array<{ value: VehicleType; label: string }> = [
-  { value: 'car', label: 'Auto' },
-  { value: 'motorcycle', label: 'Motorrad' },
-  { value: 'kart', label: 'Kart' },
-  { value: 'other', label: 'Andere' },
-];
+import type { SetupDraft } from './eventSetupApi.js';
 
 export function EventSetupForm({
   draft,
@@ -40,21 +29,10 @@ export function EventSetupForm({
   onClearRecipient: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>, open: boolean) => void;
 }) {
-  const updateClass = (
-    index: number,
-    patch: Partial<SetupDraft['classes'][number]>,
-  ) =>
-    setDraft((current) => ({
-      ...current,
-      classes: current.classes.map((item, position) =>
-        position === index ? { ...item, ...patch } : item,
-      ),
-    }));
-
   return (
     <>
       <div>
-        <SelectField
+        <AppSelect
           label="Gespeicherte Veranstaltung bearbeiten"
           value={draft.id ?? ''}
           disabled={busy}
@@ -70,9 +48,10 @@ export function EventSetupForm({
               {event.name}
             </option>
           ))}
-        </SelectField>
+        </AppSelect>
       </div>
       <form
+        className="nb-app-stack"
         onSubmit={(event) => {
           const nativeEvent = event.nativeEvent;
           const submitter =
@@ -85,9 +64,9 @@ export function EventSetupForm({
         }}
         noValidate={false}
       >
-        <section id="event-setup-event" className="event-setup-section">
-          <FormSection title="Veranstaltung">
-            <TextInput
+        <section id="event-setup-event" className="nb-app-anchor">
+          <AppSection title="Veranstaltung">
+            <AppTextInput
               required
               label="Name"
               name="event-name"
@@ -100,7 +79,7 @@ export function EventSetupForm({
                 }))
               }
             />
-            <TextInput
+            <AppTextInput
               required
               label="Link-Kürzel"
               name="event-slug"
@@ -115,8 +94,9 @@ export function EventSetupForm({
                 }))
               }
             />
-            <DateInput
+            <AppTextInput
               required
+              type="date"
               label="Beginn"
               name="starts-on"
               value={draft.startsOn}
@@ -127,8 +107,9 @@ export function EventSetupForm({
                 }))
               }
             />
-            <DateInput
+            <AppTextInput
               required
+              type="date"
               label="Ende"
               name="ends-on"
               min={draft.startsOn || undefined}
@@ -140,98 +121,20 @@ export function EventSetupForm({
                 }))
               }
             />
-          </FormSection>
+          </AppSection>
         </section>
-        <section
-          id="event-setup-classes"
-          className="event-setup-section event-setup-classes"
-        >
-          <FormSection title="Klassen und Startgeld">
-            {draft.classes.map((item, index) => (
-              <div key={item.id ?? index}>
-                <TextInput
-                  required
-                  label="Klassenname"
-                  value={item.name}
-                  onChange={(event) =>
-                    updateClass(index, { name: event.target.value })
-                  }
-                />
-                <TextInput
-                  required
-                  label="Kürzel"
-                  pattern="[A-Za-z0-9][A-Za-z0-9_-]*"
-                  value={item.code}
-                  onChange={(event) =>
-                    updateClass(index, { code: event.target.value.trim() })
-                  }
-                />
-                <SelectField
-                  label="Fahrzeugtyp"
-                  value={item.vehicleType}
-                  onChange={(event) =>
-                    updateClass(index, {
-                      vehicleType:
-                        parseVehicleType(event.target.value) ??
-                        item.vehicleType,
-                    })
-                  }
-                >
-                  {vehicleTypes.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </SelectField>
-                <SelectField
-                  label="Beifahrer"
-                  value={item.passengerMode ?? 'optional'}
-                  onChange={(event) =>
-                    updateClass(index, {
-                      passengerMode: event.target.value as PassengerMode,
-                    })
-                  }
-                >
-                  <option value="optional">Optional</option>
-                  <option value="required">Pflicht</option>
-                  <option value="none">Nein</option>
-                </SelectField>
-                <TextInput
-                  required
-                  label="Startgeld in Euro"
-                  data-fee
-                  inputMode="decimal"
-                  pattern="[0-9]+([,.][0-9]{1,2})?"
-                  title="Betrag wie 25,00 oder 25.00 eingeben."
-                  value={item.fee}
-                  onChange={(event) =>
-                    updateClass(index, { fee: event.target.value })
-                  }
-                />
-                {draft.classes.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size={40}
-                    disabled={busy || Boolean(item.id)}
-                    onClick={() =>
-                      setDraft((current) => ({
-                        ...current,
-                        classes: current.classes.filter(
-                          (_, position) => position !== index,
-                        ),
-                      }))
-                    }
-                  >
-                    Klasse entfernen
-                  </Button>
-                )}
-              </div>
-            ))}
-            <Button
+        <section id="event-setup-classes" className="nb-app-anchor">
+          <AppSection title="Klassen und Startgeld">
+            <EventSetupClasses
+              key={draft.id ?? 'new'}
+              draft={draft}
+              setDraft={setDraft}
+              busy={busy}
+            />
+
+            <AppButton
               type="button"
-              variant="secondary"
-              size={40}
+              tone="secondary"
               disabled={busy}
               onClick={() =>
                 setDraft((current) => ({
@@ -244,12 +147,12 @@ export function EventSetupForm({
               }
             >
               Klasse hinzufügen
-            </Button>
-          </FormSection>
+            </AppButton>
+          </AppSection>
         </section>
-        <section id="event-setup-terms" className="event-setup-section">
-          <FormSection title="Teilnahmebedingungen">
-            <Textarea
+        <section id="event-setup-terms" className="nb-app-anchor">
+          <AppSection title="Teilnahmebedingungen">
+            <AppTextarea
               label="Text der Bedingungen"
               rows={7}
               value={draft.terms}
@@ -261,7 +164,7 @@ export function EventSetupForm({
               }
               hint="Für einen Entwurf optional. Vor dem Öffnen der Nennung müssen verwendbare Teilnahmebedingungen hinterlegt sein."
             />
-          </FormSection>
+          </AppSection>
         </section>
         <EventOrganizerFields
           draft={draft}
@@ -269,20 +172,22 @@ export function EventSetupForm({
           busy={busy}
           onClearRecipient={onClearRecipient}
         />
-        <div id="event-setup-actions" className="event-setup-actions">
-          <Button type="submit" variant="secondary" size={40} disabled={busy}>
+        <div
+          id="event-setup-actions"
+          className="nb-app-inline nb-app-actions nb-app-anchor"
+        >
+          <AppButton type="submit" tone="secondary" disabled={busy}>
             Entwurf speichern
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             type="submit"
             name="setup-action"
             value="open"
-            variant="primary"
-            size={40}
+            tone="primary"
             disabled={busy}
           >
             Speichern und Nennung öffnen
-          </Button>
+          </AppButton>
         </div>
       </form>
     </>
@@ -296,8 +201,4 @@ function slugify(value: string) {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
-}
-
-function parseVehicleType(value: string): VehicleType | null {
-  return vehicleTypes.find((type) => type.value === value)?.value ?? null;
 }

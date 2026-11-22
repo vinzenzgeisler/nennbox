@@ -1,7 +1,14 @@
 import { adminFetch } from '../../auth.js';
-import { Button, PageHeader, SelectField, Stack } from '@nennbox/ui';
+import {
+  AppActions,
+  AppButton,
+  AppGrid,
+  AppNotice,
+  AppSection,
+  AppSelect,
+  AppView,
+} from '@nennbox/ui';
 import { useEffect, useState, type ChangeEvent } from 'react';
-import './RegistrationFormSettings.css';
 import {
   defaultRegistrationFormConfig,
   mergeRegistrationFormConfig,
@@ -20,6 +27,7 @@ import { RegistrationFieldsPreview } from './RegistrationFieldsPreview.js';
 import { RegistrationPaymentSettings } from './RegistrationPaymentSettings.js';
 import { registrationFieldLabels } from './registrationFieldLabels.js';
 
+type Notice = { text: string; tone: 'success' | 'info' | 'error' };
 export function RegistrationFormSettings({
   eventId,
   embedded = false,
@@ -36,7 +44,8 @@ export function RegistrationFormSettings({
     eventId ? 'event' : 'organization',
   );
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const fail = (text: string) => setNotice({ text, tone: 'error' });
   const [loaded, setLoaded] = useState(false);
   const [eventLoaded, setEventLoaded] = useState(!eventId);
   useEffect(() => {
@@ -57,9 +66,7 @@ export function RegistrationFormSettings({
       })
       .catch(() => {
         if (active)
-          setMessage(
-            'Organisations-Einstellungen konnten nicht geladen werden.',
-          );
+          fail('Organisations-Einstellungen konnten nicht geladen werden.');
       })
       .finally(() => {
         if (active) setLoaded(true);
@@ -93,9 +100,7 @@ export function RegistrationFormSettings({
       })
       .catch(() => {
         if (active)
-          setMessage(
-            'Veranstaltungs-Einstellungen konnten nicht geladen werden.',
-          );
+          fail('Veranstaltungs-Einstellungen konnten nicht geladen werden.');
       })
       .finally(() => {
         if (active) setEventLoaded(true);
@@ -127,7 +132,7 @@ export function RegistrationFormSettings({
     }));
   const save = async () => {
     setBusy(true);
-    setMessage('');
+    setNotice(null);
     try {
       const path =
         scope === 'organization'
@@ -155,9 +160,9 @@ export function RegistrationFormSettings({
         body: JSON.stringify(toSave),
       });
       if (!response.ok) throw new Error();
-      setMessage('Einstellungen gespeichert.');
+      setNotice({ text: 'Einstellungen gespeichert.', tone: 'success' });
     } catch {
-      setMessage('Speichern momentan nicht möglich.');
+      fail('Speichern momentan nicht möglich.');
     } finally {
       setBusy(false);
     }
@@ -180,7 +185,7 @@ export function RegistrationFormSettings({
       },
     );
     if (!response.ok) {
-      setMessage('Datei konnte nicht sicher gespeichert werden.');
+      fail('Datei konnte nicht sicher gespeichert werden.');
       return;
     }
     const body = (await response.json()) as { objectId: string };
@@ -195,7 +200,10 @@ export function RegistrationFormSettings({
             : 'headerImageObjectId']: body.objectId,
       },
     }));
-    setMessage('Datei hochgeladen. Änderungen anschließend speichern.');
+    setNotice({
+      text: 'Datei hochgeladen. Änderungen anschließend speichern.',
+      tone: 'info',
+    });
   };
   if (!loaded || (scope === 'event' && !eventLoaded))
     return (
@@ -204,33 +212,33 @@ export function RegistrationFormSettings({
       </section>
     );
   const saveBar = (
-    <div className="registration-settings-save">
-      <Button type="button" disabled={busy} onClick={() => void save()}>
+    <AppActions>
+      <AppButton
+        tone="primary"
+        type="button"
+        disabled={busy}
+        onClick={() => void save()}
+      >
         {busy ? 'Wird gespeichert …' : 'Änderungen speichern'}
-      </Button>
-      {message && <p role="status">{message}</p>}
-    </div>
+      </AppButton>
+      {notice && <AppNotice tone={notice.tone}>{notice.text}</AppNotice>}
+    </AppActions>
   );
   return (
-    <section
-      aria-labelledby="registration-admin-title"
-      className="registration-settings"
-    >
-      <Stack gap={4}>
-        {embedded ? (
-          <header className="registration-settings-head">
-            <h2 id="registration-admin-title">Formularfelder</h2>
-            <p>
-              Lege fest, welche Angaben Teilnehmende machen. Die Vorschau zeigt
-              das Formular so, wie es ausgeliefert wird.
-            </p>
-          </header>
-        ) : (
-          <PageHeader
-            id="registration-admin-title"
-            title="Nennformular · Erscheinungsbild und Felder"
-          />
-        )}
+    <AppView>
+      <AppSection
+        title={
+          embedded
+            ? 'Formularfelder'
+            : 'Nennformular · Erscheinungsbild und Felder'
+        }
+        {...(embedded
+          ? {
+              description:
+                'Lege fest, welche Angaben Teilnehmende machen. Die Vorschau zeigt das Formular so, wie es ausgeliefert wird.',
+            }
+          : {})}
+      >
         {!embedded && (
           <RegistrationAppearance
             activeConfig={activeConfig}
@@ -239,9 +247,9 @@ export function RegistrationFormSettings({
             upload={upload}
           />
         )}
-        <div className="registration-settings-body">
-          <div className="registration-settings-fields">
-            <SelectField
+        <AppGrid>
+          <div className="nb-app-stack">
+            <AppSelect
               label="Geltungsbereich"
               value={scope}
               onChange={(e) => setScope(e.target.value as typeof scope)}
@@ -250,7 +258,7 @@ export function RegistrationFormSettings({
               <option value="event" disabled={!eventId}>
                 Veranstaltung · überschreibt Organisation
               </option>
-            </SelectField>
+            </AppSelect>
             <RegistrationFormOptions
               config={activeConfig}
               updateConfig={updateConfig}
@@ -263,7 +271,7 @@ export function RegistrationFormSettings({
             {embedded && saveBar}
           </div>
           <RegistrationFieldsPreview config={activeConfig} />
-        </div>
+        </AppGrid>
         {!embedded && (
           <RegistrationCustomFields
             activeConfig={activeConfig}
@@ -279,7 +287,7 @@ export function RegistrationFormSettings({
           />
         )}
         {!embedded && saveBar}
-      </Stack>
-    </section>
+      </AppSection>
+    </AppView>
   );
 }

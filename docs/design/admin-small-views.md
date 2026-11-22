@@ -53,21 +53,16 @@ Unterlagen-URL und sie liegt nicht unter „Einrichten“.
 Das Beifahrerportal ist eine öffentliche Teilnehmerseite ohne Konto; seine
 Gestaltung und die öffentlichen Nennformulare bleiben unverändert.
 
-Weiterhin vorhanden, außerhalb dieser Umstellung:
+Einrichten und die Formular-Einstellungen sind auf App-Muster umgestellt.
+`EventSetup.css`, `NumberAndWaitlistSettings.css` und
+`RegistrationFormSettings.css` sind entfernt. Auch die ausschließlich im alten
+Zahlungseditor verwendete `.registration-payment-config`-Gestaltung ist entfernt.
 
-- `features/event-setup/EventSetup.css`: alte Mono-Labels und Navigation.
-- `features/registration/RegistrationFormSettings.css`: Einstellungen des
-  öffentlichen Formulars innerhalb der Verwaltung, alte Labels und Überschrift.
-- Legacy-UI-Felder, Tabs und Tabellen bleiben für Einrichten und die
-  Formular-Einstellungen sowie öffentliche Seiten verfügbar.
-- `features/onboarding/preview/preview.css` zeigt absichtlich die öffentliche
-  Gestaltung in der Vorschau; `features/driver-portal` ist ebenfalls öffentlich.
-- Archivo bleibt für Marke und öffentliche Oberflächen sowie alte
-  Überschriften-Tokens verfügbar. Globale `--text-label`/`--tracking-label`-
-  Tokens dürfen deshalb nicht pauschal gelöscht werden.
-
-Die ungenutzten Übersichts-/Export-Styles und die nur dort benötigten alten
-Kennzahlen-/Belegungsmaß-Tokens wurden entfernt.
+Öffentliche Seiten, Markenkomponenten und die Review-Galerie benötigen weiterhin
+Legacy-UI-Felder und Tokens. `--text-label`, `--tracking-label`, Archivo und
+`--registration-*` bleiben deshalb erhalten. Die öffentliche Formularvorschau
+in Einrichten und Onboarding zeigt absichtlich diese Optik; ihre App-Hülle nutzt
+App-Tokens. Fahrer- und Beifahrerportal sind unverändert.
 
 ## Prüfung
 
@@ -116,7 +111,7 @@ UI-API; sie ist keine Änderung an Verhaltenserwartungen.
 ### Grenze der Konto-Verwaltung
 
 `AdminApplication` zeigt unter `account` ausschließlich die bereits modernisierten
-Unterlagentypen (`EventDocumentSettings`) und die für Schritt 6 ausgesparten
+Unterlagentypen (`EventDocumentSettings`) und die modernisierten
 `RegistrationFormSettings`. Es gibt keine zusätzliche Konto-, Organisations-
 oder Rollenverwaltungsseite. Veranstalter-/Bankdaten liegen in `event-setup`;
 Rollen werden innerhalb des hier modernisierten Übergangseditors ausgewählt.
@@ -124,20 +119,18 @@ Eine zusätzliche Einstellungsoberfläche wird nicht erfunden.
 
 ### Verbliebene alte Schriftgestaltung nach diesem Schritt
 
-Direkte `--text-label`-/`--tracking-label`-Verwendungen in der Verwaltung liegen
-nur noch in `features/event-setup/EventSetup.css` und
-`features/registration/RegistrationFormSettings.css` (Schritt 6). Außerhalb der
-Verwaltung bleiben `features/driver-portal/driver-portal.css`,
-`features/onboarding/preview/preview.css` und die öffentlichen Zahlungs-Badges in
-`styles.css` unverändert. Direkte Archivo-Verwendungen gibt es unter
-`packages/app/src` nicht; die Schrift bleibt in globalen Legacy-Tokens,
-Markenkomponenten und öffentlichen UI-Styles verfügbar. Die migrierten Ansichten
-verwenden Inter. Die alten Nachrichten-Styles wurden ersetzt, die ungenutzten
-Tokens `--width-aside-min` und `--height-selection-list` entfernt.
+Die Verwaltungsansichten verwenden Inter und App-Felder. Direkte
+`--text-label`-/`--tracking-label`-Verwendungen unter `packages/app/src` liegen
+nur noch im öffentlichen Fahrerportal, der öffentlichen Onboarding-Vorschau
+und öffentlichen Zahlungs-Badges. Es gibt keine direkten Archivo-Verwendungen
+in den Verwaltungsansichten. Legacy-Komponenten in `packages/ui` bleiben für
+öffentliche Seiten und die ComponentGallery verfügbar; ihre Existenz bedeutet
+nicht, dass eine Verwaltungsansicht noch das alte Design nutzt.
 
-Fahrerportal, Beifahrerportal, öffentliches Nennformular, Einrichten und
-Formular-Einstellungen werden durch diesen Schritt nicht umgestaltet. Es werden
-keine Screenshots, Pixeldiffs oder lokalen Browser-/Smoke-Läufe verwendet.
+Die vorgeschaltete Anmeldemaske (`AuthenticatedAdmin`, außerhalb der App-Shell)
+verwendet weiterhin das bestehende Legacy-`shell`-/Button-Muster. Innerhalb der
+hier umgestellten Einrichten-/Formular-Einstellungsansichten gibt es keine
+verbliebene Altgestaltung außer der ausdrücklich öffentlichen Vorschau.
 
 ### Kompakte Verwaltungslisten
 
@@ -169,3 +162,30 @@ den jeweiligen Editor vor der Interaktion. Neue Tests prüfen außerdem die gek�
 Empfängervorschau, Disclosure/Feldwerterhalt, neue geöffnete Zeilen und den
 berechtigungsabhängigen Moduleinstieg. Die Export-Snapshot-Liste ergänzt nur
 `AppEditorRow` und `AppWorkflowPill` als absichtliche neue UI-APIs.
+
+
+## Einrichten und Formular-Einstellungen
+
+`AppSettingsLayout` ordnet Abschnittsnavigation, Formular und optionale Hilfe
+nach N5 an. `AppSettingsNav` übernimmt die hellen Navigationsflächen aus N4;
+der aktive Abschnitt ist weiß und leicht angehoben, ohne Mono-Nummern.
+Auf schmalen Ansichten ist die Navigation horizontal scrollbar.
+`AppPreviewCard` ist die ruhige App-Hülle für öffentliche Vorschauen.
+Alle drei typisierten Muster sind in der ComponentGallery und in Unit-Tests.
+
+`AppTextInput` und `AppTextarea` verknüpfen optionale Hilfetexte mit
+`aria-describedby`, ohne den Feldnamen zu verlängern. Datumsfelder bleiben
+native `type="date"`-Felder einschließlich min/required. `SegmentedControl`
+hat eine explizite `appearance="app"`-Variante: native Radiogruppen mit
+32-px-Segmenthülle, neutraler Auswahl, unveränderten Labels und Callbacks.
+Die öffentliche Standardvariante bleibt unverändert.
+
+Gespeicherte Klassen, Nummernbereiche und eigene Felder sind kompakte
+`AppEditorRow`-Zeilen. Neue Zeilen öffnen direkt. Einrichten behält seine
+vorhandenen Formular-/API-Verträge; „Entwurf speichern“ bleibt sekundär,
+„Speichern und Nennung öffnen“ nutzt Racing Green.
+
+Bestehende Testerwartungen und E2E-Dateien wurden nicht verändert. Neue Tests
+prüfen Navigation, Feldhinweise, native App-Radios, Formularvorschau,
+Geltungsbereiche und eigene Felder. Es gibt keine Änderungen an öffentlichen
+Registration-Komponenten, ihren UI-Styles oder Registration-Tokens.

@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Banner, Button, Dialog, Field, Switch } from '@nennbox/ui';
+import {
+  AppSection,
+  AppNotice,
+  AppButton,
+  AppDialog,
+  AppTextInput,
+  AppCheckbox,
+} from '@nennbox/ui';
 import { ClassCapacities } from './ClassCapacities.js';
 import { StartNumberRanges } from './StartNumberRanges.js';
 import {
@@ -10,7 +17,6 @@ import {
   type Range,
   type Settings,
 } from './startNumberApi.js';
-import './NumberAndWaitlistSettings.css';
 
 export function NumberAndWaitlistSettings({ eventId }: { eventId: string }) {
   const [ranges, setRanges] = useState<Range[]>([]);
@@ -77,10 +83,7 @@ export function NumberAndWaitlistSettings({ eventId }: { eventId: string }) {
   };
 
   return (
-    <section
-      className="nb-number-waitlist-settings"
-      aria-labelledby="number-waitlist-title"
-    >
+    <section className="nb-app-section" aria-labelledby="number-waitlist-title">
       <header>
         <h2 id="number-waitlist-title">Startnummern & Warteliste</h2>
         <p>
@@ -88,7 +91,9 @@ export function NumberAndWaitlistSettings({ eventId }: { eventId: string }) {
           automatisch eine Warteliste.
         </p>
       </header>
-      {message && <Banner tone={failed ? 'error' : 'info'}>{message}</Banner>}
+      {message && (
+        <AppNotice tone={failed ? 'error' : 'info'}>{message}</AppNotice>
+      )}
       {!loaded ? (
         !failed && <p role="status">Einstellungen werden geladen …</p>
       ) : (
@@ -99,13 +104,8 @@ export function NumberAndWaitlistSettings({ eventId }: { eventId: string }) {
             classes={classes}
             onChange={setRanges}
           />
-          <section
-            className="nb-waitlist-settings"
-            aria-labelledby="waitlist-settings-title"
-          >
-            <h3 id="waitlist-settings-title">Warteliste</h3>
-            <Switch
-              className="nb-waitlist-toggle"
+          <AppSection title="Warteliste">
+            <AppCheckbox
               label="Bei freiem Platz automatisch nachrücken lassen"
               checked={settings.automaticPromotion}
               onChange={(event) =>
@@ -115,7 +115,7 @@ export function NumberAndWaitlistSettings({ eventId }: { eventId: string }) {
                 }))
               }
             />
-            <Field
+            <AppTextInput
               label="Bestätigungsfrist (Stunden)"
               type="number"
               min="1"
@@ -132,34 +132,38 @@ export function NumberAndWaitlistSettings({ eventId }: { eventId: string }) {
               Standard: 48 Stunden. Manuelles Nachrücken bleibt jederzeit
               möglich.
             </p>
-          </section>
-          <footer>
-            <Button disabled={busy} onClick={() => void save()}>
+          </AppSection>
+          <footer className="nb-app-inline">
+            <AppButton
+              tone="primary"
+              disabled={busy}
+              onClick={() => void save()}
+            >
               Speichern
-            </Button>
-            <Button
-              variant="secondary"
+            </AppButton>
+            <AppButton
+              tone="secondary"
               disabled={busy}
               onClick={() => void planAssign()}
             >
               Alle offenen Nummern vergeben
-            </Button>
+            </AppButton>
           </footer>
         </>
       )}
-      <Dialog
+      <AppDialog
         open={pendingAssign !== null}
         title="Startnummern vergeben?"
         closeLabel="Dialog schließen"
         onClose={() => setPendingAssign(null)}
         actions={
           <>
-            <Button variant="secondary" onClick={() => setPendingAssign(null)}>
+            <AppButton tone="secondary" onClick={() => setPendingAssign(null)}>
               Abbrechen
-            </Button>
-            <Button onClick={() => void confirmAssign()}>
+            </AppButton>
+            <AppButton onClick={() => void confirmAssign()}>
               {pendingAssign} Startnummern vergeben
-            </Button>
+            </AppButton>
           </>
         }
       >
@@ -168,7 +172,7 @@ export function NumberAndWaitlistSettings({ eventId }: { eventId: string }) {
           gespeicherten Nummernbereichen vergeben. Speichere geänderte Bereiche
           vorher.
         </p>
-      </Dialog>
+      </AppDialog>
     </section>
   );
 }

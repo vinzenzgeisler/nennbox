@@ -98,5 +98,18 @@ describe('numbers and waitlist settings', () => {
     expect(assignCalls()).toHaveLength(2);
     expect(String(assignCalls()[1]?.[0])).not.toContain('dryRun');
     expect(container.textContent).toContain('3 Startnummern vergeben.');
+    const notice = container.querySelector('.nb-app-notice');
+    expect(notice?.getAttribute('role')).toBe('status');
+    expect(notice?.className).toContain('nb-app-notice-info');
+  });
+
+  it('announces failures as alerts', async () => {
+    vi.mocked(adminFetch).mockImplementation(async () => {
+      throw new Error('offline');
+    });
+    await act(async () => buttonByText('Speichern')?.click());
+    const alert = container.querySelector('[role="alert"]');
+    expect(alert?.className).toContain('nb-app-notice-error');
+    expect(alert?.textContent).toContain('konnten nicht gespeichert werden');
   });
 });

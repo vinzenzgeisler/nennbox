@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Field, FormSection } from '@nennbox/ui';
+import { AppPreviewCard, AppSection, Field, FormSection } from '@nennbox/ui';
 import type { RegistrationFormConfig } from '@nennbox/contracts';
 import {
   emptyVehicle,
@@ -37,67 +37,69 @@ export function RegistrationFieldsPreview({
   const [requestedNumber, setRequestedNumber] = useState('');
   const t = translations.de;
   return (
-    <section
-      className="registration field-preview"
-      aria-labelledby="field-preview-title"
-    >
-      <h2 id="field-preview-title">Live-Vorschau · Nennformular</h2>
-      <p className="field-preview-note">
-        So sehen Teilnehmende die Felder. Eingaben werden nicht gespeichert.
-      </p>
-      <FormSection title="Fahrer" variant="registration">
-        {fieldState(config, 'dateOfBirth') !== 'hidden' && (
-          <Field
-            label="Geburtsdatum"
-            type="date"
-            value={birthDate}
-            required={fieldState(config, 'dateOfBirth') === 'required'}
-            onChange={(event) => setBirthDate(event.target.value)}
-          />
-        )}
-        <RegistrationPhoneField
-          config={config}
-          values={contact}
-          onChange={(patch) =>
-            setContact((current) => ({ ...current, ...patch }))
-          }
-          t={t}
-        />
-        <RegistrationContactFields
-          config={config}
-          values={contact}
-          onChange={(patch) =>
-            setContact((current) => ({ ...current, ...patch }))
-          }
-          t={t}
-        />
-        <RegistrationPublicationField
-          config={config}
-          values={contact}
-          onChange={(patch) =>
-            setContact((current) => ({ ...current, ...patch }))
-          }
-          t={t}
-        />
-      </FormSection>
-      <FormSection title="Fahrzeug" variant="registration">
-        {fieldState(config, 'requestedStartNumber') !== 'hidden' && (
-          <Field
-            label="Wunsch-Startnummer"
-            required={fieldState(config, 'requestedStartNumber') === 'required'}
-            value={requestedNumber}
-            onChange={(event) => setRequestedNumber(event.target.value)}
-          />
-        )}
-        <RegistrationVehicleDetailFields
-          config={config}
-          vehicle={vehicle}
-          onChange={(patch) =>
-            setVehicle((current) => ({ ...current, ...patch }))
-          }
-          t={t}
-        />
-      </FormSection>
-    </section>
+    <AppPreviewCard>
+      <AppSection
+        title="Live-Vorschau · Nennformular"
+        description="So sehen Teilnehmende die Felder. Eingaben werden nicht gespeichert."
+      >
+        <div className="registration nb-app-stack">
+          <FormSection title="Fahrer" variant="registration">
+            {fieldState(config, 'dateOfBirth') !== 'hidden' && (
+              <Field
+                label="Geburtsdatum"
+                type="date"
+                value={birthDate}
+                required={fieldState(config, 'dateOfBirth') === 'required'}
+                onChange={(event) => setBirthDate(event.target.value)}
+              />
+            )}
+            <RegistrationPhoneField
+              config={config}
+              values={contact}
+              onChange={(patch) =>
+                setContact((current) => ({ ...current, ...patch }))
+              }
+              t={t}
+            />
+            <RegistrationContactFields
+              config={config}
+              values={contact}
+              onChange={(patch) =>
+                setContact((current) => ({ ...current, ...patch }))
+              }
+              t={t}
+            />
+            <RegistrationPublicationField
+              config={config}
+              values={contact}
+              onChange={(patch) =>
+                setContact((current) => ({ ...current, ...patch }))
+              }
+              t={t}
+            />
+          </FormSection>
+          <FormSection title="Fahrzeug" variant="registration">
+            {fieldState(config, 'requestedStartNumber') !== 'hidden' && (
+              <Field
+                label="Wunsch-Startnummer"
+                required={
+                  fieldState(config, 'requestedStartNumber') === 'required'
+                }
+                value={requestedNumber}
+                onChange={(event) => setRequestedNumber(event.target.value)}
+              />
+            )}
+            <RegistrationVehicleDetailFields
+              config={config}
+              vehicle={vehicle}
+              onChange={(patch) =>
+                setVehicle((current) => ({ ...current, ...patch }))
+              }
+              t={t}
+            />
+          </FormSection>
+        </div>
+      </AppSection>
+    </AppPreviewCard>
   );
 }

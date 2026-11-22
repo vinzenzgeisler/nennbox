@@ -1,7 +1,8 @@
 import {
-  Banner,
-  Checkbox,
-  FormSection,
+  AppNotice,
+  AppValueRow,
+  AppCheckbox,
+  AppSection,
   SegmentedControl,
   type SegmentedOption,
 } from '@nennbox/ui';
@@ -60,39 +61,36 @@ export function RegistrationFormOptions({
   fieldLabels: Record<string, string>;
 }) {
   return (
-    <div className="field-settings">
+    <div className="nb-app-stack">
       {fieldGroups.map((group) => (
-        <section key={group.title} aria-label={group.title}>
-          <h3>{group.title}</h3>
-          <ul>
-            {group.keys.map((key) => {
-              const label = fieldLabels[key] ?? key;
-              return (
-                <li key={key}>
-                  <span>{label}</span>
-                  <SegmentedControl
-                    label={label}
-                    value={config.fields[key].state}
-                    options={stateOptions}
-                    onChange={(state) =>
-                      updateConfig((current) => ({
-                        ...current,
-                        fields: { ...current.fields, [key]: { state } },
-                      }))
-                    }
-                  />
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+        <AppSection key={group.title} title={group.title}>
+          {group.keys.map((key) => {
+            const label = fieldLabels[key] ?? key;
+            return (
+              <AppValueRow key={key} label={label}>
+                <SegmentedControl
+                  appearance="app"
+                  label={label}
+                  value={config.fields[key].state}
+                  options={stateOptions}
+                  onChange={(state) =>
+                    updateConfig((current) => ({
+                      ...current,
+                      fields: { ...current.fields, [key]: { state } },
+                    }))
+                  }
+                />
+              </AppValueRow>
+            );
+          })}
+        </AppSection>
       ))}
       {config.fields.dateOfBirth.state !== 'required' && (
-        <Banner tone="warning">
+        <AppNotice tone="warning">
           Alter und Erziehungsberechtigte werden nur geprüft, wenn ein
           Geburtsdatum angegeben wird. Ein Mindestalter der Organisation lehnt
           Nennungen ohne Geburtsdatum ab.
-        </Banner>
+        </AppNotice>
       )}
     </div>
   );
@@ -108,8 +106,8 @@ export function RegistrationFeatureOptions({
   ) => void;
 }) {
   return (
-    <FormSection title="Veranstaltungsoptionen">
-      <Checkbox
+    <AppSection title="Veranstaltungsoptionen">
+      <AppCheckbox
         label="Beifahrer"
         checked={config.features.passenger}
         onChange={(event) =>
@@ -119,7 +117,7 @@ export function RegistrationFeatureOptions({
           }))
         }
       />
-      <Checkbox
+      <AppCheckbox
         label="Ersatzfahrzeug"
         checked={config.features.spareVehicle}
         onChange={(event) =>
@@ -132,7 +130,7 @@ export function RegistrationFeatureOptions({
           }))
         }
       />
-      <Checkbox
+      <AppCheckbox
         label="Mehrere Starts"
         checked={config.features.multipleEntries}
         onChange={(event) =>
@@ -145,6 +143,6 @@ export function RegistrationFeatureOptions({
           }))
         }
       />
-    </FormSection>
+    </AppSection>
   );
 }

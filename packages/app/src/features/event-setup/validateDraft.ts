@@ -1,6 +1,8 @@
+import { setupError, type SetupMessage } from './eventSetupState.js';
+
 export function validateDraft(
   form: HTMLFormElement,
-  setMessage: (message: string) => void,
+  setMessage: (message: SetupMessage) => void,
 ): boolean {
   const data = new FormData(form);
   const name = String(data.get('event-name') ?? '').trim();
@@ -10,7 +12,7 @@ export function validateDraft(
   if (!form.reportValidity()) return false;
   if (!name || !slug || !startsOn || !endsOn) return false;
   if (endsOn < startsOn) {
-    setMessage('Das Ende muss am oder nach dem Beginn liegen.');
+    setMessage(setupError('Das Ende muss am oder nach dem Beginn liegen.'));
     const endDate = form.elements.namedItem('ends-on');
     if (endDate instanceof HTMLElement) endDate.focus();
     return false;

@@ -1,5 +1,11 @@
 import { useCallback, useReducer, useRef } from 'react';
-import { initialState, reduceEventSetup } from './eventSetupState.js';
+import {
+  initialState,
+  reduceEventSetup,
+  savedMessage,
+  setupError,
+  type SetupMessage,
+} from './eventSetupState.js';
 import { createEventSetup } from './createEventSetup.js';
 import {
   listClasses,
@@ -35,7 +41,7 @@ export function useEventSetup(onCreated: (event: SetupEvent) => void) {
     [],
   );
   const setMessage = useCallback(
-    (message: string) => dispatch({ type: 'message', message }),
+    (message: SetupMessage) => dispatch({ type: 'message', message }),
     [],
   );
   const setLink = useCallback(
@@ -66,7 +72,7 @@ export function useEventSetup(onCreated: (event: SetupEvent) => void) {
       const requestGeneration = ++generation.current;
       loading.current = true;
       setBusy(true);
-      setMessage('');
+      setMessage(null);
       setLink('');
       try {
         const { draft: loadedDraft, step } = await loadSetupDraft(
@@ -113,13 +119,15 @@ export function useEventSetup(onCreated: (event: SetupEvent) => void) {
         (!draft.accountName.trim() || !draft.iban.trim())
       ) {
         setMessage(
-          'Für eine Bankverbindung sind Kontoinhaber und IBAN erforderlich.',
+          setupError(
+            'Für eine Bankverbindung sind Kontoinhaber und IBAN erforderlich.',
+          ),
         );
         return;
       }
       lock.current = true;
       setBusy(true);
-      setMessage('');
+      setMessage(null);
       try {
         let stored;
         try {
@@ -154,11 +162,7 @@ export function useEventSetup(onCreated: (event: SetupEvent) => void) {
           let finalEvent = stored;
           if (open) finalEvent = await openEvent(stored.id);
           setLink(`${window.location.origin}/events/${stored.slug}/register`);
-          setMessage(
-            open
-              ? 'Veranstaltung gespeichert und Nennung geöffnet.'
-              : 'Entwurf gespeichert. Du kannst ihn jederzeit fortsetzen.',
-          );
+          setMessage(savedMessage(open));
           await refreshEvents();
           onCreated(finalEvent);
           return;
@@ -226,18 +230,16 @@ export function useEventSetup(onCreated: (event: SetupEvent) => void) {
         const publicLink = `${window.location.origin}/events/${stored.slug}/register`;
         setLink(publicLink);
         setCurrentStep(4);
-        setMessage(
-          open
-            ? 'Veranstaltung gespeichert und Nennung geöffnet.'
-            : 'Entwurf gespeichert. Du kannst ihn jederzeit fortsetzen.',
-        );
+        setMessage(savedMessage(open));
         await refreshEvents();
         onCreated(finalEvent);
       } catch (error) {
         setMessage(
-          error instanceof Error
-            ? error.message
-            : 'Speichern fehlgeschlagen. Du kannst es erneut versuchen.',
+          setupError(
+            error instanceof Error
+              ? error.message
+              : 'Speichern fehlgeschlagen. Du kannst es erneut versuchen.',
+          ),
         );
         if (draft.id) void refreshEvents().catch(() => undefined);
       } finally {

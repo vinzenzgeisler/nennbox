@@ -1,4 +1,4 @@
-import { Checkbox } from '@nennbox/ui';
+import { AppCheckbox, AppSection } from '@nennbox/ui';
 import type { RegistrationFormConfig } from '@nennbox/contracts';
 
 const methods = [
@@ -31,21 +31,20 @@ export function RegistrationPaymentSettings({
       },
     }));
   return (
-    <fieldset className="registration-payment-config">
-      <legend>Zahlungsarten für diese Veranstaltung</legend>
+    <AppSection role="group" title="Zahlungsarten für diese Veranstaltung">
       <p>
         Überweisung bleibt zusätzlich verfügbar, wenn eine Bankverbindung
         hinterlegt ist.
       </p>
       {methods.map(([method, label]) => (
-        <Checkbox
+        <AppCheckbox
           key={method}
           label={label}
           checked={config.payments.onlineMethods.includes(method)}
           onChange={(event) => toggleMethod(method, event.target.checked)}
         />
       ))}
-      <Checkbox
+      <AppCheckbox
         label="Überweisung anbieten"
         checked={config.payments.bankTransfer}
         onChange={(event) =>
@@ -58,6 +57,6 @@ export function RegistrationPaymentSettings({
           }))
         }
       />
-    </fieldset>
+    </AppSection>
   );
 }

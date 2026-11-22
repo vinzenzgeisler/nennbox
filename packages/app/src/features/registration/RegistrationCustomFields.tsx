@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import {
-  Button,
-  Checkbox,
-  Field,
-  FormSection,
-  SelectField,
-  Textarea,
+  AppButton,
+  AppEditorRow,
+  AppCheckbox,
+  AppTextInput,
+  AppSection,
+  AppSelect,
+  AppTextarea,
 } from '@nennbox/ui';
 import type {
   RegistrationCustomField,
@@ -31,14 +33,29 @@ export function RegistrationCustomFields({
   updateCustomField: UpdateCustomField;
   change: ChangeConfig;
 }) {
+  const [openKeys, setOpenKeys] = useState<Set<string>>(() => new Set());
   return (
-    <FormSection
+    <AppSection
       title="Eigene Felder"
       description="Text-, Auswahl-, Ja/Nein- und sichere Bilddatei-Felder erscheinen im Fahrerschritt."
     >
       {activeConfig.customFields.map((field) => (
-        <FormSection title={field.key} key={field.key}>
-          <SelectField
+        <AppEditorRow
+          key={field.key}
+          label={`${field.label.de || field.key} bearbeiten`}
+          preview={<span>{field.label.de || field.key}</span>}
+          description={`${field.type === 'select' ? 'Auswahl' : field.type === 'yes_no' ? 'Ja / Nein' : field.type === 'file' ? 'Bilddatei' : 'Text'} · ${field.required ? 'Pflichtfeld' : 'Freiwillig'}`}
+          open={openKeys.has(field.key)}
+          onToggle={() =>
+            setOpenKeys((current) => {
+              const next = new Set(current);
+              if (next.has(field.key)) next.delete(field.key);
+              else next.add(field.key);
+              return next;
+            })
+          }
+        >
+          <AppSelect
             label="Typ"
             value={field.type}
             onChange={(event) => {
@@ -70,9 +87,9 @@ export function RegistrationCustomFields({
             <option value="select">Auswahl</option>
             <option value="yes_no">Ja / Nein</option>
             <option value="file">Bilddatei</option>
-          </SelectField>
-          <Field label="Feldschlüssel" value={field.key} readOnly />
-          <Field
+          </AppSelect>
+          <AppTextInput label="Feldschlüssel" value={field.key} readOnly />
+          <AppTextInput
             label="Bezeichnung · Deutsch"
             maxLength={120}
             value={field.label.de}
@@ -82,7 +99,7 @@ export function RegistrationCustomFields({
               })
             }
           />
-          <Field
+          <AppTextInput
             label="Bezeichnung · English"
             maxLength={120}
             value={field.label.en}
@@ -93,7 +110,7 @@ export function RegistrationCustomFields({
             }
           />
           {field.type === 'select' && (
-            <Textarea
+            <AppTextarea
               label="Optionen · je Zeile Wert|Deutsch|English"
               value={(field.options ?? [])
                 .map(
@@ -117,16 +134,16 @@ export function RegistrationCustomFields({
               }
             />
           )}
-          <Checkbox
+          <AppCheckbox
             label="Pflichtfeld"
             checked={field.required}
             onChange={(event) =>
               updateCustomField(field.key, { required: event.target.checked })
             }
           />
-          <Button
+          <AppButton
             type="button"
-            variant="text"
+            tone="danger"
             onClick={() =>
               change({
                 customFields: activeConfig.customFields.filter(
@@ -136,15 +153,16 @@ export function RegistrationCustomFields({
             }
           >
             Eigenes Feld entfernen
-          </Button>
-        </FormSection>
+          </AppButton>
+        </AppEditorRow>
       ))}
-      <Button
+      <AppButton
         type="button"
-        variant="secondary"
+        tone="secondary"
         disabled={activeConfig.customFields.length >= 30}
         onClick={() => {
           const key = `custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+          setOpenKeys((current) => new Set(current).add(key));
           change({
             customFields: [
               ...activeConfig.customFields,
@@ -159,7 +177,7 @@ export function RegistrationCustomFields({
         }}
       >
         Eigenes Feld hinzufügen
-      </Button>
-    </FormSection>
+      </AppButton>
+    </AppSection>
   );
 }
