@@ -25,6 +25,7 @@ export function GalleryAppPrimitives({
         <AppButton tone="primary">Zulassen</AppButton>
         <AppButton>Nachricht schreiben</AppButton>
         <AppButton tone="ghost">Abbrechen</AppButton>
+        <AppButton disabled>Nicht verfügbar</AppButton>
         <AppStatusPill status="offen">Offen</AppStatusPill>
         <AppStatusPill status="vor">In Prüfung</AppStatusPill>
         <AppStatusPill status="zu">Zugelassen</AppStatusPill>

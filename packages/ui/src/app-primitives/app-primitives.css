@@ -230,3 +230,7 @@
   color: var(--nb-fg);
   box-shadow: var(--nb-shadow-raised);
 }
+.nb-app-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
