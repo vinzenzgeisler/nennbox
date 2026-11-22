@@ -1,10 +1,11 @@
 import {
-  Checkbox,
-  Field,
-  FilterBar,
-  FormSection,
-  SelectField,
-  Textarea,
+  AppCheckbox,
+  AppTextInput,
+  AppGrid,
+  AppSelectionList,
+  AppSection,
+  AppSelect,
+  AppTextarea,
 } from '@nennbox/ui';
 import type {
   MessageRecipientFilter,
@@ -51,12 +52,13 @@ export function MessageRecipients({
       .includes(search.toLocaleLowerCase()),
   );
   return (
-    <FormSection
+    <AppSection
+      role="group"
       title="Empfänger"
       description="Filter und einzelne Nennungen können kombiniert werden."
     >
-      <FilterBar label="Empfänger filtern">
-        <SelectField
+      <AppGrid>
+        <AppSelect
           label="Klasse"
           value={filter.classIds[0] ?? ''}
           onChange={(event) =>
@@ -72,8 +74,8 @@ export function MessageRecipients({
               {item.name}
             </option>
           ))}
-        </SelectField>
-        <SelectField
+        </AppSelect>
+        <AppSelect
           label="Nennungsstatus"
           value={filter.statuses[0] ?? ''}
           onChange={(event) =>
@@ -91,8 +93,8 @@ export function MessageRecipients({
               {label}
             </option>
           ))}
-        </SelectField>
-        <SelectField
+        </AppSelect>
+        <AppSelect
           label="E-Mail-Prüfung"
           value={
             filter.emailVerified === undefined
@@ -112,8 +114,8 @@ export function MessageRecipients({
           <option value="">Alle</option>
           <option value="true">Bestätigt</option>
           <option value="false">Nicht bestätigt</option>
-        </SelectField>
-        <SelectField
+        </AppSelect>
+        <AppSelect
           label="Zahlung"
           value={filter.payment}
           onChange={(event) =>
@@ -127,20 +129,20 @@ export function MessageRecipients({
           <option value="paid">Bezahlt</option>
           <option value="open">Offen</option>
           <option value="unpaid">Unbezahlt</option>
-        </SelectField>
-      </FilterBar>
-      <Field
+        </AppSelect>
+      </AppGrid>
+      <AppTextInput
         label="Nennung suchen"
         type="search"
         value={search}
         onChange={(event) => onSearch(event.target.value)}
         placeholder="Name oder E-Mail"
       />
-      <div className="nb-message-picks" aria-label="Einzelne Nennungen wählen">
+      <AppSelectionList label="Einzelne Nennungen wählen">
         {matches.map(
           (candidate) =>
             candidate.entryId && (
-              <Checkbox
+              <AppCheckbox
                 key={candidate.entryId}
                 label={`${candidate.name || candidate.email} · ${candidate.email}`}
                 checked={filter.entryIds.includes(candidate.entryId)}
@@ -157,10 +159,10 @@ export function MessageRecipients({
               />
             ),
         )}
-      </div>
-      <Textarea
+      </AppSelectionList>
+      <p>Eine Adresse pro Zeile oder durch Komma getrennt</p>
+      <AppTextarea
         label="Zusätzliche E-Mail-Adressen"
-        hint="Eine Adresse pro Zeile oder durch Komma getrennt"
         value={addresses}
         onChange={(event) => onAddresses(event.target.value)}
       />
@@ -169,6 +171,6 @@ export function MessageRecipients({
           ? 'Empfänger werden ermittelt…'
           : `${selection.count} Empfänger`}
       </p>
-    </FormSection>
+    </AppSection>
   );
 }

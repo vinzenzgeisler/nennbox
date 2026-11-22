@@ -1,10 +1,12 @@
 import {
-  Button,
-  FileUpload,
-  FormSection,
-  SelectField,
-  Textarea,
-  Field,
+  AppButton,
+  AppFileInput,
+  AppSection,
+  AppSelect,
+  AppTextarea,
+  AppTextInput,
+  AppNotice,
+  AppActions,
 } from '@nennbox/ui';
 import {
   MESSAGE_ATTACHMENT_LIMITS,
@@ -79,11 +81,11 @@ export function MessageComposer({
   }
   return (
     <>
-      <FormSection
+      <AppSection
         title="Inhalt"
         description="Vorlage wählen und für diesen Versand anpassen."
       >
-        <SelectField
+        <AppSelect
           label="Vorlage"
           defaultValue=""
           onChange={(event) => {
@@ -102,26 +104,26 @@ export function MessageComposer({
               {item.name}
             </option>
           ))}
-        </SelectField>
-        <Field
+        </AppSelect>
+        <AppTextInput
           label="Betreff"
           value={subject}
           maxLength={998}
           onChange={(event) => onSubject(event.target.value)}
         />
-        <Textarea
+        <AppTextarea
           label="Nachricht"
           value={text}
           maxLength={50000}
           rows={9}
           onChange={(event) => onText(event.target.value)}
         />
-      </FormSection>
-      <FormSection
+      </AppSection>
+      <AppSection
         title="Anhänge"
         description={`PDF · höchstens ${MESSAGE_ATTACHMENT_LIMITS.maxCount} Dateien à 10 MB`}
       >
-        <FileUpload
+        <AppFileInput
           label="PDF hinzufügen"
           accept="application/pdf,.pdf"
           disabled={
@@ -134,18 +136,14 @@ export function MessageComposer({
           }}
         />
         {busy && <p role="status">PDF wird hochgeladen…</p>}
-        {error && (
-          <p role="alert" className="nb-message-alert">
-            {error}
-          </p>
-        )}
+        {error && <AppNotice tone="error">{error}</AppNotice>}
         {attachments.map((item) => (
-          <div className="nb-message-actions" key={item.objectId}>
+          <AppActions key={item.objectId}>
             <span>
               {item.filename} ({Math.ceil(item.size / 1024)} KB)
             </span>
-            <Button
-              variant="text"
+            <AppButton
+              tone="ghost"
               onClick={() =>
                 onAttachments(
                   attachments.filter(
@@ -155,10 +153,10 @@ export function MessageComposer({
               }
             >
               Entfernen
-            </Button>
-          </div>
+            </AppButton>
+          </AppActions>
         ))}
-      </FormSection>
+      </AppSection>
     </>
   );
 }
