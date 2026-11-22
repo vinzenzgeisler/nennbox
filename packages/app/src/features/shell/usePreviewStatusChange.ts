@@ -23,6 +23,7 @@ export function usePreviewStatusChange({
   entriesChanged: () => void;
 }) {
   const [notice, setNotice] = useState<{
+    id: number;
     eventId: string;
     message: string;
   } | null>(null);
@@ -56,7 +57,11 @@ export function usePreviewStatusChange({
           setSelectedEntry((current) =>
             current?.id === requestedEntry ? updated : current,
           );
-          setNotice({ eventId: requestedEvent, message: 'Status geändert' });
+          setNotice({
+            id: Date.now(),
+            eventId: requestedEvent,
+            message: 'Status geändert',
+          });
           previewAccepted({
             eventId: requestedEvent,
             entryId: requestedEntry,
@@ -67,6 +72,7 @@ export function usePreviewStatusChange({
     } catch {
       if (activeEvent.current === requestedEvent)
         setNotice({
+          id: Date.now(),
           eventId: requestedEvent,
           message:
             'Statusänderung fehlgeschlagen. Bitte prüfe den Status und versuche es erneut.',

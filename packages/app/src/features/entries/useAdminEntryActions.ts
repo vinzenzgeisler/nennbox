@@ -33,9 +33,10 @@ export function useAdminEntryActions({
   setRefreshRevision: Dispatch<SetStateAction<number>>;
 }) {
   const [reason, setReason] = useState('');
-  const [bulkNotice, setBulkNotice] = useState<{ message: string } | null>(
-    null,
-  );
+  const [bulkNotice, setBulkNotice] = useState<{
+    id: number;
+    message: string;
+  } | null>(null);
   const clearBulkNotice = useCallback(() => setBulkNotice(null), []);
   const [busy, setBusy] = useState(false);
   const detailGate = useRef<Gate>({ generation: 0, controller: null });
@@ -203,7 +204,10 @@ export function useAdminEntryActions({
       if (responses.some((response) => !response.ok))
         throw new Error('bulk transition rejected');
       clearSelection();
-      setBulkNotice({ message: `${eligible.length} Nennungen zugelassen` });
+      setBulkNotice({
+        id: Date.now(),
+        message: `${eligible.length} Nennungen zugelassen`,
+      });
       setRefreshRevision((revision) => revision + 1);
     } catch {
       setActionError(
