@@ -213,10 +213,10 @@ async function switchEvent(id: string) {
 const textOf = () => container.textContent ?? '';
 async function openDetailWide() {
   await click(byText('Vollständig öffnen'));
-  expect(container.querySelector('.nb-detail')).not.toBeNull();
+  expect(container.querySelector('.nb-entry-page')).not.toBeNull();
 }
 function expectEmptyEventView() {
-  expect(container.querySelector('.nb-detail')).toBeNull();
+  expect(container.querySelector('.nb-entry-page')).toBeNull();
   expect(textOf()).not.toContain('Alex Driver');
   expect(textOf()).toContain('Keine Nennungen für diese Filter.');
   expect(container.querySelector('#admin-entries-title')?.textContent).toBe(
@@ -256,7 +256,7 @@ describe('AdminApplication event switch and detail access', () => {
     expectEmptyEventView();
     // Going back to the first event shows the list again, not the old detail.
     await switchEvent(eventA);
-    expect(container.querySelector('.nb-detail')).toBeNull();
+    expect(container.querySelector('.nb-entry-page')).toBeNull();
     expect(textOf()).toContain('Alex Driver');
   });
 
@@ -278,10 +278,17 @@ describe('AdminApplication event switch and detail access', () => {
         });
         await click(byText('Speichern'));
       } else if (action === 'payment') {
+        await act(async () =>
+          container
+            .querySelector<HTMLElement>(
+              '.nb-entry-header-actions .nb-menu summary',
+            )!
+            .click(),
+        );
         await click(
           (button) =>
             button.textContent === 'Zahlung erfassen' &&
-            button.closest('.nb-detail-rail') !== null,
+            button.closest('.nb-entry-header-actions .nb-menu') !== null,
         );
         const reason =
           container.querySelector<HTMLTextAreaElement>('dialog textarea')!;
@@ -338,7 +345,7 @@ describe('AdminApplication event switch and detail access', () => {
     expect(container.querySelector('.nb-app-breadcrumb select')).not.toBeNull();
     await click((button) => button.hasAttribute('data-entry-action'));
     expect(container.querySelector('.is-mobile-open')).toBeNull();
-    expect(container.querySelector('.nb-detail')).not.toBeNull();
+    expect(container.querySelector('.nb-entry-page')).not.toBeNull();
     await switchEvent(eventB);
     expectEmptyEventView();
     expect(container.querySelector('.is-mobile-open')).toBeNull();
@@ -348,7 +355,7 @@ describe('AdminApplication event switch and detail access', () => {
     previewAvailable = false;
     await mount();
     await click((button) => button.hasAttribute('data-entry-action'));
-    expect(container.querySelector('.nb-detail')).not.toBeNull();
+    expect(container.querySelector('.nb-entry-page')).not.toBeNull();
   });
 
   it('carries a successful preview status into the detail record and actions', async () => {
@@ -368,7 +375,7 @@ describe('AdminApplication event switch and detail access', () => {
     ).toEqual(['Nachricht', 'Vollständig öffnen']);
     expect(container.querySelector('.nb-preview-hint')).toBeNull();
     await click(byText('Vollständig öffnen'));
-    const detail = container.querySelector('.nb-detail')!;
+    const detail = container.querySelector('.nb-entry-page')!;
     expect(detail.textContent).toContain('Zugelassen');
     expect(detail.textContent).not.toContain('Zulassen');
   });
@@ -433,13 +440,13 @@ describe('AdminApplication event switch and detail access', () => {
       'Alex Driver',
     );
     await click(byText('Vollständig öffnen'));
-    expect(container.querySelector('.nb-detail')).not.toBeNull();
+    expect(container.querySelector('.nb-entry-page')).not.toBeNull();
     await click(
       (button) =>
         button.textContent?.includes('Nennungen') === true &&
-        button.classList.contains('nb-detail-back'),
+        button.closest('.nb-entry-page-navigation') !== null,
     );
-    expect(container.querySelector('.nb-detail')).toBeNull();
+    expect(container.querySelector('.nb-entry-page')).toBeNull();
     await openDetailWide();
   });
 

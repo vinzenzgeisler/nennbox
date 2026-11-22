@@ -188,3 +188,33 @@ it.each([
     `nb-app-status-${tone}`,
   );
 });
+
+it.each([
+  ['approved', 'Status: Zugelassen'],
+  ['submitted', 'Status: Bestätigt'],
+])(
+  'uses server-projected wording only when it describes the current status (%s)',
+  (value, expected) => {
+    mount({
+      ...entry,
+      acceptanceStatus: 'approved',
+      statusProjection: {
+        dimensions: [
+          {
+            key: 'entry',
+            value,
+            label: { de: 'Zugelassen', en: 'Accepted' },
+            meaning: 'done',
+            required: true,
+            nextAction: null,
+          },
+        ],
+        documents: { complete: 0, total: 0 },
+        hints: [],
+      },
+    });
+    expect(host.querySelector('summary')?.getAttribute('aria-label')).toBe(
+      expected,
+    );
+  },
+);

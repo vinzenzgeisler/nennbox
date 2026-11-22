@@ -19,9 +19,14 @@ export function EntryDetailActions({
     <>
       <EntryStatusMenu
         label={
+          selected.statusProjection?.dimensions.find(
+            (item) =>
+              item.key === 'entry' && item.value === selected.acceptanceStatus,
+          )?.label.de ??
           workflow?.statuses.find(
             (item) => item.key === selected.acceptanceStatus,
-          )?.labels.de ?? selected.acceptanceStatus
+          )?.labels.de ??
+          selected.acceptanceStatus
         }
         tone={statusTone(
           workflow?.statuses.find(
