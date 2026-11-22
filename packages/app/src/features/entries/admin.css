@@ -1,11 +1,3 @@
-.link-button {
-  border: 0;
-  background: none;
-  color: var(--color-ink);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
 .admin-state {
   margin-block: var(--nb-space-7);
   padding: var(--nb-space-4);

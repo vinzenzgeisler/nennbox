@@ -263,3 +263,7 @@
 .nb-entry-message-list p {
   margin: 0;
 }
+
+.nb-entry-page-content > .nb-detail-section > header {
+  margin-top: var(--nb-space-3);
+}

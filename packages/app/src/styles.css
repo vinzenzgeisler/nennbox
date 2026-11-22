@@ -4,7 +4,6 @@
 @import url('./features/entries/status.css');
 @import url('./features/gallery/styles.css');
 @import url('./features/entries/rows.css');
-@import url('./features/entries/hints.css');
 
 .registration-payment,
 .registration-payment-instructions,
