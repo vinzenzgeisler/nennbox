@@ -14,11 +14,12 @@ import { RegistrationFormSettings } from '../registration/RegistrationFormSettin
 import { EventDocumentSettings } from '../event-documents/EventDocumentSettings.js';
 import { AdminWorkflow } from '../workflow/AdminWorkflow.js';
 import { EventSetup } from '../event-setup/EventSetup.js';
-import { adminFetch, getAdminIdentity } from '../../auth.js';
+import { adminFetch } from '../../auth.js';
+import { useAdminIdentity } from './useAdminIdentity.js';
 
 export function AdminApplication() {
   const previewViewport = useWorkspacePreview();
-  const [identity, setIdentity] = useState(getAdminIdentity());
+  const identity = useAdminIdentity();
   const [events, setEvents] = useState<
     Array<{
       id: string;
@@ -55,28 +56,6 @@ export function AdminApplication() {
     setDetailOpen(false);
     setPreviewOpen(true);
     setPreviewBusy(false);
-  }, []);
-  useEffect(() => {
-    let active = true;
-    void adminFetch('/admin/session', { cache: 'no-store' })
-      .then((response) =>
-        response.ok ? (response.json() as Promise<{ role: string }>) : null,
-      )
-      .then((session) => {
-        if (active && (session?.role === 'admin' || session?.role === 'member'))
-          setIdentity((current) =>
-            current
-              ? {
-                  ...current,
-                  role: session.role === 'admin' ? 'Admin' : 'Mitglied',
-                }
-              : null,
-          );
-      })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
   }, []);
   const handleSelectionChange = useCallback((entry: Entry | null) => {
     setSelectedEntry(entry);
@@ -210,6 +189,14 @@ export function AdminApplication() {
       entryCount={entryCount}
       entriesNavigationRevision={entriesTarget.revision}
       onEventChange={changeEvent}
+      onEntrySearch={(search) => {
+        setSelectedEntry(null);
+        setDetailOpen(false);
+        setEntriesTarget((current) => ({
+          revision: current.revision + 1,
+          filters: { search },
+        }));
+      }}
       previewOpen={previewOpen && !detailOpen}
       detailOpen={detailOpen}
       identity={identity}

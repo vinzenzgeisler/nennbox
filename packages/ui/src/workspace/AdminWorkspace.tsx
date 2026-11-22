@@ -4,12 +4,15 @@ export function AdminWorkspace({
   header,
   children,
   inset = true,
+  overlay,
 }: {
   navigation: ReactNode;
   header: ReactNode;
   children: ReactNode;
   /** false lets the content run edge to edge, e.g. for WorkspaceSplit. */
   inset?: boolean;
+  /** Fixed layers above the workspace, e.g. „Suchen und springen“. */
+  overlay?: ReactNode;
 }) {
   return (
     <div className="nb-admin-workspace">
@@ -20,6 +23,7 @@ export function AdminWorkspace({
           {children}
         </main>
       </div>
+      {overlay}
     </div>
   );
 }

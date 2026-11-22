@@ -2,11 +2,14 @@ import { useEffect, useState, type ReactNode } from 'react';
 import {
   AdminNavigation,
   AdminWorkspace,
+  CommandPalette,
   PageHeader,
   Signet,
   SelectField,
   type IconName,
 } from '@nennbox/ui';
+import { entrySearchCommand, shellCommands } from './shellCommands.js';
+import { useCommandShortcut } from './useCommandShortcut.js';
 
 export type ShellModule = {
   id: string;
@@ -62,7 +65,7 @@ export const APP_NAVIGATION_REGISTRY: Array<{
       {
         id: 'workflow',
         label: 'Nennungsablauf',
-        icon: 'approval',
+        icon: 'check',
         mobile: false,
       },
       {
@@ -92,7 +95,7 @@ export const APP_NAVIGATION_REGISTRY: Array<{
         id: 'account',
         label: 'Einstellungen',
         mobileLabel: 'Konto',
-        icon: 'more',
+        icon: 'settings',
       },
     ],
   },
@@ -110,11 +113,13 @@ export function AppShell({
   messageEntryId,
   onClearMessageSelection,
   entriesNavigationRevision,
+  onEntrySearch,
 }: {
   children: ReactNode | ((view: View) => ReactNode);
   previewOpen?: boolean;
   detailOpen?: boolean;
-  identity?: { name: string; role: string } | null;
+  /** `organization` replaces the role under the name once it is known. */
+  identity?: { name: string; role: string; organization?: string } | null;
   onClosePreview?: () => void;
   activeEvent?: string;
   events?: EventOption[];
@@ -123,7 +128,11 @@ export function AppShell({
   messageEntryId?: string | null;
   onClearMessageSelection?: () => void;
   entriesNavigationRevision?: number;
+  /** Opens the entries filtered by a text typed into „Suchen und springen“. */
+  onEntrySearch?: (search: string) => void;
 }) {
+  const [commandOpen, setCommandOpen] = useState(false);
+  useCommandShortcut(() => setCommandOpen((open) => !open));
   const [selection, setSelection] = useState<{ view: View; revision: number }>({
     view: 'entries',
     revision: 0,
@@ -176,6 +185,39 @@ export function AppShell({
       <span>{VIEW_TITLES[currentView]}</span>
     </span>
   );
+  const navigationItems = APP_NAVIGATION_REGISTRY.flatMap(
+    (group) => group.items,
+  );
+  const navigate = (id: string) => {
+    onClearMessageSelection?.();
+    const item = navigationItems.find((entry) => entry.id === id);
+    if (item)
+      setSelection({
+        view: item.id,
+        revision: entriesNavigationRevision ?? 0,
+      });
+  };
+  const palette = (
+    <CommandPalette
+      open={commandOpen}
+      onClose={() => setCommandOpen(false)}
+      items={shellCommands({
+        navigation: navigationItems,
+        events,
+        activeEvent,
+        navigate,
+        changeEvent: (id) => onEventChange?.(id),
+      })}
+      {...(onEntrySearch
+        ? {
+            queryItems: entrySearchCommand((search) => {
+              onClearMessageSelection?.();
+              onEntrySearch(search);
+            }),
+          }
+        : {})}
+    />
+  );
   return (
     <AdminWorkspace
       navigation={
@@ -190,6 +232,7 @@ export function AppShell({
           }
           ariaLabel="Hauptnavigation"
           eventInHeader
+          onSearch={() => setCommandOpen(true)}
           eventLabel="Veranstaltung"
           eventPlaceholder="Veranstaltung wählen"
           events={events.map((event) => ({ id: event.id, label: event.name }))}
@@ -203,17 +246,7 @@ export function AppShell({
             })),
           }))}
           current={currentView}
-          onNavigate={(id) => {
-            onClearMessageSelection?.();
-            const item = APP_NAVIGATION_REGISTRY.flatMap(
-              (group) => group.items,
-            ).find((entry) => entry.id === id);
-            if (item)
-              setSelection({
-                view: item.id,
-                revision: entriesNavigationRevision ?? 0,
-              });
-          }}
+          onNavigate={navigate}
           user={
             identity ? (
               <span className="nb-user-identity">
@@ -227,7 +260,7 @@ export function AppShell({
                 </b>
                 <span>
                   <strong>{identity.name}</strong>
-                  <small>{identity.role}</small>
+                  <small>{identity.organization ?? identity.role}</small>
                 </span>
               </span>
             ) : undefined
@@ -250,6 +283,7 @@ export function AppShell({
         )
       }
       inset={currentView !== 'entries'}
+      overlay={palette}
     >
       {typeof children === 'function' ? children(currentView) : children}
     </AdminWorkspace>

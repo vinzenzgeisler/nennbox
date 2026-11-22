@@ -659,6 +659,8 @@
     "ButtonSize",
     "ButtonVariant",
     "Checkbox",
+    "CommandItem",
+    "CommandPalette",
     "DataField",
     "DataTable",
     "DateInput",

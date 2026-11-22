@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { GalleryAppPrimitives } from './features/gallery/GalleryAppPrimitives.js';
 import { GalleryAdvancedComponents } from './features/gallery/GalleryAdvancedComponents.js';
 import { GalleryWorkspaceComponents } from './features/gallery/GalleryWorkspaceComponents.js';
+import { GalleryCommandPalette } from './features/gallery/GalleryCommandPalette.js';
 import './features/gallery/gallery-advanced.css';
 import {
   Button,
@@ -39,6 +40,7 @@ export function ComponentGallery() {
         </div>
       </header>
       <GalleryAppPrimitives selected={selected} onSelect={setSelected} />
+      <GalleryCommandPalette />
       <section>
         <h2>Buttons</h2>
         <div className="nb-gallery-row">
@@ -189,6 +191,11 @@ export function ComponentGallery() {
               'filter',
               'more',
               'next',
+              'overview',
+              'export',
+              'check',
+              'settings',
+              'switch',
             ] as const
           ).map((name) => (
             <span className="nb-icon-sample" key={name}>

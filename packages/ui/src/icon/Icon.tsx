@@ -6,34 +6,68 @@ export type IconName =
   | 'mail'
   | 'calendar'
   | 'approval'
+  | 'check'
   | 'info'
   | 'search'
   | 'filter'
   | 'more'
   | 'next'
   | 'overview'
-  | 'export';
+  | 'export'
+  | 'settings'
+  | 'switch';
 
 const paths: Record<IconName, React.ReactNode> = {
-  list: <path d="M4 6h16M4 12h16M4 18h10" />,
+  // Navigation glyphs follow the app reference (quelle/N2Nennungen.dc.html).
+  list: <path d="M5 6h14M5 12h14M5 18h9" />,
   document: (
     <>
       <path d="M6 3h9l4 4v14H6z" />
       <path d="M15 3v4h4" />
     </>
   ),
-  mail: <path d="M3 6h18v12H3zM3 6l9 7 9-7" />,
-  calendar: <path d="M4 5h16v15H4zM4 10h16M9 3v4M15 3v4" />,
+  mail: (
+    <>
+      <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+      <path d="M4 7l8 6 8-6" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect x="4" y="5" width="16" height="15" rx="2" />
+      <path d="M4 10h16M9 3v4M15 3v4" />
+    </>
+  ),
   approval: <path d="M5 5h3M16 5h3v16H5V5M9 13l2 2 4-4" />,
+  check: <path d="M5 12l4 4L19 6" />,
   info: <path d="M12 3l9 17H3zM12 10v4M12 16.5v1" />,
-  search: <path d="M4 4h10v10H4zM14 14l6 6" />,
+  search: (
+    <>
+      <circle cx="11" cy="11" r="6" />
+      <path d="M20 20l-4.5-4.5" />
+    </>
+  ),
   filter: <path d="M3 5h18l-7 8v6l-4 2v-8z" />,
   more: (
     <path d="M5 11h2v2H5zM11 11h2v2h-2zM17 11h2v2h-2z" fill="currentColor" />
   ),
   next: <path d="M4 12h16M14 6l6 6-6 6" />,
-  overview: <path d="M4 4h7v7H4zM13 4h7v4h-7zM13 11h7v9h-7zM4 14h7v6H4z" />,
-  export: <path d="M12 3v12M7 10l5 5 5-5M5 20h14" />,
+  overview: (
+    <>
+      <rect x="4" y="4" width="7" height="7" rx="1.5" />
+      <rect x="13" y="4" width="7" height="7" rx="1.5" />
+      <rect x="4" y="13" width="7" height="7" rx="1.5" />
+      <rect x="13" y="13" width="7" height="7" rx="1.5" />
+    </>
+  ),
+  export: <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />,
+  switch: <path d="M8 9l4-4 4 4M8 15l4 4 4-4" />,
+  settings: (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
+    </>
+  ),
 };
 export function Icon({ name, label }: { name: IconName; label?: string }) {
   return (

@@ -31,6 +31,7 @@ export * from './empty-state/EmptyState.js';
 export * from './layout/Layout.js';
 export * from './layout/SplitPane.js';
 export * from './workspace/AdminNavigation.js';
+export * from './workspace/CommandPalette.js';
 export * from './workspace/AdminWorkspace.js';
 export * from './workspace/WorkspaceSplit.js';
 export * from './workspace/EntryListRow.js';

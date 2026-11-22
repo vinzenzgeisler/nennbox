@@ -25,6 +25,8 @@ export function AdminNavigation({
   ariaLabel,
   compact = false,
   eventInHeader = false,
+  onSearch,
+  searchLabel = 'Suchen',
 }: {
   brand: ReactNode;
   eventLabel: string;
@@ -39,6 +41,9 @@ export function AdminNavigation({
   ariaLabel: string;
   compact?: boolean;
   eventInHeader?: boolean;
+  /** Shows the search field that opens „Suchen und springen“. */
+  onSearch?: () => void;
+  searchLabel?: string;
 }) {
   const items = groups
     .flatMap((group) => group.items)
@@ -87,6 +92,21 @@ export function AdminNavigation({
           <div className="nb-admin-nav-brand">{brand}</div>
           {!eventInHeader && eventPicker}
         </div>
+        {onSearch && (
+          <button
+            type="button"
+            className="nb-admin-nav-search"
+            aria-haspopup="dialog"
+            aria-keyshortcuts="Meta+K Control+K"
+            onClick={onSearch}
+          >
+            <Icon name="search" />
+            <span>{searchLabel}</span>
+            <kbd className="nb-app-kbd" aria-hidden="true">
+              ⌘K
+            </kbd>
+          </button>
+        )}
         <nav>
           {groups.map((group) => (
             <section

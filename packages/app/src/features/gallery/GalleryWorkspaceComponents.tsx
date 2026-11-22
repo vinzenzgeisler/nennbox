@@ -58,7 +58,7 @@ export function GalleryWorkspaceComponents() {
         },
         {
           label: 'Konto',
-          items: [{ id: 'settings', label: 'Einstellungen', icon: 'more' }],
+          items: [{ id: 'settings', label: 'Einstellungen', icon: 'settings' }],
         },
       ]}
       current={current}
