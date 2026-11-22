@@ -8,11 +8,11 @@ import {
   AppNotice,
   AppSection,
   AppSelect,
-  AppSettingsGroup,
   AppTable,
   AppTextarea,
   AppTextInput,
 } from './AppView.js';
+import { FormItem } from '../form-section/FormItem.js';
 import { Metric, MetricGrid } from '../metric/Metric.js';
 
 describe('app view patterns', () => {
@@ -22,7 +22,7 @@ describe('app view patterns', () => {
     act(() =>
       root.render(
         <AppSection title="Unterlagentypen">
-          <AppSettingsGroup label="Unterlage 1">
+          <FormItem label="Unterlage 1">
             <AppTextInput
               label="Name"
               defaultValue="Lizenz"
@@ -34,7 +34,7 @@ describe('app view patterns', () => {
             </AppSelect>
             <AppTextarea label="Hinweis" maxLength={500} />
             <AppChoiceGroup label="Spalten">Fahrer</AppChoiceGroup>
-          </AppSettingsGroup>
+          </FormItem>
         </AppSection>,
       ),
     );
@@ -43,9 +43,9 @@ describe('app view patterns', () => {
       host.querySelector(`[id="${section.getAttribute('aria-labelledby')}"]`)
         ?.textContent,
     ).toBe('Unterlagentypen');
-    expect(host.querySelector('fieldset legend')?.textContent).toBe(
-      'Unterlage 1',
-    );
+    expect(
+      host.querySelector('[role="group"]')?.getAttribute('aria-label'),
+    ).toBe('Unterlage 1');
     const input = host.querySelector('input')!;
     expect(input.closest('label')?.textContent).toBe('Name');
     expect(input.disabled).toBe(true);

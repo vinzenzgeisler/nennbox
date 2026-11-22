@@ -14,7 +14,7 @@ import {
   AppTextarea,
   AppCheckbox,
   AppChoiceGroup,
-  AppSettingsGroup,
+  FormItem,
   OccupancyBar,
   AppTable,
   AppButton,
@@ -71,7 +71,7 @@ export function GalleryAppViews() {
               valueText="8 belegt, ohne Limit"
             />
           </AppSection>
-          <AppSettingsGroup label="Unterlage">
+          <FormItem label="Unterlage">
             <AppGrid>
               <AppTextInput
                 label="Name"
@@ -103,7 +103,7 @@ export function GalleryAppViews() {
               Speichern
             </AppButton>
             {saved && <AppNotice tone="success">Gespeichert.</AppNotice>}
-          </AppSettingsGroup>
+          </FormItem>
         </AppGrid>
         <AppNotice tone="warning">
           3 Nennungen ohne bestätigte E-Mail-Adresse

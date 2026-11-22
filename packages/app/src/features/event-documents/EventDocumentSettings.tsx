@@ -5,7 +5,7 @@ import {
   AppSection,
   AppView,
   AppGrid,
-  AppSettingsGroup,
+  FormItem,
   AppTextInput,
   AppTextarea,
 } from '@nennbox/ui';
@@ -37,7 +37,7 @@ export function EventDocumentSettings({ eventId }: { eventId: string }) {
           description="Aktive Unterlagen erscheinen bei jeder Nennung. Deaktivierte Typen erscheinen nicht bei neuen Nennungen; vorhandene Uploads bleiben im Verlauf erhalten. Orga-Codes werden automatisch kurz und NENNBOX-weit eindeutig vergeben."
         >
           {settings.types.map((type, index) => (
-            <AppSettingsGroup
+            <FormItem
               key={type.saved ? type.key : `new-${index}`}
               label={`Unterlage ${index + 1}`}
             >
@@ -80,7 +80,7 @@ export function EventDocumentSettings({ eventId }: { eventId: string }) {
               {settings.errors[index] && (
                 <AppNotice tone="error">{settings.errors[index]}</AppNotice>
               )}
-            </AppSettingsGroup>
+            </FormItem>
           ))}
           <AppButton
             type="button"

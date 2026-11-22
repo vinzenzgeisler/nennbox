@@ -9,12 +9,12 @@ bestehenden `AppShell`-Seitenkopf; Unteransichten duplizieren diesen Kopf nicht.
 Alle Gestaltung liegt in `packages/ui`, nicht in ansichtsspezifischen App-Styles:
 
 - `AppView`, `AppGrid`, `AppSection`: Seitenrhythmus und ruhige Abschnitte.
-- `MetricGrid`, `Metric`, `OccupancyBar`: direkt modernisierte, bestehende APIs;
+- `MetricGrid`, `Metric`, `OccupancyBar`, `FormItem`: direkt modernisierte, bestehende APIs;
   ihre alten Styles wurden ersetzt, ihre Funktion und Tests bleiben bestehen.
 - `AppValueRow`, `AppTable`: Label/Wert-Zeilen und Exportverlauf.
 - `AppTextInput`, `AppSelect`, `AppTextarea`: beschriftete native Eingaben auf
   Basis von `AppField` und den N4-Feldmaßen, einschließlich nativer Zustände.
-- `AppSettingsGroup`, `AppChoiceGroup`: benannte Formulargruppen ohne Rahmen.
+- `FormItem`, `AppChoiceGroup`: benannte Formulargruppen ohne Rahmen.
 - `AppNotice`, `AppEmptyState`: Fehler, Hinweise und Leerzustände nach N5.
 
 Die ComponentGallery zeigt diese Muster unter „App-Design · Übersicht und

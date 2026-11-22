@@ -85,20 +85,6 @@ export function AppValueRow({
     </div>
   );
 }
-export function AppSettingsGroup({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <fieldset className="nb-app-settings-group">
-      <legend>{label}</legend>
-      <div className="nb-app-stack">{children}</div>
-    </fieldset>
-  );
-}
 export function AppChoiceGroup({
   label,
   children,
