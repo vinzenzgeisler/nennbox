@@ -23,9 +23,9 @@ describe('app design primitives', () => {
     expect(dots).toContain('aria-label="1 von 4 erledigt"');
   });
   it('keeps actions and checkbox native and labeled', () => {
-    expect(
-      renderToStaticMarkup(<AppButton type="button">Öffnen</AppButton>),
-    ).toContain('type="button"');
+    expect(renderToStaticMarkup(<AppButton>Öffnen</AppButton>)).toContain(
+      'type="button"',
+    );
     expect(renderToStaticMarkup(<AppCheckbox label="Auswählen" />)).toContain(
       'type="checkbox"',
     );

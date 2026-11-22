@@ -6,9 +6,11 @@ The administrative app uses the separate, scoped `@nennbox/ui/app-tokens.css` to
 
 
 
-This repository contains the implementation-facing design tokens for NENNBOX's app package. The complete NENNBOX brandbook (M1–M6 and app specifications) is maintained in the private design repository; this document is only the public product's implementation reference.
+This repository contains two separate design foundations: the new administrative app tokens above and the established public website/registration tokens below. The complete NENNBOX brandbook is maintained in the private design repository.
 
-## Tokens
+## Public website and registration tokens
+
+The following legacy foundation remains in force for public surfaces and existing controls not yet migrated in the administrative app. It does not define the new administrative visual language.
 
 Import `@nennbox/ui/base.css` for the reset, typography, focus behavior, motion preference, locally hosted fonts, and tokens. `@nennbox/ui/tokens.css` can be imported independently. TypeScript constants are exported by `@nennbox/ui`.
 
@@ -51,11 +53,11 @@ Only these text/background pairs are approved. Status colors also require a text
 
 `packages/ui/src/__tests__/contrast.test.ts` recomputes every allowlisted pair using WCAG relative luminance and checks AA (4.5:1).
 
-### Application rules (M4)
+### Legacy application rules (M4)
 
 Use uppercase only for Mono labels and the logo, never headings. Archivo wide is not used below 18 px or for body copy; condensed Archivo is for digits only. Use tabular numerals for table data, keep prose lines to at most 70 characters, and do not use italics.
 
-### Shared component rules (M6)
+### Legacy shared component rules (M6)
 
 Use square geometry, prescribed line weights and no shadows. Keyboard focus is always visible. Controls meet the minimum target size; reduced motion suppresses animation. Statuses use one of the six named meanings (new, in progress, needs attention, done, rejected, not applicable), always with text, form, and color rather than color alone.
 

@@ -8,6 +8,7 @@ import type {
 type ActionTone = 'primary' | 'secondary' | 'ghost';
 export function AppButton({
   tone = 'secondary',
+  type = 'button',
   iconOnly = false,
   className = '',
   ...props
@@ -18,6 +19,7 @@ export function AppButton({
   return (
     <button
       {...props}
+      type={type}
       className={`nb-app-btn nb-app-btn-${tone}${iconOnly ? ' nb-app-icon-btn' : ''} ${className}`}
     />
   );
