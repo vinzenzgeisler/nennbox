@@ -1,7 +1,7 @@
 import type { RequestContext } from '@nennbox/core';
 import { normalizeRequestedStartNumber } from '@nennbox/core';
 import { events } from './schema/organization.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import { entries } from './schema/entries.js';
 import { sql } from 'drizzle-orm';
 import type { PublicRegistrationDependencies } from './registration-public-types.js';
@@ -41,7 +41,10 @@ export function createRegistrationStartNumberMethods(
           and(
             eq(entries.organizationId, ctx.organizationId),
             eq(entries.eventId, event.id),
-            eq(entries.requestedStartNumber, number),
+            or(
+              eq(entries.requestedStartNumber, number),
+              eq(entries.assignedStartNumber, number),
+            ),
             sql`${entries.deletedAt} is null`,
             sql`${entries.acceptanceStatus} <> 'withdrawn'`,
           ),

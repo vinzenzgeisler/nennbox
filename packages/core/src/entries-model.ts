@@ -57,6 +57,8 @@ export interface Entry {
   verificationStatus: EntryVerificationStatus;
   acceptanceStatus: EntryAcceptanceStatus;
   requestedStartNumber: string | null;
+  assignedStartNumber?: string | null;
+  startNumberStatus?: 'assigned' | 'requested' | 'unassigned';
   waitlistPosition?: number | null;
   waitlistConfirmationDeadline?: string | null;
   priceSnapshotVersion: string | null;
@@ -112,7 +114,7 @@ export type EntryInput = Pick<
   | 'priceSnapshotVersion'
   | 'priceSnapshot'
   | 'formSnapshotVersion'
-> & { spareVehicleId?: string | null };
+> & { spareVehicleId?: string | null; assignedStartNumber?: string | null };
 
 export interface PersonRepository {
   create?(ctx: RequestContext, input: PersonInput): Promise<Person>;

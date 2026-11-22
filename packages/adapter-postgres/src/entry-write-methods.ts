@@ -32,6 +32,9 @@ export function createEntryWriteMethods(
               requestedStartNumber: normalizeRequestedStartNumber(
                 input.requestedStartNumber,
               ),
+              assignedStartNumber: normalizeRequestedStartNumber(
+                input.assignedStartNumber,
+              ),
               orgaCode,
               priceSnapshotVersion: input.priceSnapshotVersion,
               formSnapshotVersion: input.formSnapshotVersion,

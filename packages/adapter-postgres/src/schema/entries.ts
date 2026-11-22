@@ -153,6 +153,7 @@ export const entries = pgTable(
       .default({ double_starter: false, passenger: false, late_entry: false }),
     workflowRevisionId: uuid('workflow_revision_id'),
     requestedStartNumber: text('requested_start_number'),
+    assignedStartNumber: text('assigned_start_number'),
     waitlistPosition: integer('waitlist_position'),
     waitlistConfirmationDeadline: timestamp('waitlist_confirmation_deadline', {
       withTimezone: true,
@@ -233,6 +234,11 @@ export const entries = pgTable(
       'entry_deleted_reason_check',
       sql`${t.deletedAt} is null or ${t.deletionReason} is not null`,
     ),
+    uniqueIndex('entry_event_assigned_start_number_unique')
+      .on(t.organizationId, t.eventId, t.assignedStartNumber)
+      .where(
+        sql`${t.assignedStartNumber} is not null and ${t.deletedAt} is null and ${t.acceptanceStatus} <> 'withdrawn'`,
+      ),
     uniqueIndex('entry_event_requested_start_number_unique')
       .on(t.organizationId, t.eventId, t.requestedStartNumber)
       .where(

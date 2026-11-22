@@ -45,6 +45,7 @@ export function createEntryExportRepository(
           predicates.push(
             anyOf(
               ilike(entries.requestedStartNumber, pattern),
+              ilike(entries.assignedStartNumber, pattern),
               ilike(
                 entries.orgaCode,
                 `%${normalizeOrgaCode(token).replace(/[\\%_]/g, '\\$&')}%`,
@@ -66,7 +67,7 @@ export function createEntryExportRepository(
           make: vehicles.make,
           model: vehicles.model,
           className: eventClasses.name,
-          startNumber: entries.requestedStartNumber,
+          startNumber: entries.assignedStartNumber,
           orgaCode: entries.orgaCode,
           status: entries.acceptanceStatus,
           priceSnapshot: entries.priceSnapshot,

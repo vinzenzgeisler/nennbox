@@ -69,6 +69,7 @@ export interface AdminEntryInvoice {
   currency: string;
   totalCents: number;
   paidCents: number;
+  paidAt?: string | null;
   status: 'open' | 'partially_paid' | 'paid' | 'cancelled';
   providerPayments: Array<{
     providerPaymentId: string;

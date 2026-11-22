@@ -1,11 +1,11 @@
-import { and, asc, eq, isNull, ne, sql } from 'drizzle-orm';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import {
-  allocateNextStartNumbers,
-  availableStartNumbers,
+  normalizeRequestedStartNumber,
   type StartNumberService,
   type StartNumberMode,
 } from '@nennbox/core';
 import { entries } from './schema/entries.js';
+import { assignAllStartNumbers } from './start-number-assignment.js';
 import { offerWaitlistSeat } from './waitlist-offer.js';
 import {
   startNumberRanges,
@@ -125,92 +125,7 @@ export function createStartNumberService(db: Database): StartNumberService {
             set: settings,
           });
       }),
-    assignAll: async (ctx, eventId, options) =>
-      db.transaction(async (tx) => {
-        await tx.execute(
-          sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.organizationId}:start-numbers:${eventId}`}, 0))`,
-        );
-        const configured = await tx
-          .select()
-          .from(startNumberRanges)
-          .where(
-            and(
-              eq(startNumberRanges.organizationId, ctx.organizationId),
-              eq(startNumberRanges.eventId, eventId),
-            ),
-          )
-          .orderBy(asc(startNumberRanges.rangeFrom));
-        const unnumbered = await tx
-          .select({ id: entries.id, classId: entries.classId })
-          .from(entries)
-          .where(
-            and(
-              eq(entries.organizationId, ctx.organizationId),
-              eq(entries.eventId, eventId),
-              isNull(entries.requestedStartNumber),
-              isNull(entries.deletedAt),
-              eq(entries.acceptanceStatus, 'accepted'),
-            ),
-          )
-          .orderBy(asc(entries.createdAt), asc(entries.id))
-          .for('update');
-        const assignedRows = await tx
-          .select({ number: entries.requestedStartNumber })
-          .from(entries)
-          .where(
-            and(
-              eq(entries.organizationId, ctx.organizationId),
-              eq(entries.eventId, eventId),
-              isNull(entries.deletedAt),
-              ne(entries.acceptanceStatus, 'withdrawn'),
-            ),
-          );
-        const assigned = assignedRows.flatMap((row) =>
-          row.number ? [row.number] : [],
-        );
-        const result: Array<{ entryId: string; startNumber: string }> = [];
-        for (const range of configured) {
-          const candidates = unnumbered.filter(
-            (entry) =>
-              entry.classId === range.classId ||
-              (range.classId === null &&
-                !configured.some(
-                  (specific) => specific.classId === entry.classId,
-                )),
-          );
-          const numbers = availableStartNumbers(
-            {
-              from: range.rangeFrom,
-              to: range.rangeTo,
-              reserved: range.reservedNumbers,
-              classId: range.classId,
-            },
-            assigned,
-          );
-          const planned = allocateNextStartNumbers(
-            candidates.filter(
-              (entry) => !result.some((item) => item.entryId === entry.id),
-            ),
-            numbers,
-          );
-          for (const item of planned) {
-            if (!options?.dryRun)
-              await tx
-                .update(entries)
-                .set({ requestedStartNumber: item.startNumber })
-                .where(
-                  and(
-                    eq(entries.organizationId, ctx.organizationId),
-                    eq(entries.id, item.entryId),
-                    isNull(entries.requestedStartNumber),
-                  ),
-                );
-            assigned.push(item.startNumber);
-            result.push(item);
-          }
-        }
-        return result;
-      }),
+    assignAll: assignAllStartNumbers(db),
     promoteNext: async (ctx, eventId, classId, automatic = true) =>
       db.transaction(async (tx) => {
         await tx.execute(
@@ -231,8 +146,9 @@ export function createStartNumberService(db: Database): StartNumberService {
             }
           : null;
       }),
-    assign: async (ctx, eventId, entryId, startNumber) =>
+    assign: async (ctx, eventId, entryId, input) =>
       db.transaction(async (tx) => {
+        const startNumber = normalizeRequestedStartNumber(input);
         await tx.execute(
           sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.organizationId}:start-numbers:${eventId}`}, 0))`,
         );
@@ -280,7 +196,7 @@ export function createStartNumberService(db: Database): StartNumberService {
         }
         const updated = await tx
           .update(entries)
-          .set({ requestedStartNumber: startNumber })
+          .set({ assignedStartNumber: startNumber })
           .where(
             and(
               eq(entries.organizationId, ctx.organizationId),

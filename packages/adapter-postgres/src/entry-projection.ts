@@ -1,6 +1,7 @@
 import { entries } from './schema/entries.js';
 import {
   organizationId,
+  projectStartNumber,
   defaultEntryWorkflow,
   projectEntryStatuses,
   defaultEntryStatusDimensionConfig,
@@ -30,6 +31,7 @@ export function mapEntry(
     driverPersonId: row.driverPersonId,
     vehicleId: row.vehicleId,
     requestedStartNumber: row.requestedStartNumber,
+    ...projectStartNumber(row),
     waitlistPosition: row.waitlistPosition,
     waitlistConfirmationDeadline:
       row.waitlistConfirmationDeadline?.toISOString() ?? null,
@@ -140,7 +142,7 @@ export async function projectEntryRows(
         ),
       ),
     db.execute(sql`
-        SELECT id, count(*) OVER (PARTITION BY event_id, driver_person_id) > 1 AS double_starter
+        SELECT id, event_id, driver_person_id, assigned_start_number
         FROM entry WHERE organization_id=${ctx.organizationId}
           AND event_id IN ${inSql(eventIds)} AND deleted_at IS NULL
       `),
@@ -182,19 +184,26 @@ export async function projectEntryRows(
     id: string;
     workflow: import('@nennbox/core').EntryWorkflow;
   };
-  type StarterRow = { id: string; double_starter: boolean };
+  type StarterRow = {
+    id: string;
+    event_id: string;
+    driver_person_id: string;
+    assigned_start_number: string | null;
+  };
   const workflowMap = new Map(
     (workflowResult as unknown as { rows: WorkflowRow[] }).rows.map((row) => [
       row.id,
       row.workflow,
     ]),
   );
-  const starterMap = new Map(
-    (starterResult as unknown as { rows: StarterRow[] }).rows.map((row) => [
-      row.id,
-      row.double_starter,
-    ]),
-  );
+  const starterGroups = new Map<string, StarterRow[]>();
+  for (const starter of (starterResult as unknown as { rows: StarterRow[] })
+    .rows) {
+    const key = `${starter.event_id}:${starter.driver_person_id}`;
+    const group = starterGroups.get(key) ?? [];
+    group.push(starter);
+    starterGroups.set(key, group);
+  }
   const configMap = new Map(configs.map((row) => [row.eventId, row.config]));
   const stateMap = new Map(
     states.map((row) => [`${row.entryId}:${row.dimension}`, row.value]),
@@ -218,9 +227,17 @@ export async function projectEntryRows(
       late_entry: false,
     };
     const closesAt = closeMap.get(row.eventId);
+    const relatedEntries = (
+      starterGroups.get(`${row.eventId}:${row.driverPersonId}`) ?? []
+    )
+      .filter((starter) => starter.id !== row.id)
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((starter) => ({
+        entryId: starter.id,
+        startNumber: starter.assigned_start_number,
+      }));
     const hints = {
-      double_starter:
-        rawHints.double_starter || starterMap.get(row.id) === true,
+      double_starter: rawHints.double_starter || relatedEntries.length > 0,
       passenger: rawHints.passenger || passengerEntryIds.has(row.id),
       late_entry:
         rawHints.late_entry || Boolean(closesAt && row.createdAt > closesAt),
@@ -243,6 +260,7 @@ export async function projectEntryRows(
       emailStatus: row.verificationStatus,
       config: configMap.get(row.eventId) ?? defaultEntryStatusDimensionConfig,
       hints,
+      doubleStarterEntries: relatedEntries,
     });
     const documentProjection = projectEntryDocumentLines(
       row.id,
