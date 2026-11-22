@@ -147,13 +147,14 @@ function AdminEntriesView({
     setRefreshRevision,
     setActionError,
   });
-  const { changeStatus, notice, clearNotice } = useEntryListStatusChanges({
-    eventId,
-    workflow,
-    setSelected,
-    setRefreshRevision,
-    setActionError,
-  });
+  const { changeStatus, notice, clearNotice, showNotice } =
+    useEntryListStatusChanges({
+      eventId,
+      workflow,
+      setSelected,
+      setRefreshRevision,
+      setActionError,
+    });
   const openEntryDetail = useOpenEntryDetail(selected, openEntry, openDetail);
   useEffect(() => {
     if (
@@ -282,6 +283,7 @@ function AdminEntriesView({
           onBack={closeDetail}
           onMessage={onMessage}
           onChangeStatus={changeStatus}
+          onNotice={showNotice}
           items={items}
           page={page}
           pageSize={pageSize}

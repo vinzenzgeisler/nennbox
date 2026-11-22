@@ -226,3 +226,12 @@ it('leaves preview navigation alone while a palette or status menu is open', () 
   );
   expect(detail).toHaveBeenCalledOnce();
 });
+
+it('keeps an explicit mutation acknowledgment outside the detail that just closed', () => {
+  mount(<Harness />);
+  act(() => api.showNotice('Nennung gelöscht'));
+  expect(host.querySelector('[role=status]')?.textContent).toContain(
+    'Nennung gelöscht',
+  );
+  expect(host.textContent).not.toContain('Rückgängig');
+});

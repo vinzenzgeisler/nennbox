@@ -62,3 +62,14 @@
   width: 17px;
   height: 17px;
 }
+
+.nb-document-list-end .nb-button {
+  height: 30px;
+  min-height: 30px;
+  padding-inline: var(--nb-button-px);
+  border: 1px solid var(--nb-border-strong);
+  border-radius: var(--nb-radius-md);
+  background: var(--nb-bg);
+  color: var(--nb-fg);
+  font: 500 var(--nb-text-base)/1.45 var(--nb-font);
+}

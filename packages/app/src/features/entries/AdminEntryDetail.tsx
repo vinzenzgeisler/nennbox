@@ -36,7 +36,9 @@ export function AdminEntryDetail({
   onMessage,
   navigation,
   onChangeStatus,
+  onNotice,
 }: {
+  onNotice?: (message: string) => void;
   navigation?: import('react').ReactNode;
   onChangeStatus?: (entry: Entry, status: string) => Promise<void>;
   selected: Entry;
@@ -56,8 +58,10 @@ export function AdminEntryDetail({
   const [tab, setTab] = useState('overview');
   const [numberOpen, setNumberOpen] = useState(false);
   const [notice, setNotice] = useState<{ message: string } | null>(null);
+  const notify = (message: string) =>
+    onNotice ? onNotice(message) : setNotice({ message });
   const api = useEntryDetailApi(selected, onUpdated, () =>
-    setNotice({ message: 'Änderung gespeichert' }),
+    notify('Änderung gespeichert'),
   );
   const documents = useEntryDocumentActions(api);
   const writeMessage = onMessage && (() => onMessage({ entryId: selected.id }));
@@ -109,7 +113,7 @@ export function AdminEntryDetail({
           ? await transition('acceptance', pending.step.to, reason)
           : null;
     if (result?.ok) {
-      setNotice({ message: 'Änderung gespeichert' });
+      notify('Änderung gespeichert');
       close();
     } else if (result) setDialogError(result.message);
   }
@@ -119,6 +123,7 @@ export function AdminEntryDetail({
     const result = await api.performAdminAction(action);
     if (!result.ok) setDialogError(result.message);
     else if (action.kind === 'delete') {
+      notify('Nennung gelöscht');
       onUpdated(null);
       onBack();
     } else close();
@@ -240,7 +245,7 @@ export function AdminEntryDetail({
           timeline={timeline}
           requestDocument={requestDocument}
           onUpdated={onUpdated}
-          setNotice={setNotice}
+          setNotice={(notice) => notify(notice.message)}
           setPending={setPending}
         />
       </EntryDetailPage>

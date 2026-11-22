@@ -169,5 +169,7 @@ export function useEntryListStatusChanges({
     changeStatus,
     notice: notice?.eventId === eventId ? notice : null,
     clearNotice,
+    showNotice: (message: string) =>
+      setNotice({ id: ++sequence.current, eventId, message }),
   };
 }
