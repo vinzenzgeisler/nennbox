@@ -6,6 +6,44 @@ The administrative app uses the separate, scoped `@nennbox/ui/app-tokens.css` to
 
 
 
+## Einrichten / Onboarding (Claude-Design 2026-11-22, #201)
+
+The guided setup (`/app/onboarding-preview`, development and `VITE_ONBOARDING_PREVIEW=true` builds) uses the same scoped `--nb-*` tokens as the administrative app; it sets `nb-app-design` on its own root and creates no second token source. The few mint tints that exist only in the onboarding reference (`#DCEBE2`, `#19543C`, `#1F4A3A`, …) are component-local custom properties in `packages/ui/src/onboarding/onboarding-shell.css`.
+
+Building blocks live in `packages/ui/src/onboarding/` and are shown in `/components` under "Einrichtung":
+
+| Block | Purpose |
+| --- | --- |
+| `OnboardingShell` | Header with progress line, section bar, content, "Das entsteht", sticky foot bar. Below 1240 px "Das entsteht" becomes a bar plus sheet, below 980 px the section bar drops out. `wide` uses the whole middle column (summary). |
+| `OnboardingSections` | Six sections (Konto, Verein, Veranstaltung, Teilnehmer, Nennung, Veröffentlichen). Finished sections are clickable, only the active one lists its screens, the bar never counts screens. |
+| `ChoiceGroup` / `ChoiceCard` | Decision card: icon tile, title, one sentence, **consequence line** (always visible). States: rest, hover, recommended (badge), chosen (tick, never both), keyboard focus (ring), unavailable (with reason), locked (own label). Keys 1–9 choose, Enter continues (`QuestionStep`). |
+| `EmergingList` | "Das entsteht": grouped rows with value or "noch offen", "abgeleitet", reasons for form fields and documents, "Abgeschaltet" for fields turned off, mint highlight (1.9 s) for rows the last answer changed. |
+| `StepActions` | Back, "Überspringen — Wir nehmen den Vorschlag" (only where there is something to skip), key hints, main action. |
+| `OnboardingField`, `OnboardingTextarea`, `OnboardingSwitch`, `OnboardingFileButton`, `NumberStepper` | Inputs of the setup; the address field carries its fixed `.nennbox.com`. |
+| `OnboardingIcon` | Placeholder line icon (one path) for cards; real sketches are open. |
+
+Rules that follow from the reference:
+
+- No live preview. The only real preview is on the summary screen (tabs Veranstaltungsseite and Nennformular, built from the final proposal). Everything earlier shows lists.
+- Suggestions carry "Empfohlen" but are never pre-selected; "Weiter" waits for a choice. "Überspringen" resets that screen’s answers (including follow-up controls) to the empty domain answers, so `null` accepts the current domain suggestion even after an explicit choice or cleared terms. Going back and continuing preserves an accepted language suggestion; only a first, unaccepted language screen with no selection means German alone.
+- What follows from answers is shown with its reason on the right, not asked again.
+- Setup ends in a draft ("Euer Entwurf steht"); opening is a separate, deliberate step.
+- Text in the du/ihr voice, present tense. The public registration form keeps its own design system.
+
+Open according to the reference (placeholders in use): drawings for the cards, final key bindings (Esc), logo/colour derivation step, legal participation terms, dark mode, leaving and coming back.
+
+Implementation boundaries of the local prototype:
+
+- Participant languages are German and English, matching the existing public form. Other reference languages stay unavailable with an explanation. Interface language is independently indicated as DE in the header; an interactive interface-language switch awaits translated setup copy (there is no English administrative interface yet). Do not make the participant-language choice change the office language.
+- The form screen groups actual registration fields and only switches off optional fields. Required fields stay protected in `suggestEventConfig`, including after the event type changes.
+- The summary alone renders proposal-based participant previews. Enter uses the same completion action as the footer; draft is the default, opening requires a deliberate choice. The draft's “Vorschau ansehen” returns to that local preview, not to an inactive external address.
+- No server draft, private sharing token, demo entries, team invitations or mail-based return flow is invented. Links and publication are still local simulations; the draft explains this. QR output is generated only after the simulated opening.
+- “Das übersetzt ihr selbst” counts the event title, each class name and participation terms per additional language as open. No missing translation blocks completion.
+- Mobile retains the functional back button in the footer, alongside full-width forward navigation; the reference's separate top back arrow is not duplicated. Card rows, hidden descriptions, breakpoints (1240/980 px), sheet and summary stacking follow the reference CSS.
+
+Verification for onboarding uses unit/route tests and CI. Do not take screenshots, compare pixels or start a local browser-smoke stack for this design work; final visual acceptance belongs to the lead. Inspect `quelle/O1Richtung.dc.html`, `quelle/O8Bausteine.dc.html`, the individual `quelle/*.dc.html` screens and `referenz/onboarding-bausteine.css` from the design handoff when changing these components.
+
+
 This repository contains two separate design foundations: the new administrative app tokens above and the established public website/registration tokens below. The complete NENNBOX brandbook is maintained in the private design repository.
 
 ## Public website and registration tokens

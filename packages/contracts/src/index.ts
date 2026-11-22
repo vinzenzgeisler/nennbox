@@ -177,3 +177,5 @@ export type {
   RegistrationSpareVehicle,
   PassengerLinkView,
 } from './passenger.js';
+
+export * from './onboarding/index.js';

@@ -1,8 +1,8 @@
 import React, { useId } from 'react';
 export type TextInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   label: string;
-  hint?: string;
-  error?: string;
+  hint?: string | undefined;
+  error?: string | undefined;
 };
 export function TextInput({
   label,

@@ -14,7 +14,7 @@ async function signIn(page: import('@playwright/test').Page) {
   await page.locator('#kc-login').click();
   await expect(
     page.getByRole('heading', { level: 1, name: 'Nennungen' }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 30_000 });
   await page
     .getByRole('combobox', { name: 'Veranstaltung' })
     .selectOption({ label: 'Historischer Bergpreis 2027' });

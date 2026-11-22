@@ -1,0 +1,94 @@
+/* "Das Nennformular": field list with switches. */
+.nb-onb-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--nb-space-3);
+  margin: 0;
+}
+
+.nb-onb-stats div {
+  display: flex;
+  flex-direction: column-reverse;
+  padding: var(--nb-space-3) var(--nb-space-4);
+  border-radius: 10px;
+  background: var(--nb-bg-subtle);
+}
+
+.nb-onb-stats dd {
+  margin: 0;
+  font-size: var(--nb-text-xl);
+  font-weight: var(--weight-semibold);
+}
+
+.nb-onb-stats dt {
+  color: var(--nb-fg-muted);
+  font-size: var(--nb-text-sm);
+}
+
+.nb-onb-form-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0 0 var(--nb-space-2);
+}
+
+.nb-onb-form-head h2 {
+  margin: 0;
+  font-size: var(--nb-text-md);
+  font-weight: var(--weight-semibold);
+}
+
+.nb-onb-form-head span {
+  color: var(--nb-fg-faint);
+  font-size: var(--nb-text-sm);
+}
+
+.nb-onb-form-group ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nb-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nb-onb-form-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--nb-space-4);
+  padding: var(--nb-space-3) var(--nb-space-4);
+  border: 1px solid var(--nb-border);
+  border-radius: var(--nb-radius-lg);
+  background: var(--nb-bg);
+}
+
+.nb-onb-form-row.is-off {
+  border-color: var(--nb-border-row);
+  background: var(--nb-bg-row-hover);
+  color: var(--nb-fg-faint);
+}
+
+.nb-onb-form-name {
+  display: flex;
+  align-items: center;
+  gap: var(--nb-space-2);
+  font-weight: var(--weight-semibold);
+}
+
+.nb-onb-form-reason {
+  grid-column: 1;
+  color: var(--nb-fg-muted);
+  font-size: var(--nb-text-sm);
+}
+
+.nb-onb-form-row .nb-onb-switch {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+@media (width <= 980px) {
+  .nb-onb-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
