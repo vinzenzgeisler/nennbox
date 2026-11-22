@@ -1,5 +1,10 @@
 import { relativeEntryTime } from './relativeEntryTime.js';
-import { DetailSection, EntryMessageList, StatusLabel } from '@nennbox/ui';
+import {
+  AppButton,
+  DetailSection,
+  EntryMessageList,
+  StatusLabel,
+} from '@nennbox/ui';
 
 import type { EntryMessage } from './useEntryDetailReads.js';
 
@@ -13,12 +18,23 @@ const STATUS = {
 export function EntryMessagesSection({
   messages,
   failed,
+  onWrite,
 }: {
   messages: EntryMessage[] | null;
   failed: boolean;
+  onWrite?: (() => void) | undefined;
 }) {
   return (
-    <DetailSection title="Nachrichten">
+    <DetailSection
+      title="Nachrichten"
+      action={
+        onWrite && (
+          <AppButton tone="secondary" onClick={onWrite}>
+            Nachricht schreiben
+          </AppButton>
+        )
+      }
+    >
       {failed ? (
         <p role="alert">
           Die Nachrichten konnten nicht geladen werden. Öffne die Nennung

@@ -244,6 +244,7 @@ export function AdminEntryDetail({
           messages={messages}
           timeline={timeline}
           requestDocument={requestDocument}
+          writeMessage={writeMessage}
           onUpdated={onUpdated}
           setNotice={(notice) => notify(notice.message)}
           setPending={setPending}

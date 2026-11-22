@@ -28,6 +28,7 @@ export function EntryDetailContent({
   messages,
   timeline,
   requestDocument,
+  writeMessage,
   onUpdated,
   setNotice,
   setPending,
@@ -43,6 +44,7 @@ export function EntryDetailContent({
   messages: ReturnType<typeof useEntryMessages>;
   timeline: TimelineItem[];
   requestDocument: ((line: UploadLine) => void) | undefined;
+  writeMessage: (() => void) | undefined;
   onUpdated: (entry: Entry | null, refresh?: boolean) => void;
   setNotice: (notice: { message: string }) => void;
   setPending: (pending: Pending) => void;
@@ -103,6 +105,7 @@ export function EntryDetailContent({
           <EntryMessagesSection
             messages={messages.items}
             failed={messages.failed}
+            onWrite={writeMessage}
           />
         </>
       )}
