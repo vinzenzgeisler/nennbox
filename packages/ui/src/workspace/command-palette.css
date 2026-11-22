@@ -37,7 +37,10 @@
 .nb-command-search input {
   flex: 1;
   min-width: 0;
-  padding: 0;
+  height: auto;
+  min-height: 0;
+  /* The reference keeps the browser's default input padding. */
+  padding: 1px 2px;
   border: 0;
   outline: 0;
   background: transparent;
@@ -51,6 +54,8 @@
   color: var(--nb-fg-muted);
 }
 .nb-command-search button {
+  min-height: 0;
+  border: 0;
   cursor: pointer;
 }
 .nb-command-results {
