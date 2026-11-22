@@ -72,6 +72,9 @@ describe('app view action wiring', () => {
         />,
       ),
     );
+    expect(host.querySelector('section')?.getAttribute('aria-label')).toBe(
+      'Warnungen',
+    );
     act(() => host.querySelector('button')!.click());
     expect(onOpenEntries).toHaveBeenCalledWith({
       verificationStatus: 'unverified',
