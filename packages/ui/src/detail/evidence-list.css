@@ -1,56 +1,14 @@
-.nb-evidence-list {
-  margin: 0;
-  padding: 0;
+:where(.nb-admin-workspace, .nb-app-design) .nb-evidence-list {
   list-style: none;
 }
-.nb-evidence-list li {
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--color-line);
-}
-.nb-evidence-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-.nb-evidence-head strong {
-  font: var(--text-heading-4);
-}
-.nb-evidence-head time {
-  color: var(--color-graphite);
-  font: var(--text-label);
-  letter-spacing: 0.04em;
-}
-.nb-evidence-list p {
-  margin: var(--space-1) 0 0;
-  color: var(--color-graphite);
-  font: var(--text-body);
-}
-.nb-evidence-list summary {
-  margin-top: var(--space-2);
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-.nb-evidence-list summary:focus-visible {
-  outline: var(--focus-width) solid var(--color-marshal);
-  outline-offset: var(--focus-offset);
-}
-.nb-evidence-list blockquote {
-  margin: var(--space-2) 0 0;
-  padding: var(--space-2) var(--space-3);
-  border-left: 3px solid var(--color-green);
-  background: var(--color-sage);
-  font: var(--text-body);
-  white-space: pre-wrap;
-}
-
-/* N3 app presentation; shared registration styles above stay unchanged. */
 :where(.nb-admin-workspace, .nb-app-design) .nb-evidence-list li {
   padding: var(--nb-space-3) 0;
   border-color: var(--nb-border-row);
 }
 :where(.nb-admin-workspace, .nb-app-design) .nb-evidence-head {
+  justify-content: space-between;
+  align-items: baseline;
+  display: flex;
   flex-wrap: wrap;
   gap: var(--nb-space-2);
 }
@@ -69,6 +27,9 @@
   font: 400 var(--nb-text-base)/1.55 var(--nb-font);
 }
 :where(.nb-admin-workspace, .nb-app-design) .nb-evidence-list summary {
+  text-underline-offset: 4px;
+  text-decoration: underline;
+  cursor: pointer;
   margin-top: var(--nb-space-2);
   color: var(--nb-brand);
 }
@@ -80,6 +41,7 @@
   box-shadow: var(--nb-focus-ring);
 }
 :where(.nb-admin-workspace, .nb-app-design) .nb-evidence-list blockquote {
+  white-space: pre-wrap;
   margin-top: var(--nb-space-2);
   padding: var(--nb-space-3) var(--nb-space-4);
   border-color: var(--nb-border-strong);
@@ -87,4 +49,10 @@
   background: var(--nb-bg-subtle);
   color: var(--nb-fg-secondary);
   font: 400 var(--nb-text-base)/1.55 var(--nb-font);
+}
+
+:where(.nb-admin-workspace, .nb-app-design) .nb-evidence-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
