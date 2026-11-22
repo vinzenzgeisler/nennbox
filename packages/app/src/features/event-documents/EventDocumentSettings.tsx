@@ -90,7 +90,7 @@ export function EventDocumentSettings({ eventId }: { eventId: string }) {
             }
             onClick={() => settings.setTypes([...settings.types, newDraft()])}
           >
-            Hinzufügen
+            Unterlage hinzufügen
           </AppButton>
         </AppSection>
         <div>
@@ -100,7 +100,7 @@ export function EventDocumentSettings({ eventId }: { eventId: string }) {
             disabled={settings.saving || !settings.valid}
             onClick={() => void settings.save()}
           >
-            {settings.saving ? 'Wird gespeichert …' : 'Speichern'}
+            {settings.saving ? 'Wird gespeichert …' : 'Unterlagen speichern'}
           </AppButton>
         </div>
         {settings.message && (

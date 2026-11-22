@@ -30,7 +30,7 @@ export function OverviewWarnings({
                     tone="secondary"
                     onClick={() => onOpenEntries(filters)}
                   >
-                    Anzeigen
+                    Nennungen anzeigen
                   </AppButton>
                 )}
               </>

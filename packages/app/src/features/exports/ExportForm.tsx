@@ -138,7 +138,7 @@ export function ExportForm({
             onClick={onSubmit}
             disabled={busy || draft.fields.length === 0}
           >
-            {busy ? 'Wird erstellt …' : 'Erstellen'}
+            {busy ? 'Export wird erstellt …' : 'CSV-Export erstellen'}
           </AppButton>
         </div>
       </>

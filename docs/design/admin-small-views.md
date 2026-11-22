@@ -54,8 +54,7 @@ AppShell-Tests bleiben unverändert. Der Pre-push-Hook läuft ohne Umgehung;
 Community-Smoke und Dokumentenabläufe werden ausschließlich in GitHub geprüft.
 Keine Screenshots, Pixeldiffs oder lokalen Browser-/Smoke-Läufe verwenden.
 
-Bewusst angepasste E2E-Selektoren beschränken sich auf die verkürzten Knopftexte:
-`CSV-Export erstellen` → `Erstellen`, `Unterlagen speichern` → `Speichern`,
-`Nennungen anzeigen` → `Anzeigen` und `CSV herunterladen` → `Herunterladen`.
-Die Assertions auf Download, Persistenz, Aktivierung und Dokumentstatus bleiben
-unverändert.
+Knopftexte benennen Aktion und Objekt, etwa „Nennungen anzeigen“,
+„CSV-Export erstellen“, „CSV herunterladen“, „Unterlage hinzufügen“ und
+„Unterlagen speichern“. Ein Verb im Knopf schließt ein beschreibendes Objekt
+nicht aus. Bestehende E2E-Selektoren und Verhaltenserwartungen bleiben unverändert.

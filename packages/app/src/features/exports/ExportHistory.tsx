@@ -58,7 +58,7 @@ export function ExportHistory({
                       disabled={downloading === job.jobId}
                       onClick={() => onDownload(job, path)}
                     >
-                      Herunterladen
+                      CSV herunterladen
                     </AppButton>
                   ) : (
                     '—'
