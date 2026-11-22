@@ -58,8 +58,8 @@ Weiterhin vorhanden, außerhalb dieser Umstellung:
 - `features/event-setup/EventSetup.css`: alte Mono-Labels und Navigation.
 - `features/registration/RegistrationFormSettings.css`: Einstellungen des
   öffentlichen Formulars innerhalb der Verwaltung, alte Labels und Überschrift.
-- Legacy-UI-Felder, Tabs und Tabellen in noch nicht migrierten Bereichen
-  (z. B. Nachrichten und Nennungsablauf) verwenden weiterhin die alten Tokens.
+- Legacy-UI-Felder, Tabs und Tabellen bleiben für Einrichten und die
+  Formular-Einstellungen sowie öffentliche Seiten verfügbar.
 - `features/onboarding/preview/preview.css` zeigt absichtlich die öffentliche
   Gestaltung in der Vorschau; `features/driver-portal` ist ebenfalls öffentlich.
 - Archivo bleibt für Marke und öffentliche Oberflächen sowie alte
@@ -81,3 +81,58 @@ Knopftexte benennen Aktion und Objekt, etwa „Nennungen anzeigen“,
 „CSV-Export erstellen“, „CSV herunterladen“, „Unterlage hinzufügen“ und
 „Unterlagen speichern“. Ein Verb im Knopf schließt ein beschreibendes Objekt
 nicht aus. Bestehende E2E-Selektoren und Verhaltenserwartungen bleiben unverändert.
+
+## Nachrichten, Nennungsablauf und Module
+
+Diese Ansichten verwenden ebenfalls `AppView`, `AppSection` und die nativen
+App-Feldmuster. Die Nachrichtenansicht behält den flexiblen `MessageLayout` mit
+begrenzter Composer-Breite und danebenliegender Vorschau; schmale Ansichten
+stapeln beide Bereiche. Die Empfängerauswahl bleibt eine benannte Gruppe, damit
+bestehende Bedien- und E2E-Verträge unverändert bleiben. Der Postausgang verwendet
+`AppTable`, Status-Pills und den relativen Zeitformatierer der Nennungsdetailseite.
+
+Neue gemeinsame Muster (N4-Felder und N5-Abschnitte):
+
+- `AppDialog`: explizite optische Variante des vorhandenen nativen Dialogs,
+  mit 12-px-Ecke, `--nb-shadow-dialog` und `--nb-overlay`. Öffnen, Escape,
+  Schließen und Aktionen verwenden weiterhin den bestehenden Dialogvertrag.
+  Die explizite Variante lässt Einrichten und Formular-Einstellungen unverändert.
+- `AppActions`: umbrechende Aktionsgruppe.
+- `AppSelectionList`: benannte, scrollbar begrenzte Auswahlgruppe.
+- `AppFileInput`: native Dateiauswahl im beschrifteten App-Feldmuster.
+- `AppConfirmAction`: bestehende begründungspflichtige destruktive Aktionen mit
+  zurückgesetzter Begründung beim Schließen; Gefahraktionen nutzen den roten
+  `danger`-Ton des `AppButton` statt einer weiteren grünen Hauptaktion.
+
+Die ComponentGallery zeigt diese Muster interaktiv unter „App-Design · Nachrichten
+und Verwaltungsdialoge“. Unit-Tests prüfen Auswahl-/Vorlagen-Callbacks,
+Upload-Beschränkungen, Postausgang-Neuversand, Aktivierungsbedingungen und
+Begründungspflicht. Bestehende Testerwartungen und Knopftexte bleiben unverändert.
+Die Export-Snapshot-Liste erweitert lediglich die absichtlich neue öffentliche
+UI-API; sie ist keine Änderung an Verhaltenserwartungen.
+
+### Grenze der Konto-Verwaltung
+
+`AdminApplication` zeigt unter `account` ausschließlich die bereits modernisierten
+Unterlagentypen (`EventDocumentSettings`) und die für Schritt 6 ausgesparten
+`RegistrationFormSettings`. Es gibt keine zusätzliche Konto-, Organisations-
+oder Rollenverwaltungsseite. Veranstalter-/Bankdaten liegen in `event-setup`;
+Rollen werden innerhalb des hier modernisierten Übergangseditors ausgewählt.
+Eine zusätzliche Einstellungsoberfläche wird nicht erfunden.
+
+### Verbliebene alte Schriftgestaltung nach diesem Schritt
+
+Direkte `--text-label`-/`--tracking-label`-Verwendungen in der Verwaltung liegen
+nur noch in `features/event-setup/EventSetup.css` und
+`features/registration/RegistrationFormSettings.css` (Schritt 6). Außerhalb der
+Verwaltung bleiben `features/driver-portal/driver-portal.css`,
+`features/onboarding/preview/preview.css` und die öffentlichen Zahlungs-Badges in
+`styles.css` unverändert. Direkte Archivo-Verwendungen gibt es unter
+`packages/app/src` nicht; die Schrift bleibt in globalen Legacy-Tokens,
+Markenkomponenten und öffentlichen UI-Styles verfügbar. Die migrierten Ansichten
+verwenden Inter. Die alten Nachrichten-Styles wurden ersetzt, die ungenutzten
+Tokens `--width-aside-min` und `--height-selection-list` entfernt.
+
+Fahrerportal, Beifahrerportal, öffentliches Nennformular, Einrichten und
+Formular-Einstellungen werden durch diesen Schritt nicht umgestaltet. Es werden
+keine Screenshots, Pixeldiffs oder lokalen Browser-/Smoke-Läufe verwendet.

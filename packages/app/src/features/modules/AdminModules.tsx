@@ -3,16 +3,19 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ModuleListResponse, EventSchema } from '@nennbox/contracts';
 import type { ModuleViewSchema } from '@nennbox/contracts';
 import {
-  Button,
-  DataTable,
-  EmptyState,
-  FilterBar,
-  PageHeader,
-  SelectField,
-  StatusLabel,
-  Tabs,
-  TextInput,
+  AppButton,
+  AppEmptyState,
+  AppGrid,
+  AppNotice,
+  AppSection,
+  AppSegmented,
+  AppSelect,
+  AppStatusPill,
+  AppTable,
+  AppTextInput,
+  AppView,
 } from '@nennbox/ui';
+import { ModuleDisableButton } from './ModuleDisableButton.js';
 import { updatePath } from './ModuleSchemaFields.js';
 import { ModuleConfigDialog } from './ModuleConfigDialog.js';
 import {
@@ -136,63 +139,62 @@ export function AdminModules({
       setError(t.error);
     }
   }
-  const tabs = [
-    { id: 'organization', label: t.organization, content: null },
-    {
-      id: 'event',
-      label: t.event,
-      content: (
-        <SelectField
-          label={t.chooseEvent}
-          value={eventId}
-          onChange={(event) => setEventId(event.target.value)}
-        >
-          {events.map((event) => (
-            <option key={event.id} value={event.id}>
-              {event.name}
-            </option>
-          ))}
-        </SelectField>
-      ),
-    },
-  ];
   return (
-    <section aria-labelledby="modules-title">
-      <PageHeader id="modules-title" title={t.title} />
-      <Tabs
-        tabs={tabs}
-        selected={scope}
-        onChange={(next) => setScope(next as typeof scope)}
-        label={t.scope}
-      />
-      <FilterBar label={t.filterLabel}>
-        <TextInput
-          label={t.search}
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
+    <AppView>
+      <AppSection title={t.scope}>
+        <AppSegmented
+          options={[
+            { value: 'organization', label: t.organization },
+            { value: 'event', label: t.event },
+          ]}
+          value={scope}
+          onChange={(next) => setScope(next as typeof scope)}
+          label={t.scope}
         />
-        <SelectField
-          label={t.category}
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
-        >
-          <option value="">{t.all}</option>
-          {categories.map((value) => (
-            <option key={value} value={value}>
-              {categoryLabels[locale][value]}
-            </option>
-          ))}
-        </SelectField>
-      </FilterBar>
+        {scope === 'event' && (
+          <AppSelect
+            label={t.chooseEvent}
+            value={eventId}
+            onChange={(event) => setEventId(event.target.value)}
+          >
+            {events.map((event) => (
+              <option key={event.id} value={event.id}>
+                {event.name}
+              </option>
+            ))}
+          </AppSelect>
+        )}
+      </AppSection>
+      <AppSection title={t.filterLabel}>
+        <AppGrid columns="two">
+          <AppTextInput
+            label={t.search}
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          <AppSelect
+            label={t.category}
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+          >
+            <option value="">{t.all}</option>
+            {categories.map((value) => (
+              <option key={value} value={value}>
+                {categoryLabels[locale][value]}
+              </option>
+            ))}
+          </AppSelect>
+        </AppGrid>
+      </AppSection>
       {loading ? (
-        <p role="status">{t.loading}</p>
+        <AppNotice>{t.loading}</AppNotice>
       ) : error ? (
-        <p role="alert">{error}</p>
+        <AppNotice tone="error">{error}</AppNotice>
       ) : filtered.length === 0 ? (
-        <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
+        <AppEmptyState title={t.emptyTitle} description={t.emptyDescription} />
       ) : (
-        <DataTable headers={[t.module, t.description, t.status, t.actions]}>
+        <AppTable headers={[t.module, t.description, t.status, t.actions]}>
           {filtered.map((module) => (
             <tr key={module.id}>
               <td>
@@ -201,69 +203,54 @@ export function AdminModules({
               <td>{module.gallery.shortDescription[locale]}</td>
               <td>
                 {module.status === 'unavailable' ? (
-                  <StatusLabel
-                    status="missing"
-                    label={t[module.unavailableReason ?? 'edition']}
-                  />
+                  <AppStatusPill status="neg">
+                    {t[module.unavailableReason ?? 'edition']}
+                  </AppStatusPill>
                 ) : module.enabled ? (
-                  <StatusLabel status="done" label={t.active} />
+                  <AppStatusPill status="zu">{t.active}</AppStatusPill>
                 ) : (
-                  <StatusLabel status="new" label={t.inactive} />
+                  <AppStatusPill status="offen">{t.inactive}</AppStatusPill>
                 )}
               </td>
-              <td className="module-actions">
-                <Button
-                  variant="text"
-                  size={40}
-                  onClick={() => {
-                    setSelected(module);
-                    setConfig(module.config);
-                    setConfigErrors({});
-                  }}
-                >
-                  {t.details}
-                </Button>
-                {module.status === 'unavailable' ? (
-                  module.unavailableReason === 'entitlement' && onUpgrade ? (
-                    <Button
-                      variant="secondary"
-                      size={40}
-                      onClick={() => onUpgrade(module.id)}
-                    >
-                      {t.upgrade}
-                    </Button>
-                  ) : null
-                ) : module.enabled ? (
-                  <Button
-                    variant="danger"
-                    size={40}
-                    confirmation={{
-                      title: t.disableTitle,
-                      message: t.confirm,
-                      reasonLabel: t.reason,
-                      cancelLabel: t.cancel,
-                      confirmLabel: t.disable,
-                      closeLabel: t.close,
+              <td>
+                <div className="nb-app-inline">
+                  <AppButton
+                    tone="ghost"
+                    onClick={() => {
+                      setSelected(module);
+                      setConfig(module.config);
+                      setConfigErrors({});
                     }}
-                    onDangerConfirm={() =>
-                      void change(module, { enabled: false })
-                    }
                   >
-                    {t.disable}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="primary"
-                    size={40}
-                    onClick={() => void change(module, { enabled: true })}
-                  >
-                    {t.activate}
-                  </Button>
-                )}
+                    {t.details}
+                  </AppButton>
+                  {module.status === 'unavailable' ? (
+                    module.unavailableReason === 'entitlement' && onUpgrade ? (
+                      <AppButton
+                        tone="secondary"
+                        onClick={() => onUpgrade(module.id)}
+                      >
+                        {t.upgrade}
+                      </AppButton>
+                    ) : null
+                  ) : module.enabled ? (
+                    <ModuleDisableButton
+                      locale={locale}
+                      onConfirm={() => void change(module, { enabled: false })}
+                    />
+                  ) : (
+                    <AppButton
+                      tone="secondary"
+                      onClick={() => void change(module, { enabled: true })}
+                    >
+                      {t.activate}
+                    </AppButton>
+                  )}
+                </div>
               </td>
             </tr>
           ))}
-        </DataTable>
+        </AppTable>
       )}
       {selected && (
         <ModuleConfigDialog
@@ -283,7 +270,7 @@ export function AdminModules({
           }}
         />
       )}
-      {error && !loading && <p role="alert">{error}</p>}
-    </section>
+      {error && !loading && <AppNotice tone="error">{error}</AppNotice>}
+    </AppView>
   );
 }

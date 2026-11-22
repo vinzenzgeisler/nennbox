@@ -1,10 +1,12 @@
 import {
-  Button,
-  Field,
-  FormSection,
-  SelectField,
-  TextInput,
+  AppButton,
+  AppGrid,
+  AppSection,
+  AppSelect,
+  AppTextInput,
+  FormItem,
 } from '@nennbox/ui';
+import { WorkflowRemoveButton } from './WorkflowRemoveButton.js';
 import type { Status, Workflow } from './AdminWorkflow.js';
 
 const categories = [
@@ -25,14 +27,14 @@ export function WorkflowStatusesEditor({
   updateWorkflow: (workflow: Workflow) => void;
 }) {
   return (
-    <FormSection
+    <AppSection
       title="Nennungsstatus"
       description="Lege die sichtbaren Status und ihre Bedeutung fest."
     >
       {workflow.statuses.map((status, index) => (
-        <FormSection key={index} title={status.labels.de || 'Neuer Status'}>
-          <div className="workflow-fields">
-            <TextInput
+        <FormItem key={index} label={status.labels.de || 'Neuer Status'}>
+          <AppGrid>
+            <AppTextInput
               label="Interner Schlüssel"
               aria-label={'Status ' + (index + 1) + ' Schlüssel'}
               value={status.key}
@@ -40,7 +42,7 @@ export function WorkflowStatusesEditor({
                 updateStatus(index, { key: event.target.value })
               }
             />
-            <TextInput
+            <AppTextInput
               label="Deutsche Bezeichnung"
               aria-label={'Status ' + (index + 1) + ' Bezeichnung'}
               value={status.labels.de}
@@ -50,7 +52,7 @@ export function WorkflowStatusesEditor({
                 })
               }
             />
-            <TextInput
+            <AppTextInput
               label="Englische Bezeichnung"
               aria-label={'Status ' + (index + 1) + ' englische Bezeichnung'}
               value={status.labels.en}
@@ -60,7 +62,7 @@ export function WorkflowStatusesEditor({
                 })
               }
             />
-            <Field
+            <AppTextInput
               label="Statusfarbe"
               aria-label={'Status ' + (index + 1) + ' Farbe'}
               type="color"
@@ -71,7 +73,7 @@ export function WorkflowStatusesEditor({
                 updateStatus(index, { color: event.target.value })
               }
             />
-            <SelectField
+            <AppSelect
               label="Bedeutung"
               aria-label={'Status ' + (index + 1) + ' Bedeutung'}
               value={status.category}
@@ -84,38 +86,33 @@ export function WorkflowStatusesEditor({
                   {label}
                 </option>
               ))}
-            </SelectField>
-            <Button
-              variant="danger"
-              size={40}
-              confirmation={{
-                title: 'Status entfernen?',
-                message:
-                  'Der Status und alle zugehörigen Übergänge werden entfernt.',
-                reasonLabel: 'Grund',
-                cancelLabel: 'Abbrechen',
-                confirmLabel: 'Status entfernen',
-                closeLabel: 'Dialog schließen',
-              }}
-              onDangerConfirm={() =>
-                updateWorkflow({
-                  ...workflow,
-                  statuses: workflow.statuses.filter((_, i) => i !== index),
-                  transitions: workflow.transitions.filter(
-                    (edge) =>
-                      edge.from !== status.key && edge.to !== status.key,
-                  ),
-                })
-              }
-            >
-              Status entfernen
-            </Button>
-          </div>
-        </FormSection>
+            </AppSelect>
+          </AppGrid>
+          <WorkflowRemoveButton
+            confirmation={{
+              title: 'Status entfernen?',
+              message:
+                'Der Status und alle zugehörigen Übergänge werden entfernt.',
+              reasonLabel: 'Grund',
+              cancelLabel: 'Abbrechen',
+              confirmLabel: 'Status entfernen',
+              closeLabel: 'Dialog schließen',
+            }}
+            onConfirm={() =>
+              updateWorkflow({
+                ...workflow,
+                statuses: workflow.statuses.filter((_, i) => i !== index),
+                transitions: workflow.transitions.filter(
+                  (edge) => edge.from !== status.key && edge.to !== status.key,
+                ),
+              })
+            }
+          >
+            Status entfernen
+          </WorkflowRemoveButton>
+        </FormItem>
       ))}
-      <Button
-        variant="secondary"
-        size={40}
+      <AppButton
         onClick={() =>
           updateWorkflow({
             ...workflow,
@@ -132,7 +129,7 @@ export function WorkflowStatusesEditor({
         }
       >
         Status hinzufügen
-      </Button>
-    </FormSection>
+      </AppButton>
+    </AppSection>
   );
 }
