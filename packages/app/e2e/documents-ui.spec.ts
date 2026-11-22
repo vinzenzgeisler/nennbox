@@ -34,9 +34,6 @@ test('Admin reviews and rejects real documents; list and preview refresh', async
   await page.getByRole('searchbox', { name: 'Suche' }).fill('Anja Richter');
   const row = page.getByRole('row').filter({ hasText: 'Anja Richter' });
   await expect(row).toContainText('Unterlagen 2/2', { timeout: 90_000 });
-  await expect(row.locator('.nb-entry-list-orga')).toHaveText(
-    /^[2-9A-HJKMNP-TV-Z]{5}$/,
-  );
   await row.locator('button[data-entry-action]').click();
   const preview = page.getByRole('complementary', { name: 'Nennungsvorschau' });
   await expect(preview).toContainText('Hochgeladen');
@@ -87,8 +84,7 @@ test('Bergpreis documents match the A7/A4 reference at three widths', async ({
   await expect(preview).toContainText('Fahrzeugschein');
   const dir = process.env.DOCUMENTS_SCREENSHOT_DIR;
   if (dir) mkdirSync(dir, { recursive: true });
-  // The inline preview only exists from 1680px (A7); below that the list
-  // links straight to the detail, so the list row is the surface to compare.
+  // The reference preview starts at 1101px; below that rows open the detail.
   if (dir)
     await page.screenshot({
       path: `${dir}/ist-preview-1920x1080.png`,

@@ -238,7 +238,7 @@ test('driver requests a Mailpit link, uploads a document, and the office sees it
   const row = page.getByRole('row').filter({ hasText: `Fahrerin ${suffix}` });
   await row
     .getByRole('button', { name: new RegExp(`Fahrerin ${suffix}.*Lancia`) })
-    .click();
+    .dblclick();
   const detail = page.getByRole('region', {
     name: 'Nennung im Detail',
     exact: true,

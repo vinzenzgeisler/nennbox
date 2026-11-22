@@ -677,7 +677,7 @@ test('admin records payment from entry detail UI', async ({
     .getByRole('row')
     .filter({ hasText: shared.participantName })
     .locator('button[data-entry-action]')
-    .click();
+    .dblclick();
   const entryDetail = page.getByRole('region', {
     name: 'Nennung im Detail',
     exact: true,

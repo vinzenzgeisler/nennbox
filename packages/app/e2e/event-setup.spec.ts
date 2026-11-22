@@ -267,7 +267,7 @@ test('admin creates a class, terms and opens its public registration in the UI',
     .selectOption({ label: name });
   const row = page.getByRole('row').filter({ hasText: `UI${suffix} Setup` });
   await expect(row).toBeVisible();
-  await row.locator('button[data-entry-action]').click();
+  await row.locator('button[data-entry-action]').dblclick();
   const detail = page.getByRole('region', {
     name: 'Nennung im Detail',
     exact: true,
@@ -287,7 +287,7 @@ test('admin creates a class, terms and opens its public registration in the UI',
         if (!(await detail.isVisible())) {
           const full = page.getByRole('button', { name: 'Vollständig öffnen' });
           if (await full.isVisible()) await full.click();
-          else await row.locator('button[data-entry-action]').click();
+          else await row.locator('button[data-entry-action]').dblclick();
         }
         await expect(detail).toContainText('0-', { timeout: 1_000 });
         await page.waitForTimeout(400);
