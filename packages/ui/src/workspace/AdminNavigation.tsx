@@ -24,6 +24,7 @@ export function AdminNavigation({
   user,
   ariaLabel,
   compact = false,
+  eventInHeader = false,
 }: {
   brand: ReactNode;
   eventLabel: string;
@@ -37,6 +38,7 @@ export function AdminNavigation({
   user?: ReactNode;
   ariaLabel: string;
   compact?: boolean;
+  eventInHeader?: boolean;
 }) {
   const items = groups
     .flatMap((group) => group.items)
@@ -83,7 +85,7 @@ export function AdminNavigation({
       >
         <div className="nb-admin-nav-top">
           <div className="nb-admin-nav-brand">{brand}</div>
-          {eventPicker}
+          {!eventInHeader && eventPicker}
         </div>
         <nav>
           {groups.map((group) => (
@@ -99,16 +101,18 @@ export function AdminNavigation({
         </nav>
         {user && <div className="nb-admin-nav-user">{user}</div>}
       </aside>
-      <div className="nb-admin-mobile-event-picker">
-        <strong>
-          {
-            groups
-              .flatMap((group) => group.items)
-              .find((entry) => entry.id === current)?.label
-          }
-        </strong>
-        {eventPicker}
-      </div>
+      {!eventInHeader && (
+        <div className="nb-admin-mobile-event-picker">
+          <strong>
+            {
+              groups
+                .flatMap((group) => group.items)
+                .find((entry) => entry.id === current)?.label
+            }
+          </strong>
+          {eventPicker}
+        </div>
+      )}
       <nav className="nb-admin-mobile-nav" aria-label={ariaLabel}>
         {items.map((entry) => item(entry, true))}
       </nav>

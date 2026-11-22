@@ -3,7 +3,8 @@ import {
   AdminNavigation,
   AdminWorkspace,
   PageHeader,
-  Wordmark,
+  Signet,
+  SelectField,
   type IconName,
 } from '@nennbox/ui';
 
@@ -59,6 +60,12 @@ export const APP_NAVIGATION_REGISTRY: Array<{
       },
       { id: 'entries', label: 'Nennungen', icon: 'list' },
       {
+        id: 'workflow',
+        label: 'Nennungsablauf',
+        icon: 'approval',
+        mobile: false,
+      },
+      {
         id: 'setup',
         label: 'Einrichten',
         mobileLabel: 'Event',
@@ -86,12 +93,6 @@ export const APP_NAVIGATION_REGISTRY: Array<{
         label: 'Einstellungen',
         mobileLabel: 'Konto',
         icon: 'more',
-      },
-      {
-        id: 'workflow',
-        label: 'Nennungsablauf',
-        icon: 'approval',
-        mobile: false,
       },
     ],
   },
@@ -155,14 +156,40 @@ export function AppShell({
         timeZone: 'Europe/Berlin',
       }).format(new Date(selectedEvent.registrationClosesAt))
     : null;
+  const eventBreadcrumb = (
+    <span className="nb-app-breadcrumb">
+      <SelectField
+        label="Veranstaltung"
+        labelHidden
+        id="nb-header-event"
+        value={activeEvent}
+        onChange={(event) => onEventChange?.(event.target.value)}
+      >
+        <option value="">Veranstaltung wählen</option>
+        {events.map((event) => (
+          <option key={event.id} value={event.id}>
+            {event.name}
+          </option>
+        ))}
+      </SelectField>
+      <span aria-hidden="true">/</span>
+      <span>{VIEW_TITLES[currentView]}</span>
+    </span>
+  );
   return (
     <AdminWorkspace
       navigation={
         <AdminNavigation
           brand={
-            <Wordmark variant="on-green" signetSize="20px" tracking="0.04em" />
+            <span className="nb-app-brand">
+              <span className="nb-app-brand-icon">
+                <Signet />
+              </span>
+              <strong>NENNBOX</strong>
+            </span>
           }
           ariaLabel="Hauptnavigation"
+          eventInHeader
           eventLabel="Veranstaltung"
           eventPlaceholder="Veranstaltung wählen"
           events={events.map((event) => ({ id: event.id, label: event.name }))}
@@ -208,9 +235,12 @@ export function AppShell({
         />
       }
       header={
-        detailOpen && currentView === 'entries' ? null : (
+        detailOpen && currentView === 'entries' ? (
+          <div className="nb-app-detail-breadcrumb">{eventBreadcrumb}</div>
+        ) : (
           <PageHeader
             title={VIEW_TITLES[currentView]}
+            eyebrow={eventBreadcrumb}
             description={
               currentView === 'entries' && closeDate
                 ? `Nennungsschluss  ${closeDate.replace(', ', ' · ')}`

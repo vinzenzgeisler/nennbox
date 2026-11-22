@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { GalleryAppPrimitives } from './features/gallery/GalleryAppPrimitives.js';
 import { GalleryAdvancedComponents } from './features/gallery/GalleryAdvancedComponents.js';
 import { GalleryWorkspaceComponents } from './features/gallery/GalleryWorkspaceComponents.js';
 import './features/gallery/gallery-advanced.css';
@@ -29,7 +30,7 @@ export function ComponentGallery() {
   const [toast, setToast] = useState(false);
   const [selected, setSelected] = useState(false);
   return (
-    <main className="shell nb-gallery">
+    <main className="shell nb-gallery nb-app-design">
       <header className="masthead">
         <div>
           <p className="eyebrow">NENNBOX · M6 / A2</p>
@@ -37,6 +38,7 @@ export function ComponentGallery() {
           <p>Review-Galerie der Basis- und App-Komponenten.</p>
         </div>
       </header>
+      <GalleryAppPrimitives selected={selected} onSelect={setSelected} />
       <section>
         <h2>Buttons</h2>
         <div className="nb-gallery-row">

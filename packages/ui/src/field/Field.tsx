@@ -39,13 +39,19 @@ export function Field({
 export function SelectField({
   label,
   children,
+  labelHidden = false,
   ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string }) {
+}: React.SelectHTMLAttributes<HTMLSelectElement> & {
+  label: string;
+  labelHidden?: boolean;
+}) {
   const generatedId = useId();
   const id = props.id ?? `select-${generatedId}`;
   return (
     <label className="nb-field" htmlFor={id}>
-      <span>{label}</span>
+      <span className={labelHidden ? 'nb-visually-hidden' : undefined}>
+        {label}
+      </span>
       <select {...props} id={id}>
         {children}
       </select>

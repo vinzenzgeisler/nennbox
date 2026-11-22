@@ -1,5 +1,11 @@
 # NENNBOX design foundation
 
+## Verwaltungs-App (Claude-Design 2026-11-22)
+
+The administrative app uses the separate, scoped `@nennbox/ui/app-tokens.css` token set, reproduced from the design handoff. It applies only to `.nb-admin-workspace` and `.nb-app-design`; the public website and registration form continue using the original `tokens.css` foundation below. App typography is locally bundled Inter 400/500/600 with tabular numerals and cv11, and JetBrains Mono 400/500 for codes. The app uses 6/8/12 px radii, 32 px controls and the reference motion/shadows. Shared app primitives are implemented in `packages/ui/src/app-primitives/` and shown in `/components`. The old foundation below remains authoritative for the public registration experience.
+
+
+
 This repository contains the implementation-facing design tokens for NENNBOX's app package. The complete NENNBOX brandbook (M1–M6 and app specifications) is maintained in the private design repository; this document is only the public product's implementation reference.
 
 ## Tokens

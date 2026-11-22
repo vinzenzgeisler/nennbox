@@ -201,9 +201,7 @@ async function click(predicate: (button: HTMLButtonElement) => boolean) {
 const byText = (text: string) => (button: HTMLButtonElement) =>
   button.textContent?.trim() === text;
 async function switchEvent(id: string) {
-  const selector = narrow
-    ? '.nb-admin-mobile-event-picker select'
-    : '.nb-admin-event-picker select';
+  const selector = '.nb-app-breadcrumb select';
   const select = container.querySelector<HTMLSelectElement>(selector)!;
   await act(async () => {
     select.value = id;
@@ -337,9 +335,7 @@ describe('AdminApplication event switch and detail access', () => {
     // No preview opens by itself; the list stays the start view.
     expect(container.querySelector('.is-mobile-open')).toBeNull();
     expect(textOf()).toContain('Alex Driver');
-    expect(
-      container.querySelector('.nb-admin-mobile-event-picker select'),
-    ).not.toBeNull();
+    expect(container.querySelector('.nb-app-breadcrumb select')).not.toBeNull();
     await click((button) => button.hasAttribute('data-entry-action'));
     expect(container.querySelector('.is-mobile-open')).toBeNull();
     expect(container.querySelector('.nb-detail')).not.toBeNull();
@@ -447,12 +443,12 @@ describe('AdminApplication event switch and detail access', () => {
     await openDetailWide();
   });
 
-  it('keeps workflow navigation in the account group but out of mobile navigation', async () => {
+  it('keeps workflow navigation in the event group but out of mobile navigation', async () => {
     narrow = true;
     await mount();
 
     expect(
-      container.querySelector('.nb-admin-nav-group[aria-label="Konto"]')
+      container.querySelector('.nb-admin-nav-group[aria-label="Veranstaltung"]')
         ?.textContent,
     ).toContain('Nennungsablauf');
     expect(
