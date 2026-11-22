@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import { act } from 'react';
+import { act, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
-import { EntryListRow, EntryStatusMenu } from '@nennbox/ui';
+import { DataTable, EntryListRow, EntryStatusMenu } from '@nennbox/ui';
 import { useEntryListStatusChanges } from './useEntryListStatusChanges.js';
 import { EntryStatusToast } from './EntryStatusToast.js';
 import { useAdminEntriesKeyboard } from './useAdminEntriesKeyboard.js';
@@ -37,7 +37,7 @@ const refresh = vi.fn();
 const error = vi.fn();
 let api: ReturnType<typeof useEntryListStatusChanges>;
 function Harness({ eventId = 'event', notify = false }) {
-  api = useEntryListStatusChanges({
+  const state = useEntryListStatusChanges({
     eventId,
     workflow: {
       statuses: [
@@ -63,9 +63,12 @@ function Harness({ eventId = 'event', notify = false }) {
     setRefreshRevision: refresh,
     setActionError: error,
   });
+  useEffect(() => {
+    api = state;
+  });
   return (
-    api.notice && (
-      <EntryStatusToast notice={api.notice} clear={api.clearNotice} />
+    state.notice && (
+      <EntryStatusToast notice={state.notice} clear={state.clearNotice} />
     )
   );
 }
@@ -130,27 +133,27 @@ it('separates selection, preview, double-click and row status interaction', () =
   const select = vi.fn();
   const status = vi.fn();
   mount(
-    <table>
-      <tbody>
-        <EntryListRow
-          name="Alex"
-          vehicle="BMW"
-          className="Sport"
-          selectLabel="Alex auswählen"
-          onOpen={preview}
-          onOpenDetail={detail}
-          onSelect={select}
-          status={
-            <EntryStatusMenu
-              label="Offen"
-              tone="offen"
-              options={[{ key: 'accepted', label: 'Zulassen', tone: 'zu' }]}
-              onChange={status}
-            />
-          }
-        />
-      </tbody>
-    </table>,
+    <DataTable
+      headers={['Nennung', 'Klasse', 'Status', 'Vollständigkeit', 'Aktionen']}
+    >
+      <EntryListRow
+        name="Alex"
+        vehicle="BMW"
+        className="Sport"
+        selectLabel="Alex auswählen"
+        onOpen={preview}
+        onOpenDetail={detail}
+        onSelect={select}
+        status={
+          <EntryStatusMenu
+            label="Offen"
+            tone="offen"
+            options={[{ key: 'accepted', label: 'Zulassen', tone: 'zu' }]}
+            onChange={status}
+          />
+        }
+      />
+    </DataTable>,
   );
   act(() => host.querySelector<HTMLInputElement>('input')!.click());
   expect(select).toHaveBeenCalledWith(true);

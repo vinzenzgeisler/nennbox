@@ -9,7 +9,7 @@ import {
 import { EntryResponse, type EntryResponse as Entry } from '@nennbox/contracts';
 import { request, type WorkflowView } from './AdminEntriesModel.js';
 
-type Notice = { message: string; undo?: () => void };
+type Notice = { eventId: string; message: string; undo?: () => void };
 async function submit(
   entry: Entry,
   to: string,
@@ -50,7 +50,6 @@ export function useEntryListStatusChanges({
   useEffect(() => {
     generation.current += 1;
     pending.current = false;
-    setNotice(null);
     return () => {
       generation.current += 1;
     };
@@ -105,6 +104,7 @@ export function useEntryListStatusChanges({
           return;
         apply(updated);
         setNotice({
+          eventId,
           message: `Status: ${target.labels.de}`,
           ...(inverse
             ? {
@@ -124,7 +124,10 @@ export function useEntryListStatusChanges({
                     );
                     if (generation.current !== requestedGeneration) return;
                     apply(restored);
-                    setNotice({ message: 'Statusänderung rückgängig gemacht' });
+                    setNotice({
+                      eventId,
+                      message: 'Statusänderung rückgängig gemacht',
+                    });
                   } catch (error) {
                     if (generation.current !== requestedGeneration) return;
                     setActionError(
@@ -154,5 +157,9 @@ export function useEntryListStatusChanges({
     [eventId, workflow, apply, setActionError],
   );
   const clearNotice = useCallback(() => setNotice(null), []);
-  return { changeStatus, notice, clearNotice };
+  return {
+    changeStatus,
+    notice: notice?.eventId === eventId ? notice : null,
+    clearNotice,
+  };
 }
