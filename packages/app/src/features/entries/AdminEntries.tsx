@@ -222,11 +222,8 @@ function AdminEntriesView({
   }
 
   // A reload while the detail is open must not replace it: it would lose open dialogs such as a freshly created link.
-  if (
-    events.length === 0 &&
-    apiState !== 'ready' &&
-    !(isDetailOpen && selected)
-  )
+  const waitingForEvents = !events.length && apiState !== 'ready';
+  if (waitingForEvents && !(isDetailOpen && selected))
     return <AdminEntriesState state={apiState} />;
 
   return (
