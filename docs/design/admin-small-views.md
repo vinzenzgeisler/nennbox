@@ -99,7 +99,9 @@ Neue gemeinsame Muster (N4-Felder und N5-Abschnitte):
   Die explizite Variante lässt Einrichten und Formular-Einstellungen unverändert.
 - `AppActions`: umbrechende Aktionsgruppe.
 - `AppSelectionList`: benannte, scrollbar begrenzte Auswahlgruppe.
-- `AppFileInput`: native Dateiauswahl im beschrifteten App-Feldmuster.
+- `AppFileInput`: native Dateiauswahl im beschrifteten App-Feldmuster, mit
+  eigener deutscher Oberfläche („Datei auswählen“, „Keine Datei ausgewählt“)
+  statt sprachabhängiger Browser-Beschriftung.
 - `AppConfirmAction`: bestehende begründungspflichtige destruktive Aktionen mit
   zurückgesetzter Begründung beim Schließen; Gefahraktionen nutzen den roten
   `danger`-Ton des `AppButton` statt einer weiteren grünen Hauptaktion.
@@ -136,3 +138,34 @@ Tokens `--width-aside-min` und `--height-selection-list` entfernt.
 Fahrerportal, Beifahrerportal, öffentliches Nennformular, Einrichten und
 Formular-Einstellungen werden durch diesen Schritt nicht umgestaltet. Es werden
 keine Screenshots, Pixeldiffs oder lokalen Browser-/Smoke-Läufe verwendet.
+
+### Kompakte Verwaltungslisten
+
+Die Empfängervorschau zeigt höchstens acht leise Einträge ohne Aufzählungszeichen
+und danach die verbleibende Anzahl. Die Empfängerauswahl und der Versand bleiben
+vollständig; nur die Vorschau ist gekürzt.
+
+Status und Übergänge verwenden das gemeinsame, typisierte Muster `AppEditorRow`:
+Eine kompakte, tastaturbedienbare Zeile zeigt Pill-Vorschau und Kurzinfos. Der
+vollständige Editor klappt inline mit `--nb-duration-menu` (160 ms) auf;
+reduzierte Bewegung folgt den bestehenden Tokens. Geschlossene Editoren sind
+inert und bewahren ihre Feldwerte. Neue Einträge öffnen direkt. `AppWorkflowPill`
+zeigt die konfigurierte Statusfarbe als kleinen Punkt statt eines großen Balkens.
+Beide Muster sind in der ComponentGallery und durch Unit-Tests abgedeckt.
+
+Die Modulverwaltung hatte bislang keinen Einstieg in der App-Shell. Für eine vom
+Server bestätigte Admin-Sitzung führt jetzt ⌘K → Einstellungen → „Module verwalten“
+zur vorhandenen `AdminModules`-Ansicht mit den bestehenden Organisations-/Event-APIs.
+Es wird keine öffentliche Route oder zusätzliche Seitenleistenposition eingeführt;
+die API-Berechtigungsprüfung bleibt unverändert.
+
+Das Suchfeld der Nennungsliste verwendet dieselbe `Icon name="search"`-Lupe wie
+die Seitenleiste, mit 16 px und Strichstärke 1,6.
+
+Die Dateifeld-Testerwartung wurde bewusst von der gesamten Label-Textkette auf
+den expliziten zugänglichen Namen und die zwei deutschen Oberflächentexte geändert.
+Die bisherigen Funktionsassertionen bleiben erhalten; Workflow-Tests öffnen nun
+den jeweiligen Editor vor der Interaktion. Neue Tests prüfen außerdem die gekürzte
+Empfängervorschau, Disclosure/Feldwerterhalt, neue geöffnete Zeilen und den
+berechtigungsabhängigen Moduleinstieg. Die Export-Snapshot-Liste ergänzt nur
+`AppEditorRow` und `AppWorkflowPill` als absichtliche neue UI-APIs.

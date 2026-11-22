@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { WorkflowView } from '../entries/AdminEntriesModel.js';
 import { AdminEntries } from '../entries/AdminEntries.js';
+import { AdminModules } from '../modules/AdminModules.js';
 import { AppShell } from './AppShell.js';
 import { AdminOverview } from '../overview/AdminOverview.js';
 import { AdminExports } from '../exports/AdminExports.js';
@@ -187,6 +188,7 @@ export function AdminApplication() {
   );
   return (
     <AppShell
+      canManageModules={identity?.canManageModules ?? false}
       events={events}
       messageEntryId={messageSeed?.entryId ?? null}
       onClearMessageSelection={() => setMessageSeed(null)}
@@ -271,6 +273,8 @@ export function AdminApplication() {
               setSelectedEvent(event.id);
             }}
           />
+        ) : view === 'modules' && identity?.canManageModules ? (
+          <AdminModules />
         ) : view === 'account' ? (
           <>
             <EventDocumentSettings eventId={selectedEvent} />

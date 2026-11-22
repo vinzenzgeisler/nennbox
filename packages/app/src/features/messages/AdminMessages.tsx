@@ -4,6 +4,7 @@ import {
   AppDialog,
   AppView,
   AppSection,
+  AppSelectionList,
   AppActions,
   AppNotice,
   MessageLayout,
@@ -194,13 +195,16 @@ export function AdminMessages({
                   ? 'Wird geladen…'
                   : `${data.selection.value.count} Empfänger`}
               </p>
-              <ul>
-                {data.selection.value.recipients.map((item) => (
-                  <li key={item.email}>
+              <AppSelectionList label="Empfängervorschau">
+                {data.selection.value.recipients.slice(0, 8).map((item) => (
+                  <span key={item.email}>
                     {item.name || item.email} · {item.email}
-                  </li>
+                  </span>
                 ))}
-              </ul>
+              </AppSelectionList>
+              {data.selection.value.count > 8 && (
+                <p>und {data.selection.value.count - 8} weitere</p>
+              )}
             </AppSection>
             <AppSection title="Nachrichtenvorschau">
               <p>

@@ -176,3 +176,34 @@ describe('AppShell', () => {
     container.remove();
   });
 });
+
+it.each([false, true])(
+  'gates module navigation by confirmed permission (%s)',
+  async (allowed) => {
+    const container = document.createElement('div');
+    const root = createRoot(container);
+    await act(async () =>
+      root.render(
+        <AppShell canManageModules={allowed}>
+          {(view) => <p data-view={view}>View</p>}
+        </AppShell>,
+      ),
+    );
+    await act(async () =>
+      container
+        .querySelector<HTMLButtonElement>('.nb-admin-nav-search')!
+        .click(),
+    );
+    const command = [
+      ...container.querySelectorAll<HTMLElement>('[role="option"]'),
+    ].find((button) => button.textContent?.includes('Module verwalten'));
+    expect(Boolean(command)).toBe(allowed);
+    if (command) {
+      await act(async () => command.click());
+      expect(
+        container.querySelector('[data-view]')?.getAttribute('data-view'),
+      ).toBe('modules');
+    }
+    await act(async () => root.unmount());
+  },
+);

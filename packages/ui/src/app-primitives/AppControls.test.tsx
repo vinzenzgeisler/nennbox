@@ -34,7 +34,11 @@ describe('app administration controls', () => {
       ),
     );
     const file = host.querySelector<HTMLInputElement>('input[type=file]')!;
-    expect(file.closest('label')?.textContent).toBe('PDF hinzufügen');
+    expect(file.getAttribute('aria-label')).toBe('PDF hinzufügen');
+    expect(file.closest('label')?.textContent).toContain('Datei auswählen');
+    expect(file.closest('label')?.textContent).toContain(
+      'Keine Datei ausgewählt',
+    );
     expect(file.accept).toBe('application/pdf,.pdf');
     expect(host.querySelector('[role=group]')?.getAttribute('aria-label')).toBe(
       'Empfänger',

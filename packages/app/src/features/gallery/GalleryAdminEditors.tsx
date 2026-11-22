@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import {
   AppActions,
+  AppEditorRow,
+  AppWorkflowPill,
+  AppTextInput,
   AppButton,
   AppConfirmAction,
   AppDialog,
@@ -14,6 +17,7 @@ import {
 } from '@nennbox/ui';
 
 export function GalleryAdminEditors() {
+  const [editing, setEditing] = useState(false);
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState(
     'Hallo {{firstName}}, deine Unterlagen fehlen noch.',
@@ -22,6 +26,20 @@ export function GalleryAdminEditors() {
   return (
     <AppSection title="App-Design · Nachrichten und Verwaltungsdialoge">
       <AppView>
+        <AppEditorRow
+          label="Beispielstatus bearbeiten"
+          preview={<AppWorkflowPill label="Offen" />}
+          description="Open · Offen"
+          open={editing}
+          onToggle={() => setEditing(!editing)}
+        >
+          <AppTextInput label="Interner Schlüssel" defaultValue="pending" />
+          <AppTextInput
+            label="Statusfarbe"
+            type="color"
+            defaultValue="#64748b"
+          />
+        </AppEditorRow>
         <MessageLayout
           editor={
             <AppSection title="Nachricht verfassen">

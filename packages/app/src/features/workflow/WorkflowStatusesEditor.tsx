@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import {
   AppButton,
   AppGrid,
   AppSection,
   AppSelect,
   AppTextInput,
-  FormItem,
+  AppEditorRow,
+  AppWorkflowPill,
 } from '@nennbox/ui';
 import { WorkflowRemoveButton } from './WorkflowRemoveButton.js';
 import type { Status, Workflow } from './AdminWorkflow.js';
@@ -26,13 +28,31 @@ export function WorkflowStatusesEditor({
   updateStatus: (index: number, patch: Partial<Status>) => void;
   updateWorkflow: (workflow: Workflow) => void;
 }) {
+  const [expanded, setExpanded] = useState<number | null>(null);
   return (
     <AppSection
       title="Nennungsstatus"
       description="Lege die sichtbaren Status und ihre Bedeutung fest."
     >
       {workflow.statuses.map((status, index) => (
-        <FormItem key={index} label={status.labels.de || 'Neuer Status'}>
+        <AppEditorRow
+          key={index}
+          label={'Status ' + (index + 1) + ' bearbeiten'}
+          preview={
+            <AppWorkflowPill
+              label={status.labels.de || status.key}
+              color={status.color}
+            />
+          }
+          description={[
+            status.labels.en,
+            categories.find(([value]) => value === status.category)?.[1],
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+          open={expanded === index}
+          onToggle={() => setExpanded(expanded === index ? null : index)}
+        >
           <AppGrid>
             <AppTextInput
               label="Interner Schlüssel"
@@ -98,22 +118,24 @@ export function WorkflowStatusesEditor({
               confirmLabel: 'Status entfernen',
               closeLabel: 'Dialog schließen',
             }}
-            onConfirm={() =>
+            onConfirm={() => {
+              setExpanded(null);
               updateWorkflow({
                 ...workflow,
                 statuses: workflow.statuses.filter((_, i) => i !== index),
                 transitions: workflow.transitions.filter(
                   (edge) => edge.from !== status.key && edge.to !== status.key,
                 ),
-              })
-            }
+              });
+            }}
           >
             Status entfernen
           </WorkflowRemoveButton>
-        </FormItem>
+        </AppEditorRow>
       ))}
       <AppButton
-        onClick={() =>
+        onClick={() => {
+          setExpanded(workflow.statuses.length);
           updateWorkflow({
             ...workflow,
             statuses: [
@@ -125,8 +147,8 @@ export function WorkflowStatusesEditor({
                 category: 'pending',
               },
             ],
-          })
-        }
+          });
+        }}
       >
         Status hinzufügen
       </AppButton>

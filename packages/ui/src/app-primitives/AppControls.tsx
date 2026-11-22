@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from 'react';
+import { useState, type ComponentProps, type ReactNode } from 'react';
 import { Dialog } from '../dialog/Dialog.js';
 import { AppTextInput } from './AppView.js';
 
@@ -24,8 +24,35 @@ export function AppSelectionList({
     </div>
   );
 }
-export function AppFileInput(
-  props: Omit<ComponentProps<typeof AppTextInput>, 'type'>,
-) {
-  return <AppTextInput {...props} type="file" />;
+export function AppFileInput({
+  label,
+  onChange,
+  ...props
+}: Omit<ComponentProps<typeof AppTextInput>, 'type'>) {
+  const [filename, setFilename] = useState('');
+  return (
+    <label className="nb-app-input nb-app-file">
+      <span>{label}</span>
+      <span className="nb-app-file-control">
+        <input
+          aria-label={label}
+          {...props}
+          type="file"
+          onChange={(event) => {
+            const name = Array.from(event.target.files ?? [])
+              .map((file) => file.name)
+              .join(', ');
+            onChange?.(event);
+            setFilename(event.target.value ? name : '');
+          }}
+        />
+        <span className="nb-app-btn nb-app-btn-secondary" aria-hidden="true">
+          Datei auswählen
+        </span>
+        <span className="nb-app-file-name" aria-hidden="true">
+          {filename || 'Keine Datei ausgewählt'}
+        </span>
+      </span>
+    </label>
+  );
 }

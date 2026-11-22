@@ -88,6 +88,16 @@ function mountReplacement(patch: Partial<WorkflowEditorProps>) {
 
 it('keeps status edits, notification and role callbacks intact', () => {
   const props = mount();
+  act(() =>
+    host
+      .querySelector<HTMLButtonElement>('[aria-label="Status 1 bearbeiten"]')!
+      .click(),
+  );
+  act(() =>
+    host
+      .querySelector<HTMLButtonElement>('[aria-label="Übergang 1 bearbeiten"]')!
+      .click(),
+  );
   changeText(
     host.querySelector<HTMLInputElement>('[aria-label="Status 1 Schlüssel"]')!,
     'submitted',
@@ -113,6 +123,11 @@ it('keeps status edits, notification and role callbacks intact', () => {
 
 it('requires a reason before removing a status and its related transitions', () => {
   const props = mount();
+  act(() =>
+    host
+      .querySelector<HTMLButtonElement>('[aria-label="Status 1 bearbeiten"]')!
+      .click(),
+  );
   act(() => button('Status entfernen').click());
   const dialog = host.querySelector('dialog')!;
   expect(button('Status entfernen', dialog).disabled).toBe(true);
@@ -129,4 +144,37 @@ it('requires a reason before removing a status and its related transitions', () 
   act(() => button('Status entfernen').click());
   expect(dialog.querySelector('textarea')!.value).toBe('');
   expect(button('Status entfernen', dialog).disabled).toBe(true);
+});
+
+it('starts compact and opens newly added statuses and transitions', () => {
+  const props = mount();
+  expect(
+    [...host.querySelectorAll('.nb-app-editor-summary')].every(
+      (row) => row.getAttribute('aria-expanded') === 'false',
+    ),
+  ).toBe(true);
+  act(() => button('Status hinzufügen').click());
+  const withStatus = vi.mocked(props.updateWorkflow).mock.calls[0]![0];
+  act(() => root!.render(<WorkflowEditor {...props} workflow={withStatus} />));
+  expect(
+    host
+      .querySelector(
+        '[aria-label="Status ' + withStatus.statuses.length + ' bearbeiten"]',
+      )
+      ?.getAttribute('aria-expanded'),
+  ).toBe('true');
+  act(() => button('Übergang hinzufügen').click());
+  const withTransition = vi.mocked(props.updateWorkflow).mock.calls[1]![0];
+  act(() =>
+    root!.render(<WorkflowEditor {...props} workflow={withTransition} />),
+  );
+  expect(
+    host
+      .querySelector(
+        '[aria-label="Übergang ' +
+          withTransition.transitions.length +
+          ' bearbeiten"]',
+      )
+      ?.getAttribute('aria-expanded'),
+  ).toBe('true');
 });

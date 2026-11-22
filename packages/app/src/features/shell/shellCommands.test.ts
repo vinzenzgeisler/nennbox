@@ -83,3 +83,26 @@ describe('shellCommands', () => {
     expect(search).toHaveBeenCalledWith('Berger');
   });
 });
+
+it('offers module management only when the permitted target is present', () => {
+  const navigate = vi.fn();
+  const base = {
+    navigation,
+    events,
+    activeEvent: 'a',
+    navigate,
+    changeEvent: vi.fn(),
+  };
+  expect(shellCommands(base).some((item) => item.id === 'modules')).toBe(false);
+  const command = shellCommands({
+    ...base,
+    navigation: [
+      ...navigation,
+      { id: 'modules', label: 'Module', icon: 'settings' },
+    ],
+  }).find((item) => item.id === 'modules')!;
+  expect(command.label).toBe('Module verwalten');
+  expect(command.group).toBe('Einstellungen');
+  command.onSelect?.();
+  expect(navigate).toHaveBeenCalledWith('modules');
+});

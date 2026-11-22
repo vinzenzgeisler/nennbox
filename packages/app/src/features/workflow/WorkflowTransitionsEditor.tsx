@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   AppButton,
   AppCheckbox,
@@ -6,7 +7,8 @@ import {
   AppSection,
   AppSelect,
   AppTextInput,
-  FormItem,
+  AppEditorRow,
+  AppWorkflowPill,
 } from '@nennbox/ui';
 import { WorkflowRemoveButton } from './WorkflowRemoveButton.js';
 import type { Transition, Workflow } from './AdminWorkflow.js';
@@ -20,13 +22,54 @@ export function WorkflowTransitionsEditor({
   updateTransition: (index: number, patch: Partial<Transition>) => void;
   updateWorkflow: (workflow: Workflow) => void;
 }) {
+  const [expanded, setExpanded] = useState<number | null>(null);
   return (
     <AppSection
       title="Erlaubte Übergänge"
       description="Bestimme, welche Statusänderungen möglich sind."
     >
       {workflow.transitions.map((edge, index) => (
-        <FormItem key={index} label={'Übergang ' + (index + 1)}>
+        <AppEditorRow
+          key={index}
+          label={'Übergang ' + (index + 1) + ' bearbeiten'}
+          preview={
+            <>
+              <AppWorkflowPill
+                label={
+                  workflow.statuses.find((status) => status.key === edge.from)
+                    ?.labels.de || edge.from
+                }
+                color={
+                  workflow.statuses.find((status) => status.key === edge.from)
+                    ?.color
+                }
+              />
+              <span aria-hidden="true">→</span>
+              <AppWorkflowPill
+                label={
+                  workflow.statuses.find((status) => status.key === edge.to)
+                    ?.labels.de || edge.to
+                }
+                color={
+                  workflow.statuses.find((status) => status.key === edge.to)
+                    ?.color
+                }
+              />
+            </>
+          }
+          description={[
+            edge.reasonRequired && 'Begründung nötig',
+            edge.notify && 'Mail',
+            ...(edge.roles?.map((role) =>
+              role === 'admin' ? 'Veranstaltungsleitung' : 'Teammitglied',
+            ) ?? []),
+            edge.permission || (!edge.roles?.length && 'Nennung bearbeiten'),
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+          open={expanded === index}
+          onToggle={() => setExpanded(expanded === index ? null : index)}
+        >
           <AppGrid>
             <AppSelect
               label="Von"
@@ -118,20 +161,22 @@ export function WorkflowTransitionsEditor({
               confirmLabel: 'Übergang entfernen',
               closeLabel: 'Dialog schließen',
             }}
-            onConfirm={() =>
+            onConfirm={() => {
+              setExpanded(null);
               updateWorkflow({
                 ...workflow,
                 transitions: workflow.transitions.filter((_, i) => i !== index),
-              })
-            }
+              });
+            }}
           >
             Übergang entfernen
           </WorkflowRemoveButton>
-        </FormItem>
+        </AppEditorRow>
       ))}
       <AppButton
         disabled={workflow.statuses.length < 2}
         onClick={() => {
+          setExpanded(workflow.transitions.length);
           const from = workflow.statuses[0]?.key;
           const to = workflow.statuses[1]?.key;
           if (from && to)
