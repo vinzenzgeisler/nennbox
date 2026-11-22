@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Banner, EmptyState } from '@nennbox/ui';
+import {
+  AppView,
+  AppSection,
+  AppSettingsLayout,
+  AppSettingsNav,
+  AppPreviewCard,
+  AppNotice as Banner,
+  AppEmptyState as EmptyState,
+} from '@nennbox/ui';
 import type { SetupEvent } from './eventSetupApi.js';
 import { loadRecipient } from './eventRecipientApi.js';
 import { useEventSetup } from './useEventSetup.js';
@@ -9,7 +17,6 @@ import { EventSetupForm } from './EventSetupForm.js';
 import { DriverPortalSettings } from './DriverPortalSettings.js';
 import { NumberAndWaitlistSettings } from './NumberAndWaitlistSettings.js';
 import { validateDraft } from './validateDraft.js';
-import './EventSetup.css';
 
 type SetupView = 'event' | 'fields' | 'portal' | 'numbers';
 
@@ -45,6 +52,7 @@ export function EventSetup({
   const setup = useEventSetup(onCreated);
   const [view, setView] = useState<SetupView>('event');
   const target = useRef('');
+  const [activeId, setActiveId] = useState(sections[0]!.id);
   const navRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (target.current)
@@ -95,174 +103,158 @@ export function EventSetup({
       className={`event-setup${view === 'event' ? '' : ` is-${view}`}`}
       aria-label="Veranstaltung einrichten"
     >
-      <div className="event-setup-layout">
-        <nav
-          ref={navRef}
-          className="event-setup-nav"
-          aria-label="Abschnittsnavigation"
-        >
-          <p className="event-setup-nav-title">Einrichtung</p>
-          {sections.map((section, index) => (
-            <a
-              key={section.id}
-              href={`#${section.id}`}
-              aria-current={section.view !== 'event' && section.view === view}
-              onClick={(event) => {
-                event.preventDefault();
+      <AppView>
+        <AppSettingsLayout
+          navigation={
+            <AppSettingsNav
+              navRef={navRef}
+              items={sections}
+              activeId={activeId}
+              onSelect={(id) => {
+                const section = sections.find((item) => item.id === id)!;
+                setActiveId(id);
                 if (section.view === view) {
-                  document.getElementById(section.id)?.scrollIntoView();
+                  document.getElementById(id)?.scrollIntoView();
                   return;
                 }
-                target.current = section.id;
+                target.current = id;
                 setView(section.view);
               }}
-            >
-              <span aria-hidden="true">
-                {String(index + 1).padStart(2, '0')}
-              </span>
-              {section.label}
-            </a>
-          ))}
-        </nav>
-        <div className="event-setup-main">
-          <div hidden={view !== 'event'}>
-            <p className="event-setup-intro">
-              Veranstaltungsdaten, Klassen und Teilnahmebedingungen an einem Ort
-              einrichten. Vor dem Öffnen prüfen wir die Pflichtangaben.
-            </p>
-            <EventSetupForm
-              draft={setup.draft}
-              setDraft={setup.setDraft}
-              events={setup.events}
-              busy={setup.busy}
-              onResume={(id) =>
-                void setup.resume(id).catch((error: unknown) => {
-                  setup.setMessage(
-                    error instanceof Error
-                      ? error.message
-                      : 'Entwurf konnte nicht geladen werden.',
-                  );
-                })
-              }
-              onReset={setup.reset}
-              onClearRecipient={setup.clearRecipient}
-              onSubmit={submit}
             />
-            {setup.message && (
-              <Banner tone={setup.link ? 'success' : 'warning'}>
-                {setup.message}
-              </Banner>
-            )}
-            {setup.link && (
-              <p className="event-setup-public-link">
-                Öffentliche Nennung:{' '}
-                <a href={setup.link} target="_blank" rel="noreferrer">
-                  {setup.link}
-                </a>
-              </p>
-            )}
-          </div>
-          {view === 'portal' && (
-            <section id="event-setup-driver-portal">
-              {setup.draft.id ? (
-                <DriverPortalSettings
-                  key={setup.draft.id}
-                  eventId={setup.draft.id}
-                  slug={setup.draft.slug}
-                />
-              ) : (
-                <EmptyState
-                  title="Fahrer-Portal"
-                  description="Speichere die Veranstaltung zuerst als Entwurf, dann legst du die korrigierbaren Felder fest."
-                />
-              )}
-            </section>
-          )}
-          {view === 'fields' && (
-            <section id="event-setup-form-fields">
-              {setup.draft.id ? (
-                <RegistrationFormSettings
-                  key={setup.draft.id}
-                  eventId={setup.draft.id}
-                  embedded
-                />
-              ) : (
-                <EmptyState
-                  title="Formularfelder"
-                  description="Speichere die Veranstaltung zuerst als Entwurf, dann legst du hier die Formularfelder fest."
-                />
-              )}
-            </section>
-          )}
-          {view === 'numbers' && (
-            <section id="event-setup-numbers">
-              {setup.draft.id ? (
-                <NumberAndWaitlistSettings
-                  key={setup.draft.id}
-                  eventId={setup.draft.id}
-                />
-              ) : (
-                <EmptyState
-                  title="Startnummern & Warteliste"
-                  description="Speichere die Veranstaltung zuerst als Entwurf, dann legst du hier Nummernbereiche und die Warteliste fest."
-                />
-              )}
-            </section>
-          )}
-        </div>
-        <aside
-          className="event-setup-aside"
-          aria-label="Hilfe und Vorschau"
-          hidden={view !== 'event'}
+          }
+          aside={
+            view === 'event' ? (
+              <>
+                <AppSection title="Vor dem Öffnen" description="Hilfe">
+                  <p>
+                    Mindestens eine offene Klasse braucht ein Startgeld.
+                    Hinterlege veröffentlichte Teilnahmebedingungen, bevor du
+                    die Nennung freischaltest.
+                  </p>
+                  <p>
+                    Das Startgeld dokumentiert den Preis; es löst keine
+                    Online-Zahlung aus.
+                  </p>
+                </AppSection>
+                <AppSection title="Öffentliche Nennung" description="Vorschau">
+                  <AppPreviewCard>
+                    <strong>
+                      {setup.draft.name || 'Name der Veranstaltung'}
+                    </strong>
+                    <span>
+                      {setup.draft.startsOn || 'Beginn'}
+                      {setup.draft.endsOn ? ` – ${setup.draft.endsOn}` : ''}
+                    </span>
+                    <span>
+                      {setup.draft.classes.length} Klasse
+                      {setup.draft.classes.length === 1 ? '' : 'n'}
+                    </span>
+                    {setup.draft.classes.slice(0, 3).map((item, index) => (
+                      <span key={item.id ?? `${item.code}-${index}`}>
+                        {item.name || 'Klassenname'} · {item.fee || '0,00'} €
+                      </span>
+                    ))}
+                    {setup.draft.classes.length > 3 && (
+                      <span>+ {setup.draft.classes.length - 3} weitere</span>
+                    )}
+                  </AppPreviewCard>
+                  <p>
+                    Die Vorschau zeigt die wichtigsten Angaben vor dem
+                    Veröffentlichen.
+                  </p>
+                </AppSection>
+              </>
+            ) : undefined
+          }
         >
-          <section
-            className="event-setup-help"
-            aria-labelledby="event-setup-help-title"
-          >
-            <p className="event-setup-aside-label">Hilfe</p>
-            <h2 id="event-setup-help-title">Vor dem Öffnen</h2>
-            <p>
-              Mindestens eine offene Klasse braucht ein Startgeld. Hinterlege
-              veröffentlichte Teilnahmebedingungen, bevor du die Nennung
-              freischaltest.
-            </p>
-            <p>
-              Das Startgeld dokumentiert den Preis; es löst keine Online-Zahlung
-              aus.
-            </p>
-          </section>
-          <section
-            className="event-setup-preview"
-            aria-labelledby="event-setup-preview-title"
-          >
-            <p className="event-setup-aside-label">Vorschau</p>
-            <h2 id="event-setup-preview-title">Öffentliche Nennung</h2>
-            <div className="event-setup-preview-card">
-              <strong>{setup.draft.name || 'Name der Veranstaltung'}</strong>
-              <span>
-                {setup.draft.startsOn || 'Beginn'}
-                {setup.draft.endsOn ? ` – ${setup.draft.endsOn}` : ''}
-              </span>
-              <span>
-                {setup.draft.classes.length} Klasse
-                {setup.draft.classes.length === 1 ? '' : 'n'}
-              </span>
-              {setup.draft.classes.slice(0, 3).map((item, index) => (
-                <span key={item.id ?? `${item.code}-${index}`}>
-                  {item.name || 'Klassenname'} · {item.fee || '0,00'} €
-                </span>
-              ))}
-              {setup.draft.classes.length > 3 && (
-                <span>+ {setup.draft.classes.length - 3} weitere</span>
+          <div className="nb-app-stack">
+            <div className="nb-app-stack" hidden={view !== 'event'}>
+              <p>
+                Veranstaltungsdaten, Klassen und Teilnahmebedingungen an einem
+                Ort einrichten. Vor dem Öffnen prüfen wir die Pflichtangaben.
+              </p>
+              <EventSetupForm
+                draft={setup.draft}
+                setDraft={setup.setDraft}
+                events={setup.events}
+                busy={setup.busy}
+                onResume={(id) =>
+                  void setup.resume(id).catch((error: unknown) => {
+                    setup.setMessage(
+                      error instanceof Error
+                        ? error.message
+                        : 'Entwurf konnte nicht geladen werden.',
+                    );
+                  })
+                }
+                onReset={setup.reset}
+                onClearRecipient={setup.clearRecipient}
+                onSubmit={submit}
+              />
+              {setup.message && (
+                <Banner tone={setup.link ? 'success' : 'warning'}>
+                  {setup.message}
+                </Banner>
+              )}
+              {setup.link && (
+                <p className="nb-app-wrap">
+                  Öffentliche Nennung:{' '}
+                  <a href={setup.link} target="_blank" rel="noreferrer">
+                    {setup.link}
+                  </a>
+                </p>
               )}
             </div>
-            <p className="event-setup-preview-note">
-              Die Vorschau zeigt die wichtigsten Angaben vor dem
-              Veröffentlichen.
-            </p>
-          </section>
-        </aside>
-      </div>
+            {view === 'portal' && (
+              <section id="event-setup-driver-portal">
+                {setup.draft.id ? (
+                  <DriverPortalSettings
+                    key={setup.draft.id}
+                    eventId={setup.draft.id}
+                    slug={setup.draft.slug}
+                  />
+                ) : (
+                  <EmptyState
+                    title="Fahrer-Portal"
+                    description="Speichere die Veranstaltung zuerst als Entwurf, dann legst du die korrigierbaren Felder fest."
+                  />
+                )}
+              </section>
+            )}
+            {view === 'fields' && (
+              <section id="event-setup-form-fields">
+                {setup.draft.id ? (
+                  <RegistrationFormSettings
+                    key={setup.draft.id}
+                    eventId={setup.draft.id}
+                    embedded
+                  />
+                ) : (
+                  <EmptyState
+                    title="Formularfelder"
+                    description="Speichere die Veranstaltung zuerst als Entwurf, dann legst du hier die Formularfelder fest."
+                  />
+                )}
+              </section>
+            )}
+            {view === 'numbers' && (
+              <section id="event-setup-numbers">
+                {setup.draft.id ? (
+                  <NumberAndWaitlistSettings
+                    key={setup.draft.id}
+                    eventId={setup.draft.id}
+                  />
+                ) : (
+                  <EmptyState
+                    title="Startnummern & Warteliste"
+                    description="Speichere die Veranstaltung zuerst als Entwurf, dann legst du hier Nummernbereiche und die Warteliste fest."
+                  />
+                )}
+              </section>
+            )}
+          </div>
+        </AppSettingsLayout>
+      </AppView>
     </section>
   );
 }

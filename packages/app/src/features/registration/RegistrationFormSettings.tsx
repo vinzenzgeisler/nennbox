@@ -1,7 +1,14 @@
 import { adminFetch } from '../../auth.js';
-import { Button, PageHeader, SelectField, Stack } from '@nennbox/ui';
+import {
+  AppActions,
+  AppButton,
+  AppGrid,
+  AppNotice,
+  AppSection,
+  AppSelect,
+  AppView,
+} from '@nennbox/ui';
 import { useEffect, useState, type ChangeEvent } from 'react';
-import './RegistrationFormSettings.css';
 import {
   defaultRegistrationFormConfig,
   mergeRegistrationFormConfig,
@@ -204,33 +211,41 @@ export function RegistrationFormSettings({
       </section>
     );
   const saveBar = (
-    <div className="registration-settings-save">
-      <Button type="button" disabled={busy} onClick={() => void save()}>
+    <AppActions>
+      <AppButton
+        tone="primary"
+        type="button"
+        disabled={busy}
+        onClick={() => void save()}
+      >
         {busy ? 'Wird gespeichert …' : 'Änderungen speichern'}
-      </Button>
-      {message && <p role="status">{message}</p>}
-    </div>
+      </AppButton>
+      {message && (
+        <AppNotice
+          tone={
+            message === 'Einstellungen gespeichert.' ? 'success' : 'warning'
+          }
+        >
+          {message}
+        </AppNotice>
+      )}
+    </AppActions>
   );
   return (
-    <section
-      aria-labelledby="registration-admin-title"
-      className="registration-settings"
-    >
-      <Stack gap={4}>
-        {embedded ? (
-          <header className="registration-settings-head">
-            <h2 id="registration-admin-title">Formularfelder</h2>
-            <p>
-              Lege fest, welche Angaben Teilnehmende machen. Die Vorschau zeigt
-              das Formular so, wie es ausgeliefert wird.
-            </p>
-          </header>
-        ) : (
-          <PageHeader
-            id="registration-admin-title"
-            title="Nennformular · Erscheinungsbild und Felder"
-          />
-        )}
+    <AppView>
+      <AppSection
+        title={
+          embedded
+            ? 'Formularfelder'
+            : 'Nennformular · Erscheinungsbild und Felder'
+        }
+        {...(embedded
+          ? {
+              description:
+                'Lege fest, welche Angaben Teilnehmende machen. Die Vorschau zeigt das Formular so, wie es ausgeliefert wird.',
+            }
+          : {})}
+      >
         {!embedded && (
           <RegistrationAppearance
             activeConfig={activeConfig}
@@ -239,9 +254,9 @@ export function RegistrationFormSettings({
             upload={upload}
           />
         )}
-        <div className="registration-settings-body">
-          <div className="registration-settings-fields">
-            <SelectField
+        <AppGrid>
+          <div className="nb-app-stack">
+            <AppSelect
               label="Geltungsbereich"
               value={scope}
               onChange={(e) => setScope(e.target.value as typeof scope)}
@@ -250,7 +265,7 @@ export function RegistrationFormSettings({
               <option value="event" disabled={!eventId}>
                 Veranstaltung · überschreibt Organisation
               </option>
-            </SelectField>
+            </AppSelect>
             <RegistrationFormOptions
               config={activeConfig}
               updateConfig={updateConfig}
@@ -263,7 +278,7 @@ export function RegistrationFormSettings({
             {embedded && saveBar}
           </div>
           <RegistrationFieldsPreview config={activeConfig} />
-        </div>
+        </AppGrid>
         {!embedded && (
           <RegistrationCustomFields
             activeConfig={activeConfig}
@@ -279,7 +294,7 @@ export function RegistrationFormSettings({
           />
         )}
         {!embedded && saveBar}
-      </Stack>
-    </section>
+      </AppSection>
+    </AppView>
   );
 }

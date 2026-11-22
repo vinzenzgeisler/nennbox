@@ -1,4 +1,4 @@
-import { Button, FormSection, TextInput, Textarea } from '@nennbox/ui';
+import { AppButton, AppSection, AppTextInput, AppTextarea } from '@nennbox/ui';
 import type { SetupDraft } from './eventSetupApi.js';
 
 export function EventOrganizerFields({
@@ -14,9 +14,9 @@ export function EventOrganizerFields({
 }) {
   return (
     <>
-      <section id="event-setup-organizer" className="event-setup-section">
-        <FormSection title="Veranstalter und Zahlungsempfänger">
-          <TextInput
+      <section id="event-setup-organizer" className="nb-app-anchor">
+        <AppSection title="Veranstalter und Zahlungsempfänger">
+          <AppTextInput
             label="Veranstaltername"
             value={draft.organizerName}
             onChange={(event) =>
@@ -27,7 +27,7 @@ export function EventOrganizerFields({
             }
             hint="Für diese Veranstaltung; leer bedeutet Organisationsname."
           />
-          <Textarea
+          <AppTextarea
             label="Veranstalteranschrift"
             rows={3}
             maxLength={1000}
@@ -43,7 +43,7 @@ export function EventOrganizerFields({
             Die Bankverbindung gilt für die Organisation und erscheint nur in
             Zahlungsunterlagen für Teilnehmende.
           </p>
-          <TextInput
+          <AppTextInput
             label="Name des Zahlungsempfängers"
             maxLength={70}
             value={draft.accountName}
@@ -54,7 +54,7 @@ export function EventOrganizerFields({
               }))
             }
           />
-          <Textarea
+          <AppTextarea
             label="Anschrift des Zahlungsempfängers"
             rows={3}
             maxLength={1000}
@@ -66,7 +66,7 @@ export function EventOrganizerFields({
               }))
             }
           />
-          <TextInput
+          <AppTextInput
             label="IBAN"
             autoComplete="off"
             value={draft.iban}
@@ -78,7 +78,7 @@ export function EventOrganizerFields({
             }
             hint="IBAN wird bei Speicherung geprüft."
           />
-          <TextInput
+          <AppTextInput
             label="BIC (optional)"
             maxLength={11}
             autoComplete="off"
@@ -87,20 +87,19 @@ export function EventOrganizerFields({
               setDraft((current) => ({ ...current, bic: event.target.value }))
             }
           />
-          <Button
+          <AppButton
             type="button"
-            variant="secondary"
-            size={40}
+            tone="secondary"
             disabled={busy || (!draft.iban && !draft.accountName)}
             onClick={onClearRecipient}
           >
             Bankverbindung entfernen
-          </Button>
-        </FormSection>
+          </AppButton>
+        </AppSection>
       </section>
-      <section id="event-setup-arrival" className="event-setup-section">
-        <FormSection title="Anreise und Fahrerlager">
-          <Textarea
+      <section id="event-setup-arrival" className="nb-app-anchor">
+        <AppSection title="Anreise und Fahrerlager">
+          <AppTextarea
             label="Anreisehinweise"
             rows={5}
             maxLength={10000}
@@ -113,7 +112,7 @@ export function EventOrganizerFields({
             }
             hint="Im öffentlichen Nennformular sichtbar."
           />
-          <Textarea
+          <AppTextarea
             label="Fahrerlagerhinweise"
             rows={5}
             maxLength={10000}
@@ -126,7 +125,7 @@ export function EventOrganizerFields({
             }
             hint="Im öffentlichen Nennformular sichtbar."
           />
-        </FormSection>
+        </AppSection>
       </section>
     </>
   );

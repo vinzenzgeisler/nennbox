@@ -1,4 +1,4 @@
-import { DataTable, Field } from '@nennbox/ui';
+import { AppSection, AppTable, AppTextInput } from '@nennbox/ui';
 import type { ClassOption } from './startNumberApi.js';
 
 export type { ClassOption };
@@ -11,22 +11,14 @@ export function ClassCapacities({
   onChange: (classes: ClassOption[]) => void;
 }) {
   return (
-    <section
-      className="nb-class-capacities"
-      aria-labelledby="class-capacities-title"
-    >
-      <h3 id="class-capacities-title">Kapazität pro Klasse</h3>
+    <AppSection title="Kapazität pro Klasse">
       <p>Leer lassen, wenn die Klasse nicht begrenzt ist.</p>
-      <DataTable
-        compact
-        className="nb-number-table"
-        headers={['Klasse', 'Kapazität']}
-      >
+      <AppTable headers={['Klasse', 'Kapazität']}>
         {classes.map((eventClass, index) => (
           <tr key={eventClass.id}>
             <th scope="row">{eventClass.name}</th>
             <td>
-              <Field
+              <AppTextInput
                 label={`Kapazität ${eventClass.name}`}
                 type="number"
                 min="1"
@@ -50,7 +42,7 @@ export function ClassCapacities({
             </td>
           </tr>
         ))}
-      </DataTable>
-    </section>
+      </AppTable>
+    </AppSection>
   );
 }

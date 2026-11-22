@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Banner, Button, Checkbox, FormSection } from '@nennbox/ui';
+import { AppNotice, AppButton, AppCheckbox, AppSection } from '@nennbox/ui';
 import { z } from 'zod';
 import { apiRequest } from '../remote/apiRequest.js';
 
@@ -62,7 +62,10 @@ export function DriverPortalSettings({
     }
   };
   return (
-    <section aria-labelledby="driver-portal-settings-title">
+    <section
+      className="nb-app-section"
+      aria-labelledby="driver-portal-settings-title"
+    >
       <h2 id="driver-portal-settings-title">Fahrer-Portal</h2>
       <p>
         Verifizierte Teilnehmer können ihren Status und ihre Unterlagen
@@ -79,19 +82,19 @@ export function DriverPortalSettings({
         </a>
       </p>
       {state === 'error' && (
-        <Banner tone="error">
+        <AppNotice tone="error">
           Die Einstellungen konnten nicht geladen oder gespeichert werden.
-        </Banner>
+        </AppNotice>
       )}
       {state === 'saved' && (
-        <Banner tone="success">Freigegebene Felder gespeichert.</Banner>
+        <AppNotice tone="success">Freigegebene Felder gespeichert.</AppNotice>
       )}
-      <FormSection
+      <AppSection
         title="Korrigierbare Angaben"
         description="Standardmäßig ist kein Feld freigegeben."
       >
         {options.map((option) => (
-          <Checkbox
+          <AppCheckbox
             key={option.key}
             label={option.label}
             checked={fields.includes(option.key)}
@@ -105,14 +108,15 @@ export function DriverPortalSettings({
             }
           />
         ))}
-      </FormSection>
-      <Button
+      </AppSection>
+      <AppButton
+        tone="primary"
         type="button"
         disabled={state === 'loading' || state === 'saving'}
         onClick={() => void save()}
       >
         Freigaben speichern
-      </Button>
+      </AppButton>
     </section>
   );
 }

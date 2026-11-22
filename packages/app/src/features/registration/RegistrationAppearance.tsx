@@ -1,11 +1,11 @@
 import type { ChangeEvent } from 'react';
 import {
-  Field,
-  FileUpload,
-  FormSection,
-  SelectField,
-  Stack,
-  Textarea,
+  AppTextInput,
+  AppFileInput,
+  AppSection,
+  AppSelect,
+  AppGrid,
+  AppTextarea,
 } from '@nennbox/ui';
 import type { RegistrationFormConfig } from '@nennbox/contracts';
 
@@ -30,9 +30,9 @@ export function RegistrationAppearance({
 }) {
   return (
     <>
-      <FormSection title="Erscheinungsbild">
-        <Stack gap={4}>
-          <Field
+      <AppSection title="Erscheinungsbild">
+        <AppGrid>
+          <AppTextInput
             label="Primärfarbe"
             type="color"
             value={activeConfig.branding.primaryColor}
@@ -46,7 +46,7 @@ export function RegistrationAppearance({
               }))
             }
           />
-          <Field
+          <AppTextInput
             label="Akzentfarbe"
             type="color"
             value={activeConfig.branding.accentColor}
@@ -60,7 +60,7 @@ export function RegistrationAppearance({
               }))
             }
           />
-          <SelectField
+          <AppSelect
             label="Ecken"
             value={activeConfig.branding.corners}
             onChange={(e) =>
@@ -75,38 +75,38 @@ export function RegistrationAppearance({
           >
             <option value="square">Eckig</option>
             <option value="rounded">Leicht gerundet · 6 px</option>
-          </SelectField>
-          <SelectField
+          </AppSelect>
+          <AppSelect
             label="Überschriftenschrift"
             value={activeConfig.branding.headingFont}
             disabled
           >
             <option value="archivo">Archivo · Brandbook M4</option>
-          </SelectField>
-          <FileUpload
+          </AppSelect>
+          <AppFileInput
             label="Logo auf hellem Grund"
             accept="image/svg+xml,image/png"
             onChange={(e) => void upload('logoLight', e)}
           />
-          <FileUpload
+          <AppFileInput
             label="Logo auf dunklem Grund"
             accept="image/svg+xml,image/png"
             onChange={(e) => void upload('logoDark', e)}
           />
-          <FileUpload
+          <AppFileInput
             label="Kopfbild · optional"
             accept="image/png,image/jpeg,image/webp"
             onChange={(e) => void upload('headerImage', e)}
           />
-        </Stack>
-      </FormSection>
-      <Textarea
+        </AppGrid>
+      </AppSection>
+      <AppTextarea
         label="Begrüßung"
         maxLength={4000}
         value={activeConfig.welcomeText}
         onChange={(e) => change({ welcomeText: e.target.value })}
       />
-      <Textarea
+      <AppTextarea
         label="Hinweise des Veranstalters"
         maxLength={10000}
         value={activeConfig.organizerNotice}
