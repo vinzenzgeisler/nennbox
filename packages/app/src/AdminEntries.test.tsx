@@ -37,6 +37,8 @@ const entry = (id: string, eventId: string, classId: string) => ({
   verificationStatus: 'unverified',
   acceptanceStatus: 'pending',
   requestedStartNumber: null,
+  assignedStartNumber: id === entryA ? '42' : null,
+  startNumberStatus: id === entryA ? 'assigned' : 'unassigned',
   priceSnapshotVersion: null,
   formSnapshotVersion: null,
   priceSnapshot: null,
@@ -534,7 +536,7 @@ describe('AdminEntries', () => {
     expect(firstRow.textContent).toContain('Alex Driver');
     expect(firstRow.textContent).toContain('Porsche 911');
     expect(firstRow.textContent).toContain('Touring A');
-    expect(firstRow.textContent).toContain('42');
+    expect(firstRow.textContent).toContain('Nr. 42');
     expect(firstRow.textContent).not.toContain(entryA);
     expect(firstRow.querySelectorAll('.nb-entry-list-open')).toHaveLength(1);
     expect(

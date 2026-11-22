@@ -1,3 +1,5 @@
+import { assignedNumber } from '../entries/entryStartNumber.js';
+import { EntryDataHints } from '../entries/EntryDataHints.js';
 import { formatEntryHistoryLabel } from '../entries/EntryHistoryLabel.js';
 import { completionStates } from '../entries/completionStates.js';
 import { useState, type ReactNode } from 'react';
@@ -133,7 +135,7 @@ export function EntryPreview({
   return (
     <PreviewPanel
       eyebrow="Vorschau"
-      number={entry.requestedStartNumber ?? details?.startNumber ?? null}
+      number={assignedNumber(entry)}
       title={details?.driver.name ?? 'Name nicht verfügbar'}
       subtitle={
         details
@@ -172,6 +174,7 @@ export function EntryPreview({
               )?.labels.de ??
               entry.acceptanceStatus}
           </AppStatusPill>
+          <EntryDataHints entry={entry} />
           {entry.orgaCode && (
             <span className="nb-preview-code">
               Orga-Code <code>{entry.orgaCode}</code>

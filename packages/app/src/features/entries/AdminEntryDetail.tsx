@@ -37,8 +37,10 @@ export function AdminEntryDetail({
   navigation,
   onChangeStatus,
   onNotice,
+  onOpenRelated,
 }: {
   onNotice?: (message: string) => void;
+  onOpenRelated?: ((id: string) => Promise<void>) | undefined;
   navigation?: import('react').ReactNode;
   onChangeStatus?: (entry: Entry, status: string) => Promise<void>;
   selected: Entry;
@@ -179,6 +181,7 @@ export function AdminEntryDetail({
         sidebar={
           <EntryProperties
             entry={selected}
+            onOpenRelated={onOpenRelated}
             busy={api.busy}
             onNumber={() => setNumberOpen((value) => !value)}
             saveNote={(text) =>

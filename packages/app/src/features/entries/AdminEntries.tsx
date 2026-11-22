@@ -281,6 +281,7 @@ function AdminEntriesView({
           error={actionError}
           transition={transition}
           onBack={closeDetail}
+          onOpenRelated={openEntryDetail}
           onMessage={onMessage}
           onChangeStatus={changeStatus}
           onNotice={showNotice}
