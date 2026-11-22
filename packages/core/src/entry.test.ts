@@ -177,6 +177,27 @@ describe('entry domain rules', () => {
       true,
     );
   });
+  it('enriches double starter references without changing boolean hint inputs', () => {
+    const relatedEntries = [
+      { entryId: 'other', startNumber: '18' },
+      { entryId: 'wish', startNumber: null },
+    ];
+    const projection = projectEntryStatuses({
+      workflow: defaultEntryWorkflow,
+      acceptanceStatus: 'pending',
+      paymentStatus: 'open',
+      technicalStatus: 'not_relevant',
+      waiverStatus: 'not_relevant',
+      emailStatus: 'unverified',
+      config: defaultEntryStatusDimensionConfig,
+      doubleStarterEntries: relatedEntries,
+    });
+    expect(projection.hints).toEqual([
+      { key: 'double_starter', present: true, relatedEntries },
+      { key: 'passenger', present: false },
+      { key: 'late_entry', present: false },
+    ]);
+  });
   it('rejects forbidden transitions and enforces configured reasons', () => {
     expect(() =>
       assertWorkflowTransition(defaultEntryWorkflow, 'accepted', 'pending', ''),

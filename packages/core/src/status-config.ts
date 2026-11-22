@@ -220,4 +220,8 @@ export type EntryStatusHintKey = 'double_starter' | 'passenger' | 'late_entry';
 export interface EntryStatusHint {
   readonly key: EntryStatusHintKey;
   readonly present: boolean;
+  readonly relatedEntries?: readonly {
+    readonly entryId: string;
+    readonly startNumber: string | null;
+  }[];
 }

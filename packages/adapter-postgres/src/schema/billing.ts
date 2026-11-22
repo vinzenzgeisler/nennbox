@@ -85,6 +85,7 @@ export const invoices = pgTable(
     paymentReference: text('payment_reference').notNull(),
     status: text('status').notNull().default('open'),
     cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

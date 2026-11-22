@@ -50,27 +50,27 @@ export function createTimingRepository(db: Database): TimingRepository {
   return {
     listEntries: async (ctx, eventId) => {
       if (!timingUuid.test(eventId)) return [];
-      const result = await db.execute(sql`SELECT e.id, e.requested_start_number,
+      const result = await db.execute(sql`SELECT e.id, e.assigned_start_number,
         status.value->>'category' AS status_category
         FROM entry e
         LEFT JOIN entry_workflow_revision w ON w.organization_id=e.organization_id AND w.id=e.workflow_revision_id
         LEFT JOIN LATERAL jsonb_array_elements(COALESCE(w.workflow->'statuses', '[]'::jsonb)) AS status(value)
           ON status.value->>'key'=e.acceptance_status
         WHERE e.organization_id=${ctx.organizationId} AND e.event_id=${eventId} AND e.deleted_at IS NULL
-        ORDER BY e.requested_start_number, e.id`);
+        ORDER BY e.assigned_start_number, e.id`);
       const rows =
         (
           result as unknown as {
             rows: {
               id: string;
-              requested_start_number: string | null;
+              assigned_start_number: string | null;
               status_category: string | null;
             }[];
           }
         ).rows ?? [];
       return rows.map((row) => ({
         entryId: row.id,
-        startNumber: row.requested_start_number ?? row.id,
+        startNumber: row.assigned_start_number ?? row.id,
         statusCategory: row.status_category,
       }));
     },
@@ -164,18 +164,18 @@ export function createTimingRepository(db: Database): TimingRepository {
     resolveEntry: async (ctx, eventId, lookup) => {
       if (!timingUuid.test(eventId)) return null;
       const result =
-        await db.execute(sql`SELECT id, requested_start_number FROM entry WHERE organization_id=${ctx.organizationId}
-        AND event_id=${eventId} AND deleted_at IS NULL AND (${lookup.entryId ? sql`id=${lookup.entryId}` : sql`requested_start_number=${lookup.startNumber ?? ''}`}) LIMIT 2`);
+        await db.execute(sql`SELECT id, assigned_start_number FROM entry WHERE organization_id=${ctx.organizationId}
+        AND event_id=${eventId} AND deleted_at IS NULL AND (${lookup.entryId ? sql`id=${lookup.entryId}` : sql`assigned_start_number=${lookup.startNumber ?? ''}`}) LIMIT 2`);
       const rows =
         (
           result as unknown as {
-            rows: { id: string; requested_start_number: string | null }[];
+            rows: { id: string; assigned_start_number: string | null }[];
           }
         ).rows ?? [];
       if (rows.length !== 1) return null;
       return {
         entryId: rows[0]!.id,
-        startNumber: rows[0]!.requested_start_number ?? rows[0]!.id,
+        startNumber: rows[0]!.assigned_start_number ?? rows[0]!.id,
       };
     },
     correct: async (ctx, eventId, measurementId, input, actor) => {

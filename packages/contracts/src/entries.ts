@@ -40,6 +40,10 @@ export const EntryResponse = z
     verificationStatus: z.enum(['unverified', 'verified']),
     acceptanceStatus: z.string().regex(/^[a-z][a-z0-9_-]{0,63}$/),
     requestedStartNumber: z.string().nullable(),
+    assignedStartNumber: z.string().nullable().optional(),
+    startNumberStatus: z
+      .enum(['assigned', 'requested', 'unassigned'])
+      .optional(),
     waitlistPosition: z.number().int().positive().nullable().optional(),
     waitlistConfirmationDeadline: z
       .string()
@@ -175,6 +179,7 @@ export const EntryResponse = z
             currency: z.string(),
             totalCents: z.number().int().nonnegative(),
             paidCents: z.number().int(),
+            paidAt: z.string().datetime({ offset: true }).nullable().optional(),
             status: z.enum(['open', 'partially_paid', 'paid', 'cancelled']),
             providerPayments: z
               .array(
@@ -258,6 +263,16 @@ export const EntryResponse = z
             .object({
               key: z.enum(['double_starter', 'passenger', 'late_entry']),
               present: z.boolean(),
+              relatedEntries: z
+                .array(
+                  z
+                    .object({
+                      entryId: z.string().uuid(),
+                      startNumber: z.string().nullable(),
+                    })
+                    .strict(),
+                )
+                .optional(),
             })
             .strict(),
         ),
