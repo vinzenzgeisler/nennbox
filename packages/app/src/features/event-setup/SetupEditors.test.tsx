@@ -84,3 +84,51 @@ it('opens added number ranges immediately and keeps old ranges compact', () => {
   ).toBe('7');
   act(() => root.unmount());
 });
+it('keeps an empty class editor open and reports required fields in the visible editor', () => {
+  function Classes({ saved }: { saved: boolean }) {
+    const [draft, setDraft] = useState<SetupDraft>(() => ({
+      ...initialState().draft,
+      classes: [
+        {
+          ...(saved ? { id: 'class-one' } : {}),
+          name: '',
+          code: '',
+          fee: '',
+          vehicleType: 'car' as const,
+        },
+      ],
+    }));
+    return (
+      <form>
+        <EventSetupClasses draft={draft} setDraft={setDraft} busy={false} />
+      </form>
+    );
+  }
+  const host = document.createElement('div');
+  document.body.append(host);
+  const root = createRoot(host);
+  const toggle = () =>
+    host.querySelector<HTMLButtonElement>('[aria-expanded]')!;
+  const disclosure = () => host.querySelector('.nb-app-editor-disclosure');
+  act(() => root.render(<Classes saved={false} />));
+  expect(toggle().getAttribute('aria-expanded')).toBe('true');
+  act(() => toggle().click());
+  expect(toggle().getAttribute('aria-expanded')).toBe('true');
+  expect(disclosure()?.hasAttribute('inert')).toBe(false);
+  expect(document.activeElement).toBe(
+    host.querySelector('input[aria-label="Klassenname"]'),
+  );
+  act(() => root.unmount());
+
+  const closedRoot = createRoot(host);
+  act(() => closedRoot.render(<Classes saved />));
+  expect(toggle().getAttribute('aria-expanded')).toBe('false');
+  act(() => host.querySelector('form')!.requestSubmit());
+  expect(toggle().getAttribute('aria-expanded')).toBe('true');
+  expect(disclosure()?.hasAttribute('inert')).toBe(false);
+  expect(document.activeElement).toBe(
+    host.querySelector('input[aria-label="Klassenname"]'),
+  );
+  act(() => closedRoot.unmount());
+  host.remove();
+});

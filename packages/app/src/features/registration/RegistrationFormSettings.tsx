@@ -27,6 +27,7 @@ import { RegistrationFieldsPreview } from './RegistrationFieldsPreview.js';
 import { RegistrationPaymentSettings } from './RegistrationPaymentSettings.js';
 import { registrationFieldLabels } from './registrationFieldLabels.js';
 
+type Notice = { text: string; tone: 'success' | 'info' | 'error' };
 export function RegistrationFormSettings({
   eventId,
   embedded = false,
@@ -43,7 +44,8 @@ export function RegistrationFormSettings({
     eventId ? 'event' : 'organization',
   );
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const fail = (text: string) => setNotice({ text, tone: 'error' });
   const [loaded, setLoaded] = useState(false);
   const [eventLoaded, setEventLoaded] = useState(!eventId);
   useEffect(() => {
@@ -64,9 +66,7 @@ export function RegistrationFormSettings({
       })
       .catch(() => {
         if (active)
-          setMessage(
-            'Organisations-Einstellungen konnten nicht geladen werden.',
-          );
+          fail('Organisations-Einstellungen konnten nicht geladen werden.');
       })
       .finally(() => {
         if (active) setLoaded(true);
@@ -100,9 +100,7 @@ export function RegistrationFormSettings({
       })
       .catch(() => {
         if (active)
-          setMessage(
-            'Veranstaltungs-Einstellungen konnten nicht geladen werden.',
-          );
+          fail('Veranstaltungs-Einstellungen konnten nicht geladen werden.');
       })
       .finally(() => {
         if (active) setEventLoaded(true);
@@ -134,7 +132,7 @@ export function RegistrationFormSettings({
     }));
   const save = async () => {
     setBusy(true);
-    setMessage('');
+    setNotice(null);
     try {
       const path =
         scope === 'organization'
@@ -162,9 +160,9 @@ export function RegistrationFormSettings({
         body: JSON.stringify(toSave),
       });
       if (!response.ok) throw new Error();
-      setMessage('Einstellungen gespeichert.');
+      setNotice({ text: 'Einstellungen gespeichert.', tone: 'success' });
     } catch {
-      setMessage('Speichern momentan nicht möglich.');
+      fail('Speichern momentan nicht möglich.');
     } finally {
       setBusy(false);
     }
@@ -187,7 +185,7 @@ export function RegistrationFormSettings({
       },
     );
     if (!response.ok) {
-      setMessage('Datei konnte nicht sicher gespeichert werden.');
+      fail('Datei konnte nicht sicher gespeichert werden.');
       return;
     }
     const body = (await response.json()) as { objectId: string };
@@ -202,7 +200,10 @@ export function RegistrationFormSettings({
             : 'headerImageObjectId']: body.objectId,
       },
     }));
-    setMessage('Datei hochgeladen. Änderungen anschließend speichern.');
+    setNotice({
+      text: 'Datei hochgeladen. Änderungen anschließend speichern.',
+      tone: 'info',
+    });
   };
   if (!loaded || (scope === 'event' && !eventLoaded))
     return (
@@ -220,15 +221,7 @@ export function RegistrationFormSettings({
       >
         {busy ? 'Wird gespeichert …' : 'Änderungen speichern'}
       </AppButton>
-      {message && (
-        <AppNotice
-          tone={
-            message === 'Einstellungen gespeichert.' ? 'success' : 'warning'
-          }
-        >
-          {message}
-        </AppNotice>
-      )}
+      {notice && <AppNotice tone={notice.tone}>{notice.text}</AppNotice>}
     </AppActions>
   );
   return (

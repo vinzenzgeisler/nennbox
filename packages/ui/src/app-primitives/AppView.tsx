@@ -46,7 +46,7 @@ export function AppNotice({
   title,
 }: {
   children: ReactNode;
-  tone?: 'warning' | 'error' | 'success';
+  tone?: 'warning' | 'error' | 'success' | 'info';
   title?: string;
 }) {
   return (

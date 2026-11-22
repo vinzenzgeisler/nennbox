@@ -13,9 +13,9 @@ afterEach(() => {
   container?.remove();
   vi.unstubAllGlobals();
 });
-async function mount(embedded = false) {
+async function mount(embedded = false, saveFails = false) {
   const fetch = vi.fn(async (_url: string, init?: RequestInit) => ({
-    ok: true,
+    ok: !(saveFails && init?.method === 'PUT'),
     status: 200,
     json: async () =>
       init?.method === 'POST'
@@ -144,4 +144,19 @@ it('keeps custom field type conversions and payment controls functional', async 
   expect(
     JSON.parse(String(call[1]?.body)).payments.onlineMethods.includes('card'),
   ).toBe(!wasChecked);
+});
+it('announces save failures as alerts and successes as status messages', async () => {
+  await mount(false, true);
+  await act(async () => button('Änderungen speichern').click());
+  const alert = container.querySelector('[role="alert"]');
+  expect(alert?.textContent).toBe('Speichern momentan nicht möglich.');
+  expect(alert?.className).toContain('nb-app-notice-error');
+  act(() => root.unmount());
+  container.remove();
+  await mount();
+  await act(async () => button('Änderungen speichern').click());
+  expect(container.querySelector('[role="alert"]')).toBeNull();
+  expect(container.querySelector('[role="status"]')?.className).toContain(
+    'nb-app-notice-success',
+  );
 });

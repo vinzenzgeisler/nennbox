@@ -92,7 +92,7 @@ export function NumberAndWaitlistSettings({ eventId }: { eventId: string }) {
         </p>
       </header>
       {message && (
-        <AppNotice tone={failed ? 'error' : 'success'}>{message}</AppNotice>
+        <AppNotice tone={failed ? 'error' : 'info'}>{message}</AppNotice>
       )}
       {!loaded ? (
         !failed && <p role="status">Einstellungen werden geladen …</p>

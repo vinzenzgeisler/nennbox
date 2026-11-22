@@ -75,6 +75,9 @@
 .nb-app-notice-success {
   color: var(--nb-ok-fg);
 }
+.nb-app-notice-info {
+  color: var(--nb-fg-secondary);
+}
 .nb-app-inline {
   display: flex;
   flex-wrap: wrap;

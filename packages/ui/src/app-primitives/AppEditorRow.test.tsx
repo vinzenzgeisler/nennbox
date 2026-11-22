@@ -46,3 +46,54 @@ it('toggles an accessible editor and retains unsaved values when collapsed', () 
   expect(host.querySelector('input')!.value).toBe('changed');
   act(() => root.unmount());
 });
+
+function InvalidEditorForm({ initiallyOpen }: { initiallyOpen: boolean }) {
+  const [open, setOpen] = useState(initiallyOpen);
+  return (
+    <form>
+      <AppEditorRow
+        label="Klasse bearbeiten"
+        preview="Neue Klasse"
+        open={open}
+        onToggle={() => setOpen(!open)}
+      >
+        <AppTextInput required label="Klassenname" defaultValue="" />
+        <AppTextInput required label="Kürzel" defaultValue="" />
+      </AppEditorRow>
+      <button type="submit">Speichern</button>
+    </form>
+  );
+}
+
+it('does not collapse an editor that still has invalid required fields', () => {
+  const host = document.createElement('div');
+  document.body.append(host);
+  const root = createRoot(host);
+  act(() => root.render(<InvalidEditorForm initiallyOpen />));
+  const toggle = host.querySelector<HTMLButtonElement>('[aria-expanded]')!;
+  act(() => toggle.click());
+  expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  expect(
+    host.querySelector('.nb-app-editor-disclosure')?.hasAttribute('inert'),
+  ).toBe(false);
+  expect(document.activeElement).toBe(host.querySelector('input'));
+  act(() => root.unmount());
+  host.remove();
+});
+
+it('reopens a closed editor and focuses its first invalid field on submit', () => {
+  const host = document.createElement('div');
+  document.body.append(host);
+  const root = createRoot(host);
+  act(() => root.render(<InvalidEditorForm initiallyOpen={false} />));
+  const toggle = host.querySelector<HTMLButtonElement>('[aria-expanded]')!;
+  expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  act(() => host.querySelector('form')!.requestSubmit());
+  expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  expect(
+    host.querySelector('.nb-app-editor-disclosure')?.hasAttribute('inert'),
+  ).toBe(false);
+  expect(document.activeElement).toBe(host.querySelector('input'));
+  act(() => root.unmount());
+  host.remove();
+});
