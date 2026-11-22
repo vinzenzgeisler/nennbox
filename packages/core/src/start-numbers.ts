@@ -67,3 +67,23 @@ export function dueWaitlistOffers<
       offer.deadline !== null && offer.deadline.getTime() <= now.getTime(),
   );
 }
+
+/** A request is never displayed as an allocation. */
+export function projectStartNumber(input: {
+  requestedStartNumber: string | null;
+  assignedStartNumber?: string | null;
+}): {
+  assignedStartNumber: string | null;
+  startNumberStatus: 'assigned' | 'requested' | 'unassigned';
+} {
+  const assignedStartNumber = input.assignedStartNumber ?? null;
+  return {
+    assignedStartNumber,
+    startNumberStatus:
+      assignedStartNumber !== null
+        ? 'assigned'
+        : input.requestedStartNumber !== null
+          ? 'requested'
+          : 'unassigned',
+  };
+}

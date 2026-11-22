@@ -1575,6 +1575,7 @@ describe.skipIf(!url)('PostgreSQL integration', () => {
             driverPersonId: personId,
             vehicleId,
             requestedStartNumber: startNumber,
+            assignedStartNumber: startNumber,
           })
           .returning();
       const [entryA] = await attempted(

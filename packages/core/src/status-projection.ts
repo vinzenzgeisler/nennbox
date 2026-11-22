@@ -3,6 +3,7 @@ import {
   EntryStatusDimensionKey,
   EntryStatusDimensionProjection,
   EntryStatusHintKey,
+  EntryStatusHint,
   EntryStatusProjection,
 } from './status-config.js';
 import {
@@ -22,6 +23,7 @@ export function projectEntryStatuses(input: {
   readonly emailStatus: string;
   readonly config: EntryStatusDimensionConfig;
   readonly hints?: Partial<Record<EntryStatusHintKey, boolean>>;
+  readonly doubleStarterEntries?: EntryStatusHint['relatedEntries'];
 }): EntryStatusProjection {
   const config = new Map(
     input.config.dimensions.map((item) => [item.key, item]),
@@ -119,7 +121,13 @@ export function projectEntryStatuses(input: {
   const hints = (['double_starter', 'passenger', 'late_entry'] as const).map(
     (key) => ({
       key,
-      present: input.hints?.[key] === true,
+      present:
+        input.hints?.[key] === true ||
+        (key === 'double_starter' &&
+          Boolean(input.doubleStarterEntries?.length)),
+      ...(key === 'double_starter' && input.doubleStarterEntries !== undefined
+        ? { relatedEntries: input.doubleStarterEntries }
+        : {}),
     }),
   );
   return {

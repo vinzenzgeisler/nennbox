@@ -1,4 +1,5 @@
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { projectStartNumber } from '@nennbox/core';
 import type { RequestContext } from '@nennbox/core';
 import { eventDriverPortalFields } from './schema/driver-portal.js';
 import {
@@ -43,7 +44,9 @@ export function createDriverPortalView(
           driverLastName: people.lastName,
           className: eventClasses.name,
           status: entries.acceptanceStatus,
-          startNumber: entries.requestedStartNumber,
+          startNumber: entries.assignedStartNumber,
+          assignedStartNumber: entries.assignedStartNumber,
+          requestedStartNumber: entries.requestedStartNumber,
           vehicleMake: vehicles.make,
           vehicleModel: vehicles.model,
         })
@@ -134,6 +137,7 @@ export function createDriverPortalView(
         .select({
           invoiceId: invoices.id,
           status: invoices.status,
+          paidAt: invoices.paidAt,
           totalCents: invoices.totalCents,
           paidCents: sql<number>`coalesce((select sum(p.amount_cents) from invoice_payment p where p.organization_id = ${invoices.organizationId} and p.invoice_id = ${invoices.id}), 0)::int`,
           currency: invoices.currency,
@@ -195,6 +199,8 @@ export function createDriverPortalView(
           className: row.className,
           status: row.status,
           startNumber: row.startNumber,
+          requestedStartNumber: row.requestedStartNumber,
+          ...projectStartNumber(row),
           vehicle: `${row.vehicleMake} ${row.vehicleModel}`,
           documents: types.map((type) => {
             const doc = docs.find(
@@ -216,6 +222,7 @@ export function createDriverPortalView(
           ? {
               ...invoice,
               paidCents: Number(invoice.paidCents),
+              paidAt: invoice.paidAt?.toISOString() ?? null,
               accountName: recipient?.accountName ?? null,
               iban: recipient?.iban ?? null,
               bic: recipient?.bic ?? null,

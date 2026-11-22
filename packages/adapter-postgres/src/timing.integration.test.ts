@@ -102,7 +102,8 @@ describe.skipIf(!url)('PostgreSQL timing adapter', () => {
           registrationGroupId: groupA!.id,
           driverPersonId: personA!.id,
           vehicleId: vehicleA!.id,
-          requestedStartNumber: '7',
+          requestedStartNumber: '17',
+          assignedStartNumber: '7',
         })
         .returning();
       const ctxA = {
@@ -120,6 +121,9 @@ describe.skipIf(!url)('PostgreSQL timing adapter', () => {
       expect(
         await repo.resolveEntry(ctxA, eventA!.id, { startNumber: '7' }),
       ).toEqual({ entryId: entryA!.id, startNumber: '7' });
+      expect(
+        await repo.resolveEntry(ctxA, eventA!.id, { startNumber: '17' }),
+      ).toBeNull();
       const recorded = await repo.record(
         ctxA,
         eventA!.id,

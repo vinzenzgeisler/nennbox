@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  projectStartNumber,
   allocateNextStartNumbers,
   availableStartNumbers,
   confirmationDeadline,
@@ -39,5 +40,27 @@ describe('start number and waitlist domain functions', () => {
         now,
       ).map((x) => x.id),
     ).toEqual(['a']);
+  });
+});
+
+describe('start number read model', () => {
+  it.each([
+    [null, null, 'unassigned'],
+    ['42', null, 'requested'],
+    ['42', '18', 'assigned'],
+    [null, '42', 'assigned'],
+  ] as const)(
+    'projects wish %s and assignment %s as %s',
+    (requestedStartNumber, assignedStartNumber, startNumberStatus) => {
+      expect(
+        projectStartNumber({ requestedStartNumber, assignedStartNumber }),
+      ).toEqual({ assignedStartNumber, startNumberStatus });
+    },
+  );
+  it('does not promote a legacy request to an assignment', () => {
+    expect(projectStartNumber({ requestedStartNumber: '42' })).toEqual({
+      assignedStartNumber: null,
+      startNumberStatus: 'requested',
+    });
   });
 });
