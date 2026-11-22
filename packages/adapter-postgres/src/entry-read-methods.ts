@@ -66,6 +66,7 @@ export function createEntryReadMethods(
           predicates.push(
             anyOf(
               ilike(entries.requestedStartNumber, pattern),
+              ilike(entries.assignedStartNumber, pattern),
               ilike(
                 entries.orgaCode,
                 `%${normalizeOrgaCode(token).replace(/[\\%_]/g, '\\$&')}%`,

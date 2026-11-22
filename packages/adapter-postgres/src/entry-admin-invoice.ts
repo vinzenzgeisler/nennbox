@@ -17,6 +17,7 @@ export async function loadInvoiceSummaries(
       currency: invoices.currency,
       totalCents: invoices.totalCents,
       status: invoices.status,
+      paidAt: invoices.paidAt,
       paidCents: sql<number>`coalesce((select sum(p.amount_cents) from invoice_payment p where p.organization_id = invoice.organization_id and p.invoice_id = invoice.id), 0)::int`,
       providerPayments: sql<
         AdminEntryInvoice['providerPayments']
@@ -32,7 +33,11 @@ export async function loadInvoiceSummaries(
   return new Map(
     rows.map(({ groupId, ...invoice }) => [
       groupId,
-      { ...invoice, status: invoice.status as AdminEntryInvoice['status'] },
+      {
+        ...invoice,
+        paidAt: invoice.paidAt?.toISOString() ?? null,
+        status: invoice.status as AdminEntryInvoice['status'],
+      },
     ]),
   );
 }

@@ -595,6 +595,7 @@
     "performEntryAdminAction",
     "permissionsForRole",
     "projectEntryStatuses",
+    "projectStartNumber",
     "queueArtifactJob",
     "recordInvoicePayment",
     "registrationBirthDateMatches",

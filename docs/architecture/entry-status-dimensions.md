@@ -27,3 +27,35 @@ The projection can include `double_starter`, `passenger`, and `late_entry` hints
 ## Compatibility
 
 The migration adds only nullable/configuration/audit structures and losslessly backfills default technical-inspection and waiver states. Existing workflow, payment, and email source records remain authoritative and unchanged. Status projection is returned on admin entry reads; no frontend behavior is part of this backend change.
+
+## Entry detail source fields
+
+`requestedStartNumber` records the driver's wish; nullable `assignedStartNumber`
+records the actual confirmed/allotted number. `startNumberStatus` is `assigned`
+when an allocation exists, `requested` when only a wish exists, otherwise
+`unassigned`. Admin details, exports, driver portal and timing use only the
+allocation as `startNumber`. These new entry fields are optional in contracts.
+Driver-choice submissions confirm a valid free wish immediately; automatic mode
+allocates without manufacturing a wish. Organizer-assigned wishes stay pending
+until assignment. Manual and bulk allocation preserve the original wish.
+Both wishes and allocations reserve numbers across active entries in the same
+organization/event, including concurrent writes; withdrawal/deletion releases
+both claims. The original requested-number unique index remains in place.
+Migration confirms valid historical driver-choice/automatic numbers; ambiguous
+organizer-assigned values remain wishes. No-range legacy events retain the
+historical driver-choice default.
+
+The `double_starter` hint retains `key` and boolean `present` and optionally adds
+`relatedEntries: [{ entryId, startNumber }]`. References contain all other
+non-deleted entries for that event/driver, not only the current page/class filter,
+and expose confirmed numbers only (otherwise null). Stored boolean hints remain
+valid even without related entries.
+
+Invoices expose optional nullable `paidAt`, persisted from the invoice payment
+ledger's `occurred_at` at the start of the current fully-paid period. The shared
+invoice-status trigger covers manual office payments, bank-transfer imports,
+provider payments and invoice amount corrections. Refunds/reversals below the
+total clear the date; repayment starts a new period; overpayments preserve it.
+Backfill replays the ledger, never checkout creation times. Historical paid
+invoices without payment evidence remain undated. Public registration submission
+responses do not change.

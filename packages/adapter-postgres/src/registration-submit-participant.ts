@@ -99,15 +99,14 @@ export async function resolveRegistrationParticipant(args: {
   const automaticStartNumbers = Array<string | null>(
     payload.entries.length,
   ).fill(null);
-  const hasAutomaticRange = numberRanges.some(
-    (range) => range.assignmentMode === 'automatic',
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.organizationId}:start-numbers:${event.id}`}, 0))`,
   );
-  if (hasAutomaticRange)
-    await tx.execute(
-      sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.organizationId}:start-numbers:${event.id}`}, 0))`,
-    );
   const assignedRows = await tx
-    .select({ number: entries.requestedStartNumber })
+    .select({
+      wish: entries.requestedStartNumber,
+      assigned: entries.assignedStartNumber,
+    })
     .from(entries)
     .where(
       and(
@@ -118,7 +117,9 @@ export async function resolveRegistrationParticipant(args: {
       ),
     );
   const usedNumbers = assignedRows.flatMap((row) =>
-    row.number ? [row.number] : [],
+    [row.wish, row.assigned].filter(
+      (number): number is string => number !== null,
+    ),
   );
   for (const [index, submitted] of payload.entries.entries()) {
     const classRanges = numberRanges.filter(
@@ -156,7 +157,6 @@ export async function resolveRegistrationParticipant(args: {
       applicableRanges.length &&
       !applicableRanges.some(
         (range) =>
-          range.assignmentMode === 'driver_choice' &&
           /^\d+$/.test(requested) &&
           Number(requested) >= range.rangeFrom &&
           Number(requested) <= range.rangeTo &&
@@ -164,7 +164,11 @@ export async function resolveRegistrationParticipant(args: {
       )
     ) {
       throw new RegistrationUnavailable('class-unavailable');
-    } else if (requested) usedNumbers.push(requested);
+    } else if (requested) {
+      if (mode !== 'organizer_assigned')
+        automaticStartNumbers[index] = requested;
+      usedNumbers.push(requested);
+    }
   }
   const waitlistEntryIndexes: number[] = [];
   for (const eventClass of classes) {

@@ -261,7 +261,7 @@ export async function attachAdminEntryDetails(
               }
             : {}),
         },
-        startNumber: item.requestedStartNumber,
+        startNumber: item.assignedStartNumber ?? null,
         customAnswers: customAnswersOf(item),
       },
     };
