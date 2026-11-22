@@ -1,3 +1,5 @@
+import { assignedNumber } from './entryStartNumber.js';
+import { EntryDataHints } from './EntryDataHints.js';
 import type { Dispatch, SetStateAction } from 'react';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import {
@@ -50,17 +52,7 @@ export function AdminEntryRow({
           {entry.waitlistPosition != null && (
             <HintLabel>Warteliste · Platz {entry.waitlistPosition}</HintLabel>
           )}
-          {entry.statusProjection?.hints
-            .filter((hint) => hint.present)
-            .map((hint) => (
-              <HintLabel key={hint.key}>
-                {hint.key === 'double_starter'
-                  ? 'Doppelstarter'
-                  : hint.key === 'passenger'
-                    ? 'mit Beifahrer'
-                    : 'Nachnennung'}
-              </HintLabel>
-            ))}
+          <EntryDataHints entry={entry} />
         </>
       }
       className={
@@ -68,7 +60,7 @@ export function AdminEntryRow({
         classes.find((item) => item.id === entry.classId)?.name ??
         '—'
       }
-      number={entry.requestedStartNumber ?? details?.startNumber ?? null}
+      number={assignedNumber(entry)}
       selected={selected?.id === entry.id}
       dimmed={['rejected', 'withdrawn'].includes(
         workflow?.statuses.find((item) => item.key === entry.acceptanceStatus)

@@ -59,3 +59,18 @@ total clear the date; repayment starts a new period; overpayments preserve it.
 Backfill replays the ledger, never checkout creation times. Historical paid
 invoices without payment evidence remain undated. Public registration submission
 responses do not change.
+
+## Admin UI consumption
+
+List, detail and preview reserve “Nr.” for `assignedStartNumber`; the compact
+“Wunsch” label keeps a different requested number visible. `startNumberStatus`
+can explicitly rule out an allocation. With older optional-field responses, the
+UI still shows wishes but does not treat legacy `adminDetails.startNumber` as
+proof of assignment: that field previously echoed the wish. The existing sort
+contract remains wish-based and is labeled “Wunschstartnummer”.
+
+Manual assignment re-reads the authenticated entry detail after the write; it
+does not overwrite the wish or infer assignment from the submitted value. Related
+starter references use existing detail-host navigation only when supplied;
+list and preview references are informational. Invoice payment dates appear only
+when `paidAt` exists, never from creation or history fallbacks.

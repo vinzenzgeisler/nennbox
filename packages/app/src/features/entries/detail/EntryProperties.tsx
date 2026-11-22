@@ -1,3 +1,5 @@
+import { assignedNumber } from '../entryStartNumber.js';
+import { EntryDataHints } from '../EntryDataHints.js';
 import { useState } from 'react';
 import { AppButton, Banner, Textarea } from '@nennbox/ui';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
@@ -8,11 +10,13 @@ export function EntryProperties({
   busy,
   saveNote,
   onNumber,
+  onOpenRelated,
 }: {
   entry: Entry;
   busy: boolean;
   saveNote: (text: string) => Promise<Outcome>;
   onNumber: () => void;
+  onOpenRelated?: ((id: string) => Promise<void>) | undefined;
 }) {
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
@@ -25,9 +29,9 @@ export function EntryProperties({
           <dt>Startnummer</dt>
           <dd>
             <AppButton tone="ghost" onClick={onNumber}>
-              {entry.requestedStartNumber ??
-                entry.adminDetails?.startNumber ??
-                'Vergeben'}
+              {assignedNumber(entry)
+                ? `${assignedNumber(entry)} · bestätigt`
+                : 'Vergeben'}
             </AppButton>
           </dd>
           <dt>Eingang</dt>
@@ -50,20 +54,31 @@ export function EntryProperties({
               (item) => item.key === 'payment',
             )?.label.de ?? '—'}
           </dd>
-          {entry.statusProjection?.hints
-            .filter((item) => item.present)
-            .map((item) => (
-              <div key={item.key}>
-                <dt>Hinweis</dt>
-                <dd>
-                  {item.key === 'double_starter'
-                    ? 'Doppelstarter'
-                    : item.key === 'passenger'
-                      ? 'Beifahrer'
-                      : 'Nachnennung'}
-                </dd>
-              </div>
-            ))}
+          {invoice?.paidAt && (
+            <>
+              <dt>Bezahlt am</dt>
+              <dd>
+                <time dateTime={invoice.paidAt}>
+                  {new Intl.DateTimeFormat('de-DE', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: 'Europe/Berlin',
+                  }).format(new Date(invoice.paidAt))}
+                </time>
+              </dd>
+            </>
+          )}
+          <dt>Hinweise</dt>
+          <dd>
+            <EntryDataHints
+              entry={entry}
+              onOpenRelated={onOpenRelated}
+              busy={busy}
+            />
+          </dd>
         </dl>
       </section>
       {entry.availableActions?.includes('note:internal') && (

@@ -23,7 +23,7 @@ export function AdminEntryFilters({
   const sortId = useId();
   const sortLabels: Record<string, string> = {
     createdAt: 'Neueste zuerst',
-    requestedStartNumber: 'Startnummer',
+    requestedStartNumber: 'Wunschstartnummer',
     acceptanceStatus: 'Nennungsstatus',
     verificationStatus: 'E-Mail-Prüfung',
   };
@@ -138,7 +138,7 @@ export function AdminEntryFilters({
           onChange={(e) => changeSort(e.target.value)}
         >
           <option value="createdAt">Neueste zuerst</option>
-          <option value="requestedStartNumber">Startnummer</option>
+          <option value="requestedStartNumber">Wunschstartnummer</option>
           <option value="acceptanceStatus">Nennungsstatus</option>
           <option value="verificationStatus">E-Mail-Prüfung</option>
         </SelectField>

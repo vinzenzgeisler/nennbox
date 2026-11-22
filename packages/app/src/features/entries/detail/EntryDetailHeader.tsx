@@ -1,3 +1,4 @@
+import { assignedNumber, numberWish } from '../entryStartNumber.js';
 import { AppThumb } from '@nennbox/ui';
 import type { ReactNode } from 'react';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
@@ -24,8 +25,12 @@ export function EntryDetailHeader({
         <div>
           <h1>{details.driver.name}</h1>
           <p>
-            Nr. {entry.requestedStartNumber ?? details.startNumber ?? '—'} ·{' '}
-            {details.vehicle.make} {details.vehicle.model} ·{' '}
+            {assignedNumber(entry)
+              ? `Nr. ${assignedNumber(entry)}`
+              : numberWish(entry)
+                ? `Wunsch: ${numberWish(entry)}`
+                : 'Ohne Startnummer'}{' '}
+            · {details.vehicle.make} {details.vehicle.model} ·{' '}
             {details.eventClass.name}
             {entry.orgaCode && (
               <>
