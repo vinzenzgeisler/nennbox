@@ -65,3 +65,24 @@ describe('event document settings', () => {
     ).toEqual(['']);
   });
 });
+
+it('validates persisted inactive types because they are included in the save request', () => {
+  const inactive = {
+    ...draftFromType({
+      key: 'license',
+      name: 'License',
+      required: true,
+      hint: null,
+    }),
+    active: false,
+  };
+  expect(documentTypeErrors([{ ...inactive, name: '  ' }])).toEqual([
+    'Bitte einen Namen eingeben.',
+  ]);
+  expect(
+    documentTypeErrors([{ ...inactive, hint: 'x'.repeat(501) }])[0],
+  ).toContain('500');
+  expect(
+    documentTypeErrors([{ ...inactive, name: 'x'.repeat(121) }])[0],
+  ).toContain('120');
+});
