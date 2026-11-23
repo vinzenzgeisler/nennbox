@@ -46,6 +46,7 @@ export function createRegistrationActions(
   } = model;
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (model.submitted || model.submitting) return;
     if (step < steps.length - 1) {
       if (
         step === steps.length - 2 &&
@@ -207,14 +208,8 @@ export function createRegistrationActions(
       const result = (await response.json()) as Parameters<
         typeof completeRegistrationPayment
       >[0]['result'];
-      await completeRegistrationPayment({
-        result,
-        paymentChoice,
-        organizationId,
-        paymentMethods: payload!.registrationFormConfig.payments.onlineMethods,
-        setPaymentInstructions,
-        setSubmitted,
-      });
+      model.setSubmissionResult(result);
+      await startPayment(result);
     } catch {
       setError(t.retry);
     } finally {
@@ -289,6 +284,28 @@ export function createRegistrationActions(
     }
   }
 
-  return { submit, saveDraft, uploadCustomField };
+  function startPayment(
+    result: Parameters<typeof completeRegistrationPayment>[0]['result'],
+  ) {
+    return completeRegistrationPayment({
+      result,
+      paymentChoice,
+      organizationId,
+      paymentMethods: payload!.registrationFormConfig.payments.onlineMethods,
+      setPaymentInstructions,
+      setSubmitted,
+      setPaymentError: model.setPaymentError,
+    });
+  }
+  async function retryPayment() {
+    if (!model.submissionResult || model.submitting) return;
+    setSubmitting(true);
+    try {
+      await startPayment(model.submissionResult);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+  return { submit, saveDraft, uploadCustomField, retryPayment };
 }
 export type RegistrationActions = ReturnType<typeof createRegistrationActions>;

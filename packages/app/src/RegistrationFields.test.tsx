@@ -71,6 +71,7 @@ async function mount(
   payload: ReturnType<typeof form>,
   initialDraft?: RegistrationDraft,
   locale: 'de' | 'en' = 'de',
+  submissionResult: object = { accepted: true },
 ) {
   const submissions: unknown[] = [];
   vi.stubGlobal(
@@ -78,7 +79,7 @@ async function mount(
     vi.fn(async (input: string, init?: RequestInit) => {
       if (String(input).endsWith('/registration/submissions')) {
         submissions.push(JSON.parse(String(init?.body)));
-        return { ok: true, json: async () => ({ accepted: true }) };
+        return { ok: true, json: async () => submissionResult };
       }
       return { ok: true, json: async () => payload };
     }),
@@ -208,6 +209,114 @@ describe('public registration contact and vehicle fields', () => {
     expect(control('Besitzer')).toBeUndefined();
     expect(control('Hubraum (cm³)')).toBeTruthy();
     expect(control('Fahrzeughistorie')?.tagName).toBe('TEXTAREA');
+  });
+
+  it.each(['required', 'optional', 'hidden'])(
+    'shows phone independently of a hidden birth date: %s',
+    async (state) => {
+      await mount(
+        form({
+          dateOfBirth: { state: 'hidden' },
+          phone: { state },
+          emergencyContact: { state: 'hidden' },
+        }),
+        draftWith({ dateOfBirth: '' }),
+      );
+      expect(control('Geburtsdatum')).toBeUndefined();
+      if (state === 'hidden') expect(control('Telefon')).toBeUndefined();
+      else {
+        expect(control('Telefon')).toBeDefined();
+        expect(control('Telefon')?.required).toBe(state === 'required');
+      }
+    },
+  );
+
+  it('confirms mixed incoming and waitlisted entries without claiming acceptance', async () => {
+    await mount(form({}), draftWith(), 'de', {
+      accepted: true,
+      entries: [
+        { entryId: 'entry-a', status: 'pending', waitlistPosition: null },
+        { entryId: 'entry-b', status: 'waitlisted', waitlistPosition: 3 },
+      ],
+    });
+    await press('Weiter zu Startmeldungen');
+    await press('Weiter zur Prüfung');
+    await press('Nennung absenden');
+    expect(container.textContent).toContain('Nennung eingegangen');
+    expect(container.textContent).toContain('Auf der Warteliste, Platz 3');
+    expect(container.textContent).not.toContain('angenommen');
+  });
+
+  it('confirms receipt before checkout finishes and retries only payment with the same invoice', async () => {
+    const payload = {
+      ...form({}),
+      pricing: [
+        {
+          classId,
+          baseCents: 1000,
+          additionalEntryAdjustmentCents: 0,
+          earlyBirdDeadline: null,
+          earlyBirdDiscountCents: 0,
+        },
+      ],
+      onlinePaymentAvailable: true,
+      registrationFormConfig: {
+        ...form({}).registrationFormConfig,
+        payments: {
+          ...defaultRegistrationFormConfig.payments,
+          onlineMethods: ['card'],
+        },
+      },
+    };
+    const submissions = await mount(
+      payload,
+      draftWith({ phone: '+49 351 12345' }),
+      'de',
+      { accepted: true, invoiceId: 'invoice-a' },
+    );
+    const fetchMock = vi.mocked(fetch);
+    const original = fetchMock.getMockImplementation()!;
+    let rejectCheckout: (reason: Error) => void = () => {};
+    fetchMock.mockImplementation((input, init) =>
+      String(input).endsWith('/checkout')
+        ? new Promise((_resolve, reject) => {
+            rejectCheckout = reject;
+          })
+        : original(input, init),
+    );
+    await press('Weiter zu Startmeldungen');
+    await press('Weiter zur Prüfung');
+    await press('Weiter zur Zahlung');
+    const online = container.querySelector(
+      'input[value="online"]',
+    ) as HTMLInputElement;
+    await act(async () => online.click());
+    // Do not await the pending checkout; receipt must already be visible.
+    await act(async () => {
+      const submit = [...container.querySelectorAll('button')].find(
+        (b) => b.type === 'submit',
+      );
+      submit!.click();
+    });
+    expect(container.textContent).toContain('Nennung eingegangen');
+    await act(async () => rejectCheckout(new Error('network')));
+    expect(container.textContent).toContain('Zahlung nicht gestartet');
+    expect(submissions).toHaveLength(1);
+    fetchMock.mockImplementation((input, init) =>
+      String(input).endsWith('/checkout')
+        ? Promise.resolve({ ok: false, json: async () => ({}) } as Response)
+        : original(input, init),
+    );
+    await press('Erneut versuchen');
+    expect(submissions).toHaveLength(1);
+    const checkouts = fetchMock.mock.calls.filter(([url]) =>
+      String(url).endsWith('/checkout'),
+    );
+    expect(checkouts).toHaveLength(2);
+    expect(
+      checkouts.every(([url]) => String(url).includes('/invoices/invoice-a/')),
+    ).toBe(true);
+    expect(container.textContent).toContain('Zahlung nicht gestartet');
   });
 
   it('speaks English and keeps an emergency contact together', async () => {

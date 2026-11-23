@@ -1,3 +1,4 @@
+import { RegistrationConfirmation } from './RegistrationConfirmation.js';
 import type { RegistrationDraft } from '@nennbox/contracts';
 import { useState } from 'react';
 import { Button } from '@nennbox/ui';
@@ -123,8 +124,7 @@ export function Registration({
     defaultLocale,
     ...(initialDraft ? { initialDraft } : {}),
   });
-  const { payload, loadError, t, submitted, locale, paymentInstructions } =
-    state;
+  const { payload, loadError, t, submitted, locale } = state;
   if (!payload && !loadError)
     return (
       <section aria-busy="true">
@@ -163,51 +163,11 @@ export function Registration({
   const actions = createRegistrationActions(model, organizationId, eventSlug);
   if (submitted)
     return (
-      <section aria-labelledby="registration-success">
-        <h2 id="registration-success">{payload.event.name}</h2>
-        <p role="status">{t.submitted}</p>
-        {paymentInstructions && (
-          <section
-            className="registration-payment-instructions"
-            aria-label={
-              locale === 'de' ? 'Überweisungsdaten' : 'Bank transfer details'
-            }
-          >
-            <h3>{locale === 'de' ? 'Überweisung' : 'Bank transfer'}</h3>
-            <dl>
-              <dt>{locale === 'de' ? 'Empfänger' : 'Recipient'}</dt>
-              <dd>{paymentInstructions.accountName}</dd>
-              <dt>IBAN</dt>
-              <dd>{paymentInstructions.iban}</dd>
-              {paymentInstructions.bic && (
-                <>
-                  <dt>BIC</dt>
-                  <dd>{paymentInstructions.bic}</dd>
-                </>
-              )}
-              <dt>{locale === 'de' ? 'Betrag' : 'Amount'}</dt>
-              <dd>
-                {new Intl.NumberFormat(locale, {
-                  style: 'currency',
-                  currency: paymentInstructions.currency,
-                }).format(paymentInstructions.amountCents / 100)}
-              </dd>
-              <dt>
-                {locale === 'de' ? 'Verwendungszweck' : 'Payment reference'}
-              </dt>
-              <dd>{paymentInstructions.paymentReference}</dd>
-            </dl>
-          </section>
-        )}
-        <p>
-          {locale === 'de'
-            ? 'Nach Bestätigung deiner E-Mail kannst du deine Nennung jederzeit einsehen.'
-            : 'After verifying your email, you can view your entry at any time.'}
-        </p>
-        <a href={`/events/${encodeURIComponent(eventSlug)}/my-entry`}>
-          {locale === 'de' ? 'Meine Nennung' : 'My entry'}
-        </a>
-      </section>
+      <RegistrationConfirmation
+        model={model}
+        actions={actions}
+        eventSlug={eventSlug}
+      />
     );
 
   if (!payload.consents.some((item) => item.language === locale))

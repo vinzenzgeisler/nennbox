@@ -1,3 +1,4 @@
+import type { RegistrationSubmissionResult } from './completeRegistrationPayment.js';
 import { useEffect, useRef, useState } from 'react';
 import {
   StandardRegistrationFormSchema,
@@ -69,6 +70,9 @@ export function useRegistrationState({
   >({});
   const numberLookup = useRef<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submissionResult, setSubmissionResult] =
+    useState<RegistrationSubmissionResult | null>(null);
+  const [paymentError, setPaymentError] = useState(false);
   const [paymentChoice, setPaymentChoice] = useState<
     'online' | 'bank_transfer' | 'later'
   >('later');
@@ -138,6 +142,10 @@ export function useRegistrationState({
     setNumberAvailability,
     numberLookup,
     submitted,
+    submissionResult,
+    setSubmissionResult,
+    paymentError,
+    setPaymentError,
     setSubmitted,
     paymentChoice,
     setPaymentChoice,

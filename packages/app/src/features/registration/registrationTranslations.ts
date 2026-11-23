@@ -11,7 +11,7 @@ export const translations = {
     consentUnavailable:
       'Die Anmeldung ist nicht verfügbar, weil für diese Veranstaltung kein Einwilligungstext hinterlegt ist.',
     submitted:
-      'Die Nennung wurde angenommen. Bitte bestätige die E-Mail-Adresse über den zugesandten Link.',
+      'Nennung eingegangen. Bitte bestätige die E-Mail-Adresse über den zugesandten Link.',
     guardianName: 'Name der erziehungsberechtigten Person',
     guardianEmail: 'E-Mail der erziehungsberechtigten Person',
     addVehicle: 'Weiteres Fahrzeug hinzufügen',
@@ -82,7 +82,7 @@ export const translations = {
     consentUnavailable:
       'Registration is not available because this event has no published consent text.',
     submitted:
-      'Your registration was accepted. Please verify your email using the link we sent.',
+      'Registration received. Please verify your email using the link we sent.',
     guardianName: 'Parent or guardian name',
     guardianEmail: 'Parent or guardian email',
     addVehicle: 'Add another vehicle',
