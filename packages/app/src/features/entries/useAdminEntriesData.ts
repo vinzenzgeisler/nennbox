@@ -44,6 +44,7 @@ export function useAdminEntriesData({
   const [classes, setClasses] = useState<Array<{ id: string; name: string }>>(
     [],
   );
+  const eventGate = useRef<Gate>({ generation: 0, controller: null });
   const listGate = useRef<Gate>({ generation: 0, controller: null });
   const classGate = useRef<Gate>({ generation: 0, controller: null });
   const invalidateDataRequests = useCallback(() => {
@@ -53,7 +54,7 @@ export function useAdminEntriesData({
   useEffect(() => () => invalidateDataRequests(), [invalidateDataRequests]);
   useEffect(() => {
     let active = true;
-    const gate = classGate.current;
+    const gate = eventGate.current;
     const { generation, controller } = begin(gate);
     request('/admin/events', { signal: controller.signal })
       .then(async (response) => {
@@ -154,7 +155,8 @@ export function useAdminEntriesData({
 
     const requestedEventId = eventId;
     const { generation, controller } = begin(listGate.current);
-    setApiState('loading');
+    // Keep existing rows mounted while a replacement query is in flight.
+    setApiState((current) => (current === 'ready' ? current : 'loading'));
     try {
       const response = await request(`/admin/entries?${params}`, {
         signal: controller.signal,

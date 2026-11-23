@@ -302,11 +302,9 @@ test('A co-driver completes data and consents through the personal link; the off
   ).toContainText('participation');
   await shoot(page, 'detail-beifahrer-vollstaendig');
   // A completed co-driver leaves no link action; the spare vehicle took no capacity (capacity is 1).
-  await detail.locator('summary[aria-label="Weitere Aktionen"]').click();
   await expect(
     detail.getByRole('button', { name: 'Persönlichen Link erstellen' }),
   ).toHaveCount(0);
-  await detail.locator('summary[aria-label="Weitere Aktionen"]').click();
   const occupied = await call(
     `/admin/entries?eventId=${event.id}&classId=${klass.id}`,
     'GET',
@@ -381,7 +379,6 @@ test('A co-driver completes data and consents through the personal link; the off
   });
   await expect(lateDetail.getByText('nicht angegeben').first()).toBeVisible();
   await shoot(page, 'detail-ohne-beifahrer');
-  await lateDetail.locator('summary[aria-label="Weitere Aktionen"]').click();
   await lateDetail
     .getByRole('button', { name: 'Beifahrer nachmelden' })
     .click();
@@ -395,7 +392,6 @@ test('A co-driver completes data and consents through the personal link; the off
     lateDetail.getByRole('region', { name: 'Beifahrer', exact: true }),
   ).toContainText('Nico Nachgemeldet');
   await expect(lateDetail).toContainText('Daten ausstehend');
-  await lateDetail.locator('summary[aria-label="Weitere Aktionen"]').click();
   await lateDetail
     .getByRole('button', { name: 'Persönlichen Link erstellen' })
     .click();

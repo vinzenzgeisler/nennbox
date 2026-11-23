@@ -1,8 +1,10 @@
+import { useEntryQuickAction } from './useEntryQuickAction.js';
+import type { EntryQuickActionRequest } from './entryQuickActions.js';
 import { EntryDetailDialogs } from './detail/EntryDetailDialogs.js';
 import { entryStatusDialog } from './detail/entryStatusDialog.js';
 import { EntryDetailContent } from './detail/EntryDetailContent.js';
 import { useMemo, useState } from 'react';
-import { AppButton, EntryDetailPage, Menu } from '@nennbox/ui';
+import { AppButton, EntryDetailPage } from '@nennbox/ui';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { Outcome, WorkflowView } from './AdminEntriesModel.js';
 import type { Pending } from './detail/EntryDetailPending.js';
@@ -25,6 +27,8 @@ import {
 } from './detail/useEntryDetailReads.js';
 
 export function AdminEntryDetail({
+  quickActionRequest,
+  onQuickActionHandled,
   selected,
   classes,
   workflow,
@@ -39,6 +43,8 @@ export function AdminEntryDetail({
   onNotice,
   onOpenRelated,
 }: {
+  quickActionRequest?: EntryQuickActionRequest | null;
+  onQuickActionHandled?: () => void;
   onNotice?: (message: string) => void;
   onOpenRelated?: ((id: string) => Promise<void>) | undefined;
   navigation?: import('react').ReactNode;
@@ -79,6 +85,16 @@ export function AdminEntryDetail({
     () => timelineFor(selected, workflow, dimensionLabels),
     [selected, workflow, dimensionLabels],
   );
+  useEntryQuickAction({
+    request: quickActionRequest,
+    entry: selected,
+    workflow,
+    onMessage,
+    setTab,
+    setNumberOpen,
+    setPending,
+    onHandled: onQuickActionHandled,
+  });
   if (!details)
     return <p role="alert">Die Details dieser Nennung sind nicht verfügbar.</p>;
   const close = () => {
@@ -179,19 +195,47 @@ export function AdminEntryDetail({
         onTab={setTab}
         progress={<EntryAdmissionProgress entry={selected} />}
         sidebar={
-          <EntryProperties
-            entry={selected}
-            onOpenRelated={onOpenRelated}
-            busy={api.busy}
-            onNumber={() => setNumberOpen((value) => !value)}
-            saveNote={(text) =>
-              api.performAdminAction({
-                kind: 'note',
-                visibility: 'internal',
-                text,
-              })
-            }
-          />
+          <>
+            <section className="nb-entry-sidebar-actions" aria-label="Aktionen">
+              <h2>Aktionen</h2>
+              <EntryActionRail
+                hidePrimary
+                entry={selected}
+                workflow={workflow}
+                busy={busy || api.busy}
+                onStatus={(step) => {
+                  changeDetailStatus(step);
+                }}
+                onVerify={() => setPending({ kind: 'verify' })}
+                onPayment={() => setPending({ kind: 'payment' })}
+                onDimension={(action) =>
+                  setPending({ kind: 'dimension', action })
+                }
+                onAdminAction={(action) =>
+                  setPending({ kind: 'admin', action })
+                }
+                onPassenger={(action) =>
+                  setPending({ kind: 'passenger', action })
+                }
+                onMessage={writeMessage}
+                onRequestDocument={requestDocument}
+              />
+            </section>
+            <EntryProperties
+              recent={timeline}
+              entry={selected}
+              onOpenRelated={onOpenRelated}
+              busy={api.busy}
+              onNumber={() => setNumberOpen((value) => !value)}
+              saveNote={(text) =>
+                api.performAdminAction({
+                  kind: 'note',
+                  visibility: 'internal',
+                  text,
+                })
+              }
+            />
+          </>
         }
         header={
           <EntryDetailHeader
@@ -206,30 +250,6 @@ export function AdminEntryDetail({
                     changeDetailStatus(step);
                   }}
                 />
-                <Menu label="Weitere Aktionen">
-                  <EntryActionRail
-                    hidePrimary
-                    entry={selected}
-                    workflow={workflow}
-                    busy={busy || api.busy}
-                    onStatus={(step) => {
-                      changeDetailStatus(step);
-                    }}
-                    onVerify={() => setPending({ kind: 'verify' })}
-                    onPayment={() => setPending({ kind: 'payment' })}
-                    onDimension={(action) =>
-                      setPending({ kind: 'dimension', action })
-                    }
-                    onAdminAction={(action) =>
-                      setPending({ kind: 'admin', action })
-                    }
-                    onPassenger={(action) =>
-                      setPending({ kind: 'passenger', action })
-                    }
-                    onMessage={writeMessage}
-                    onRequestDocument={requestDocument}
-                  />
-                </Menu>
               </>
             }
           />

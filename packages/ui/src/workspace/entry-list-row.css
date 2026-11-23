@@ -12,20 +12,26 @@
   letter-spacing: 0;
   text-transform: none;
 }
-.nb-workspace-split-content .nb-table th:nth-child(1) {
+.nb-workspace-split-content .nb-table th:nth-child(2) {
   width: 43%;
 }
-.nb-workspace-split-content .nb-table th:nth-child(2) {
+.nb-workspace-split-content .nb-table th:nth-child(3) {
   width: 13%;
 }
-.nb-workspace-split-content .nb-table th:nth-child(3) {
+.nb-workspace-split-content .nb-table th:nth-child(4) {
   width: 15%;
 }
-.nb-workspace-split-content .nb-table th:nth-child(4) {
+.nb-workspace-split-content .nb-table th:nth-child(5) {
   width: 22%;
 }
-.nb-workspace-split-content .nb-table th:nth-child(5) {
+.nb-workspace-split-content .nb-table th:nth-child(6) {
   width: 7%;
+}
+.nb-workspace-split-content .nb-table th:nth-child(1) {
+  width: 48px;
+}
+.nb-entry-list-row td[data-column='selection'] {
+  padding-right: 0;
 }
 .nb-entry-list-row {
   height: var(--nb-row-h);
@@ -53,19 +59,16 @@
   opacity: 0.55;
 }
 .nb-entry-list-person {
-  position: relative;
   display: flex;
   align-items: center;
   gap: var(--nb-space-3);
   min-width: 0;
 }
 .nb-entry-list-select {
-  position: absolute;
-  z-index: 1;
-  top: 50%;
-  left: calc(-1 * var(--nb-space-6));
+  display: flex;
+  align-items: center;
+  width: 20px;
   opacity: 0;
-  transform: translateY(-50%);
   transition: opacity var(--nb-duration-fast);
 }
 .nb-entry-list-row:hover .nb-entry-list-select,
@@ -126,7 +129,7 @@
 @media (width <= 860px) {
   .nb-entry-list-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
     gap: var(--nb-space-2);
     height: auto;
     min-height: var(--nb-row-h);
@@ -139,8 +142,15 @@
     padding: 0;
     border: 0;
   }
+  .nb-entry-list-row td[data-column='selection'] {
+    grid-column: 1;
+    grid-row: 1;
+  }
   .nb-entry-list-row td[data-column='person'] {
-    grid-column: 1 / -1;
+    grid-column: 2 / -1;
+  }
+  .nb-entry-list-row td[data-column='status'] {
+    grid-column: 2;
   }
   .nb-entry-list-row td[data-column='status'],
   .nb-entry-list-row td[data-column='completion'] {
@@ -151,6 +161,10 @@
     display: none;
   }
   .nb-entry-list-select {
-    left: 0;
+    opacity: 1;
   }
+}
+
+.nb-workspace-split-content .nb-table th.nb-entry-column-label {
+  font-size: 0;
 }

@@ -1,14 +1,10 @@
+import { useEntryQuickRequest } from './useEntryQuickRequest.js';
 import { EntryDetailHost } from './detail/EntryDetailHost.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { EntryEventPicker } from './EntryEventPicker.js';
 import { EntryStatusToast } from './EntryStatusToast.js';
 import { useEntryListStatusChanges } from './useEntryListStatusChanges.js';
-import {
-  applyEntrySort,
-  initialQuery,
-  request,
-  type EntryQuery,
-} from './AdminEntriesModel.js';
+import { applyEntrySort, initialQuery, request } from './AdminEntriesModel.js';
 import { AdminEntriesState } from './AdminEntriesState.js';
 import { AdminEntryList } from './AdminEntryList.js';
 import { useAdminEntryActions } from './useAdminEntryActions.js';
@@ -19,17 +15,12 @@ import { useOpenEntryDetail } from './useOpenEntryDetail.js';
 import { useEntryChangesRefresh } from './useEntryChangesRefresh.js';
 import { useSharedSelection } from './useSharedSelection.js';
 import type { AdminEntriesProps } from './AdminEntriesProps.js';
-import { useEntrySearch } from './useEntrySearch.js';
+import { useEntryFilters } from './useEntryFilters.js';
 
 /** Event changes reset view state and cancel requests scoped to the previous event. */
 
 export function AdminEntries(props: AdminEntriesProps = {}) {
-  return (
-    <AdminEntriesView
-      key={`${props.eventId ?? 'standalone'}:${props.filterRevision ?? 0}`}
-      {...props}
-    />
-  );
+  return <AdminEntriesView key={props.eventId ?? 'standalone'} {...props} />;
 }
 
 function AdminEntriesView({
@@ -37,9 +28,11 @@ function AdminEntriesView({
   preview,
   mobilePreviewOpen,
   autoPreview = false,
+  autoSelectFirst = autoPreview,
   onOpenDetail,
   onMessage,
   onCloseDetail,
+  onClosePreview,
   onSelectionChange,
   onWorkflowChange,
   entriesRevision = 0,
@@ -49,6 +42,7 @@ function AdminEntriesView({
   onTotalChange,
   eventId: sharedEventId,
   initialFilters = {},
+  filterRevision = 0,
   onEventChange: onSharedEventChange,
 }: AdminEntriesProps) {
   const [internalDetailOpen, setInternalDetailOpen] = useState(false);
@@ -62,19 +56,12 @@ function AdminEntriesView({
     if (onCloseDetail) onCloseDetail();
     else setInternalDetailOpen(false);
   }, [onCloseDetail]);
-  const [localEventId, setLocalEventId] = useState('');
+  const [localEventId, setLocalEventId] = useState(
+    () => new URLSearchParams(window.location.search).get('eventId') ?? '',
+  );
   const eventId = sharedEventId ?? localEventId;
-  const [page, setPage] = useState(1);
   const pageSize = 12;
   const [refreshRevision, setRefreshRevision] = useState(0);
-  const [draft, setDraft] = useState<EntryQuery>({
-    ...initialQuery,
-    ...initialFilters,
-  });
-  const [applied, setApplied] = useState<EntryQuery>({
-    ...initialQuery,
-    ...initialFilters,
-  });
   const [selected, setSelected] = useSharedSelection(
     sharedSelectedEntry,
     onSelectionChange,
@@ -107,6 +94,8 @@ function AdminEntriesView({
     () => setSelection({ eventId, ids: new Set() }),
     [eventId],
   );
+  const { draft, setDraft, applied, setApplied, page, setPage } =
+    useEntryFilters(eventId, initialFilters, filterRevision, clearSelection);
   const {
     apiState,
     events,
@@ -156,9 +145,10 @@ function AdminEntriesView({
       setActionError,
     });
   const openEntryDetail = useOpenEntryDetail(selected, openEntry, openDetail);
+  const quick = useEntryQuickRequest(openEntryDetail);
   useEffect(() => {
     if (
-      !autoPreview ||
+      !autoSelectFirst ||
       !eventId ||
       !items.length ||
       autoPreviewedEvent.current === eventId ||
@@ -172,7 +162,7 @@ function AdminEntriesView({
           ?.category === 'waitlisted',
     );
     void openEntry((firstPending ?? items[0]!).id);
-  }, [autoPreview, eventId, items, workflow, openEntry]);
+  }, [autoSelectFirst, eventId, items, workflow, openEntry]);
   usePreviewAdvance({
     eventId,
     items,
@@ -191,9 +181,9 @@ function AdminEntriesView({
     openEntry,
     openDetail,
     closeDetail,
+    closePreview: onClosePreview,
     setSelected,
   });
-  useEntrySearch(draft, setApplied, setPage, clearSelection);
 
   function changeEvent(nextEventId: string) {
     resetData();
@@ -244,6 +234,8 @@ function AdminEntriesView({
       )}
       {!(isDetailOpen && selected) && (
         <AdminEntryList
+          onQuickAction={quick.onQuickAction}
+          canMessage={Boolean(onMessage)}
           preview={preview}
           mobilePreviewOpen={mobilePreviewOpen}
           eventId={eventId}
@@ -273,6 +265,8 @@ function AdminEntriesView({
       )}
       {isDetailOpen && selected && (
         <EntryDetailHost
+          quickActionRequest={quick.request}
+          onQuickActionHandled={quick.clear}
           key={selected.id}
           selected={selected}
           classes={classes}

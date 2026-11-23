@@ -2,9 +2,15 @@ import { relativeEntryTime } from './relativeEntryTime.js';
 import { DetailSection, HistoryTimeline } from '@nennbox/ui';
 import { type TimelineItem } from './entryDetailModel.js';
 
-export function EntryHistorySection({ items }: { items: TimelineItem[] }) {
+export function EntryHistorySection({
+  items,
+  title = 'Verlauf',
+}: {
+  items: TimelineItem[];
+  title?: string;
+}) {
   return (
-    <DetailSection title="Verlauf">
+    <DetailSection title={title}>
       <HistoryTimeline
         items={items.map((item) => ({
           id: item.id,

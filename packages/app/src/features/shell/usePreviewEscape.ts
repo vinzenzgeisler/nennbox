@@ -11,6 +11,7 @@ export function usePreviewEscape(
         !event.defaultPrevented &&
         !document.querySelector('dialog[open], [role=dialog], details[open]')
       ) {
+        event.preventDefault();
         onClosePreview?.();
         document
           .querySelector<HTMLButtonElement>('[data-selected-entry]')

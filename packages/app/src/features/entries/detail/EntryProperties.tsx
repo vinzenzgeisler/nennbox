@@ -1,3 +1,6 @@
+import { EntryHistorySection } from './EntryHistorySection.js';
+import type { TimelineItem } from './entryDetailModel.js';
+import { EntryRecentNote } from './EntryRecentNote.js';
 import { assignedNumber } from '../entryStartNumber.js';
 import { EntryDataHints } from '../EntryDataHints.js';
 import { useState } from 'react';
@@ -7,12 +10,14 @@ import type { Outcome } from '../AdminEntriesModel.js';
 import { formatMoney } from './entryDetailModel.js';
 export function EntryProperties({
   entry,
+  recent = [],
   busy,
   saveNote,
   onNumber,
   onOpenRelated,
 }: {
   entry: Entry;
+  recent?: TimelineItem[];
   busy: boolean;
   saveNote: (text: string) => Promise<Outcome>;
   onNumber: () => void;
@@ -81,6 +86,8 @@ export function EntryProperties({
           </dd>
         </dl>
       </section>
+      <EntryHistorySection title="Zuletzt" items={recent.slice(0, 3)} />
+      <EntryRecentNote entry={entry} />
       {entry.availableActions?.includes('note:internal') && (
         <form
           className="nb-entry-note"

@@ -228,6 +228,8 @@ function expectEmptyEventView() {
 }
 
 beforeEach(() => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/admin?view=entries');
   (
     globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
   ).IS_REACT_ACT_ENVIRONMENT = true;
@@ -280,17 +282,10 @@ describe('AdminApplication event switch and detail access', () => {
         });
         await click(byText('Speichern'));
       } else if (action === 'payment') {
-        await act(async () =>
-          container
-            .querySelector<HTMLElement>(
-              '.nb-entry-header-actions .nb-menu summary',
-            )!
-            .click(),
-        );
         await click(
           (button) =>
             button.textContent === 'Zahlung erfassen' &&
-            button.closest('.nb-entry-header-actions .nb-menu') !== null,
+            button.closest('.nb-entry-sidebar-actions') !== null,
         );
         const reason =
           container.querySelector<HTMLTextAreaElement>('dialog textarea')!;
@@ -454,6 +449,49 @@ describe('AdminApplication event switch and detail access', () => {
     );
     expect(container.querySelector('.nb-entry-page')).toBeNull();
     await openDetailWide();
+  });
+
+  it('closes the preview with Escape, persists collapse, and reopens on a row click', async () => {
+    await mount();
+    expect(container.querySelector('.has-preview')).not.toBeNull();
+    await act(async () =>
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+      ),
+    );
+    expect(container.querySelector('.has-preview')).toBeNull();
+    expect(container.querySelector('.nb-workspace-split-preview')).toBeNull();
+    expect(localStorage.getItem('nennbox.preview.collapsed')).toBe('true');
+    await click((button) => button.hasAttribute('data-entry-action'));
+    expect(container.querySelector('.has-preview')).not.toBeNull();
+    expect(localStorage.getItem('nennbox.preview.collapsed')).toBe('false');
+  });
+
+  it('restores a collapsed preview on a fresh mount without an empty panel', async () => {
+    localStorage.setItem('nennbox.preview.collapsed', 'true');
+    await mount();
+    expect(container.querySelector('.nb-workspace-split-preview')).toBeNull();
+    await click((button) => button.hasAttribute('data-entry-action'));
+    expect(container.querySelector('.nb-preview-panel')).not.toBeNull();
+  });
+
+  it('routes the row start-number action into the existing detail editor', async () => {
+    listedEntries = [{ ...alex, availableActions: ['start_number'] }];
+    await mount();
+    await act(async () =>
+      container
+        .querySelector<HTMLElement>('.nb-entry-list-row .nb-menu summary')!
+        .click(),
+    );
+    await flush();
+    await click(
+      (button) => button.textContent?.includes('Startnummer ändern') === true,
+    );
+    expect(container.querySelector('.nb-entry-page')).not.toBeNull();
+    expect(container.textContent).toContain(
+      'Bestätigte Startnummer vergeben oder entfernen.',
+    );
+    expect(container.querySelector('input[maxlength="16"]')).not.toBeNull();
   });
 
   it('keeps workflow navigation in the event group but out of mobile navigation', async () => {

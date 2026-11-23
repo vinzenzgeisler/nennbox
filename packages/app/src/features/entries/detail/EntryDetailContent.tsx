@@ -64,18 +64,20 @@ export function EntryDetailContent({
       )}
       {tab === 'overview' && (
         <>
-          <EntryDriverSection
-            driver={entry.adminDetails!.driver}
-            passenger={entry.adminDetails!.passenger ?? null}
-            busy={api.busy}
-            onSave={api.saveDriver}
-          />
-          <EntryVehicleSection
-            vehicle={entry.adminDetails!.vehicle}
-            eventClass={entry.adminDetails!.eventClass}
-            busy={api.busy}
-            onSave={api.saveVehicle}
-          />
+          <div className="nb-entry-overview-columns">
+            <EntryDriverSection
+              driver={entry.adminDetails!.driver}
+              passenger={entry.adminDetails!.passenger ?? null}
+              busy={api.busy}
+              onSave={api.saveDriver}
+            />
+            <EntryVehicleSection
+              vehicle={entry.adminDetails!.vehicle}
+              eventClass={entry.adminDetails!.eventClass}
+              busy={api.busy}
+              onSave={api.saveVehicle}
+            />
+          </div>
           <EntryPassengerBlocks details={entry.adminDetails!} />
           <EntryCustomAnswers answers={entry.adminDetails!.customAnswers} />
         </>

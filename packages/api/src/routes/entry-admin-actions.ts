@@ -41,6 +41,8 @@ export function registerEntryAdminActionRoutes(
         availableActions.push(`acceptance:${edge.to}`);
       }
     }
+    if (deps.startNumbers && context.permissions.has('entry:write'))
+      availableActions.push('start_number');
     if (deps.passengers && context.permissions.has('entry:write'))
       availableActions.push(
         ...availablePassengerActions(entry.adminDetails ?? {}),
