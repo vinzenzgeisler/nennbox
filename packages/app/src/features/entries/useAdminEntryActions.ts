@@ -164,9 +164,10 @@ export function useAdminEntryActions({
     return outcome;
   }
 
-  const acceptedStatusKey = workflow?.statuses.find(
+  const acceptedStatus = workflow?.statuses.find(
     (status) => status.category === 'accepted',
-  )?.key;
+  );
+  const acceptedStatusKey = acceptedStatus?.id ?? acceptedStatus?.key;
   const eligibleSelectedItems = items.filter(
     (item) =>
       selectedIds.has(item.id) &&

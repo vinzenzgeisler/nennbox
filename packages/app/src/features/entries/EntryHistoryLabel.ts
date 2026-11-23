@@ -22,7 +22,8 @@ const statusLabels: Record<string, string> = {
   bf_signed: 'Beifahrer-Haftverzicht unterschrieben',
 };
 const statusText = (value: string, workflow: WorkflowView | null) =>
-  workflow?.statuses.find((item) => item.key === value)?.labels.de ??
+  workflow?.statuses.find((item) => (item.id ?? item.key) === value)?.labels
+    .de ??
   statusLabels[value] ??
   'Status aktualisiert';
 

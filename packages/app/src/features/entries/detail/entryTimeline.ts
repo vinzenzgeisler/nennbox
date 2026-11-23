@@ -73,7 +73,8 @@ export function timelineFor(
   dimensionLabels: ReadonlyMap<string, string>,
 ): TimelineItem[] {
   const status = (value: string) =>
-    workflow?.statuses.find((item) => item.key === value)?.labels.de ??
+    workflow?.statuses.find((item) => (item.id ?? item.key) === value)?.labels
+      .de ??
     dimensionLabels.get(value) ??
     knownStatus[value] ??
     'Unbekannt';

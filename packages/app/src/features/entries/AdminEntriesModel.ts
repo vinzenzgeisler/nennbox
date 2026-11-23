@@ -25,6 +25,7 @@ export const initialQuery: EntryQuery = {
 };
 export type Gate = { generation: number; controller: AbortController | null };
 export type WorkflowStatus = {
+  id?: string;
   key: string;
   labels: { de: string; en: string };
   color: string;

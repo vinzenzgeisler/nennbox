@@ -8,7 +8,29 @@ const POLL_INTERVAL_MS = 2000;
 /** The export history of one event. It polls only while a job is still running. */
 export function useExportJobs(eventId: string) {
   const load = useCallback(
-    (signal: AbortSignal) => exportsApi.list(eventId, signal),
+    async (signal: AbortSignal) => {
+      const jobs = await exportsApi.list(eventId, signal);
+      return Promise.all(
+        jobs.map(async (job) => {
+          if (job.status !== 'failed') return job;
+          try {
+            const status = await exportsApi.status(job.jobId, signal);
+            return {
+              ...job,
+              error:
+                status.error?.trim() ||
+                'Die Verarbeitung ist fehlgeschlagen. Bitte starte den Export erneut.',
+            };
+          } catch {
+            return {
+              ...job,
+              error:
+                'Die Fehlerursache konnte nicht geladen werden. Bitte starte den Export erneut.',
+            };
+          }
+        }),
+      );
+    },
     [eventId],
   );
   const { state, reload } = useRemoteResource(load);

@@ -31,7 +31,7 @@ export function usePreviewAdvance({
       return;
     const isOpen = (item: Entry) => {
       const category = workflow.statuses.find(
-        (status) => status.key === item.acceptanceStatus,
+        (status) => (status.id ?? status.key) === item.acceptanceStatus,
       )?.category;
       return category === 'pending' || category === 'waitlisted';
     };

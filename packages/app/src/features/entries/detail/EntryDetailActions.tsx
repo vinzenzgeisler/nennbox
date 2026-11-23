@@ -24,23 +24,24 @@ export function EntryDetailActions({
               item.key === 'entry' && item.value === selected.acceptanceStatus,
           )?.label.de ??
           workflow?.statuses.find(
-            (item) => item.key === selected.acceptanceStatus,
+            (item) => (item.id ?? item.key) === selected.acceptanceStatus,
           )?.labels.de ??
           selected.acceptanceStatus
         }
         tone={statusTone(
           workflow?.statuses.find(
-            (item) => item.key === selected.acceptanceStatus,
+            (item) => (item.id ?? item.key) === selected.acceptanceStatus,
           )?.category,
         )}
         disabled={busy}
         options={options.map((step) => ({
           key: step.to,
           label:
-            workflow?.statuses.find((item) => item.key === step.to)?.labels
-              .de ?? step.label,
+            workflow?.statuses.find((item) => (item.id ?? item.key) === step.to)
+              ?.labels.de ?? step.label,
           tone: statusTone(
-            workflow?.statuses.find((item) => item.key === step.to)?.category,
+            workflow?.statuses.find((item) => (item.id ?? item.key) === step.to)
+              ?.category,
           ),
         }))}
         onChange={(key) => {
@@ -51,8 +52,9 @@ export function EntryDetailActions({
       {['rejected', 'accepted'].map((category) => {
         const step = options.find(
           (item) =>
-            workflow?.statuses.find((status) => status.key === item.to)
-              ?.category === category,
+            workflow?.statuses.find(
+              (status) => (status.id ?? status.key) === item.to,
+            )?.category === category,
         );
         return (
           step && (

@@ -20,12 +20,16 @@ export function ExportHistory({
   statuses,
   downloading,
   onDownload,
+  onRetry,
+  retrying = false,
 }: {
   jobs: ExportJob[];
   classes: Map<string, string>;
   statuses: Map<string, string>;
   downloading: string | null;
   onDownload: (job: ExportJob, path: string) => void;
+  onRetry?: (job: ExportJob) => void;
+  retrying?: boolean;
 }) {
   return (
     <AppSection title="Bisherige Exporte">
@@ -50,6 +54,12 @@ export function ExportHistory({
                   <AppStatusPill status={STATE_TONES[job.status]}>
                     {STATE_LABELS[job.status]}
                   </AppStatusPill>
+                  {job.status === 'failed' && (
+                    <p>
+                      {job.error ||
+                        'Die Verarbeitung ist fehlgeschlagen. Bitte starte den Export erneut.'}
+                    </p>
+                  )}
                 </td>
                 <td>
                   {job.status === 'finished' && path ? (
@@ -59,6 +69,14 @@ export function ExportHistory({
                       onClick={() => onDownload(job, path)}
                     >
                       CSV herunterladen
+                    </AppButton>
+                  ) : job.status === 'failed' && onRetry ? (
+                    <AppButton
+                      tone="secondary"
+                      disabled={retrying}
+                      onClick={() => onRetry(job)}
+                    >
+                      Mit gleichen Einstellungen erneut starten
                     </AppButton>
                   ) : (
                     '—'

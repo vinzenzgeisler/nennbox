@@ -168,8 +168,9 @@ function AdminEntriesView({
     autoPreviewedEvent.current = eventId;
     const firstPending = items.find(
       (item) =>
-        workflow.statuses.find((status) => status.key === item.acceptanceStatus)
-          ?.category === 'waitlisted',
+        workflow.statuses.find(
+          (status) => (status.id ?? status.key) === item.acceptanceStatus,
+        )?.category === 'waitlisted',
     );
     void openEntry((firstPending ?? items[0]!).id);
   }, [autoPreview, eventId, items, workflow, openEntry]);
