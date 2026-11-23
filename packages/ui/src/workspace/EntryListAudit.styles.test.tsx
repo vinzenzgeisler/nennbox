@@ -39,3 +39,12 @@ it('removes closed row and status popovers from layout and restores them on open
     expect(getComputedStyle(popover).display).toBe('none');
   }
 });
+
+it('keeps IBM Plex out of the entries views by remapping shared font tokens', () => {
+  const tokens = readFileSync('packages/ui/src/app-tokens.css', 'utf8');
+  const block = tokens.match(
+    /\.admin-entries,\s*\.admin-detail-view,\s*\.nb-preview-panel\s*\{([^}]*)\}/,
+  )?.[1];
+  expect(block).toContain('--font-plex: var(--nb-font);');
+  expect(block).toContain('--font-mono: var(--nb-font-mono);');
+});
