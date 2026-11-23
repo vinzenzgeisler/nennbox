@@ -146,8 +146,10 @@ function EventMessages({
       <MessageLayout
         editor={
           <>
+            {/* The rendered preview reports its own error inside the preview panel. */}
             {Object.entries(data).map(
               ([name, request]) =>
+                name !== 'rendered' &&
                 request.error && (
                   <AppNotice key={name} tone="error">
                     {request.error}

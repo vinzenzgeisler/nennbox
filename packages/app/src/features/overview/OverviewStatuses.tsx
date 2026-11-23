@@ -42,7 +42,7 @@ export function OverviewStatuses({
             >
               <AppButton
                 tone="ghost"
-                aria-label={`${row.label}: ${row.count} Nennungen anzeigen`}
+                aria-label={`${row.label}: ${row.count} Nennungen öffnen`}
                 onClick={() => onOpenEntries({ acceptanceStatus: row.key })}
               >
                 {row.count}

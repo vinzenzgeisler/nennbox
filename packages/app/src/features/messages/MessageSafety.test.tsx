@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { AdminMessages } from './AdminMessages.js';
 import { messagesApi } from './messagesApi.js';
 
-const state = vi.hoisted(() => ({ error: '' }));
+const state = vi.hoisted(() => ({ error: '', renderedError: '' }));
 vi.mock('./useMessagesData.js', () => ({
   useMessagesData: () => {
     const ready = (value: unknown) => ({
@@ -32,11 +32,14 @@ vi.mock('./useMessagesData.js', () => ({
       workflow: ready([]),
       templates: ready([]),
       campaigns: ready([]),
-      rendered: ready({
-        recipient: { name: 'Anja', email: 'anja@example.test' },
-        subject: 'Hallo',
-        text: 'Text',
-      }),
+      rendered: {
+        ...ready({
+          recipient: { name: 'Anja', email: 'anja@example.test' },
+          subject: 'Hallo',
+          text: 'Text',
+        }),
+        error: state.renderedError || state.error,
+      },
     };
   },
 }));
@@ -46,6 +49,7 @@ beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   sessionStorage.clear();
   state.error = '';
+  state.renderedError = '';
   host = document.createElement('div');
   document.body.append(host);
   root = createRoot(host);
@@ -157,4 +161,18 @@ it('blocks sending while an attachment is uploading and includes it when complet
     }),
     expect.any(String),
   );
+});
+
+it('reports a failed message preview exactly once, inside the preview', async () => {
+  state.renderedError = 'Die Vorschau konnte nicht erstellt werden.';
+  await act(async () =>
+    root.render(<AdminMessages eventId="first" seed={seed} />),
+  );
+  const alerts = [...document.querySelectorAll('[role="alert"]')].filter(
+    (alert) => alert.textContent?.includes(state.renderedError),
+  );
+  expect(alerts).toHaveLength(1);
+  expect(
+    alerts[0]!.closest('section, [aria-label="Nachrichtenvorschau"]'),
+  ).not.toBeNull();
 });

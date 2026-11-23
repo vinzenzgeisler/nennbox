@@ -57,7 +57,7 @@ export function OccupancyBar({
         {onOpenEntries ? (
           <AppButton
             tone="ghost"
-            aria-label={`${label}: Nennungen anzeigen`}
+            aria-label={`${label}: Nennungen öffnen`}
             onClick={onOpenEntries}
           >
             {occupied}

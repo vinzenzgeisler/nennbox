@@ -50,12 +50,17 @@ it('opens each entry metric, workflow status and class with only its intended fi
   try {
     const buttons = [...host.querySelectorAll('button')];
     expect(buttons.map((button) => button.getAttribute('aria-label'))).toEqual([
-      'Alle Nennungen anzeigen',
-      'Nennungen mit offenen Zahlungen anzeigen',
-      'Nennungen mit fehlenden Unterlagen anzeigen',
-      'Vorauswahl: 3 Nennungen anzeigen',
-      'Touring: Nennungen anzeigen',
+      'Alle Nennungen öffnen',
+      'Nennungen mit offenen Zahlungen öffnen',
+      'Nennungen mit fehlenden Unterlagen öffnen',
+      'Vorauswahl: 3 Nennungen öffnen',
+      'Touring: Nennungen öffnen',
     ]);
+    // "Nennungen anzeigen" names the warning action; drilldowns must not shadow it.
+    for (const button of buttons)
+      expect(button.getAttribute('aria-label')).not.toMatch(
+        /Nennungen anzeigen/i,
+      );
     for (const button of buttons) act(() => button.click());
     expect(onOpenEntries.mock.calls).toEqual([
       [{}],

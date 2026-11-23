@@ -23,7 +23,7 @@ export function OverviewMetrics({
         value={
           <AppButton
             tone="ghost"
-            aria-label="Alle Nennungen anzeigen"
+            aria-label="Alle Nennungen öffnen"
             onClick={() => onOpenEntries({})}
           >
             {totalEntries(overview.statuses)}
@@ -35,7 +35,7 @@ export function OverviewMetrics({
         value={
           <AppButton
             tone="ghost"
-            aria-label="Nennungen mit offenen Zahlungen anzeigen"
+            aria-label="Nennungen mit offenen Zahlungen öffnen"
             onClick={() => onOpenEntries({ paymentStatus: 'outstanding' })}
           >
             {openPayments.count}
@@ -49,7 +49,7 @@ export function OverviewMetrics({
         value={
           <AppButton
             tone="ghost"
-            aria-label="Nennungen mit fehlenden Unterlagen anzeigen"
+            aria-label="Nennungen mit fehlenden Unterlagen öffnen"
             onClick={() => onOpenEntries({ missingDocuments: 'true' })}
           >
             {missingDocuments.count}
