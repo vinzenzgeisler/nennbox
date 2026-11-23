@@ -37,9 +37,9 @@ export type WorkflowView = {
     from: string;
     to: string;
     reasonRequired: boolean;
-    permission?: string;
+    permission?: string | undefined;
     roles?: Array<'admin' | 'member'> | undefined;
-    notify?: boolean;
+    notify?: boolean | undefined;
   }>;
 };
 

@@ -1,3 +1,6 @@
+.nb-entry-status-menu:not([open]) > .nb-entry-status-options {
+  display: none;
+}
 .nb-entry-status-menu {
   position: relative;
   display: inline-block;

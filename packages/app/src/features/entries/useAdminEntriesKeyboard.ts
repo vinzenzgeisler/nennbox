@@ -8,6 +8,7 @@ export function useAdminEntriesKeyboard({
   openEntry,
   openDetail,
   closeDetail,
+  closePreview,
   setSelected,
 }: {
   items: Entry[];
@@ -16,6 +17,7 @@ export function useAdminEntriesKeyboard({
   openEntry: (id: string) => Promise<void>;
   openDetail: () => void;
   closeDetail: () => void;
+  closePreview?: (() => void) | undefined;
   setSelected: Dispatch<SetStateAction<Entry | null>>;
 }) {
   useEffect(() => {
@@ -63,7 +65,13 @@ export function useAdminEntriesKeyboard({
           )
           ?.click();
       } else if (event.key === 'Escape' && selected) {
-        setSelected(null);
+        if (closePreview) {
+          event.preventDefault();
+          closePreview();
+          document
+            .querySelector<HTMLButtonElement>('[data-selected-entry]')
+            ?.focus();
+        } else setSelected(null);
       } else if (
         event.key === 'Enter' &&
         selected &&
@@ -87,6 +95,7 @@ export function useAdminEntriesKeyboard({
     openEntry,
     openDetail,
     closeDetail,
+    closePreview,
     setSelected,
   ]);
 }

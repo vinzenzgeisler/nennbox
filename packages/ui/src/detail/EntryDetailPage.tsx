@@ -1,4 +1,5 @@
-import { useId, type ReactNode } from 'react';
+import { usePreviewResize } from '../workspace/usePreviewResize.js';
+import { useId, type ReactNode, type CSSProperties } from 'react';
 import { AppButton } from '../app-primitives/AppPrimitives.js';
 
 export type EntryDetailTab = { key: string; label: string; count?: number };
@@ -22,12 +23,16 @@ export function EntryDetailPage({
   children: ReactNode;
 }) {
   const id = useId();
+  const { ref, width } = usePreviewResize();
   return (
-    <div className="nb-entry-page">
+    <div
+      ref={ref}
+      className="nb-entry-page"
+      style={{ '--workspace-preview-width': `${width}px` } as CSSProperties}
+    >
       <div className="nb-entry-page-navigation">{navigation}</div>
       <div className="nb-entry-page-head">
         <div className="nb-entry-page-identity">{header}</div>
-        {progress}
         <nav aria-label="Bereiche der Nennung" className="nb-entry-page-tabs">
           {tabs.map((tab) => (
             <AppButton
@@ -49,8 +54,9 @@ export function EntryDetailPage({
         </div>
         <aside
           className="nb-entry-page-sidebar"
-          aria-label="Eigenschaften und interne Notiz"
+          aria-label="Checkliste, Aktionen und Eigenschaften"
         >
+          {progress}
           {sidebar}
         </aside>
       </div>

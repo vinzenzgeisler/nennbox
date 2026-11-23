@@ -2,7 +2,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
+import { defaultWorkflow } from './features/workflow/AdminWorkflow.js';
 import { AdminEntries } from './AdminEntries.js';
+import { EntrySelectionProvider } from './features/entries/EntrySelectionState.js';
 
 const eventA = '10000000-0000-4000-8000-000000000001';
 const eventB = '10000000-0000-4000-8000-000000000002';
@@ -142,12 +144,21 @@ async function flush() {
 }
 async function mount(
   fetchImpl: (url: string, init?: RequestInit) => Promise<Response>,
+  fallbackWorkflow = true,
 ) {
   fetchMock = vi
     .spyOn(globalThis, 'fetch')
-    .mockImplementation((input, init) =>
-      fetchImpl(String(input), init),
-    ) as unknown as typeof fetchMock;
+    .mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (fallbackWorkflow && url.endsWith('/registration-workflow')) {
+        // Legacy list fixtures omit this endpoint; provide an explicit successful workflow.
+        const response = await fetchImpl(url, init).catch(() => null);
+        return response?.ok
+          ? response
+          : Response.json({ workflow: defaultWorkflow });
+      }
+      return fetchImpl(url, init);
+    }) as unknown as typeof fetchMock;
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -243,12 +254,8 @@ async function selectDetailTab(label: string) {
   expect(tab!.getAttribute('aria-pressed')).toBe('true');
 }
 async function openDetailMenu() {
-  const menu = container.querySelector<HTMLDetailsElement>(
-    '.nb-entry-header-actions .nb-menu',
-  )!;
-  await act(async () => menu.querySelector('summary')!.click());
-  await flush();
-  expect(menu.open).toBe(true);
+  // Actions are directly available in the persistent sidebar after #217.
+  expect(container.querySelector('.nb-entry-sidebar-actions')).not.toBeNull();
 }
 async function closeDetail() {
   await act(async () =>
@@ -274,6 +281,7 @@ async function changeStatus(action: string, reason = 'Reviewed') {
 }
 
 beforeEach(() => {
+  window.history.replaceState(null, '', '/');
   (
     globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
   ).IS_REACT_ACT_ENVIRONMENT = true;
@@ -344,28 +352,68 @@ describe('AdminEntries', () => {
 
   it('ignores a slower response for a superseded filter query', async () => {
     const slowSearch = deferred<Response>();
-    await mount(async (url) => {
+    let slowSignal: AbortSignal | null | undefined;
+    await mount(async (url, init) => {
       if (url === '/admin/events') return eventList();
       if (url.endsWith('/classes')) return classesFor(classA);
       if (url.startsWith('/admin/entries?')) {
         const search = new URL(url, 'http://localhost').searchParams.get(
           'search',
         );
-        if (search === 'slow') return slowSearch.promise;
+        if (search === 'slow') {
+          slowSignal = init?.signal;
+          return slowSearch.promise;
+        }
         if (search === 'fast') return listResponse([itemsA[1]!]);
         return listResponse(itemsA);
       }
       throw new Error(`Unexpected request ${url}`);
     });
     await chooseEvent(eventA);
+    const originalRow = container.querySelector('tbody tr');
     await setInput('Suche', 'slow');
     await submitFilters();
+    expect(container.querySelector('tbody tr')).toBe(originalRow);
+    expect(visibleEntryIds()).toEqual([entryA, entryA2]);
     await setInput('Suche', 'fast');
     await submitFilters();
+    expect(slowSignal?.aborted).toBe(true);
     expect(visibleEntryIds()).toEqual([entryA2]);
     await act(async () => slowSearch.resolve(listResponse([itemsA[0]!])));
     await flush();
     expect(visibleEntryIds()).toEqual([entryA2]);
+  });
+
+  it('applies shell filter revisions without remounting filters or refetching event metadata', async () => {
+    await mount(async (url) => {
+      if (url === '/admin/events') return eventList();
+      if (url.endsWith('/classes')) return classesFor(classA);
+      if (url.startsWith('/admin/entries?')) return listResponse(itemsA);
+      throw new Error(`Unexpected request ${url}`);
+    });
+    await chooseEvent(eventA);
+    await click('Filter');
+    const input = labeled('Suche', 'input');
+    const metadataCalls = () =>
+      fetchMock.mock.calls.filter(
+        ([url]) =>
+          String(url) === '/admin/events' || String(url).endsWith('/classes'),
+      ).length;
+    const before = metadataCalls();
+    await act(async () =>
+      root!.render(
+        <AdminEntries
+          filterRevision={1}
+          initialFilters={{ search: 'revised' }}
+        />,
+      ),
+    );
+    await flush();
+    expect(labeled('Suche', 'input')).toBe(input);
+    expect(input.value).toBe('revised');
+    expect(labeled('Klasse', 'select').closest('[hidden]')).toBeNull();
+    expect(metadataCalls()).toBe(before);
+    expect(listCalls().at(-1)).toContain('search=revised');
   });
 
   it('ignores delayed details when selection changes and resets class/detail state on event switch', async () => {
@@ -833,11 +881,9 @@ describe('AdminEntries', () => {
     expect(actions[0]?.textContent).toContain('Zulassen');
     await openDetailMenu();
     expect(
-      [
-        ...container.querySelectorAll(
-          '.nb-entry-header-actions .nb-menu button',
-        ),
-      ].some((button) => button.textContent?.includes('E-Mail verifizieren')),
+      [...container.querySelectorAll('.nb-entry-sidebar-actions button')].some(
+        (button) => button.textContent?.includes('E-Mail verifizieren'),
+      ),
     ).toBe(false);
     expect(
       [...container.querySelectorAll('.nb-entry-status-options button')].map(
@@ -955,7 +1001,7 @@ describe('AdminEntries', () => {
     });
     await openDetailMenu();
     expect(
-      container.querySelector('.nb-entry-header-actions .nb-menu')?.textContent,
+      container.querySelector('.nb-entry-sidebar-actions')?.textContent,
     ).toContain('Zahlung erfassen');
   });
 
@@ -1192,4 +1238,88 @@ describe('AdminEntries', () => {
       'kein Einwilligungsnachweis gespeichert',
     );
   });
+});
+
+it('retains actual list selection per event across view remounts along with URL filters', async () => {
+  await mount(async (url) => {
+    if (url === '/admin/events') return eventList();
+    if (url.endsWith('/classes')) return classesFor(classA);
+    if (url.startsWith('/admin/entries?')) return listResponse(itemsA, 2, 3);
+    return new Response('{}', { status: 404 });
+  });
+  window.history.replaceState(
+    {},
+    '',
+    `/?eventId=${eventA}&page=2&paymentStatus=partially_paid&sort=requestedStartNumber&direction=asc`,
+  );
+  const renderView = async (eventId: string | null) => {
+    await act(async () =>
+      root!.render(
+        <EntrySelectionProvider>
+          {eventId ? <AdminEntries eventId={eventId} /> : <p>Andere Ansicht</p>}
+        </EntrySelectionProvider>,
+      ),
+    );
+    await flush();
+  };
+  await renderView(null);
+  await renderView(eventA);
+  const checkbox = () =>
+    container.querySelector<HTMLInputElement>('tbody input[type="checkbox"]')!;
+  await act(async () => checkbox().click());
+  expect(checkbox().checked).toBe(true);
+  await renderView(null);
+  await renderView(eventA);
+  expect(checkbox().checked).toBe(true);
+  expect(container.textContent).toContain('1 von 2 ausgewählt');
+  expect(container.textContent).toContain('Zahlung: Teilweise bezahlt');
+  expect(window.location.search).toContain('page=2');
+  expect(window.location.search).toContain('sort=requestedStartNumber');
+  await renderView(eventB);
+  expect(checkbox().checked).toBe(false);
+  await renderView(eventA);
+  expect(checkbox().checked).toBe(true);
+});
+
+it('wires workflow failures and both retry actions through the actual list container', async () => {
+  let workflowFailed = true;
+  let listFailed = false;
+  const workflowRequest = vi.fn(() =>
+    workflowFailed
+      ? new Response('{}', { status: 503 })
+      : Response.json({ workflow: defaultWorkflow }),
+  );
+  await mount(async (url) => {
+    if (url === '/admin/events') return eventList();
+    if (url.endsWith('/classes')) return classesFor(classA);
+    if (url.endsWith('/registration-workflow')) return workflowRequest();
+    if (url.startsWith('/admin/entries?'))
+      return listFailed
+        ? new Response('{}', { status: 403 })
+        : listResponse(itemsA);
+    return new Response('{}', { status: 404 });
+  }, false);
+  await chooseEvent(eventA);
+  expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+    'Statusaktionen',
+  );
+  expect(
+    container.querySelectorAll('.nb-entry-status-menu [role="menuitem"]'),
+  ).toHaveLength(0);
+  workflowFailed = false;
+  await click('Erneut laden');
+  expect(workflowRequest).toHaveBeenCalledTimes(2);
+  expect(container.textContent).not.toContain(
+    'Workflow-Einstellungen konnten nicht',
+  );
+  listFailed = true;
+  await setInput('Suche', 'Alex');
+  await submitFilters();
+  expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+    'Zugriff verweigert',
+  );
+  listFailed = false;
+  await click('Erneut laden');
+  expect(container.querySelector('[role="alert"]')).toBeNull();
+  expect(container.textContent).toContain('Alex Driver');
 });
