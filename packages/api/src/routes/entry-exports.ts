@@ -47,6 +47,7 @@ export function registerEntryExportRoutes(context: ApiRoutesContext): void {
           createdAt: job.createdAt,
           expiresAt: job.expiresAt,
           fields: job.fields,
+          delimiter: job.delimiter,
           filters: job.filters,
           downloadUrl:
             job.status === 'ready' &&

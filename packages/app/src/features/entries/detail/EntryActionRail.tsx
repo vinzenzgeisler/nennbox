@@ -43,7 +43,9 @@ export function statusSteps(
         entry.availableActions.includes(`acceptance:${edge.to}`),
     )
     .map((edge): StatusStep => {
-      const target = workflow?.statuses.find((item) => item.key === edge.to);
+      const target = workflow?.statuses.find(
+        (item) => (item.id ?? item.key) === edge.to,
+      );
       const label = target?.labels.de ?? edge.to;
       return {
         to: edge.to,

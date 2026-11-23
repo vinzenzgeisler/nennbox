@@ -30,7 +30,7 @@ export function createOverviewRepository(db: Database): OverviewRepository {
         .limit(EVENT_QUERY_LIMIT);
       if (!event) return { ok: false, error: 'event-not-found' };
 
-      const statusCategory = sql<string>`coalesce((select workflow_status->>'category' from jsonb_array_elements(coalesce(workflow_revision.workflow->'statuses', '[]'::jsonb)) workflow_status where workflow_status->>'key' = ${entries.acceptanceStatus} limit 1), ${entries.acceptanceStatus})`;
+      const statusCategory = sql<string>`coalesce((select workflow_status->>'category' from jsonb_array_elements(coalesce(workflow_revision.workflow->'statuses', '[]'::jsonb)) workflow_status where coalesce(workflow_status->>'id', workflow_status->>'key') = ${entries.acceptanceStatus} limit 1), ${entries.acceptanceStatus})`;
       const [statusRows, classRows, [payments], [missingDocuments]] =
         await Promise.all([
           db

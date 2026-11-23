@@ -92,22 +92,13 @@ export async function saveStartNumberSetup(
         mode,
       })),
       settings,
+      classCapacities: classes.map(({ id, maxParticipants }) => ({
+        classId: id,
+        maxParticipants,
+      })),
     }),
   });
   if (!response.ok) throw new Error();
-  const capacities = await Promise.all(
-    classes.map((eventClass) =>
-      adminFetch(
-        `${eventUrl(eventId)}/classes/${encodeURIComponent(eventClass.id)}`,
-        {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ maxParticipants: eventClass.maxParticipants }),
-        },
-      ),
-    ),
-  );
-  if (capacities.some((capacity) => !capacity.ok)) throw new Error();
 }
 
 /** Plans (`dryRun`) or performs the assignment of all open start numbers. */

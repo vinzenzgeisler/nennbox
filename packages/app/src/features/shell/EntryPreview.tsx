@@ -66,7 +66,7 @@ export function EntryPreview({
   const next = status?.find((item) => item.key === 'entry')?.nextAction;
   const nextStatus = next?.key.startsWith('entry:') ? next.key.slice(6) : null;
   const nextCategory = workflow?.statuses.find(
-    (item) => item.key === nextStatus,
+    (item) => (item.id ?? item.key) === nextStatus,
   )?.category;
   const canAcceptNext = nextCategory === 'accepted';
   const canAdvance = Boolean(
@@ -162,7 +162,7 @@ export function EntryPreview({
                 } as const
               )[
                 workflow?.statuses.find(
-                  (item) => item.key === entry.acceptanceStatus,
+                  (item) => (item.id ?? item.key) === entry.acceptanceStatus,
                 )?.category as
                   'accepted' | 'waitlisted' | 'rejected' | 'withdrawn'
               ] ?? 'offen'
@@ -170,7 +170,7 @@ export function EntryPreview({
           >
             {status?.find((item) => item.key === 'entry')?.label.de ??
               workflow?.statuses.find(
-                (item) => item.key === entry.acceptanceStatus,
+                (item) => (item.id ?? item.key) === entry.acceptanceStatus,
               )?.labels.de ??
               entry.acceptanceStatus}
           </AppStatusPill>

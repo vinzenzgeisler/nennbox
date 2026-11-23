@@ -7,7 +7,7 @@ export function entryStatusDialog(
   return pending?.kind === 'status'
     ? {
         title: pending.step.label.replace(/ …$/, ''),
-        message: `Die Nennung wird auf „${workflow?.statuses.find((item) => item.key === pending.step.to)?.labels.de ?? pending.step.to}“ gesetzt. Die Entscheidung wird im Verlauf protokolliert.`,
+        message: `Die Nennung wird auf „${workflow?.statuses.find((item) => (item.id ?? item.key) === pending.step.to)?.labels.de ?? pending.step.to}“ gesetzt. Die Entscheidung wird im Verlauf protokolliert.`,
         confirm: 'Status ändern',
         danger: pending.step.danger,
       }

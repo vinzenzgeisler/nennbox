@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { useEmergingSheet } from './useEmergingSheet.js';
 import { useEmerging } from './EmergingContext.js';
 
 export type EmergingFact = {
@@ -55,8 +56,13 @@ export function EmergingList({
   closeLabel,
 }: EmergingListProps) {
   const { open, setOpen, id } = useEmerging();
+  const sheet = useEmergingSheet(open, setOpen);
   return (
     <aside
+      ref={sheet}
+      role={open ? 'dialog' : undefined}
+      aria-modal={open ? true : undefined}
+      tabIndex={open ? -1 : undefined}
       id={id}
       className={`nb-emerging${open ? ' is-open' : ''}`}
       aria-label={title}

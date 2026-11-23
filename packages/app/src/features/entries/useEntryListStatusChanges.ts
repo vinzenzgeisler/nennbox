@@ -74,7 +74,9 @@ export function useEntryListStatusChanges({
     async (entry: Entry, to: string) => {
       if (pending.current) return;
       const requestedGeneration = generation.current;
-      const target = workflow?.statuses.find((status) => status.key === to);
+      const target = workflow?.statuses.find(
+        (status) => (status.id ?? status.key) === to,
+      );
       const edge = workflow?.transitions.find(
         (item) => item.from === entry.acceptanceStatus && item.to === to,
       );

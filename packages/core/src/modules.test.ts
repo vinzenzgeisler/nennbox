@@ -253,6 +253,41 @@ describe('module activation', () => {
     ).rejects.toMatchObject({ code: 'not_found' });
     expect(await activations.listOrganization(a)).toEqual([]);
   });
+  it('rejects deactivation without a reason and audits a trimmed reason', async () => {
+    const { deps, activations } = setup();
+    const a = admin('org-a');
+    await setOrganizationModule(
+      a,
+      deps,
+      'example.noop',
+      { enabled: true },
+      'u',
+    );
+    for (const reason of [undefined, '', '   ', 'x'.repeat(501)]) {
+      await expect(
+        setOrganizationModule(
+          a,
+          deps,
+          'example.noop',
+          { enabled: false, reason },
+          'u',
+        ),
+      ).rejects.toMatchObject({ code: 'invalid_config' });
+    }
+    expect(activations.audit).toHaveLength(1);
+    await setOrganizationModule(
+      a,
+      deps,
+      'example.noop',
+      { enabled: false, reason: '  Retired  ' },
+      'u',
+    );
+    expect(activations.audit[1]).toMatchObject({
+      action: 'disable',
+      reason: 'Retired',
+      actor: 'u',
+    });
+  });
   it('enforces dependencies in both directions', async () => {
     const { deps } = setup();
     const a = admin('org-a');
@@ -274,7 +309,13 @@ describe('module activation', () => {
       'u',
     );
     await expect(
-      setOrganizationModule(a, deps, 'example.noop', { enabled: false }, 'u'),
+      setOrganizationModule(
+        a,
+        deps,
+        'example.noop',
+        { enabled: false, reason: 'No longer needed' },
+        'u',
+      ),
     ).rejects.toMatchObject({ code: 'conflict' });
   });
   it('refuses via the entitlement hook and fails closed when it throws', async () => {
@@ -345,7 +386,7 @@ describe('module activation', () => {
       deps,
       'event-a1',
       'example.noop',
-      { enabled: false },
+      { enabled: false, reason: 'No longer needed' },
       'u',
     );
     const archived = await resolveEventModuleAccess(

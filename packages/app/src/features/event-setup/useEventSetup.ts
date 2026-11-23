@@ -20,7 +20,7 @@ import {
   type SetupDraft,
   type SetupEvent,
 } from './eventSetupApi.js';
-import { saveRecipient } from './eventRecipientApi.js';
+import { deleteRecipient, saveRecipient } from './eventRecipientApi.js';
 import { loadSetupDraft } from './loadSetupDraft.js';
 import { useRecipientClear } from './useRecipientClear.js';
 
@@ -156,7 +156,17 @@ export function useEventSetup(onCreated: (event: SetupEvent) => void) {
           throw error;
         }
         setDraft((current) => ({ ...current, id: stored.id }));
-        if (recipientTouched) await saveRecipient(draft);
+        if (draft.recipientRemoval) {
+          await deleteRecipient();
+          setDraft((current) => ({
+            ...current,
+            recipientRemoval: false,
+            accountName: '',
+            recipientAddress: '',
+            iban: '',
+            bic: '',
+          }));
+        } else if (recipientTouched) await saveRecipient(draft);
         if (!draft.id) {
           setCurrentStep(4);
           let finalEvent = stored;

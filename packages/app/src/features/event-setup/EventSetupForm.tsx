@@ -42,13 +42,21 @@ export function EventSetupForm({
             else onReset();
           }}
         >
-          <option value="">Neue Veranstaltung einrichten</option>
+          <option value="">Keine gespeicherte Veranstaltung ausgewählt</option>
           {events.map((event) => (
             <option key={event.id} value={event.id}>
               {event.name}
             </option>
           ))}
         </AppSelect>
+        <AppButton
+          type="button"
+          tone="secondary"
+          disabled={busy}
+          onClick={onReset}
+        >
+          Neue Veranstaltung einrichten
+        </AppButton>
       </div>
       <form
         className="nb-app-stack"
@@ -75,7 +83,11 @@ export function EventSetupForm({
                 setDraft((current) => ({
                   ...current,
                   name: event.target.value,
-                  slug: current.slug || slugify(event.target.value),
+                  slug:
+                    !current.id &&
+                    (!current.slug || current.slug === slugify(current.name))
+                      ? slugify(event.target.value)
+                      : current.slug,
                 }))
               }
             />

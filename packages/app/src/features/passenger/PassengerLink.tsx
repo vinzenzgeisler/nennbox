@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import {
   Banner,
   Button,
@@ -8,7 +8,6 @@ import {
   FormWide,
 } from '@nennbox/ui';
 import {
-  PassengerLinkViewSchema,
   defaultRegistrationFormConfig,
   type PassengerLinkView,
 } from '@nennbox/contracts';
@@ -19,12 +18,7 @@ import {
 } from '../registration/RegistrationDomain.js';
 import { passengerBrandStyle } from './passengerBrand.js';
 import { passengerWords } from './passengerWords.js';
-
-type State =
-  | { kind: 'loading' }
-  | { kind: 'unavailable' }
-  | { kind: 'ready'; view: PassengerLinkView }
-  | { kind: 'done'; language: 'de' | 'en' };
+import { usePassengerView } from './usePassengerView.js';
 
 const asText = (value: string | null) => value ?? '';
 
@@ -34,39 +28,20 @@ const asText = (value: string | null) => value ?? '';
  */
 export function PassengerLink({ locale: runtimeLocale }: { locale: string }) {
   const token = new URLSearchParams(location.search).get('token');
-  const [state, setState] = useState<State>(
-    token ? { kind: 'loading' } : { kind: 'unavailable' },
-  );
-  useEffect(() => {
-    if (!token) return;
-    const controller = new AbortController();
-    fetch('/public/passenger-links/resolve', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ token }),
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        const view = response.ok
-          ? PassengerLinkViewSchema.safeParse(await response.json())
-          : null;
-        setState(
-          view?.success
-            ? { kind: 'ready', view: view.data }
-            : { kind: 'unavailable' },
-        );
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setState({ kind: 'unavailable' });
-      });
-    return () => controller.abort();
-  }, [token]);
-
+  const { state, setState, reload } = usePassengerView(token);
   const fallback = runtimeLocale.toLowerCase().startsWith('de') ? 'de' : 'en';
   if (state.kind === 'loading')
     return (
       <section aria-busy="true">
         <p role="status">{passengerWords[fallback].loading}</p>
+      </section>
+    );
+  if (state.kind === 'error')
+    return (
+      <section aria-labelledby="passenger-title">
+        <h2 id="passenger-title">{passengerWords[fallback].title}</h2>
+        <Banner tone="error">{passengerWords[fallback].loadError}</Banner>
+        <Button onClick={reload}>{passengerWords[fallback].reload}</Button>
       </section>
     );
   if (state.kind === 'unavailable')

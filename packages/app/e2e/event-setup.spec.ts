@@ -18,6 +18,12 @@ test('admin creates a class, terms and opens its public registration in the UI',
     page.getByRole('heading', { level: 1, name: 'Nennungen' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Einrichten' }).click();
+  // Einrichten preselects the active event; creating a new one is explicit.
+  await page.waitForLoadState('networkidle');
+  await page
+    .getByRole('button', { name: 'Neue Veranstaltung einrichten' })
+    .click();
+  await expect(page.getByLabel('Name', { exact: true })).toHaveValue('');
 
   const suffix = randomUUID().slice(0, 8);
   const name = `UI Setup ${suffix}`;
@@ -259,7 +265,7 @@ test('admin creates a class, terms and opens its public registration in the UI',
     202,
   );
   await expect(page.getByRole('status')).toContainText(
-    'Die Nennung wurde angenommen.',
+    'Nennung eingegangen. Bitte bestätige die E-Mail-Adresse über den zugesandten Link.',
   );
   await page.goto('/app');
   await page

@@ -18,6 +18,7 @@ import { EventSetupForm } from './EventSetupForm.js';
 import { DriverPortalSettings } from './DriverPortalSettings.js';
 import { NumberAndWaitlistSettings } from './NumberAndWaitlistSettings.js';
 import { validateDraft } from './validateDraft.js';
+import { RecipientRemovalDialog } from './RecipientRemovalDialog.js';
 
 type SetupView = 'event' | 'fields' | 'portal' | 'numbers';
 
@@ -47,10 +48,16 @@ const sections: Array<{ id: string; label: string; view: SetupView }> = [
 
 export function EventSetup({
   onCreated,
+  eventId = '',
 }: {
   onCreated: (event: SetupEvent) => void;
+  eventId?: string;
 }) {
   const setup = useEventSetup(onCreated);
+  const [pendingSave, setPendingSave] = useState<{
+    form: HTMLFormElement;
+    open: boolean;
+  } | null>(null);
   const [view, setView] = useState<SetupView>('event');
   const target = useRef('');
   const [activeId, setActiveId] = useState(sections[0]!.id);
@@ -72,7 +79,25 @@ export function EventSetup({
     window.addEventListener('resize', revealActive);
     return () => window.removeEventListener('resize', revealActive);
   }, [view]);
-  const { refreshEvents, setDraft } = setup;
+  const { refreshEvents, setDraft, resume, setMessage } = setup;
+  const draftId = useRef('');
+  useEffect(() => {
+    draftId.current = setup.draft.id ?? '';
+  });
+  useEffect(() => {
+    // A freshly saved event is selected by the shell; reloading it would
+    // clear the saved confirmation and the public link.
+    if (eventId && eventId !== draftId.current)
+      void resume(eventId).catch((error: unknown) =>
+        setMessage(
+          setupError(
+            error instanceof Error
+              ? error.message
+              : 'Entwurf konnte nicht geladen werden.',
+          ),
+        ),
+      );
+  }, [eventId, resume, setMessage]);
   useEffect(() => {
     void refreshEvents().catch(() => undefined);
     void loadRecipient()
@@ -96,6 +121,10 @@ export function EventSetup({
   const submit = (event: FormEvent<HTMLFormElement>, open: boolean) => {
     event.preventDefault();
     if (!validateDraft(event.currentTarget, setup.setMessage)) return;
+    if (setup.draft.recipientRemoval) {
+      setPendingSave({ form: event.currentTarget, open });
+      return;
+    }
     void setup.save(event.currentTarget, open);
   };
 
@@ -255,6 +284,15 @@ export function EventSetup({
           </div>
         </AppSettingsLayout>
       </AppView>
+      <RecipientRemovalDialog
+        open={pendingSave !== null}
+        onCancel={() => setPendingSave(null)}
+        onConfirm={() => {
+          const pending = pendingSave;
+          setPendingSave(null);
+          if (pending) void setup.save(pending.form, pending.open);
+        }}
+      />
     </section>
   );
 }

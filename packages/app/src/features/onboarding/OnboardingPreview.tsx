@@ -1,4 +1,3 @@
-import { useLayoutEffect, useState } from 'react';
 import {
   AppButton,
   EmergingList,
@@ -20,7 +19,7 @@ import { choiceSteps } from './choices.js';
 import { buildEmerging, emergingOpenLabel } from './emerging.js';
 import { formatTime } from './format.js';
 import { remainingTime, sectionBar, sectionLabels } from './sections.js';
-import { type LogoState } from './steps/BrandStep.js';
+import { useOnboardingLogo } from './useOnboardingLogo.js';
 import { chosenOption, type ChoiceStepId } from './steps/ChoiceStepView.js';
 import { StepBody } from './steps/StepBody.js';
 import { sampleTakenSubdomains, type StepProps } from './steps/types.js';
@@ -28,17 +27,6 @@ import { useOnboardingState } from './state.js';
 import './onboarding.css';
 import './onboarding-finish.css';
 import './onboarding-form.css';
-
-const logoStorageKey = 'nennbox.onboarding-preview.logo.v1';
-
-function savedLogo(): LogoState {
-  try {
-    const raw = window.localStorage.getItem(logoStorageKey);
-    return raw ? (JSON.parse(raw) as LogoState) : null;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Clickable prototype of the guided onboarding (#201, phase 1). All data is local;
@@ -48,6 +36,8 @@ function savedLogo(): LogoState {
 export function OnboardingPreview() {
   const {
     state,
+    savedAt,
+    storageFailed,
     patch,
     go,
     next: advance,
@@ -58,16 +48,8 @@ export function OnboardingPreview() {
     publish,
     reset,
   } = useOnboardingState();
-  const [logo, setLogo] = useState<LogoState>(savedLogo);
-  useLayoutEffect(() => {
-    try {
-      if (logo)
-        window.localStorage.setItem(logoStorageKey, JSON.stringify(logo));
-      else window.localStorage.removeItem(logoStorageKey);
-    } catch {
-      // Private mode or a large image: the logo remains available this session.
-    }
-  }, [logo]);
+  const { logo, setLogo, logoStorageFailed } = useOnboardingLogo();
+  const sessionOnly = storageFailed || logoStorageFailed;
   const restart = () => {
     setLogo(null);
     reset();
@@ -216,11 +198,15 @@ export function OnboardingPreview() {
           >
             DE
           </span>
-          {state.savedAt && (
-            <span className="nb-onb-position nb-onb-hide-narrow">
-              {`Gespeichert · ${formatTime(state.savedAt)}`}
+          {sessionOnly ? (
+            <span className="nb-onb-position" role="status">
+              Nur für diese Sitzung · Speichern auf diesem Gerät nicht möglich
             </span>
-          )}
+          ) : savedAt ? (
+            <span className="nb-onb-position nb-onb-hide-narrow">
+              {`Gespeichert · ${formatTime(savedAt)}`}
+            </span>
+          ) : null}
           {!isSuccess && step !== 'account' && (
             <AppButton
               tone="ghost"
@@ -284,11 +270,14 @@ export function OnboardingPreview() {
       {paused ? (
         <section className="nb-onb-paused" aria-labelledby="nb-onb-paused">
           <h1 id="nb-onb-paused" className="nb-question-title">
-            Dein Stand ist gespeichert
+            {sessionOnly
+              ? 'Dein Stand bleibt in dieser Sitzung'
+              : 'Dein Stand ist gespeichert'}
           </h1>
           <p className="nb-question-lead">
-            Du kannst hier jederzeit weitermachen. Alle Antworten bleiben auf
-            diesem Gerät erhalten.
+            {sessionOnly
+              ? 'Du kannst hier weitermachen, solange diese Seite geöffnet bleibt. Deine Antworten konnten nicht auf diesem Gerät gespeichert werden.'
+              : 'Du kannst hier jederzeit weitermachen. Alle Antworten bleiben auf diesem Gerät erhalten.'}
           </p>
           <AppButton tone="primary" onClick={() => pause(false)}>
             Weitermachen

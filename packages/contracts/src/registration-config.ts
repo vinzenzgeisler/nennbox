@@ -200,6 +200,10 @@ export const RegistrationFormConfigPatchSchema = registrationFormConfigObject
         RegistrationFieldConfigSchema,
       )
       .optional(),
+    // No default here: parsing a patch must never invent an override that freezes the organization's payments.
+    payments: registrationFormConfigObject.shape.payments
+      .removeDefault()
+      .optional(),
   })
   .strict()
   .superRefine((config, ctx) => {

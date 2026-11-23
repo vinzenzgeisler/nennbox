@@ -286,7 +286,7 @@ export async function persistRegistrationSubmission(args: {
     tx,
     organizationId: ctx.organizationId,
     invoice,
-    entryCount: entryIds.length,
+    entryIds,
   });
   await tx
     .update(publicEntrySubmissions)

@@ -17,7 +17,12 @@ const fieldsSchema = z.object({
 });
 
 /** Organizer-controlled correction scope; no field is editable until explicitly enabled. */
-export function DriverPortalSettings({
+export function DriverPortalSettings(props: { eventId: string; slug: string }) {
+  // Remount per event so a failed or slow load can never leak the previous event's state.
+  return <DriverPortalSettingsForEvent key={props.eventId} {...props} />;
+}
+
+function DriverPortalSettingsForEvent({
   eventId,
   slug,
 }: {
@@ -26,8 +31,11 @@ export function DriverPortalSettings({
 }) {
   const [fields, setFields] = useState<string[]>([]);
   const [state, setState] = useState<
-    'loading' | 'ready' | 'saving' | 'error' | 'saved'
+    'loading' | 'ready' | 'saving' | 'load-error' | 'save-error' | 'saved'
   >('loading');
+  const [loadedEventId, setLoadedEventId] = useState<string | null>(null);
+  const canEdit =
+    loadedEventId === eventId && state !== 'loading' && state !== 'saving';
   useEffect(() => {
     const controller = new AbortController();
     void apiRequest(
@@ -36,15 +44,18 @@ export function DriverPortalSettings({
       { signal: controller.signal },
     )
       .then((value) => {
+        if (controller.signal.aborted) return;
+        setLoadedEventId(eventId);
         setFields(value.fields);
         setState('ready');
       })
       .catch(() => {
-        if (!controller.signal.aborted) setState('error');
+        if (!controller.signal.aborted) setState('load-error');
       });
     return () => controller.abort();
   }, [eventId]);
   const save = async () => {
+    if (!canEdit) return;
     setState('saving');
     try {
       await apiRequest(
@@ -58,7 +69,7 @@ export function DriverPortalSettings({
       );
       setState('saved');
     } catch {
-      setState('error');
+      setState('save-error');
     }
   };
   return (
@@ -81,9 +92,11 @@ export function DriverPortalSettings({
           Meine Nennung öffnen
         </a>
       </p>
-      {state === 'error' && (
+      {(state === 'load-error' || state === 'save-error') && (
         <AppNotice tone="error">
-          Die Einstellungen konnten nicht geladen oder gespeichert werden.
+          {state === 'load-error'
+            ? 'Die Einstellungen konnten nicht geladen werden. Speichern ist gesperrt. Bitte die Ansicht erneut öffnen.'
+            : 'Die Einstellungen konnten nicht gespeichert werden. Bitte erneut versuchen.'}
         </AppNotice>
       )}
       {state === 'saved' && (
@@ -98,7 +111,7 @@ export function DriverPortalSettings({
             key={option.key}
             label={option.label}
             checked={fields.includes(option.key)}
-            disabled={state === 'loading' || state === 'saving'}
+            disabled={!canEdit}
             onChange={(event) =>
               setFields((current) =>
                 event.target.checked
@@ -112,7 +125,7 @@ export function DriverPortalSettings({
       <AppButton
         tone="primary"
         type="button"
-        disabled={state === 'loading' || state === 'saving'}
+        disabled={!canEdit}
         onClick={() => void save()}
       >
         Freigaben speichern

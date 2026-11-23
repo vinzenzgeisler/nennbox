@@ -53,15 +53,17 @@ export function keyFor(name: string, taken: ReadonlySet<string>) {
 export function documentTypeErrors(drafts: readonly DocumentTypeDraft[]) {
   const names = new Set<string>();
   return drafts.map((draft) => {
-    if (!draft.active) return '';
+    // Unsaved inactive drafts are omitted; persisted types still go to the API.
+    if (!draft.active && !draft.saved) return '';
     const name = draft.name.trim();
     if (!name) return 'Bitte einen Namen eingeben.';
     if (name.length > 120) return 'Der Name darf höchstens 120 Zeichen haben.';
     if (draft.hint.trim().length > 500)
       return 'Der Hinweis darf höchstens 500 Zeichen haben.';
     const normalized = name.toLowerCase();
-    if (names.has(normalized)) return 'Dieser Name wird schon verwendet.';
-    names.add(normalized);
+    if (draft.active && names.has(normalized))
+      return 'Dieser Name wird schon verwendet.';
+    if (draft.active) names.add(normalized);
     return '';
   });
 }

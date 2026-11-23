@@ -229,6 +229,18 @@ describe('event module API', () => {
       organizationEnabled: true,
       available: true,
     });
+    for (const reason of [undefined, '', '   ']) {
+      const rejected = await patch(
+        app,
+        `/admin/events/${eventA}/modules/example.noop`,
+        {
+          enabled: false,
+          ...(reason === undefined ? {} : { reason }),
+        },
+      );
+      expect(rejected.status).toBe(400);
+    }
+    expect(activations.audit).toHaveLength(2);
     const off = await patch(
       app,
       `/admin/events/${eventA}/modules/example.noop`,
@@ -306,6 +318,7 @@ describe('event module API', () => {
     });
     await patch(app, '/admin/organization/modules/example.noop', {
       enabled: false,
+      reason: 'No longer needed',
     });
     expect(
       (
@@ -505,7 +518,7 @@ describe('event module API', () => {
       patch(
         app,
         `/admin/events/${eventA}/modules/example.noop`,
-        { enabled: false },
+        { enabled: false, reason: 'No longer needed' },
         as('b'),
       ),
       app.request(`/admin/events/${eventA}/modules/example.noop/ping`, {

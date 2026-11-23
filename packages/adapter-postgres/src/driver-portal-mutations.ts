@@ -162,7 +162,7 @@ export function createDriverPortalMutations(
         assertWorkflowTransition(
           pinned.workflow,
           entry.status,
-          target.key,
+          target.id ?? target.key,
           'Participant withdrew entry',
         );
       } catch {
@@ -172,7 +172,7 @@ export function createDriverPortalMutations(
         const now = new Date();
         const [updated] = await tx
           .update(entries)
-          .set({ acceptanceStatus: target.key })
+          .set({ acceptanceStatus: target.id ?? target.key })
           .where(
             and(
               eq(entries.organizationId, ctx.organizationId),
@@ -189,7 +189,7 @@ export function createDriverPortalMutations(
           entryId,
           transition: 'acceptance',
           fromStatus: entry.status,
-          toStatus: target.key,
+          toStatus: target.id ?? target.key,
           actor: 'driver-portal',
           reason: 'Participant withdrew entry',
           statusCategory: 'withdrawn',
@@ -202,7 +202,7 @@ export function createDriverPortalMutations(
             and(
               eq(entries.organizationId, ctx.organizationId),
               eq(entries.registrationGroupId, entry.groupId),
-              ne(entries.acceptanceStatus, target.key),
+              ne(entries.acceptanceStatus, target.id ?? target.key),
               isNull(entries.deletedAt),
             ),
           )
