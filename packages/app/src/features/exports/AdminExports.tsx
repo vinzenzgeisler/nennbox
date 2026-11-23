@@ -11,7 +11,12 @@ import { useRemoteResource } from '../remote/useRemoteResource.js';
 import { ExportForm } from './ExportForm.js';
 import { ExportHistory } from './ExportHistory.js';
 import { exportsApi } from './exportsApi.js';
-import { exportQuery, initialDraft, type ExportDraft } from './exportModel.js';
+import {
+  exportQuery,
+  retryExportQuery,
+  initialDraft,
+  type ExportDraft,
+} from './exportModel.js';
 import { useExportJobs } from './useExportJobs.js';
 
 export function AdminExports({ eventId }: { eventId: string }) {
@@ -63,7 +68,7 @@ function ExportsForEvent({ eventId }: { eventId: string }) {
       : [],
   );
 
-  async function create() {
+  async function create(query = exportQuery(draft)) {
     controller.current?.abort();
     const request = new AbortController();
     controller.current = request;
@@ -73,7 +78,7 @@ function ExportsForEvent({ eventId }: { eventId: string }) {
     try {
       await exportsApi.create(
         eventId,
-        exportQuery(draft),
+        query,
         crypto.randomUUID(),
         request.signal,
       );
@@ -151,6 +156,8 @@ function ExportsForEvent({ eventId }: { eventId: string }) {
           classes={classNames}
           statuses={statusNames}
           downloading={downloading}
+          retrying={busy}
+          onRetry={(job) => void create(retryExportQuery(job))}
           onDownload={(job, path) => void download(job, path)}
         />
       )}

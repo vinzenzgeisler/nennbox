@@ -171,7 +171,8 @@ describe('AdminModules', () => {
         fetch.mock.calls.some(
           ([, init]) =>
             init?.method === 'PATCH' &&
-            String(init.body).includes('"enabled":false'),
+            String(init.body).includes('"enabled":false') &&
+            String(init.body).includes('"reason":"Daten bleiben erhalten"'),
         ),
       ).toBe(true);
     } finally {
@@ -181,6 +182,91 @@ describe('AdminModules', () => {
         globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
       ).IS_REACT_ACT_ENVIRONMENT = false;
       vi.restoreAllMocks();
+    }
+  });
+});
+
+describe('module scope request ownership', () => {
+  it('ignores old organization and event responses after switching scopes', async () => {
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+    const original = globalThis.fetch;
+    const pending = new Map<string, (response: Response) => void>();
+    const eventIds = [
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222',
+    ];
+    globalThis.fetch = vi.fn(async (input) => {
+      const path = String(input);
+      if (path === '/admin/events')
+        return Response.json(
+          eventIds.map((id, i) => ({
+            id,
+            organizationId: eventIds[0],
+            name: `Event ${i}`,
+            slug: `event-${i}`,
+            startsOn: '2026-01-01',
+            endsOn: '2026-01-01',
+            status: 'draft',
+          })),
+        );
+      return new Promise<Response>((resolve) => pending.set(path, resolve));
+    });
+    const host = document.createElement('div');
+    const root = createRoot(host);
+    const tick = () =>
+      act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 15));
+      });
+    const reply = (name: string) =>
+      Response.json({
+        modules: [
+          {
+            ...item,
+            gallery: { ...item.gallery, name: { de: name, en: name } },
+          },
+        ],
+      });
+    try {
+      await act(async () => root.render(<AdminModules />));
+      await tick();
+      await act(async () =>
+        [...host.querySelectorAll('button')]
+          .find((button) => button.textContent === 'Veranstaltung')!
+          .click(),
+      );
+      await tick();
+      const select = [...host.querySelectorAll('select')].find(
+        (node) => node.options.length === 2,
+      )!;
+      await act(async () => {
+        select.value = eventIds[1]!;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      await tick();
+      await act(async () =>
+        pending.get(`/admin/events/${eventIds[1]}/modules`)!(
+          reply('Current event'),
+        ),
+      );
+      expect(host.textContent).toContain('Current event');
+      await act(async () => {
+        pending.get('/admin/organization/modules')!(
+          reply('Stale organization'),
+        );
+        pending.get(`/admin/events/${eventIds[0]}/modules`)!(
+          reply('Stale event'),
+        );
+      });
+      expect(host.textContent).toContain('Current event');
+      expect(host.textContent).not.toContain('Stale');
+    } finally {
+      act(() => root.unmount());
+      globalThis.fetch = original;
+      (
+        globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+      ).IS_REACT_ACT_ENVIRONMENT = false;
     }
   });
 });

@@ -1,12 +1,8 @@
 import type { RefObject } from 'react';
 import type { SetupDraft } from './eventSetupApi.js';
-import { deleteRecipient } from './eventRecipientApi.js';
-import {
-  setupError,
-  setupSuccess,
-  type SetupMessage,
-} from './eventSetupState.js';
+import { setupSuccess, type SetupMessage } from './eventSetupState.js';
 
+/** Removal is staged locally; saving requires organization-wide confirmation. */
 export function useRecipientClear(
   lock: RefObject<boolean>,
   loading: RefObject<boolean>,
@@ -14,31 +10,13 @@ export function useRecipientClear(
   setDraft: (draft: SetupDraft | ((current: SetupDraft) => SetupDraft)) => void,
   setMessage: (message: SetupMessage) => void,
 ) {
-  const clearRecipient = async () => {
+  return () => {
     if (lock.current || loading.current) return;
-    setBusy(true);
-    try {
-      await deleteRecipient();
-      setDraft((current) => ({
-        ...current,
-        accountName: '',
-        recipientAddress: '',
-        iban: '',
-        bic: '',
-      }));
-      setMessage(setupSuccess('Bankverbindung entfernt.'));
-    } catch (error) {
-      setMessage(
-        setupError(
-          error instanceof Error
-            ? error.message
-            : 'Bankverbindung konnte nicht entfernt werden.',
-        ),
-      );
-    } finally {
-      setBusy(false);
-    }
+    setDraft((current) => ({ ...current, recipientRemoval: true }));
+    setMessage(
+      setupSuccess(
+        'Entfernen der Bankverbindung vorgemerkt. Erst beim Speichern wird die organisationsweite Löschung bestätigt.',
+      ),
+    );
   };
-
-  return clearRecipient;
 }

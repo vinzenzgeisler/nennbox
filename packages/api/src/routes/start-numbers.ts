@@ -16,6 +16,26 @@ const configSchema = z
           .strict(),
       )
       .max(100),
+    classCapacities: z
+      .array(
+        z
+          .object({
+            classId: z.string().uuid(),
+            maxParticipants: z
+              .number()
+              .int()
+              .positive()
+              .max(2147483647)
+              .nullable(),
+          })
+          .strict(),
+      )
+      .max(1000)
+      .refine(
+        (items) =>
+          new Set(items.map((item) => item.classId)).size === items.length,
+      )
+      .optional(),
     settings: z
       .object({
         automaticPromotion: z.boolean(),
@@ -48,12 +68,18 @@ export function registerStartNumberRoutes({
     const parsed = configSchema.safeParse(await c.req.json().catch(() => null));
     if (!eventId.success || !parsed.success)
       return c.json({ error: 'Invalid configuration' }, 400);
+    if (
+      parsed.data.classCapacities?.length &&
+      !guard.context.permissions.has('class:write')
+    )
+      return c.json({ error: 'Forbidden' }, 403);
     try {
       await deps.startNumbers.configure(
         guard.context,
         eventId.data,
         parsed.data.ranges,
         parsed.data.settings,
+        parsed.data.classCapacities,
       );
       return c.json(await deps.startNumbers.list(guard.context, eventId.data));
     } catch {

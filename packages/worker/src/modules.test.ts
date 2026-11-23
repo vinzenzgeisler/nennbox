@@ -125,7 +125,7 @@ describe('module jobs', () => {
       modules,
       eventA,
       'example.noop',
-      { enabled: false },
+      { enabled: false, reason: 'No longer needed' },
       'u',
     );
     handler.mockClear();

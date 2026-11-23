@@ -71,3 +71,23 @@ it('requires both API messaging authorization and a connected composer', () => {
     expect(canRequestQuickAction(allowed, { kind }, workflow, true)).toBe(true);
   }
 });
+it('resolves the cancellation target through stable status ids', () => {
+  const idWorkflow = {
+    statuses: [{ id: 'st-cancel', key: 'cancelled', category: 'withdrawn' }],
+    transitions: [{ from: 'st-open', to: 'st-cancel' }],
+  } as unknown as WorkflowView;
+  const idEntry = {
+    id: 'one',
+    acceptanceStatus: 'st-open',
+    availableActions: ['acceptance:st-cancel'],
+  } as Entry;
+  expect(quickCancellation(idEntry, idWorkflow)?.to).toBe('st-cancel');
+  expect(
+    canRequestQuickAction(
+      idEntry,
+      { kind: 'cancel', to: 'st-cancel' },
+      idWorkflow,
+      false,
+    ),
+  ).toBe(true);
+});

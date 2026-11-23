@@ -107,7 +107,11 @@ export const ModuleChangeRequest = z
     reason: z.string().trim().min(1).max(500).optional(),
   })
   .strict()
-  .refine((value) => value.enabled !== undefined || value.config !== undefined);
+  .refine((value) => value.enabled !== undefined || value.config !== undefined)
+  .refine((value) => value.enabled !== false || Boolean(value.reason), {
+    path: ['reason'],
+    message: 'A deactivation reason is required',
+  });
 export type ModuleChangeRequest = z.infer<typeof ModuleChangeRequest>;
 
 export const ModuleViewSchema = z

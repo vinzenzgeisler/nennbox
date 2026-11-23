@@ -92,8 +92,9 @@ export function AdminEntryRow({
       requestedNumber={numberWish(entry)}
       selected={selected?.id === entry.id}
       dimmed={['rejected', 'withdrawn'].includes(
-        workflow?.statuses.find((item) => item.key === entry.acceptanceStatus)
-          ?.category ?? '',
+        workflow?.statuses.find(
+          (item) => (item.id ?? item.key) === entry.acceptanceStatus,
+        )?.category ?? '',
       )}
       checked={selectedIds.has(entry.id)}
       selectLabel={`${name} auswählen`}
@@ -121,12 +122,12 @@ export function AdminEntryRow({
           <EntryStatusMenu
             label={
               workflow?.statuses.find(
-                (item) => item.key === entry.acceptanceStatus,
+                (item) => (item.id ?? item.key) === entry.acceptanceStatus,
               )?.labels.de ?? entry.acceptanceStatus
             }
             tone={statusTone(
               workflow?.statuses.find(
-                (item) => item.key === entry.acceptanceStatus,
+                (item) => (item.id ?? item.key) === entry.acceptanceStatus,
               )?.category,
             )}
             options={(workflow?.transitions ?? [])
@@ -139,7 +140,7 @@ export function AdminEntryRow({
               )
               .map((item) => {
                 const target = workflow?.statuses.find(
-                  (status) => status.key === item.to,
+                  (status) => (status.id ?? status.key) === item.to,
                 );
                 return {
                   key: item.to,

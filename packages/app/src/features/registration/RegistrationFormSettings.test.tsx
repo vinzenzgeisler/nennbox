@@ -13,7 +13,11 @@ afterEach(() => {
   container?.remove();
   vi.unstubAllGlobals();
 });
-async function mount(embedded = false, saveFails = false) {
+async function mount(
+  embedded = false,
+  saveFails = false,
+  eventConfig: object = {},
+) {
   const fetch = vi.fn(async (_url: string, init?: RequestInit) => ({
     ok: !(saveFails && init?.method === 'PUT'),
     status: 200,
@@ -21,17 +25,19 @@ async function mount(embedded = false, saveFails = false) {
       init?.method === 'POST'
         ? { objectId: 'uploaded-logo' }
         : {
-            config: {
-              ...defaultRegistrationFormConfig,
-              customFields: [
-                {
-                  key: 'existing',
-                  type: 'text',
-                  label: { de: 'Eigenes Testfeld', en: 'Test field' },
-                  required: false,
+            config: _url.includes('/events/')
+              ? eventConfig
+              : {
+                  ...defaultRegistrationFormConfig,
+                  customFields: [
+                    {
+                      key: 'existing',
+                      type: 'text',
+                      label: { de: 'Eigenes Testfeld', en: 'Test field' },
+                      required: false,
+                    },
+                  ],
                 },
-              ],
-            },
           },
   }));
   vi.stubGlobal('fetch', fetch);
@@ -84,8 +90,8 @@ it('preserves standard radio selectors, updates the live public preview, and per
   await act(async () => button('Änderungen speichern').click());
   const call = fetch.mock.calls.find(([, init]) => init?.method === 'PUT')!;
   expect(call[0]).toBe('/admin/events/event-one/registration-form-config');
-  expect(JSON.parse(String(call[1]?.body)).fields).toEqual({
-    bloodGroup: { state: 'required' },
+  expect(JSON.parse(String(call[1]?.body))).toEqual({
+    fields: { bloodGroup: { state: 'required' } },
   });
   expect(container.textContent).toContain('Einstellungen gespeichert.');
 });
@@ -159,4 +165,58 @@ it('announces save failures as alerts and successes as status messages', async (
   expect(container.querySelector('[role="status"]')?.className).toContain(
     'nb-app-notice-success',
   );
+});
+
+it('preserves legacy full copies without loss until each area is explicitly reset', async () => {
+  const legacy = {
+    ...defaultRegistrationFormConfig,
+    welcomeText: 'Legacy welcome',
+    organizerNotice: 'Keep this notice',
+  };
+  const fetch = await mount(false, false, legacy);
+  await act(async () => button('Änderungen speichern').click());
+  let writes = fetch.mock.calls.filter(([, init]) => init?.method === 'PUT');
+  expect(JSON.parse(String(writes[0]![1]?.body))).toEqual(legacy);
+  const reset = container.querySelector(
+    '[aria-label="Begrüßung: Von Organisation übernehmen"]',
+  ) as HTMLButtonElement;
+  await act(async () => reset.click());
+  await act(async () => button('Änderungen speichern').click());
+  writes = fetch.mock.calls.filter(([, init]) => init?.method === 'PUT');
+  const remaining: Record<string, unknown> = { ...legacy };
+  delete remaining.welcomeText;
+  expect(JSON.parse(String(writes[1]![1]?.body))).toEqual(remaining);
+});
+it('can clear every event override and save an empty inheritance patch', async () => {
+  const fetch = await mount(false, false, defaultRegistrationFormConfig);
+  for (const reset of container.querySelectorAll<HTMLButtonElement>(
+    'button[aria-label$=": Von Organisation übernehmen"]',
+  )) {
+    await act(async () => reset.click());
+  }
+  await act(async () => button('Änderungen speichern').click());
+  const call = fetch.mock.calls.find(([, init]) => init?.method === 'PUT')!;
+  expect(JSON.parse(String(call[1]?.body))).toEqual({});
+});
+it('does not copy event overrides when saving organization changes', async () => {
+  const fetch = await mount(true);
+  const required = container.querySelector(
+    '[role="radiogroup"][aria-label="Blutgruppe"] input[value="required"]',
+  ) as HTMLInputElement;
+  await act(async () => required.click());
+  await select(control('Geltungsbereich') as HTMLSelectElement, 'organization');
+  await act(async () => button('Änderungen speichern').click());
+  await select(control('Geltungsbereich') as HTMLSelectElement, 'event');
+  expect(
+    (
+      container.querySelector(
+        '[role="radiogroup"][aria-label="Blutgruppe"] input[value="required"]',
+      ) as HTMLInputElement
+    ).checked,
+  ).toBe(true);
+  await act(async () => button('Änderungen speichern').click());
+  const writes = fetch.mock.calls.filter(([, init]) => init?.method === 'PUT');
+  expect(JSON.parse(String(writes[1]![1]?.body))).toEqual({
+    fields: { bloodGroup: { state: 'required' } },
+  });
 });

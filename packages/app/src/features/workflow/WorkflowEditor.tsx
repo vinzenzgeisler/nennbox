@@ -48,7 +48,8 @@ export function WorkflowEditor({
     return (
       <AppView>
         <AppNotice tone="error">
-          Der Nennungsablauf ist ungültig oder konnte nicht geladen werden.
+          {message ||
+            'Der Nennungsablauf ist ungültig oder konnte nicht geladen werden.'}
         </AppNotice>
       </AppView>
     );

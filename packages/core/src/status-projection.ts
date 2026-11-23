@@ -30,7 +30,7 @@ export function projectEntryStatuses(input: {
   );
   const workflow = normalizeEntryWorkflow(input.workflow);
   const entryStatus = workflow.statuses.find(
-    (item) => item.key === input.acceptanceStatus,
+    (item) => (item.id ?? item.key) === input.acceptanceStatus,
   );
   if (!entryStatus)
     throw new Error(`Unknown entry status: ${input.acceptanceStatus}`);
@@ -47,7 +47,7 @@ export function projectEntryStatuses(input: {
   const dimensions: EntryStatusDimensionProjection[] = [
     {
       key: 'entry',
-      value: entryStatus.key,
+      value: entryStatus.id ?? entryStatus.key,
       label: entryStatus.labels,
       meaning: entryStatus.meaning!,
       required: true,
@@ -55,8 +55,8 @@ export function projectEntryStatuses(input: {
         ? {
             key: `entry:${entryTransitions[0].to}`,
             label: {
-              de: `Status auf ${workflow.statuses.find((s) => s.key === entryTransitions[0]!.to)?.labels.de ?? entryTransitions[0].to} setzen`,
-              en: `Set status to ${workflow.statuses.find((s) => s.key === entryTransitions[0]!.to)?.labels.en ?? entryTransitions[0].to}`,
+              de: `Status auf ${workflow.statuses.find((s) => (s.id ?? s.key) === entryTransitions[0]!.to)?.labels.de ?? entryTransitions[0].to} setzen`,
+              en: `Set status to ${workflow.statuses.find((s) => (s.id ?? s.key) === entryTransitions[0]!.to)?.labels.en ?? entryTransitions[0].to}`,
             },
           }
         : null,
@@ -145,12 +145,21 @@ export function projectEntryStatuses(input: {
 export function validateEntryWorkflow(workflow: EntryWorkflow): string[] {
   const errors: string[] = [],
     keys = new Set<string>(),
+    ids = new Set<string>(),
     edges = new Map<string, string[]>(),
     pairs = new Set<string>();
   for (const status of workflow.statuses) {
     if (!/^[a-z][a-z0-9_-]{0,63}$/.test(status.key) || keys.has(status.key))
       errors.push(`Invalid or duplicate status key: ${status.key}`);
     keys.add(status.key);
+    const id = status.id ?? status.key;
+    if (
+      typeof id !== 'string' ||
+      !/^[a-z][a-z0-9_-]{0,63}$/.test(id) ||
+      ids.has(id)
+    )
+      errors.push(`Invalid or duplicate status ID: ${id}`);
+    ids.add(id);
     if (!entryWorkflowCategories.includes(status.category))
       errors.push(`Invalid category: ${status.category}`);
     if (
@@ -165,14 +174,16 @@ export function validateEntryWorkflow(workflow: EntryWorkflow): string[] {
   }
   if (
     !workflow.statuses.some(
-      (status) => status.key === 'pending' && status.category === 'pending',
+      (status) =>
+        (status.id ?? status.key) === 'pending' &&
+        status.category === 'pending',
     )
   )
     errors.push('Workflow must include the pending system status');
   if (!Number.isInteger(workflow.version) || workflow.version < 1)
     errors.push('Invalid workflow version');
   for (const edge of workflow.transitions) {
-    if (!keys.has(edge.from) || !keys.has(edge.to))
+    if (!ids.has(edge.from) || !ids.has(edge.to))
       errors.push(`Orphan transition: ${edge.from} -> ${edge.to}`);
     const pair = `${edge.from}\0${edge.to}`;
     if (typeof edge.reasonRequired !== 'boolean')
@@ -204,7 +215,7 @@ export function validateEntryWorkflow(workflow: EntryWorkflow): string[] {
     visiting.delete(key);
     visited.add(key);
   };
-  for (const key of keys) visit(key);
+  for (const id of ids) visit(id);
   const start = 'pending';
   const reachable = new Set<string>();
   const walk = (key: string): void => {
@@ -216,11 +227,13 @@ export function validateEntryWorkflow(workflow: EntryWorkflow): string[] {
   for (const category of entryWorkflowCategories)
     if (
       !workflow.statuses.some(
-        (status) => status.category === category && reachable.has(status.key),
+        (status) =>
+          status.category === category &&
+          reachable.has(status.id ?? status.key),
       )
     )
       errors.push(`Unreachable category: ${category}`);
-  if ([...keys].some((key) => !reachable.has(key)))
+  if ([...ids].some((key) => !reachable.has(key)))
     errors.push('Workflow contains unreachable statuses');
   return [...new Set(errors)];
 }

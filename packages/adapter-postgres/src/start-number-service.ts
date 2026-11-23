@@ -55,7 +55,7 @@ export function createStartNumberService(db: Database): StartNumberService {
         },
       };
     },
-    configure: async (ctx, eventId, ranges, settings) =>
+    configure: async (ctx, eventId, ranges, settings, classCapacities = []) =>
       db.transaction(async (tx) => {
         await tx.execute(
           sql`select pg_advisory_xact_lock(hashtextextended(${`${ctx.organizationId}:number-config:${eventId}`}, 0))`,
@@ -70,6 +70,19 @@ export function createStartNumberService(db: Database): StartNumberService {
             ),
           );
         const classIds = new Set(classes.map((item) => item.id));
+        const capacityClassIds = new Set<string>();
+        for (const capacity of classCapacities) {
+          if (
+            !classIds.has(capacity.classId) ||
+            capacityClassIds.has(capacity.classId) ||
+            (capacity.maxParticipants !== null &&
+              (!Number.isSafeInteger(capacity.maxParticipants) ||
+                capacity.maxParticipants < 1 ||
+                capacity.maxParticipants > 2147483647))
+          )
+            throw new Error('invalid-capacity');
+          capacityClassIds.add(capacity.classId);
+        }
         for (const range of ranges) {
           if (
             !Number.isSafeInteger(range.from) ||
@@ -114,6 +127,20 @@ export function createStartNumberService(db: Database): StartNumberService {
               assignmentMode: range.mode,
             })),
           );
+        for (const capacity of classCapacities) {
+          const updated = await tx
+            .update(eventClasses)
+            .set({ maxParticipants: capacity.maxParticipants })
+            .where(
+              and(
+                eq(eventClasses.organizationId, ctx.organizationId),
+                eq(eventClasses.eventId, eventId),
+                eq(eventClasses.id, capacity.classId),
+              ),
+            )
+            .returning({ id: eventClasses.id });
+          if (!updated.length) throw new Error('invalid-capacity');
+        }
         await tx
           .insert(eventWaitlistSettings)
           .values({ organizationId: ctx.organizationId, eventId, ...settings })

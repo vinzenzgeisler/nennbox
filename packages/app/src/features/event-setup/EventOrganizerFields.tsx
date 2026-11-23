@@ -91,9 +91,18 @@ export function EventOrganizerFields({
             type="button"
             tone="secondary"
             disabled={busy || (!draft.iban && !draft.accountName)}
-            onClick={onClearRecipient}
+            onClick={() =>
+              draft.recipientRemoval
+                ? setDraft((current) => ({
+                    ...current,
+                    recipientRemoval: false,
+                  }))
+                : onClearRecipient()
+            }
           >
-            Bankverbindung entfernen
+            {draft.recipientRemoval
+              ? 'Entfernen rückgängig machen'
+              : 'Bankverbindung entfernen'}
           </AppButton>
         </AppSection>
       </section>

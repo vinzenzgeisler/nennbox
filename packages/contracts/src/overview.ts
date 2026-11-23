@@ -86,6 +86,8 @@ export const ExportJobSchema = z.object({
   createdAt: z.string(),
   expiresAt: z.string().nullable(),
   fields: z.array(z.string()),
+  delimiter: z.enum([',', ';']).optional(),
+  error: z.string().nullable().optional(),
   filters: ExportFiltersSchema,
   downloadUrl: z.string().nullable(),
 });

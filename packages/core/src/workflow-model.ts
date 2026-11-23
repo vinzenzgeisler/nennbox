@@ -33,6 +33,8 @@ export const entryWorkflowCategories = [
 export type EntryWorkflowCategory = (typeof entryWorkflowCategories)[number];
 
 export interface EntryWorkflowStatus {
+  /** Immutable reference; missing only in legacy revisions, where key is the ID. */
+  readonly id?: string;
   readonly key: string;
   readonly labels: { readonly de: string; readonly en: string };
   readonly color: string;
@@ -217,6 +219,7 @@ export function normalizeEntryWorkflow(workflow: EntryWorkflow): EntryWorkflow {
         status.meaning ?? defaultMeaningByCategory[status.category];
       return {
         ...status,
+        id: status.id ?? status.key,
         meaning,
       };
     }),

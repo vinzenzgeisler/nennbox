@@ -34,7 +34,9 @@ export function quickStatusTransitions(
 export function quickCancellation(entry: Entry, workflow: WorkflowView | null) {
   return quickStatusTransitions(entry, workflow).find((edge) =>
     workflow?.statuses.some(
-      (status) => status.key === edge.to && status.category === 'withdrawn',
+      (status) =>
+        (status.id ?? status.key) === edge.to &&
+        status.category === 'withdrawn',
     ),
   );
 }

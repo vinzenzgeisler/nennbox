@@ -36,7 +36,7 @@ export function WorkflowStatusesEditor({
     >
       {workflow.statuses.map((status, index) => (
         <AppEditorRow
-          key={index}
+          key={status.id ?? status.key}
           label={'Status ' + (index + 1) + ' bearbeiten'}
           preview={
             <AppWorkflowPill
@@ -124,7 +124,9 @@ export function WorkflowStatusesEditor({
                 ...workflow,
                 statuses: workflow.statuses.filter((_, i) => i !== index),
                 transitions: workflow.transitions.filter(
-                  (edge) => edge.from !== status.key && edge.to !== status.key,
+                  (edge) =>
+                    edge.from !== (status.id ?? status.key) &&
+                    edge.to !== (status.id ?? status.key),
                 ),
               });
             }}
@@ -141,6 +143,7 @@ export function WorkflowStatusesEditor({
             statuses: [
               ...workflow.statuses,
               {
+                id: 'status_' + crypto.randomUUID(),
                 key: 'status_' + (workflow.statuses.length + 1),
                 labels: { en: 'New status', de: 'Neuer Status' },
                 color: '#64748b',

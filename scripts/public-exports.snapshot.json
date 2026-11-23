@@ -572,6 +572,7 @@
     "RegistrationUnavailableReason",
     "RequestContext",
     "ResolvedAnswers",
+    "StartNumberClassCapacity",
     "StartNumberMode",
     "StartNumberRange",
     "StartNumberRangeConfig",

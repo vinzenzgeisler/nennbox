@@ -71,6 +71,7 @@ export type SetupDraft = {
   iban: string;
   bic: string;
   consentTerms?: SetupConsent[];
+  recipientRemoval?: boolean;
 };
 export type EventOption = Pick<SetupEvent, 'id' | 'name' | 'slug' | 'status'>;
 const SetupEventSchema = z.object({

@@ -75,7 +75,7 @@ export function registerRegistrationRoutes(context: ApiRoutesContext): void {
     const parsed = RegistrationFormConfigPatchSchema.safeParse(
       await c.req.json().catch(() => null),
     );
-    if (!parsed.success || Object.keys(parsed.data ?? {}).length === 0)
+    if (!parsed.success)
       return c.json({ error: 'Invalid registration form configuration' }, 400);
     const actor = context.subject
       ? `${context.subject.issuer}|${context.subject.subject}`

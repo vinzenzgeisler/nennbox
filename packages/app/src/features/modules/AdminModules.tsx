@@ -1,21 +1,18 @@
 import { adminFetch } from '../../auth.js';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ModuleListResponse, EventSchema } from '@nennbox/contracts';
 import type { ModuleViewSchema } from '@nennbox/contracts';
 import {
-  AppButton,
   AppEmptyState,
   AppGrid,
   AppNotice,
   AppSection,
   AppSegmented,
   AppSelect,
-  AppStatusPill,
-  AppTable,
   AppTextInput,
   AppView,
 } from '@nennbox/ui';
-import { ModuleDisableButton } from './ModuleDisableButton.js';
+import { ModuleTable } from './ModuleTable.js';
 import { updatePath } from './ModuleSchemaFields.js';
 import { ModuleConfigDialog } from './ModuleConfigDialog.js';
 import {
@@ -45,43 +42,75 @@ export function AdminModules({
   const [configErrors, setConfigErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const generation = useRef(0);
+  const listRequest = useRef<AbortController | null>(null);
+  const mutationRequest = useRef<AbortController | null>(null);
+  function resetScope() {
+    generation.current++;
+    listRequest.current?.abort();
+    mutationRequest.current?.abort();
+    setModules([]);
+    setSelected(null);
+    setConfigErrors({});
+    setError('');
+    setLoading(true);
+  }
   const base =
     scope === 'organization'
       ? '/admin/organization/modules'
       : '/admin/events/' + encodeURIComponent(eventId) + '/modules';
   const load = useCallback(async () => {
-    if (scope === 'event' && !eventId) return;
+    listRequest.current?.abort();
+    const request = new AbortController();
+    listRequest.current = request;
+    if (scope === 'event' && !eventId) {
+      setModules([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
       const response = await adminFetch(base, {
+        signal: request.signal,
         credentials: 'same-origin',
         cache: 'no-store',
       });
       if (!response.ok) throw new Error(String(response.status));
-      setModules(ModuleListResponse.parse(await response.json()).modules);
+      const next = ModuleListResponse.parse(await response.json()).modules;
+      if (!request.signal.aborted) setModules(next);
     } catch {
-      setError(t.error);
+      if (!request.signal.aborted) setError(t.error);
     } finally {
-      setLoading(false);
+      if (!request.signal.aborted) setLoading(false);
     }
   }, [base, eventId, scope, t.error]);
   useEffect(() => {
+    const request = new AbortController();
     void adminFetch('/admin/events', {
+      signal: request.signal,
       credentials: 'same-origin',
       cache: 'no-store',
     })
       .then((response) => (response.ok ? response.json() : []))
       .then((rows: unknown[]) => {
+        if (request.signal.aborted) return;
         const parsed = rows.map((row) => EventSchema.parse(row));
         setEvents(parsed.map(({ id, name }) => ({ id, name })));
         setEventId((current) => current || parsed[0]?.id || '');
       })
-      .catch(() => setEvents([]));
+      .catch(() => {
+        if (!request.signal.aborted) setEvents([]);
+      });
+    return () => request.abort();
   }, []);
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      listRequest.current?.abort();
+      mutationRequest.current?.abort();
+    };
   }, [load]);
   const filtered = useMemo(
     () =>
@@ -102,14 +131,21 @@ export function AdminModules({
   );
   async function change(
     module: Module,
-    payload: { enabled?: boolean; config?: unknown },
+    payload: { enabled?: boolean; config?: unknown; reason?: string },
   ) {
+    const scopeGeneration = generation.current;
+    mutationRequest.current?.abort();
+    const request = new AbortController();
+    mutationRequest.current = request;
+    const isCurrent = () =>
+      !request.signal.aborted && scopeGeneration === generation.current;
     setError('');
     try {
       const response = await adminFetch(
         base + '/' + encodeURIComponent(module.id),
         {
           method: 'PATCH',
+          signal: request.signal,
           credentials: 'same-origin',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
@@ -122,6 +158,7 @@ export function AdminModules({
         const body = (await response.json().catch(() => null)) as {
           issues?: Array<{ path: string; message: string }>;
         } | null;
+        if (!isCurrent()) return;
         if (payload.config !== undefined && body?.issues) {
           setConfigErrors(
             Object.fromEntries(
@@ -132,11 +169,13 @@ export function AdminModules({
         }
         throw new Error(String(response.status));
       }
+      if (!isCurrent()) return;
       await load();
+      if (!isCurrent()) return;
       setSelected(null);
       setConfigErrors({});
     } catch {
-      setError(t.error);
+      if (isCurrent()) setError(t.error);
     }
   }
   return (
@@ -148,14 +187,20 @@ export function AdminModules({
             { value: 'event', label: t.event },
           ]}
           value={scope}
-          onChange={(next) => setScope(next as typeof scope)}
+          onChange={(next) => {
+            resetScope();
+            setScope(next as typeof scope);
+          }}
           label={t.scope}
         />
         {scope === 'event' && (
           <AppSelect
             label={t.chooseEvent}
             value={eventId}
-            onChange={(event) => setEventId(event.target.value)}
+            onChange={(event) => {
+              resetScope();
+              setEventId(event.target.value);
+            }}
           >
             {events.map((event) => (
               <option key={event.id} value={event.id}>
@@ -194,63 +239,17 @@ export function AdminModules({
       ) : filtered.length === 0 ? (
         <AppEmptyState title={t.emptyTitle} description={t.emptyDescription} />
       ) : (
-        <AppTable headers={[t.module, t.description, t.status, t.actions]}>
-          {filtered.map((module) => (
-            <tr key={module.id}>
-              <td>
-                <strong>{module.gallery.name[locale]}</strong>
-              </td>
-              <td>{module.gallery.shortDescription[locale]}</td>
-              <td>
-                {module.status === 'unavailable' ? (
-                  <AppStatusPill status="neg">
-                    {t[module.unavailableReason ?? 'edition']}
-                  </AppStatusPill>
-                ) : module.enabled ? (
-                  <AppStatusPill status="zu">{t.active}</AppStatusPill>
-                ) : (
-                  <AppStatusPill status="offen">{t.inactive}</AppStatusPill>
-                )}
-              </td>
-              <td>
-                <div className="nb-app-inline">
-                  <AppButton
-                    tone="ghost"
-                    onClick={() => {
-                      setSelected(module);
-                      setConfig(module.config);
-                      setConfigErrors({});
-                    }}
-                  >
-                    {t.details}
-                  </AppButton>
-                  {module.status === 'unavailable' ? (
-                    module.unavailableReason === 'entitlement' && onUpgrade ? (
-                      <AppButton
-                        tone="secondary"
-                        onClick={() => onUpgrade(module.id)}
-                      >
-                        {t.upgrade}
-                      </AppButton>
-                    ) : null
-                  ) : module.enabled ? (
-                    <ModuleDisableButton
-                      locale={locale}
-                      onConfirm={() => void change(module, { enabled: false })}
-                    />
-                  ) : (
-                    <AppButton
-                      tone="secondary"
-                      onClick={() => void change(module, { enabled: true })}
-                    >
-                      {t.activate}
-                    </AppButton>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </AppTable>
+        <ModuleTable
+          modules={filtered}
+          locale={locale}
+          onUpgrade={onUpgrade}
+          onDetails={(module) => {
+            setSelected(module);
+            setConfig(module.config);
+            setConfigErrors({});
+          }}
+          onChange={(module, patch) => void change(module, patch)}
+        />
       )}
       {selected && (
         <ModuleConfigDialog

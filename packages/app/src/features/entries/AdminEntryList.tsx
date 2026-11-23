@@ -149,9 +149,9 @@ export function AdminEntryList(props: Props) {
   const tabs = [
     { id: 'all', label: 'Alle', count: countAll },
     ...(workflow?.statuses ?? []).map((status) => ({
-      id: status.key,
+      id: status.id ?? status.key,
       label: status.labels.de,
-      count: counts[status.key] ?? 0,
+      count: counts[status.id ?? status.key] ?? 0,
     })),
   ];
   const selectedTab = draft.acceptanceStatus || 'all';

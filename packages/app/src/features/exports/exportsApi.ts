@@ -20,7 +20,11 @@ const event = (eventId: string) =>
 const WorkflowStatusesSchema = z.object({
   workflow: z.object({
     statuses: z.array(
-      z.object({ key: z.string(), labels: z.object({ de: z.string() }) }),
+      z.object({
+        id: z.string().optional(),
+        key: z.string(),
+        labels: z.object({ de: z.string() }),
+      }),
     ),
   }),
 });
@@ -40,7 +44,7 @@ export const exportsApi = {
       },
     ).then((body) =>
       body.workflow.statuses.map((status) => ({
-        key: status.key,
+        key: status.id ?? status.key,
         label: status.labels.de,
       })),
     ),

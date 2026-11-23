@@ -119,3 +119,22 @@ export function describeFilters(
   ].filter((part): part is string => Boolean(part));
   return parts.length ? parts.join(' · ') : 'Alle Nennungen';
 }
+
+/** Replay the stored request, preserving column order, filters and CSV delimiter. */
+export function retryExportQuery(job: ExportJob): URLSearchParams {
+  const query = new URLSearchParams({
+    fields: job.fields.join(','),
+    delimiter: job.delimiter ?? DEFAULT_DELIMITER,
+  });
+  for (const key of [
+    'classId',
+    'acceptanceStatus',
+    'verificationStatus',
+    'paymentStatus',
+    'search',
+  ] as const) {
+    const value = job.filters[key];
+    if (value !== undefined) query.set(key, value);
+  }
+  return query;
+}

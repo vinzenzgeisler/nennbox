@@ -37,3 +37,41 @@ it('fails closed until row status capabilities are hydrated', () => {
     'aria-label="Status ändern"',
   );
 });
+it('resolves label, tone and transition targets through stable status ids', () => {
+  const idWorkflow = {
+    statuses: [
+      { id: 'st-new', key: 'pending', category: 'open', labels: { de: 'Neu' } },
+      {
+        id: 'st-ok',
+        key: 'accepted',
+        category: 'accepted',
+        labels: { de: 'Zugelassen' },
+      },
+    ],
+    transitions: [{ from: 'st-new', to: 'st-ok' }],
+  } as unknown as WorkflowView;
+  const entry = {
+    id: 'entry',
+    acceptanceStatus: 'st-new',
+    availableActions: ['acceptance:st-ok'],
+  } as Entry;
+  const html = renderToStaticMarkup(
+    <DataTable headers={[]}>
+      <AdminEntryRow
+        entry={entry}
+        eventId="event"
+        selected={null}
+        selectedIds={new Set()}
+        setSelection={vi.fn()}
+        classes={[]}
+        workflow={idWorkflow}
+        openEntry={vi.fn()}
+        onChangeStatus={vi.fn()}
+      />
+    </DataTable>,
+  );
+  expect(html).toContain('Neu');
+  expect(html).toContain('Zugelassen');
+  expect(html).not.toContain('st-new');
+  expect(html).not.toContain('st-ok');
+});

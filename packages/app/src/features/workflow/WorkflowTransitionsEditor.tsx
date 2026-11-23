@@ -36,23 +36,27 @@ export function WorkflowTransitionsEditor({
             <>
               <AppWorkflowPill
                 label={
-                  workflow.statuses.find((status) => status.key === edge.from)
-                    ?.labels.de || edge.from
+                  workflow.statuses.find(
+                    (status) => (status.id ?? status.key) === edge.from,
+                  )?.labels.de || edge.from
                 }
                 color={
-                  workflow.statuses.find((status) => status.key === edge.from)
-                    ?.color
+                  workflow.statuses.find(
+                    (status) => (status.id ?? status.key) === edge.from,
+                  )?.color
                 }
               />
               <span aria-hidden="true">→</span>
               <AppWorkflowPill
                 label={
-                  workflow.statuses.find((status) => status.key === edge.to)
-                    ?.labels.de || edge.to
+                  workflow.statuses.find(
+                    (status) => (status.id ?? status.key) === edge.to,
+                  )?.labels.de || edge.to
                 }
                 color={
-                  workflow.statuses.find((status) => status.key === edge.to)
-                    ?.color
+                  workflow.statuses.find(
+                    (status) => (status.id ?? status.key) === edge.to,
+                  )?.color
                 }
               />
             </>
@@ -80,7 +84,10 @@ export function WorkflowTransitionsEditor({
               }
             >
               {workflow.statuses.map((status) => (
-                <option key={status.key} value={status.key}>
+                <option
+                  key={status.id ?? status.key}
+                  value={status.id ?? status.key}
+                >
                   {status.labels.de}
                 </option>
               ))}
@@ -94,7 +101,10 @@ export function WorkflowTransitionsEditor({
               }
             >
               {workflow.statuses.map((status) => (
-                <option key={status.key} value={status.key}>
+                <option
+                  key={status.id ?? status.key}
+                  value={status.id ?? status.key}
+                >
                   {status.labels.de}
                 </option>
               ))}
@@ -177,8 +187,8 @@ export function WorkflowTransitionsEditor({
         disabled={workflow.statuses.length < 2}
         onClick={() => {
           setExpanded(workflow.transitions.length);
-          const from = workflow.statuses[0]?.key;
-          const to = workflow.statuses[1]?.key;
+          const from = workflow.statuses[0]?.id ?? workflow.statuses[0]?.key;
+          const to = workflow.statuses[1]?.id ?? workflow.statuses[1]?.key;
           if (from && to)
             updateWorkflow({
               ...workflow,

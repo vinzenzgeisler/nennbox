@@ -282,6 +282,7 @@ export function AdminApplication() {
           <AdminWorkflow eventId={selectedEvent} events={events} />
         ) : view === 'setup' ? (
           <EventSetup
+            eventId={selectedEvent}
             onCreated={(event) => {
               setEvents((current) => [
                 ...current.filter((item) => item.id !== event.id),

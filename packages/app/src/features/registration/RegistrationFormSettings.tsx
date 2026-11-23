@@ -8,12 +8,8 @@ import {
   AppSelect,
   AppView,
 } from '@nennbox/ui';
-import { useEffect, useState, type ChangeEvent } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import {
-  defaultRegistrationFormConfig,
-  mergeRegistrationFormConfig,
-  RegistrationFormConfigSchema,
-  RegistrationFormConfigPatchSchema,
   type RegistrationFormConfig,
   type RegistrationCustomField,
 } from '@nennbox/contracts';
@@ -27,6 +23,12 @@ import { RegistrationFieldsPreview } from './RegistrationFieldsPreview.js';
 import { RegistrationPaymentSettings } from './RegistrationPaymentSettings.js';
 import { registrationFieldLabels } from './registrationFieldLabels.js';
 
+import {
+  changedOverrides,
+  useRegistrationConfig,
+} from './useRegistrationConfig.js';
+import { RegistrationInheritance } from './RegistrationInheritance.js';
+
 type Notice = { text: string; tone: 'success' | 'info' | 'error' };
 export function RegistrationFormSettings({
   eventId,
@@ -35,88 +37,31 @@ export function RegistrationFormSettings({
   eventId: string;
   embedded?: boolean;
 }) {
-  const [config, setConfig] = useState<RegistrationFormConfig>(
-    defaultRegistrationFormConfig,
-  );
-  const [organizationConfig, setOrganizationConfig] =
-    useState<RegistrationFormConfig>(defaultRegistrationFormConfig);
+  const {
+    config,
+    organizationConfig,
+    setOrganizationConfig,
+    overrides,
+    setOverrides,
+    loaded,
+    error,
+  } = useRegistrationConfig(eventId);
   const [scope, setScope] = useState<'organization' | 'event'>(
     eventId ? 'event' : 'organization',
   );
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const fail = (text: string) => setNotice({ text, tone: 'error' });
-  const [loaded, setLoaded] = useState(false);
-  const [eventLoaded, setEventLoaded] = useState(!eventId);
-  useEffect(() => {
-    let active = true;
-    void adminFetch('/admin/organization/registration-form-config', {
-      credentials: 'same-origin',
-      cache: 'no-store',
-    })
-      .then(async (response) => {
-        if (!response.ok) throw new Error();
-        return response.json();
-      })
-      .then((body: { config: unknown }) => {
-        if (active) {
-          const parsed = RegistrationFormConfigSchema.parse(body.config);
-          setOrganizationConfig(parsed);
-        }
-      })
-      .catch(() => {
-        if (active)
-          fail('Organisations-Einstellungen konnten nicht geladen werden.');
-      })
-      .finally(() => {
-        if (active) setLoaded(true);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-  useEffect(() => {
-    if (!loaded || scope !== 'event' || !eventId) return;
-    let active = true;
-    void adminFetch(
-      `/admin/events/${encodeURIComponent(eventId)}/registration-form-config`,
-      { credentials: 'same-origin', cache: 'no-store' },
-    )
-      .then(async (response) => {
-        if (response.status === 404) return null;
-        if (!response.ok) throw new Error();
-        return response.json();
-      })
-      .then((body: { config: unknown } | null) => {
-        if (!active) return;
-        setConfig(
-          body
-            ? mergeRegistrationFormConfig(
-                organizationConfig,
-                RegistrationFormConfigPatchSchema.parse(body.config),
-              )
-            : organizationConfig,
-        );
-      })
-      .catch(() => {
-        if (active)
-          fail('Veranstaltungs-Einstellungen konnten nicht geladen werden.');
-      })
-      .finally(() => {
-        if (active) setEventLoaded(true);
-      });
-    return () => {
-      active = false;
-    };
-  }, [scope, eventId, organizationConfig, loaded]);
-
   const activeConfig = scope === 'organization' ? organizationConfig : config;
   const updateConfig = (
     updater: (current: RegistrationFormConfig) => RegistrationFormConfig,
   ) => {
     if (scope === 'organization')
       setOrganizationConfig((current) => updater(current));
-    else setConfig((current) => updater(current));
+    else
+      setOverrides((current) =>
+        changedOverrides(current, config, updater(config)),
+      );
   };
   const change = (patch: Partial<RegistrationFormConfig>) =>
     updateConfig((current) => ({ ...current, ...patch }));
@@ -131,6 +76,7 @@ export function RegistrationFormSettings({
       ),
     }));
   const save = async () => {
+    if (!loaded || error || busy) return;
     setBusy(true);
     setNotice(null);
     try {
@@ -138,21 +84,7 @@ export function RegistrationFormSettings({
         scope === 'organization'
           ? '/admin/organization/registration-form-config'
           : `/admin/events/${encodeURIComponent(eventId)}/registration-form-config`;
-      const toSave =
-        scope === 'event'
-          ? {
-              ...activeConfig,
-              fields: Object.fromEntries(
-                Object.entries(activeConfig.fields).filter(
-                  ([key, field]) =>
-                    field.state !==
-                    organizationConfig.fields[
-                      key as keyof typeof organizationConfig.fields
-                    ].state,
-                ),
-              ),
-            }
-          : activeConfig;
+      const toSave = scope === 'event' ? overrides : activeConfig;
       const response = await adminFetch(path, {
         method: 'PUT',
         credentials: 'same-origin',
@@ -205,7 +137,13 @@ export function RegistrationFormSettings({
       tone: 'info',
     });
   };
-  if (!loaded || (scope === 'event' && !eventLoaded))
+  if (error)
+    return (
+      <AppNotice tone="error">
+        {error} Speichern ist gesperrt. Bitte die Ansicht erneut öffnen.
+      </AppNotice>
+    );
+  if (!loaded)
     return (
       <section aria-busy="true">
         <p role="status">Einstellungen werden geladen …</p>
@@ -259,6 +197,20 @@ export function RegistrationFormSettings({
                 Veranstaltung · überschreibt Organisation
               </option>
             </AppSelect>
+            {scope === 'event' && (
+              <RegistrationInheritance
+                overrides={overrides}
+                busy={busy}
+                embedded={embedded}
+                reset={(key) =>
+                  setOverrides((current) => {
+                    const next = { ...current };
+                    delete next[key];
+                    return next;
+                  })
+                }
+              />
+            )}
             <RegistrationFormOptions
               config={activeConfig}
               updateConfig={updateConfig}

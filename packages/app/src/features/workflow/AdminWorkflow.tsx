@@ -4,6 +4,7 @@ import { WorkflowEditor } from './WorkflowEditor.js';
 
 export type Event = { id: string; name: string };
 export type Status = {
+  id?: string;
   key: string;
   labels: { de: string; en: string };
   color: string;
@@ -38,11 +39,15 @@ export function AdminWorkflow({
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   useEffect(() => {
+    // Never expose a previous event's draft after a failed or empty selection.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRevision(null);
+    setDraft('');
+    setReason('');
     if (!eventId) return;
     const abort = new AbortController();
     let active = true;
     // Loading state is scoped to this event-bound request.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setMessage('');
     adminFetch(
@@ -60,8 +65,15 @@ export function AdminWorkflow({
       })
       .then((value) => {
         if (!active) return;
-        setRevision(value);
-        setDraft(JSON.stringify(value.workflow, null, 2));
+        const workflow = {
+          ...value.workflow,
+          statuses: value.workflow.statuses.map((status) => ({
+            ...status,
+            id: status.id ?? status.key,
+          })),
+        };
+        setRevision({ ...value, workflow });
+        setDraft(JSON.stringify(workflow, null, 2));
         setMessage('');
       })
       .catch((error: Error) => {
@@ -76,6 +88,7 @@ export function AdminWorkflow({
     };
   }, [eventId]);
   async function save() {
+    if (loading || !revision || !eventId) return;
     let workflow: Workflow;
     try {
       workflow = JSON.parse(draft) as Workflow;
@@ -133,20 +146,14 @@ export function AdminWorkflow({
   }
   function updateStatus(index: number, patch: Partial<Status>) {
     if (!workflow) return;
-    const previousKey = workflow.statuses[index]?.key;
     const statuses = workflow.statuses.map((status, i) =>
-      i === index ? { ...status, ...patch } : status,
+      i === index
+        ? { ...status, ...patch, id: status.id ?? status.key }
+        : status,
     );
-    const transitions =
-      patch.key && previousKey
-        ? workflow.transitions.map((edge) => ({
-            ...edge,
-            from: edge.from === previousKey ? patch.key! : edge.from,
-            to: edge.to === previousKey ? patch.key! : edge.to,
-          }))
-        : workflow.transitions;
-    updateWorkflow({ ...workflow, statuses, transitions });
+    updateWorkflow({ ...workflow, statuses });
   }
+
   function updateTransition(index: number, patch: Partial<Transition>) {
     if (!workflow) return;
     const transitions = workflow.transitions.map((edge, i) => {

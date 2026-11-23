@@ -31,6 +31,15 @@ async function change(
   if (!definition) throw new ModuleError('not_found', 'Unknown module');
   if (input.enabled === undefined && input.config === undefined)
     throw new ModuleError('invalid_config', 'Nothing to change');
+  if (
+    input.enabled === false &&
+    (!input.reason?.trim() || input.reason.trim().length > 500)
+  )
+    throw new ModuleError(
+      'invalid_config',
+      'A deactivation reason is required',
+      [{ path: 'reason', message: 'Provide a reason of 1 to 500 characters' }],
+    );
   const isEntitled = await entitled(deps, ctx, moduleId);
   const decide = (snapshot: ModuleSnapshot): ModuleWrite | null => {
     const rows =
@@ -113,7 +122,7 @@ async function change(
             ? 'enable'
             : 'disable'
           : 'configure',
-      reason: input.reason,
+      reason: input.reason?.trim(),
     };
   };
   const result = await deps.activations.apply(ctx, scope, moduleId, decide);
