@@ -80,8 +80,14 @@ export function EventSetup({
     return () => window.removeEventListener('resize', revealActive);
   }, [view]);
   const { refreshEvents, setDraft, resume, setMessage } = setup;
+  const draftId = useRef('');
   useEffect(() => {
-    if (eventId)
+    draftId.current = setup.draft.id ?? '';
+  });
+  useEffect(() => {
+    // A freshly saved event is selected by the shell; reloading it would
+    // clear the saved confirmation and the public link.
+    if (eventId && eventId !== draftId.current)
       void resume(eventId).catch((error: unknown) =>
         setMessage(
           setupError(
