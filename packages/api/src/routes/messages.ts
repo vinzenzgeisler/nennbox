@@ -122,7 +122,11 @@ export function registerMessageRoutes(context: ApiRoutesContext): void {
     const action = z
       .enum(['resend-verification', 'remind-open-payments'])
       .safeParse(c.req.param('action'));
-    if (!eventId.success || !action.success)
+    const body = z
+      .object({ recipients: MessageRecipientFilterSchema })
+      .strict()
+      .safeParse(await c.req.json().catch(() => null));
+    if (!eventId.success || !action.success || !body.success)
       return c.json({ error: 'Invalid request' }, 400);
     const actor = member.subject
       ? `${member.subject.issuer}|${member.subject.subject}`
@@ -132,6 +136,7 @@ export function registerMessageRoutes(context: ApiRoutesContext): void {
       eventId.data,
       action.data,
       actor,
+      body.data.recipients,
     );
     if (campaign.ok)
       return c.json(messageCampaignResponse(campaign.campaign), 202);

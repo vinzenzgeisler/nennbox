@@ -2,6 +2,7 @@ import {
   resolveCanonicalOrigin,
   type CanonicalOrigin,
   type RequestContext,
+  type MessageRecipientFilter,
 } from '@nennbox/core';
 import { createMessageSender } from './messaging-send.js';
 import { messageCampaignDelivery } from '@nennbox/core';
@@ -19,6 +20,14 @@ export function createMessageQuickActions(
     eventId: string,
     action: MessageQuickAction,
     actor: string,
+    recipients: MessageRecipientFilter = {
+      classIds: [],
+      statuses: [],
+      entryStatusIds: [],
+      payment: 'any',
+      entryIds: [],
+      additionalAddresses: [],
+    },
   ) => {
     const originAvailable =
       canonicalOrigin !== undefined &&
@@ -31,17 +40,28 @@ export function createMessageQuickActions(
           message: 'Registration verification is unavailable',
         },
       };
+    // Intersect the visible selection with the action, never widen conflicting filters.
+    if (
+      (action === 'remind-open-payments' &&
+        recipients.payment !== 'any' &&
+        recipients.payment !== 'open') ||
+      (action === 'resend-verification' && recipients.emailVerified === true)
+    )
+      return {
+        ok: false as const,
+        error: {
+          code: 'no-recipients' as const,
+          message: 'No recipients match the selected filters',
+        },
+      };
+    const selected = { ...recipients, additionalAddresses: [] };
     const input =
       action === 'resend-verification'
         ? {
             eventId,
             recipients: {
-              classIds: [],
-              statuses: [],
+              ...selected,
               emailVerified: false as const,
-              payment: 'any' as const,
-              entryIds: [],
-              additionalAddresses: [],
             },
             subject: 'Verify your email address',
             text: 'Follow the verification link to confirm your email address.',
@@ -50,11 +70,8 @@ export function createMessageQuickActions(
         : {
             eventId,
             recipients: {
-              classIds: [],
-              statuses: [],
+              ...selected,
               payment: 'open' as const,
-              entryIds: [],
-              additionalAddresses: [],
             },
             subject: 'Payment reminder for {{eventName}}',
             text: 'This is a reminder that a payment for {{eventName}} is still open. Please review your payment details.',

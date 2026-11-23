@@ -13,6 +13,10 @@ export const MessageRecipientFilterSchema = z
       .array(z.enum(['pending', 'accepted', 'rejected', 'withdrawn']))
       .max(50)
       .default([]),
+    entryStatusIds: z
+      .array(z.string().trim().min(1).max(100))
+      .max(100)
+      .default([]),
     emailVerified: z.boolean().optional(),
     payment: z.enum(['any', 'paid', 'open', 'unpaid']).default('any'),
     entryIds: z.array(z.string().uuid()).max(500).default([]),

@@ -1,6 +1,8 @@
 export interface MessageRecipientFilter {
   classIds: string[];
   statuses: string[];
+  /** Workflow status keys, including waitlist and event-specific custom statuses. */
+  entryStatusIds?: string[];
   emailVerified?: boolean | undefined;
   payment: 'any' | 'paid' | 'open' | 'unpaid';
   entryIds: string[];
@@ -110,6 +112,11 @@ export function resolveMessageRecipientCandidates(
     if (
       filter.statuses.length &&
       !filter.statuses.includes(candidate.acceptanceStatus)
+    )
+      return false;
+    if (
+      filter.entryStatusIds?.length &&
+      !filter.entryStatusIds.includes(candidate.acceptanceStatus)
     )
       return false;
     if (

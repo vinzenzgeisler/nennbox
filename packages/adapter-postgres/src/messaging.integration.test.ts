@@ -151,6 +151,28 @@ describe.skipIf(!databaseUrl)('messaging PostgreSQL integration', () => {
           ],
         },
       });
+      for (const status of ['waitlist', 'custom-review']) {
+        await db
+          .update(entries)
+          .set({ acceptanceStatus: status })
+          .where(eq(entries.id, owner.entry.id));
+        expect(
+          await repo.preview(context, owner.event.id, {
+            ...filter,
+            entryStatusIds: [status],
+          }),
+        ).toMatchObject({ ok: true, value: { count: 1 } });
+        expect(
+          await repo.preview(context, owner.event.id, {
+            ...filter,
+            entryStatusIds: ['accepted'],
+          }),
+        ).toMatchObject({ ok: true, value: { count: 0 } });
+      }
+      await db
+        .update(entries)
+        .set({ acceptanceStatus: 'pending' })
+        .where(eq(entries.id, owner.entry.id));
       const payload = {
         eventId: owner.event.id,
         recipients: filter,
@@ -265,6 +287,24 @@ describe.skipIf(!databaseUrl)('messaging PostgreSQL integration', () => {
         currency: 'EUR',
         paymentReference: `payment-${suffix}`,
       });
+      for (const action of [
+        'remind-open-payments',
+        'resend-verification',
+      ] as const) {
+        expect(
+          await repo.quickAction(
+            context,
+            owner.event.id,
+            action,
+            'integration-test',
+            {
+              ...filter,
+              entryStatusIds: ['waitlist'],
+              additionalAddresses: ['manual@example.test'],
+            },
+          ),
+        ).toMatchObject({ ok: false, error: { code: 'no-recipients' } });
+      }
       const paymentReminder = await repo.quickAction(
         context,
         owner.event.id,
