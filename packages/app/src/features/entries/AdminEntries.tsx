@@ -1,10 +1,10 @@
 import { useEntryQuickRequest } from './useEntryQuickRequest.js';
 import { EntryDetailHost } from './detail/EntryDetailHost.js';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { EntryEventPicker } from './EntryEventPicker.js';
 import { EntryStatusToast } from './EntryStatusToast.js';
 import { useEntryListStatusChanges } from './useEntryListStatusChanges.js';
-import { applyEntrySort, initialQuery, request } from './AdminEntriesModel.js';
+import { applyEntrySort, initialQuery } from './AdminEntriesModel.js';
 import { AdminEntriesState } from './AdminEntriesState.js';
 import { AdminEntryList } from './AdminEntryList.js';
 import { useAdminEntryActions } from './useAdminEntryActions.js';
@@ -15,6 +15,9 @@ import { useOpenEntryDetail } from './useOpenEntryDetail.js';
 import { useEntryChangesRefresh } from './useEntryChangesRefresh.js';
 import { useSharedSelection } from './useSharedSelection.js';
 import type { AdminEntriesProps } from './AdminEntriesProps.js';
+import { useAutoPreviewEntry } from './useAutoPreviewEntry.js';
+import { useEntryCounts } from './useEntryCounts.js';
+import { useEntryDetailNavigation } from './useEntryDetailNavigation.js';
 import { useEntryFilters } from './useEntryFilters.js';
 
 /** Event changes reset view state and cancel requests scoped to the previous event. */
@@ -47,7 +50,7 @@ function AdminEntriesView({
   onEventChange: onSharedEventChange,
 }: AdminEntriesProps) {
   const [internalDetailOpen, setInternalDetailOpen] = useState(false);
-  const autoPreviewedEvent = useRef('');
+  const [detailTab, setDetailTab] = useState('overview');
   const isDetailOpen = detailOpen ?? internalDetailOpen;
   const openDetail = useCallback(() => {
     if (onOpenDetail) onOpenDetail();
@@ -68,23 +71,7 @@ function AdminEntriesView({
     onSelectionChange,
   );
   const [actionError, setActionError] = useState('');
-  const [counts, setCounts] = useState<Record<string, number>>({});
-  useEffect(() => {
-    if (!eventId) return;
-    const controller = new AbortController();
-    request(`/admin/events/${encodeURIComponent(eventId)}/entry-counts`, {
-      signal: controller.signal,
-    })
-      .then((response) => (response.ok ? response.json() : Promise.reject()))
-      .then((data: { total: number; statuses: Record<string, number> }) => {
-        if (!controller.signal.aborted) {
-          setCounts(data.statuses);
-          onTotalChange?.(data.total);
-        }
-      })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [eventId, refreshRevision, onTotalChange]);
+  const counts = useEntryCounts(eventId, refreshRevision, onTotalChange);
   const [selection, setSelection] = useState<{
     eventId: string;
     ids: Set<string>;
@@ -107,7 +94,7 @@ function AdminEntriesView({
     apiState,
     events,
     workflow,
-    items,
+    items: listItems,
     total,
     totalPages,
     classes,
@@ -120,6 +107,11 @@ function AdminEntriesView({
     refreshRevision,
     setActionError,
   });
+  // Saved detail responses update the hidden list immediately, before its refetch.
+  const items = useMemo(
+    () => listItems.map((item) => (item.id === selected?.id ? selected : item)),
+    [listItems, selected],
+  );
   useEffect(() => onWorkflowChange?.(workflow), [onWorkflowChange, workflow]);
   const {
     setReason,
@@ -151,25 +143,21 @@ function AdminEntriesView({
       setRefreshRevision,
       setActionError,
     });
+  const detailNavigation = useEntryDetailNavigation({
+    eventId,
+    applied,
+    items,
+    selected,
+    page,
+    pageSize,
+    total,
+    openEntry,
+    setPage,
+    setActionError,
+  });
   const openEntryDetail = useOpenEntryDetail(selected, openEntry, openDetail);
   const quick = useEntryQuickRequest(openEntryDetail);
-  useEffect(() => {
-    if (
-      !autoSelectFirst ||
-      !eventId ||
-      !items.length ||
-      autoPreviewedEvent.current === eventId ||
-      !workflow
-    )
-      return;
-    autoPreviewedEvent.current = eventId;
-    const firstPending = items.find(
-      (item) =>
-        workflow.statuses.find((status) => status.key === item.acceptanceStatus)
-          ?.category === 'waitlisted',
-    );
-    void openEntry((firstPending ?? items[0]!).id);
-  }, [autoSelectFirst, eventId, items, workflow, openEntry]);
+  useAutoPreviewEntry({ autoSelectFirst, eventId, items, workflow, openEntry });
   usePreviewAdvance({
     eventId,
     items,
@@ -272,6 +260,10 @@ function AdminEntriesView({
       )}
       {isDetailOpen && selected && (
         <EntryDetailHost
+          activeTab={detailTab}
+          onTab={setDetailTab}
+          navigate={detailNavigation.navigate}
+          navigationBusy={detailNavigation.busy}
           quickActionRequest={quick.request}
           onQuickActionHandled={quick.clear}
           key={selected.id}
@@ -290,7 +282,6 @@ function AdminEntriesView({
           page={page}
           pageSize={pageSize}
           total={total}
-          openEntry={openEntry}
           setSelected={setSelected}
           setRefreshRevision={setRefreshRevision}
         />

@@ -236,9 +236,16 @@ test('driver requests a Mailpit link, uploads a document, and the office sees it
     .getByRole('combobox', { name: 'Veranstaltung' })
     .selectOption(event.id);
   const row = page.getByRole('row').filter({ hasText: `Fahrerin ${suffix}` });
-  await row
-    .getByRole('button', { name: new RegExp(`Fahrerin ${suffix}.*Lancia`) })
-    .dblclick();
+  const openEntry = row.getByRole('button', {
+    name: new RegExp(`Fahrerin ${suffix}.*Lancia`),
+  });
+  // Selection may reopen a persisted-collapsed split. Let its layout settle before the double click.
+  await openEntry.click();
+  await expect(row).toHaveClass(/is-selected/);
+  await expect(
+    page.getByRole('complementary', { name: 'Nennungsvorschau' }),
+  ).toBeVisible();
+  await openEntry.dblclick();
   const detail = page.getByRole('region', {
     name: 'Nennung im Detail',
     exact: true,

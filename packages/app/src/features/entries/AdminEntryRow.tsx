@@ -1,16 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { EntryQuickMenu } from './EntryQuickMenu.js';
 import { type OnEntryQuickAction } from './entryQuickActions.js';
-import { assignedNumber } from './entryStartNumber.js';
+import { assignedNumber, numberWish } from './entryStartNumber.js';
 import { EntryDataHints } from './EntryDataHints.js';
 import type { Dispatch, SetStateAction } from 'react';
 import { EntryResponse, type EntryResponse as Entry } from '@nennbox/contracts';
-import {
-  CompletionDots,
-  EntryListRow,
-  EntryStatusMenu,
-  HintLabel,
-} from '@nennbox/ui';
+import { CompletionDots, EntryListRow, EntryStatusMenu } from '@nennbox/ui';
 import { completionStates } from './completionStates.js';
 import { request } from './AdminEntriesModel.js';
 import type { WorkflowView } from './AdminEntriesModel.js';
@@ -87,20 +82,14 @@ export function AdminEntryRow({
       vehicle={vehicle}
       imageUrl={details?.vehicle.imageUrl ?? null}
       imageAlt="Fahrzeugbild"
-      hints={
-        <>
-          {entry.waitlistPosition != null && (
-            <HintLabel>Warteliste · Platz {entry.waitlistPosition}</HintLabel>
-          )}
-          <EntryDataHints entry={entry} />
-        </>
-      }
+      hints={<EntryDataHints entry={entry} compact />}
       className={
         details?.eventClass.name ??
         classes.find((item) => item.id === entry.classId)?.name ??
         '—'
       }
       number={assignedNumber(entry)}
+      requestedNumber={numberWish(entry)}
       selected={selected?.id === entry.id}
       dimmed={['rejected', 'withdrawn'].includes(
         workflow?.statuses.find((item) => item.key === entry.acceptanceStatus)

@@ -215,3 +215,8 @@
     display: none;
   }
 }
+
+.nb-workspace-split-filters .nb-filter-bar .nb-field > span,
+.nb-workspace-split-filters .nb-filter-bar .nb-text-input > span {
+  font: 500 var(--nb-text-sm)/1.1 var(--nb-font);
+}

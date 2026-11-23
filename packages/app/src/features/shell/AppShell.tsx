@@ -1,3 +1,4 @@
+import { EntrySelectionProvider } from '../entries/EntrySelectionState.js';
 import { usePreviewEscape } from './usePreviewEscape.js';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import { usePaletteEntries } from './usePaletteEntries.js';
@@ -164,82 +165,90 @@ export function AppShell({
     />
   );
   return (
-    <AdminWorkspace
-      navigation={
-        <AdminNavigation
-          brand={
-            <span className="nb-app-brand">
-              <span className="nb-app-brand-icon">
-                <Signet />
-              </span>
-              <strong>NENNBOX</strong>
-            </span>
-          }
-          ariaLabel="Hauptnavigation"
-          eventInHeader
-          onSearch={() => setCommandOpen(true)}
-          eventLabel="Veranstaltung"
-          eventPlaceholder="Veranstaltung wählen"
-          events={events.map((event) => ({ id: event.id, label: event.name }))}
-          selectedEvent={activeEvent}
-          onEventChange={(id) => onEventChange?.(id)}
-          groups={APP_NAVIGATION_REGISTRY.map((group) => ({
-            label: group.label,
-            items: group.items.map((item) => ({
-              ...item,
-              ...(item.id === 'entries' ? { count: entryCount } : {}),
-            })),
-          }))}
-          current={currentView}
-          onNavigate={navigate}
-          user={
-            identity ? (
-              <span className="nb-user-identity">
-                <b aria-hidden="true">
-                  {identity.name
-                    .split(/\s+/)
-                    .map((part) => part[0])
-                    .slice(0, 2)
-                    .join('')
-                    .toUpperCase()}
-                </b>
-                <span>
-                  <strong>{identity.name}</strong>
-                  <small>{identity.organization ?? identity.role}</small>
+    <EntrySelectionProvider>
+      <AdminWorkspace
+        navigation={
+          <AdminNavigation
+            brand={
+              <span className="nb-app-brand">
+                <span className="nb-app-brand-icon">
+                  <Signet />
                 </span>
+                <strong>NENNBOX</strong>
               </span>
-            ) : undefined
-          }
-        />
-      }
-      header={
-        detailOpen && currentView === 'entries' ? (
-          <div className="nb-app-detail-breadcrumb">{eventBreadcrumb}</div>
-        ) : (
-          <PageHeader
-            title={VIEW_TITLES[currentView]}
-            actions={
-              currentView === 'entries' ? (
-                <AppButton tone="primary" onClick={() => navigate('messages')}>
-                  Nachricht schreiben
-                </AppButton>
+            }
+            ariaLabel="Hauptnavigation"
+            eventInHeader
+            onSearch={() => setCommandOpen(true)}
+            eventLabel="Veranstaltung"
+            eventPlaceholder="Veranstaltung wählen"
+            events={events.map((event) => ({
+              id: event.id,
+              label: event.name,
+            }))}
+            selectedEvent={activeEvent}
+            onEventChange={(id) => onEventChange?.(id)}
+            groups={APP_NAVIGATION_REGISTRY.map((group) => ({
+              label: group.label,
+              items: group.items.map((item) => ({
+                ...item,
+                ...(item.id === 'entries' ? { count: entryCount } : {}),
+              })),
+            }))}
+            current={currentView}
+            onNavigate={navigate}
+            user={
+              identity ? (
+                <span className="nb-user-identity">
+                  <b aria-hidden="true">
+                    {identity.name
+                      .split(/\s+/)
+                      .map((part) => part[0])
+                      .slice(0, 2)
+                      .join('')
+                      .toUpperCase()}
+                  </b>
+                  <span>
+                    <strong>{identity.name}</strong>
+                    <small>{identity.organization ?? identity.role}</small>
+                  </span>
+                </span>
               ) : undefined
             }
-            eyebrow={eventBreadcrumb}
-            description={
-              currentView === 'entries' && deadlineDays !== null
-                ? deadlineDays >= 0
-                  ? `Nennungsschluss in ${deadlineDays} Tagen`
-                  : 'Nennungsschluss vorbei'
-                : undefined
-            }
           />
-        )
-      }
-      inset={currentView !== 'entries'}
-      overlay={palette}
-    >
-      {typeof children === 'function' ? children(currentView) : children}
-    </AdminWorkspace>
+        }
+        header={
+          detailOpen && currentView === 'entries' ? (
+            <div className="nb-app-detail-breadcrumb">{eventBreadcrumb}</div>
+          ) : (
+            <PageHeader
+              title={VIEW_TITLES[currentView]}
+              actions={
+                currentView === 'entries' ? (
+                  <AppButton
+                    tone="primary"
+                    onClick={() => navigate('messages')}
+                  >
+                    Nachricht schreiben
+                  </AppButton>
+                ) : undefined
+              }
+              eyebrow={eventBreadcrumb}
+              description={
+                currentView === 'entries' && deadlineDays !== null
+                  ? deadlineDays >= 0
+                    ? `Nennungsschluss in ${deadlineDays} Tagen`
+                    : 'Nennungsschluss vorbei'
+                  : undefined
+              }
+            />
+          )
+        }
+        inset={currentView !== 'entries'}
+        overlay={palette}
+      >
+        {typeof children === 'function' ? children(currentView) : children}
+      </AdminWorkspace>
+    </EntrySelectionProvider>
   );
 }

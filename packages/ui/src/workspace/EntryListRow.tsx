@@ -9,6 +9,7 @@ export function EntryListRow({
   imageAlt = '',
   className,
   number,
+  requestedNumber,
   selected = false,
   dimmed = false,
   checked = false,
@@ -29,6 +30,7 @@ export function EntryListRow({
   imageAlt?: string;
   className: string;
   number?: string | null;
+  requestedNumber?: string | null;
   selected?: boolean;
   dimmed?: boolean;
   checked?: boolean;
@@ -92,6 +94,7 @@ export function EntryListRow({
               <span className="nb-entry-list-meta">
                 <small>
                   {number ? `Nr. ${number} · ` : ''}
+                  {requestedNumber ? `Wunsch: ${requestedNumber} · ` : ''}
                   {vehicle}
                 </small>
                 {hints}
@@ -103,6 +106,7 @@ export function EntryListRow({
               <span className="nb-entry-list-meta">
                 <small>
                   {number ? `Nr. ${number} · ` : ''}
+                  {requestedNumber ? `Wunsch: ${requestedNumber} · ` : ''}
                   {vehicle}
                 </small>
                 {hints}

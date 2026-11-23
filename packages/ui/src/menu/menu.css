@@ -1,3 +1,6 @@
+.nb-menu:not([open]) > .nb-menu-disclosure {
+  display: none;
+}
 .nb-menu {
   position: relative;
   display: inline-block;

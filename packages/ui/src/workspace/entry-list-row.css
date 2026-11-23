@@ -111,14 +111,16 @@
 }
 .nb-entry-list-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--nb-space-2);
+  gap: 0 var(--nb-space-2);
   min-width: 0;
 }
 .nb-entry-list-meta small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  flex-shrink: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
   color: var(--nb-fg-muted);
   font: 400 var(--nb-text-sm)/1.45 var(--nb-font);
 }

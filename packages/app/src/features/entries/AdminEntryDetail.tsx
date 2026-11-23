@@ -27,6 +27,8 @@ import {
 } from './detail/useEntryDetailReads.js';
 
 export function AdminEntryDetail({
+  activeTab,
+  onTab,
   quickActionRequest,
   onQuickActionHandled,
   selected,
@@ -43,6 +45,8 @@ export function AdminEntryDetail({
   onNotice,
   onOpenRelated,
 }: {
+  activeTab?: string;
+  onTab?: (tab: string) => void;
   quickActionRequest?: EntryQuickActionRequest | null;
   onQuickActionHandled?: () => void;
   onNotice?: (message: string) => void;
@@ -63,7 +67,9 @@ export function AdminEntryDetail({
   onUpdated: (entry: Entry | null, refresh?: boolean) => void;
   onMessage?: ((seed: MessageSeed) => void) | undefined;
 }) {
-  const [tab, setTab] = useState('overview');
+  const [localTab, setLocalTab] = useState('overview');
+  const tab = activeTab ?? localTab;
+  const setTab = onTab ?? setLocalTab;
   const [numberOpen, setNumberOpen] = useState(false);
   const [notice, setNotice] = useState<{ message: string } | null>(null);
   const notify = (message: string) =>

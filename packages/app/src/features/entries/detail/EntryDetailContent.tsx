@@ -57,7 +57,7 @@ export function EntryDetailContent({
         <EntryStartNumber
           entry={entry}
           onUpdated={(entry) => {
-            onUpdated(entry, false);
+            onUpdated(entry);
             setNotice({ message: 'Startnummer gespeichert' });
           }}
         />

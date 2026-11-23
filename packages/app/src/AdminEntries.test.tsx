@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
+import { defaultWorkflow } from './features/workflow/AdminWorkflow.js';
 import { AdminEntries } from './AdminEntries.js';
 
 const eventA = '10000000-0000-4000-8000-000000000001';
@@ -145,9 +146,17 @@ async function mount(
 ) {
   fetchMock = vi
     .spyOn(globalThis, 'fetch')
-    .mockImplementation((input, init) =>
-      fetchImpl(String(input), init),
-    ) as unknown as typeof fetchMock;
+    .mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith('/registration-workflow')) {
+        // Legacy list fixtures omit this endpoint; provide an explicit successful workflow.
+        const response = await fetchImpl(url, init).catch(() => null);
+        return response?.ok
+          ? response
+          : Response.json({ workflow: defaultWorkflow });
+      }
+      return fetchImpl(url, init);
+    }) as unknown as typeof fetchMock;
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);

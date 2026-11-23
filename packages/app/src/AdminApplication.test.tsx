@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
+import { defaultWorkflow } from './features/workflow/AdminWorkflow.js';
 import { AdminApplication } from './features/shell/AdminApplication.js';
 
 const eventA = '10000000-0000-4000-8000-000000000001';
@@ -149,6 +150,8 @@ async function mount(slow: Array<'driver' | 'payment' | 'status'> = []) {
     const method = init?.method ?? 'GET';
     if (url === '/admin/session') return Response.json({ role: 'admin' });
     if (url === '/admin/events') return Response.json(events);
+    if (url.endsWith('/registration-workflow'))
+      return Response.json({ workflow: defaultWorkflow });
     const counts = /\/admin\/events\/([^/]+)\/entry-counts/.exec(url);
     if (counts)
       return Response.json(
