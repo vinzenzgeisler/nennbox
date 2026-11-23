@@ -17,30 +17,27 @@ import { z } from 'zod';
 type Props = {
   filter: MessageRecipientFilter;
   onChange: (filter: MessageRecipientFilter) => void;
+  statuses?: Array<{ key: string; labels: { de: string } }>;
   classes: z.infer<typeof EventClassSchema>[];
   candidates: MessageRecipientPreview;
   selection: MessageRecipientPreview;
   loading: boolean;
+  error?: string;
   search: string;
   onSearch: (value: string) => void;
   addresses: string;
   onAddresses: (value: string) => void;
 };
-const statusSchema = z.enum(['pending', 'accepted', 'rejected', 'withdrawn']);
 const paymentSchema = z.enum(['any', 'paid', 'open', 'unpaid']);
-const statuses = [
-  ['pending', 'Offen'],
-  ['accepted', 'Angenommen'],
-  ['rejected', 'Abgelehnt'],
-  ['withdrawn', 'Zurückgezogen'],
-];
 export function MessageRecipients({
   filter,
   onChange,
   classes,
+  statuses = [],
   candidates,
   selection,
   loading,
+  error,
   search,
   onSearch,
   addresses,
@@ -77,20 +74,19 @@ export function MessageRecipients({
         </AppSelect>
         <AppSelect
           label="Nennungsstatus"
-          value={filter.statuses[0] ?? ''}
+          value={filter.entryStatusIds[0] ?? ''}
           onChange={(event) =>
             onChange({
               ...filter,
-              statuses: statusSchema.safeParse(event.target.value).success
-                ? [statusSchema.parse(event.target.value)]
-                : [],
+              statuses: [],
+              entryStatusIds: event.target.value ? [event.target.value] : [],
             })
           }
         >
           <option value="">Alle Status</option>
-          {statuses.map(([value, label]) => (
-            <option value={value} key={value}>
-              {label}
+          {statuses.map(({ key, labels }) => (
+            <option value={key} key={key}>
+              {labels.de}
             </option>
           ))}
         </AppSelect>
@@ -169,7 +165,9 @@ export function MessageRecipients({
       <p role="status">
         {loading
           ? 'Empfänger werden ermittelt…'
-          : `${selection.count} Empfänger`}
+          : error
+            ? 'Empfängerauswahl nicht verfügbar'
+            : `${selection.count} Empfänger`}
       </p>
     </AppSection>
   );
