@@ -115,17 +115,36 @@ describe('DriverPortal access', () => {
       expect(container.textContent).toContain('Testfahrt');
     },
   );
-  it('shows technical load failures without a token, but requests a link for a missing session', async () => {
+  it.each([404, 401])(
+    'shows technical load failures without a token, but offers the request form for a missing session (%s)',
+    async (missing) => {
+      history.replaceState(null, '', '/fahrer');
+      fetchMock
+        .mockResolvedValueOnce(response({}, 503))
+        .mockResolvedValueOnce(response({}, missing));
+      await render();
+      expect(container.textContent).toContain('Technischer Fehler');
+      await click('Erneut laden');
+      expect(container.textContent).toContain('Persönlichen Link anfordern');
+      expect(container.textContent).not.toContain('Technischer Fehler');
+      expect(container.querySelector('input[type="email"]')).not.toBeNull();
+    },
+  );
+  it('shows the request form directly when the first visit has no session', async () => {
     history.replaceState(null, '', '/fahrer');
-    fetchMock
-      .mockResolvedValueOnce(response({}, 503))
-      .mockResolvedValueOnce(response({}, 401));
+    fetchMock.mockResolvedValueOnce(
+      response({ error: 'Link unavailable' }, 404),
+    );
     await render();
-    expect(container.textContent).toContain('Technischer Fehler');
-    await click('Erneut laden');
-    expect(container.textContent).toContain('Persönlichen Link anfordern');
+    const label = [...container.querySelectorAll('label')].find((item) =>
+      item.textContent?.includes('E-Mail-Adresse'),
+    );
+    expect(label).toBeDefined();
+    expect(container.querySelector('input[type="email"]')).not.toBeNull();
+    expect(container.textContent).not.toContain('Technischer Fehler');
   });
 });
+
 describe('shared driver contact corrections', () => {
   it('synchronizes forms, sends only changed fields, and keeps refreshed data when another form saves', async () => {
     let contact = { phone: '123', city: 'Berlin' };

@@ -23,6 +23,8 @@ export async function json(url: string, method = 'GET', body?: unknown) {
   return response.json();
 }
 
+const isMissingSession = (status: number) => status === 401 || status === 404;
+
 export function useDriverPortalAccess() {
   const [phase, setPhase] = useState<
     'loading' | 'request' | 'sent' | 'ready' | 'invalid' | 'error'
@@ -69,12 +71,14 @@ export function useDriverPortalAccess() {
       try {
         await refresh();
       } catch (error) {
-        // Only a missing session on the initial visit needs a new link.
+        // Only a missing session on the initial visit needs a new link. The
+        // API answers a missing or expired session with 404 ("Link
+        // unavailable"); 401 is accepted for proxies that map it that way.
         setPhase(
           !redeemed.current &&
             !token &&
             error instanceof HttpError &&
-            error.status === 401
+            isMissingSession(error.status)
             ? 'request'
             : 'error',
         );
