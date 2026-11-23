@@ -11,6 +11,7 @@
 .nb-admin-workspace-body,
 .nb-admin-workspace-main {
   min-width: 0;
+  max-width: 100%;
 }
 .nb-admin-workspace-main.is-inset {
   --nb-content-inset: var(--nb-space-4);
