@@ -55,7 +55,7 @@ export function createTimingRepository(db: Database): TimingRepository {
         FROM entry e
         LEFT JOIN entry_workflow_revision w ON w.organization_id=e.organization_id AND w.id=e.workflow_revision_id
         LEFT JOIN LATERAL jsonb_array_elements(COALESCE(w.workflow->'statuses', '[]'::jsonb)) AS status(value)
-          ON status.value->>'key'=e.acceptance_status
+          ON coalesce(status.value->>'id', status.value->>'key')=e.acceptance_status
         WHERE e.organization_id=${ctx.organizationId} AND e.event_id=${eventId} AND e.deleted_at IS NULL
         ORDER BY e.assigned_start_number, e.id`);
       const rows =

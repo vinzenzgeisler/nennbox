@@ -80,16 +80,16 @@ export async function transitionEntry(
     )
       throw new Error('Forbidden');
     statusCategory = pinned.workflow.statuses.find(
-      (status) => status.key === to,
+      (status) => (status.id ?? status.key) === to,
     )?.category;
     if (!statusCategory) throw new Error(`Unknown entry status: ${to}`);
     workflowRevisionId = pinned.id;
     if (workflowEdge.notify) {
       const targetStatus = pinned.workflow.statuses.find(
-        (status) => status.key === to,
+        (status) => (status.id ?? status.key) === to,
       )!;
       notification = {
-        statusKey: targetStatus.key,
+        statusKey: targetStatus.id ?? targetStatus.key,
         statusLabelDe: targetStatus.labels.de,
         statusLabelEn: targetStatus.labels.en,
       };

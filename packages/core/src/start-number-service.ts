@@ -10,6 +10,11 @@ export interface StartNumberRangeConfig {
   readonly mode: StartNumberMode;
 }
 
+export interface StartNumberClassCapacity {
+  readonly classId: string;
+  readonly maxParticipants: number | null;
+}
+
 export interface StartNumberService {
   list(
     ctx: RequestContext,
@@ -23,6 +28,7 @@ export interface StartNumberService {
     eventId: string,
     ranges: readonly StartNumberRangeConfig[],
     settings: { automaticPromotion: boolean; confirmationHours: number },
+    classCapacities?: readonly StartNumberClassCapacity[],
   ): Promise<void>;
   /** `dryRun` plans the assignment without writing, so the UI can name the count. */
   assignAll(
