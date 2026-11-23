@@ -53,14 +53,21 @@ it('only offers transitions explicitly authorized by the API', () => {
     canRequestQuickAction(allowed, { kind: 'delete' }, workflow, false),
   ).toBe(true);
 });
-it('hides communication actions without a connected composer', () => {
-  expect(
-    canRequestQuickAction(entry, { kind: 'message' }, workflow, false),
-  ).toBe(false);
-  expect(
-    canRequestQuickAction(entry, { kind: 'documents' }, workflow, false),
-  ).toBe(false);
-  expect(
-    canRequestQuickAction(entry, { kind: 'message' }, workflow, true),
-  ).toBe(true);
+it('requires both API messaging authorization and a connected composer', () => {
+  for (const kind of ['message', 'documents'] as const) {
+    expect(canRequestQuickAction(entry, { kind }, workflow, true)).toBe(false);
+    expect(
+      canRequestQuickAction(
+        { ...entry, availableActions: [] },
+        { kind },
+        workflow,
+        true,
+      ),
+    ).toBe(false);
+    const allowed = { ...entry, availableActions: ['message'] };
+    expect(canRequestQuickAction(allowed, { kind }, workflow, false)).toBe(
+      false,
+    );
+    expect(canRequestQuickAction(allowed, { kind }, workflow, true)).toBe(true);
+  }
 });

@@ -189,6 +189,21 @@ describe('entry detail routes', () => {
     );
     expect(await readOnly.json()).toMatchObject({ availableActions: [] });
   });
+  it('advertises message actions only with the campaign send permission', async () => {
+    for (const permissions of [
+      ['entry:read'],
+      ['entry:read', 'entry:write'],
+      ['entry:read', 'event:write'],
+    ]) {
+      const response = await appWith(permissions).request(
+        `/admin/entries/${entryId}`,
+      );
+      const body = await response.json();
+      expect(body.availableActions.includes('message')).toBe(
+        permissions.includes('event:write'),
+      );
+    }
+  });
   it('lists the mails of an entry', async () => {
     const response = await appWith(['entry:read']).request(
       `/admin/entries/${entryId}/messages`,

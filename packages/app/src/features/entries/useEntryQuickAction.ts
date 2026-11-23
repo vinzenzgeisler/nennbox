@@ -40,11 +40,7 @@ export function useEntryQuickAction({
       return;
     const { action } = request;
     // The detail's read hook hydrates capabilities before opening a mutation UI.
-    if (
-      !['message', 'documents'].includes(action.kind) &&
-      !entry.availableActions
-    )
-      return;
+    if (!entry.availableActions) return;
     consumed.current = request.token;
     if (canRequestQuickAction(entry, action, workflow, Boolean(onMessage))) {
       if (action.kind === 'message') onMessage?.({ entryId: entry.id });

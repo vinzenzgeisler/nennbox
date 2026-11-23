@@ -26,6 +26,9 @@ type Props = {
   mobilePreviewOpen?: boolean | undefined;
   eventId: string;
   apiState: ApiState;
+  workflowError?: ApiState | null | undefined;
+  onRetry?: (() => void | Promise<void>) | undefined;
+  onRetryWorkflow?: (() => void) | undefined;
   draft: EntryQuery;
   setDraft: Dispatch<SetStateAction<EntryQuery>>;
   changeSort: (sort: string, direction?: string) => void;
@@ -80,7 +83,13 @@ export function AdminEntryList(props: Props) {
   const countAll = Object.values(counts).reduce((sum, value) => sum + value, 0);
   const content = (
     <>
-      <AdminEntryListStatus apiState={apiState} total={total} />
+      <AdminEntryListStatus
+        apiState={apiState}
+        total={total}
+        workflowError={props.workflowError}
+        onRetry={props.onRetry}
+        onRetryWorkflow={props.onRetryWorkflow}
+      />
       <DataTable
         headerCellClassNames={[
           'nb-entry-column-label',

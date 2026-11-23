@@ -4,6 +4,7 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { defaultWorkflow } from './features/workflow/AdminWorkflow.js';
 import { AdminEntries } from './AdminEntries.js';
+import { EntrySelectionProvider } from './features/entries/EntrySelectionState.js';
 
 const eventA = '10000000-0000-4000-8000-000000000001';
 const eventB = '10000000-0000-4000-8000-000000000002';
@@ -143,12 +144,13 @@ async function flush() {
 }
 async function mount(
   fetchImpl: (url: string, init?: RequestInit) => Promise<Response>,
+  fallbackWorkflow = true,
 ) {
   fetchMock = vi
     .spyOn(globalThis, 'fetch')
     .mockImplementation(async (input, init) => {
       const url = String(input);
-      if (url.endsWith('/registration-workflow')) {
+      if (fallbackWorkflow && url.endsWith('/registration-workflow')) {
         // Legacy list fixtures omit this endpoint; provide an explicit successful workflow.
         const response = await fetchImpl(url, init).catch(() => null);
         return response?.ok
@@ -1236,4 +1238,88 @@ describe('AdminEntries', () => {
       'kein Einwilligungsnachweis gespeichert',
     );
   });
+});
+
+it('retains actual list selection per event across view remounts along with URL filters', async () => {
+  await mount(async (url) => {
+    if (url === '/admin/events') return eventList();
+    if (url.endsWith('/classes')) return classesFor(classA);
+    if (url.startsWith('/admin/entries?')) return listResponse(itemsA, 2, 3);
+    return new Response('{}', { status: 404 });
+  });
+  window.history.replaceState(
+    {},
+    '',
+    `/?eventId=${eventA}&page=2&paymentStatus=partially_paid&sort=requestedStartNumber&direction=asc`,
+  );
+  const renderView = async (eventId: string | null) => {
+    await act(async () =>
+      root!.render(
+        <EntrySelectionProvider>
+          {eventId ? <AdminEntries eventId={eventId} /> : <p>Andere Ansicht</p>}
+        </EntrySelectionProvider>,
+      ),
+    );
+    await flush();
+  };
+  await renderView(null);
+  await renderView(eventA);
+  const checkbox = () =>
+    container.querySelector<HTMLInputElement>('tbody input[type="checkbox"]')!;
+  await act(async () => checkbox().click());
+  expect(checkbox().checked).toBe(true);
+  await renderView(null);
+  await renderView(eventA);
+  expect(checkbox().checked).toBe(true);
+  expect(container.textContent).toContain('1 von 2 ausgewählt');
+  expect(container.textContent).toContain('Zahlung: Teilweise bezahlt');
+  expect(window.location.search).toContain('page=2');
+  expect(window.location.search).toContain('sort=requestedStartNumber');
+  await renderView(eventB);
+  expect(checkbox().checked).toBe(false);
+  await renderView(eventA);
+  expect(checkbox().checked).toBe(true);
+});
+
+it('wires workflow failures and both retry actions through the actual list container', async () => {
+  let workflowFailed = true;
+  let listFailed = false;
+  const workflowRequest = vi.fn(() =>
+    workflowFailed
+      ? new Response('{}', { status: 503 })
+      : Response.json({ workflow: defaultWorkflow }),
+  );
+  await mount(async (url) => {
+    if (url === '/admin/events') return eventList();
+    if (url.endsWith('/classes')) return classesFor(classA);
+    if (url.endsWith('/registration-workflow')) return workflowRequest();
+    if (url.startsWith('/admin/entries?'))
+      return listFailed
+        ? new Response('{}', { status: 403 })
+        : listResponse(itemsA);
+    return new Response('{}', { status: 404 });
+  }, false);
+  await chooseEvent(eventA);
+  expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+    'Statusaktionen',
+  );
+  expect(
+    container.querySelectorAll('.nb-entry-status-menu [role="menuitem"]'),
+  ).toHaveLength(0);
+  workflowFailed = false;
+  await click('Erneut laden');
+  expect(workflowRequest).toHaveBeenCalledTimes(2);
+  expect(container.textContent).not.toContain(
+    'Workflow-Einstellungen konnten nicht',
+  );
+  listFailed = true;
+  await setInput('Suche', 'Alex');
+  await submitFilters();
+  expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+    'Zugriff verweigert',
+  );
+  listFailed = false;
+  await click('Erneut laden');
+  expect(container.querySelector('[role="alert"]')).toBeNull();
+  expect(container.textContent).toContain('Alex Driver');
 });

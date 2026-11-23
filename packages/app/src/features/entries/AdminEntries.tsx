@@ -1,4 +1,5 @@
 import { useEntryQuickRequest } from './useEntryQuickRequest.js';
+import { useEntryBulkSelection } from './EntrySelectionState.js';
 import { EntryDetailHost } from './detail/EntryDetailHost.js';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { EntryEventPicker } from './EntryEventPicker.js';
@@ -72,15 +73,12 @@ function AdminEntriesView({
   );
   const [actionError, setActionError] = useState('');
   const counts = useEntryCounts(eventId, refreshRevision, onTotalChange);
-  const [selection, setSelection] = useState<{
-    eventId: string;
-    ids: Set<string>;
-  }>({ eventId, ids: new Set() });
+  const [selection, setSelection] = useEntryBulkSelection(eventId);
   const selectedIds =
     selection.eventId === eventId ? selection.ids : new Set<string>();
   const clearSelection = useCallback(
     () => setSelection({ eventId, ids: new Set() }),
-    [eventId],
+    [eventId, setSelection],
   );
   const { draft, setDraft, applied, setApplied, page, setPage } =
     useEntryFilters(
@@ -94,6 +92,9 @@ function AdminEntriesView({
     apiState,
     events,
     workflow,
+    workflowError,
+    retryWorkflow,
+    retryEntries,
     items: listItems,
     total,
     totalPages,
@@ -235,6 +236,9 @@ function AdminEntriesView({
           mobilePreviewOpen={mobilePreviewOpen}
           eventId={eventId}
           apiState={apiState}
+          workflowError={workflowError}
+          onRetryWorkflow={retryWorkflow}
+          onRetry={retryEntries}
           draft={draft}
           setDraft={setDraft}
           changeSort={changeSort}

@@ -47,4 +47,9 @@ it('keeps IBM Plex out of the entries views by remapping shared font tokens', ()
   )?.[1];
   expect(block).toContain('--font-plex: var(--nb-font);');
   expect(block).toContain('--font-mono: var(--nb-font-mono);');
+  // Inherited root shorthands are already computed; changing --font-plex alone
+  // cannot update font declarations in shared fields and dialog footers.
+  for (const token of ['--text-body', '--text-label']) {
+    expect(block).toMatch(new RegExp(`${token}:[^;]*var\\(--nb-font\\);`));
+  }
 });

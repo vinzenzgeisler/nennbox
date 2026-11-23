@@ -3,6 +3,7 @@ import { EntryResponse, type EntryResponse as Entry } from '@nennbox/contracts';
 import { Icon, Menu, MenuItem } from '@nennbox/ui';
 import { request, type WorkflowView } from './AdminEntriesModel.js';
 import {
+  canRequestQuickAction,
   quickCancellation,
   quickStatusTransitions,
   type OnEntryQuickAction,
@@ -79,23 +80,29 @@ export function EntryQuickMenu({
           Status ändern
         </MenuItem>
       )}
-      {onQuickAction && canMessage && (
-        <>
-          <MenuItem
-            shortcut="M"
-            onClick={() => onQuickAction(entry.id, { kind: 'message' })}
-          >
-            <Icon name="mail" />
-            Nachricht senden
-          </MenuItem>
-          <MenuItem
-            onClick={() => onQuickAction(entry.id, { kind: 'documents' })}
-          >
-            <Icon name="document" />
-            Unterlagen anfordern
-          </MenuItem>
-        </>
-      )}
+      {onQuickAction &&
+        canRequestQuickAction(
+          current,
+          { kind: 'message' },
+          workflow,
+          canMessage,
+        ) && (
+          <>
+            <MenuItem
+              shortcut="M"
+              onClick={() => onQuickAction(entry.id, { kind: 'message' })}
+            >
+              <Icon name="mail" />
+              Nachricht senden
+            </MenuItem>
+            <MenuItem
+              onClick={() => onQuickAction(entry.id, { kind: 'documents' })}
+            >
+              <Icon name="document" />
+              Unterlagen anfordern
+            </MenuItem>
+          </>
+        )}
       {onQuickAction && current.availableActions?.includes('start_number') && (
         <MenuItem
           onClick={() => onQuickAction(entry.id, { kind: 'start_number' })}

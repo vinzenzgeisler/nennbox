@@ -46,7 +46,7 @@ export function canRequestQuickAction(
   canMessage: boolean,
 ): boolean {
   if (action.kind === 'message' || action.kind === 'documents')
-    return canMessage;
+    return canMessage && Boolean(entry.availableActions?.includes('message'));
   if (action.kind === 'cancel')
     return quickCancellation(entry, workflow)?.to === action.to;
   return entry.availableActions?.includes(action.kind) ?? false;
