@@ -1,5 +1,5 @@
 import { formatEuro } from '@nennbox/contracts';
-import { formatDay } from '../format.js';
+import { formatDay } from '../../../format.js';
 import {
   brandStyle,
   Fact,

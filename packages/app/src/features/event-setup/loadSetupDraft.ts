@@ -5,6 +5,7 @@ import {
   loadTerms,
   type SetupDraft,
 } from './eventSetupApi.js';
+import { formatAmountInput } from '../../format.js';
 import { loadRecipient } from './eventRecipientApi.js';
 
 export async function loadSetupDraft(
@@ -47,7 +48,7 @@ export async function loadSetupDraft(
           rule?.additionalEntryAdjustmentCents ?? 0,
         earlyBirdDeadline: rule?.earlyBirdDeadline ?? null,
         earlyBirdDiscountCents: rule?.earlyBirdDiscountCents ?? 0,
-        fee: ((rule?.baseCents ?? 0) / 100).toFixed(2),
+        fee: formatAmountInput(rule?.baseCents ?? 0),
       };
     }),
     terms:

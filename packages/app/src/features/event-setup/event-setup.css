@@ -1,0 +1,14 @@
+/* Header row of the setup view: intro text left, secondary action right. */
+.nb-event-setup-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--nb-space-3) var(--nb-space-4);
+}
+
+.nb-event-setup-head > p {
+  flex: 1 1 20rem;
+  min-width: 0;
+  margin: 0;
+}

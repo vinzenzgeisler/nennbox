@@ -4,7 +4,7 @@ import {
   deriveAccessibleBrandColors,
   type EventConfigProposal,
 } from '@nennbox/contracts';
-import { formatRange } from '../format.js';
+import { formatRange } from '../../../format.js';
 
 /** Kept as a thin wrapper so the preview markup stays the same; the preview no longer animates. */
 export function Flash({ children }: { value?: string; children: ReactNode }) {

@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
+import './event-setup.css';
 import {
+  AppButton,
   AppView,
   AppSection,
   AppSettingsLayout,
   AppSettingsNav,
-  AppPreviewCard,
   AppNotice,
   AppEmptyState,
 } from '@nennbox/ui';
 import type { SetupEvent } from './eventSetupApi.js';
+import { EventSetupPreview } from './EventSetupPreview.js';
 import { loadRecipient } from './eventRecipientApi.js';
 import { setupError } from './eventSetupState.js';
 import { useEventSetup } from './useEventSetup.js';
@@ -163,43 +165,27 @@ export function EventSetup({
                     Online-Zahlung aus.
                   </p>
                 </AppSection>
-                <AppSection title="Öffentliche Nennung">
-                  <AppPreviewCard>
-                    <strong>
-                      {setup.draft.name || 'Name der Veranstaltung'}
-                    </strong>
-                    <span>
-                      {setup.draft.startsOn || 'Beginn'}
-                      {setup.draft.endsOn ? ` – ${setup.draft.endsOn}` : ''}
-                    </span>
-                    <span>
-                      {setup.draft.classes.length} Klasse
-                      {setup.draft.classes.length === 1 ? '' : 'n'}
-                    </span>
-                    {setup.draft.classes.slice(0, 3).map((item, index) => (
-                      <span key={item.id ?? `${item.code}-${index}`}>
-                        {item.name || 'Klassenname'} · {item.fee || '0,00'} €
-                      </span>
-                    ))}
-                    {setup.draft.classes.length > 3 && (
-                      <span>+ {setup.draft.classes.length - 3} weitere</span>
-                    )}
-                  </AppPreviewCard>
-                  <p>
-                    Die Vorschau zeigt die wichtigsten Angaben vor dem
-                    Veröffentlichen.
-                  </p>
-                </AppSection>
+                <EventSetupPreview draft={setup.draft} />
               </>
             ) : undefined
           }
         >
           <div className="nb-app-stack">
             <div className="nb-app-stack" hidden={view !== 'event'}>
-              <p>
-                Veranstaltungsdaten, Klassen und Teilnahmebedingungen an einem
-                Ort einrichten. Vor dem Öffnen prüfen wir die Pflichtangaben.
-              </p>
+              <div className="nb-event-setup-head">
+                <p>
+                  Veranstaltungsdaten, Klassen und Teilnahmebedingungen an einem
+                  Ort einrichten. Vor dem Öffnen prüfen wir die Pflichtangaben.
+                </p>
+                <AppButton
+                  type="button"
+                  tone="secondary"
+                  disabled={setup.busy}
+                  onClick={setup.reset}
+                >
+                  Neue Veranstaltung einrichten
+                </AppButton>
+              </div>
               <EventSetupForm
                 draft={setup.draft}
                 setDraft={setup.setDraft}

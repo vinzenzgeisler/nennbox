@@ -1,5 +1,5 @@
 import { registrationFieldDefaultState } from '@nennbox/contracts';
-import { formatDay } from '../format.js';
+import { formatDay } from '../../../format.js';
 import { brandStyle, Flash, PreviewHero, type PreviewProps } from './Pieces.js';
 
 type Row = { key: string; label: string; sample: string };

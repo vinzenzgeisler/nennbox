@@ -7,7 +7,7 @@ import {
   type ResolvedAnswers,
 } from '@nennbox/contracts';
 import { choiceSteps } from './choices.js';
-import { formatRange } from './format.js';
+import { formatRange } from '../../format.js';
 import { icons } from './icons.js';
 import { formFieldRows } from './form-fields.js';
 import { languageSummary } from './languages.js';

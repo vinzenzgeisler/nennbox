@@ -17,7 +17,7 @@ import {
 } from '@nennbox/contracts';
 import { choiceSteps } from './choices.js';
 import { buildEmerging, emergingOpenLabel } from './emerging.js';
-import { formatTime } from './format.js';
+import { formatTime } from '../../format.js';
 import { remainingTime, sectionBar, sectionLabels } from './sections.js';
 import { useOnboardingLogo } from './useOnboardingLogo.js';
 import { chosenOption, type ChoiceStepId } from './steps/ChoiceStepView.js';

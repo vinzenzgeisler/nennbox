@@ -129,10 +129,16 @@
   text-align: right;
 }
 @media (width <= 860px) {
+  /* Row 1: name and meta line. Row 2: status and completion side by side.
+     Every cell has an explicit track, so nothing can fall back into the
+     20px selection column and overlap its neighbour. */
   .nb-entry-list-row {
     display: grid;
-    grid-template-columns: 20px minmax(0, 1fr) auto;
-    gap: var(--nb-space-2);
+    grid-template-columns: 20px auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: var(--nb-space-3);
+    row-gap: var(--nb-space-2);
     height: auto;
     min-height: var(--nb-row-h);
     padding: var(--nb-space-2) var(--nb-space-4);
@@ -140,23 +146,32 @@
   }
   .nb-entry-list-row td {
     display: block;
+    min-width: 0;
     height: auto;
     padding: 0;
     border: 0;
   }
+  /* The 44px touch target is centred on row 1 but contributes no height. */
   .nb-entry-list-row td[data-column='selection'] {
+    display: flex;
     grid-column: 1;
     grid-row: 1;
+    align-items: center;
+    height: 0;
+    overflow: visible;
   }
   .nb-entry-list-row td[data-column='person'] {
     grid-column: 2 / -1;
+    grid-row: 1;
   }
   .nb-entry-list-row td[data-column='status'] {
     grid-column: 2;
-  }
-  .nb-entry-list-row td[data-column='status'],
-  .nb-entry-list-row td[data-column='completion'] {
     grid-row: 2;
+  }
+  .nb-entry-list-row td[data-column='completion'] {
+    grid-column: 3;
+    grid-row: 2;
+    overflow: hidden;
   }
   .nb-entry-list-row td[data-priority='2'],
   .nb-entry-list-row td[data-column='actions'] {

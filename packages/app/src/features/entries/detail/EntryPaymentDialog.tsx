@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ReasonDialog, TextInput } from '@nennbox/ui';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import { formatMoney } from './entryDetailModel.js';
+import { formatAmountInput } from '../../../format.js';
 
 type Invoice = NonNullable<NonNullable<Entry['adminDetails']>['invoice']>;
 
@@ -27,9 +28,7 @@ export function EntryPaymentDialog({
   onClose: () => void;
 }) {
   const openCents = Math.max(0, invoice.totalCents - invoice.paidCents);
-  const [amount, setAmount] = useState(() =>
-    (openCents / 100).toFixed(2).replace('.', ','),
-  );
+  const [amount, setAmount] = useState(() => formatAmountInput(openCents));
   const cents = parseEuroToCents(amount);
   return (
     <ReasonDialog
