@@ -18,7 +18,8 @@ it('places filters, content and preview as sibling grid cells without script mea
   expect(order).toEqual([...order].sort((a, b) => a - b));
   expect(html).toContain('nb-workspace-split has-preview');
   expect(html).toContain('aria-label="Nennungsvorschau"');
-  expect(html).not.toContain('style=');
+  expect(html).toContain('role="separator"');
+  expect(html).toContain('aria-valuemin="340"');
 });
 
 it('renders a single column without preview', () => {

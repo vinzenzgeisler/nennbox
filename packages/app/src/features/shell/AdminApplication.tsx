@@ -1,6 +1,13 @@
+import {
+  pushEntryEvent,
+  usePreviewPreference,
+  useEntryEventHistory,
+  readEntryEvent,
+  type ShellEvent,
+} from './entryWorkspacePreferences.js';
 import { usePreviewStatusChange } from './usePreviewStatusChange.js';
 import { EntryStatusToast } from '../entries/EntryStatusToast.js';
-import { PreviewPanel, useWorkspacePreview } from '@nennbox/ui';
+import { useWorkspacePreview } from '@nennbox/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { WorkflowView } from '../entries/AdminEntriesModel.js';
@@ -23,21 +30,13 @@ import { useAdminIdentity } from './useAdminIdentity.js';
 export function AdminApplication() {
   const previewViewport = useWorkspacePreview();
   const identity = useAdminIdentity();
-  const [events, setEvents] = useState<
-    Array<{
-      id: string;
-      name: string;
-      slug: string;
-      registrationClosesAt: string | null;
-      status: 'draft' | 'open' | 'closed' | 'archived';
-    }>
-  >([]);
+  const [events, setEvents] = useState<ShellEvent[]>([]);
   const [entryCount, setEntryCount] = useState(0);
   const [entriesTarget, setEntriesTarget] = useState<{
     revision: number;
     filters: EntryFilters;
   }>({ revision: 0, filters: {} });
-  const [selectedEvent, setSelectedEvent] = useState('');
+  const [selectedEvent, setSelectedEvent] = useState(readEntryEvent);
 
   const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
   const [messageSeed, setMessageSeed] = useState<MessageSeed | null>(null);
@@ -45,21 +44,22 @@ export function AdminApplication() {
     null,
   );
   const [previewBusy, setPreviewBusy] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(true);
+  const [previewOpen, setPreviewOpen] = usePreviewPreference();
   const [detailOpen, setDetailOpen] = useState(false);
   const closePreview = () => setPreviewOpen(false);
   const activeEvent = useRef('');
   /** One place for leaving an event: nothing of the old one may stay selected, open or busy. */
   const changeEvent = useCallback((id: string) => {
+    pushEntryEvent(id);
     activeEvent.current = id;
     setSelectedEvent(id);
     setEntriesTarget((current) => ({ ...current, filters: {} }));
     setSelectedEntry(null);
     setMessageSeed(null);
     setDetailOpen(false);
-    setPreviewOpen(true);
     setPreviewBusy(false);
   }, []);
+  useEntryEventHistory(events, activeEvent, changeEvent);
   const selectPaletteEntry = useCallback(
     (entry: Entry) => {
       if (entry.eventId !== activeEvent.current) return;
@@ -73,13 +73,19 @@ export function AdminApplication() {
         },
       }));
     },
-    [previewViewport],
+    [previewViewport, setPreviewOpen],
   );
-  const handleSelectionChange = useCallback((entry: Entry | null) => {
-    setSelectedEntry(entry);
-    if (entry) setPreviewOpen(true);
-    else setDetailOpen(false);
-  }, []);
+  const handleSelectionChange = useCallback(
+    (entry: Entry | null) => {
+      setSelectedEntry(entry);
+      if (entry) setPreviewOpen(true);
+      else {
+        setDetailOpen(false);
+        setPreviewOpen(false);
+      }
+    },
+    [setPreviewOpen],
+  );
   useEffect(() => {
     let active = true;
     void adminFetch('/admin/events', {
@@ -119,8 +125,13 @@ export function AdminApplication() {
         });
         setEvents(parsed);
         const first = parsed[0]?.id ?? '';
-        setSelectedEvent((current) => current || first);
-        activeEvent.current = activeEvent.current || first;
+        setSelectedEvent((current) => {
+          const next = parsed.some((event) => event.id === current)
+            ? current
+            : first;
+          activeEvent.current = next;
+          return next;
+        });
       })
       .catch(() => undefined);
     return () => {
@@ -143,11 +154,14 @@ export function AdminApplication() {
     () => setEntriesRevision((value) => value + 1),
     [],
   );
-  const openMessages = useCallback((seed: MessageSeed) => {
-    setMessageSeed(seed);
-    setDetailOpen(false);
-    setPreviewOpen(false);
-  }, []);
+  const openMessages = useCallback(
+    (seed: MessageSeed) => {
+      setMessageSeed(seed);
+      setDetailOpen(false);
+      setPreviewOpen(false);
+    },
+    [setPreviewOpen],
+  );
   const previewStatus = usePreviewStatusChange({
     selectedEntry,
     activeEvent,
@@ -183,9 +197,7 @@ export function AdminApplication() {
         )
       }
     />
-  ) : (
-    <PreviewPanel eyebrow="Vorschau" title="Nennung auswählen" />
-  );
+  ) : undefined;
   return (
     <AppShell
       canManageModules={identity?.canManageModules ?? false}
@@ -230,6 +242,9 @@ export function AdminApplication() {
           <AdminEntries
             filterRevision={entriesTarget.revision}
             initialFilters={entriesTarget.filters}
+            onFiltersConsumed={() =>
+              setEntriesTarget((current) => ({ ...current, filters: {} }))
+            }
             preview={previewOpen && !detailOpen ? entryPreview : undefined}
             mobilePreviewOpen={
               previewOpen && !detailOpen && Boolean(selectedEntry)
@@ -239,6 +254,7 @@ export function AdminApplication() {
             onTotalChange={setEntryCount}
             detailOpen={detailOpen}
             autoPreview={previewViewport}
+            autoSelectFirst={previewViewport && previewOpen}
             onOpenDetail={() => {
               setDetailOpen(true);
               setPreviewOpen(false);
@@ -248,6 +264,7 @@ export function AdminApplication() {
               // A6 mobile returns to the list; only the wide workspace reopens its inline preview.
               setPreviewOpen(previewViewport);
             }}
+            onClosePreview={closePreview}
             onMessage={openMessages}
             onSelectionChange={handleSelectionChange}
             onWorkflowChange={setPreviewWorkflow}

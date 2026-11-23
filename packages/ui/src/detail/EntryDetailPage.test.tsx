@@ -44,9 +44,14 @@ it('renders named slots, selected section controls, and an accessible sidebar', 
   expect(host.querySelector('a')?.getAttribute('href')).toBe('/entries');
   expect(host.textContent).toContain('2 von 4 erledigt');
   expect(host.querySelector('aside')?.getAttribute('aria-label')).toBe(
-    'Eigenschaften und interne Notiz',
+    'Checkliste, Aktionen und Eigenschaften',
   );
-  expect(host.querySelector('aside')?.textContent).toBe('Interne Notiz');
+  expect(host.querySelector('aside')?.textContent).toBe(
+    '2 von 4 erledigtInterne Notiz',
+  );
+  expect(host.querySelector('.nb-entry-page-head')?.textContent).not.toContain(
+    '2 von 4 erledigt',
+  );
   const nav = host.querySelector('nav')!;
   expect(nav.getAttribute('aria-label')).toBe('Bereiche der Nennung');
   const buttons = [...nav.querySelectorAll('button')];

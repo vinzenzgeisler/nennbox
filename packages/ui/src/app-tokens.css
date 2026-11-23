@@ -105,6 +105,20 @@
   --nb-ease-out: cubic-bezier(0.2, 0, 0, 1);
 }
 
+/* Nennungsansichten nutzen die App-Schrift; geteilte Bausteine mit Website-Tokens
+   (Status, Tabs, Filterleiste, Detailkopf) fallen hier auf Inter/JetBrains Mono. */
+.admin-entries,
+.admin-detail-view,
+.nb-preview-panel {
+  --font-plex: var(--nb-font);
+  --font-mono: var(--nb-font-mono);
+  /* Rebind inherited shorthands here: root-computed values retain root fonts. */
+  --text-body: 400 var(--type-body-size-app)/var(--type-body-app-line)
+    var(--nb-font);
+  --text-label: 500 var(--type-label-size-app)/var(--type-label-line)
+    var(--nb-font);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .nb-admin-workspace,
   .nb-app-design {

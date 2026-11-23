@@ -9,6 +9,7 @@ export function EntryListRow({
   imageAlt = '',
   className,
   number,
+  requestedNumber,
   selected = false,
   dimmed = false,
   checked = false,
@@ -29,6 +30,7 @@ export function EntryListRow({
   imageAlt?: string;
   className: string;
   number?: string | null;
+  requestedNumber?: string | null;
   selected?: boolean;
   dimmed?: boolean;
   checked?: boolean;
@@ -57,19 +59,21 @@ export function EntryListRow({
         onOpenDetail?.();
       }}
     >
+      <td data-column="selection" onClick={(event) => event.stopPropagation()}>
+        <span
+          className="nb-entry-list-select"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <Checkbox
+            visuallyHiddenLabel
+            label={selectLabel}
+            checked={checked}
+            onChange={(event) => onSelect?.(event.target.checked)}
+          />
+        </span>
+      </td>
       <td data-column="person">
         <div className="nb-entry-list-person">
-          <span
-            className="nb-entry-list-select"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <Checkbox
-              visuallyHiddenLabel
-              label={selectLabel}
-              checked={checked}
-              onChange={(event) => onSelect?.(event.target.checked)}
-            />
-          </span>
           {imageUrl ? (
             <img src={imageUrl} alt={imageAlt} />
           ) : (
@@ -90,6 +94,7 @@ export function EntryListRow({
               <span className="nb-entry-list-meta">
                 <small>
                   {number ? `Nr. ${number} · ` : ''}
+                  {requestedNumber ? `Wunsch: ${requestedNumber} · ` : ''}
                   {vehicle}
                 </small>
                 {hints}
@@ -101,6 +106,7 @@ export function EntryListRow({
               <span className="nb-entry-list-meta">
                 <small>
                   {number ? `Nr. ${number} · ` : ''}
+                  {requestedNumber ? `Wunsch: ${requestedNumber} · ` : ''}
                   {vehicle}
                 </small>
                 {hints}
