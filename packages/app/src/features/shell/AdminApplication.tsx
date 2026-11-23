@@ -3,6 +3,7 @@ import {
   usePreviewPreference,
   useEntryEventHistory,
   readEntryEvent,
+  parseShellEvents,
   type ShellEvent,
 } from './entryWorkspacePreferences.js';
 import { usePreviewStatusChange } from './usePreviewStatusChange.js';
@@ -95,34 +96,7 @@ export function AdminApplication() {
       .then((response) => (response.ok ? response.json() : []))
       .then((rows: unknown) => {
         if (!active || !Array.isArray(rows)) return;
-        const parsed = rows.flatMap((row) => {
-          if (!row || typeof row !== 'object') return [];
-          const value = row as {
-            id?: unknown;
-            name?: unknown;
-            slug?: unknown;
-            registrationClosesAt?: unknown;
-            status?: unknown;
-          };
-          return typeof value.id === 'string' && typeof value.name === 'string'
-            ? [
-                {
-                  id: value.id,
-                  name: value.name,
-                  slug: typeof value.slug === 'string' ? value.slug : '',
-                  registrationClosesAt:
-                    typeof value.registrationClosesAt === 'string'
-                      ? value.registrationClosesAt
-                      : null,
-                  status: (value.status === 'open' ||
-                  value.status === 'closed' ||
-                  value.status === 'archived'
-                    ? value.status
-                    : 'draft') as 'draft' | 'open' | 'closed' | 'archived',
-                },
-              ]
-            : [];
-        });
+        const parsed = parseShellEvents(rows);
         setEvents(parsed);
         const first = parsed[0]?.id ?? '';
         setSelectedEvent((current) => {
