@@ -25,6 +25,7 @@ type Props = {
   onText: (value: string) => void;
   attachments: MessageAttachmentRecord[];
   onAttachments: (value: MessageAttachmentRecord[]) => void;
+  onUploading?: (value: boolean) => void;
 };
 export function MessageComposer({
   eventId,
@@ -35,6 +36,7 @@ export function MessageComposer({
   onText,
   attachments,
   onAttachments,
+  onUploading,
 }: Props) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -57,6 +59,7 @@ export function MessageComposer({
       return;
     }
     setBusy(true);
+    onUploading?.(true);
     setError('');
     try {
       const data = await new Promise<string>((resolve, reject) => {
@@ -77,6 +80,7 @@ export function MessageComposer({
       );
     } finally {
       setBusy(false);
+      onUploading?.(false);
     }
   }
   return (
@@ -118,6 +122,25 @@ export function MessageComposer({
           rows={9}
           onChange={(event) => onText(event.target.value)}
         />
+        <AppActions>
+          {Object.entries({
+            firstName: 'Vorname',
+            lastName: 'Nachname',
+            fullName: 'Vollständiger Name',
+            email: 'E-Mail-Adresse',
+            eventName: 'Veranstaltung',
+            className: 'Klasse',
+            entryNumber: 'Startnummer',
+          }).map(([key, label]) => (
+            <AppButton
+              key={key}
+              tone="ghost"
+              onClick={() => onText(text + '{{' + key + '}}')}
+            >
+              {label} einfügen
+            </AppButton>
+          ))}
+        </AppActions>
       </AppSection>
       <AppSection
         title="Anhänge"

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { AdminMobileNavigation } from './AdminMobileNavigation.js';
 import { Icon, type IconName } from '../icon/Icon.js';
 
 type NavItem = {
@@ -45,9 +46,6 @@ export function AdminNavigation({
   onSearch?: () => void;
   searchLabel?: string;
 }) {
-  const items = groups
-    .flatMap((group) => group.items)
-    .filter((entry) => entry.mobile !== false);
   const eventPicker = (
     <label className="nb-admin-event-picker">
       <span className="nb-visually-hidden">{eventLabel}</span>
@@ -64,7 +62,7 @@ export function AdminNavigation({
       </select>
     </label>
   );
-  const item = (entry: NavItem, mobile = false) => (
+  const item = (entry: NavItem) => (
     <button
       key={entry.id}
       type="button"
@@ -74,9 +72,7 @@ export function AdminNavigation({
       onClick={() => onNavigate(entry.id)}
     >
       <Icon name={entry.icon} />
-      <span className="nb-admin-nav-label">
-        {mobile ? (entry.mobileLabel ?? entry.label) : entry.label}
-      </span>
+      <span className="nb-admin-nav-label">{entry.label}</span>
       {entry.count !== undefined && (
         <span className="nb-admin-nav-count">{entry.count}</span>
       )}
@@ -136,9 +132,14 @@ export function AdminNavigation({
           {eventPicker}
         </div>
       )}
-      <nav className="nb-admin-mobile-nav" aria-label={ariaLabel}>
-        {items.map((entry) => item(entry, true))}
-      </nav>
+      <AdminMobileNavigation
+        groups={groups}
+        current={current}
+        onNavigate={onNavigate}
+        ariaLabel={ariaLabel}
+        onSearch={onSearch}
+        searchLabel={searchLabel}
+      />
     </>
   );
 }

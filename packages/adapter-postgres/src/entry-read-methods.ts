@@ -1,6 +1,6 @@
 import { people, vehicles, entries } from './schema/entries.js';
 import { eq, and, desc, asc, ilike, count } from 'drizzle-orm';
-import { anyOf } from './sql-helpers.js';
+import { anyOf, missingRequiredDocuments } from './sql-helpers.js';
 import { sql } from 'drizzle-orm';
 import { eventClasses } from './schema/organization.js';
 import type { Database } from './database.js';
@@ -55,10 +55,15 @@ export function createEntryReadMethods(
         predicates.push(
           sql`exists (select 1 from invoice i where i.organization_id = ${entries.organizationId} and i.registration_group_id = ${entries.registrationGroupId} and i.status = 'cancelled')`,
         );
+      else if (query.paymentStatus === 'outstanding')
+        predicates.push(
+          sql`exists (select 1 from invoice i where i.organization_id = ${entries.organizationId} and i.registration_group_id = ${entries.registrationGroupId} and i.status in ('open', 'partially_paid'))`,
+        );
       else if (query.paymentStatus)
         predicates.push(
           sql`exists (select 1 from invoice i where i.organization_id = ${entries.organizationId} and i.registration_group_id = ${entries.registrationGroupId} and i.status = ${query.paymentStatus})`,
         );
+      if (query.missingDocuments) predicates.push(missingRequiredDocuments());
       const search = query.search?.trim();
       if (search) {
         for (const token of search.split(/\s+/)) {

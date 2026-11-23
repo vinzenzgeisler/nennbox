@@ -74,6 +74,7 @@ export function useEntryDetailNavigation({
           'acceptanceStatus',
           'verificationStatus',
           'paymentStatus',
+          'missingDocuments',
           'search',
         ] as const) {
           const value = applied[key].trim();

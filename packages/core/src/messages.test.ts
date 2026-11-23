@@ -117,6 +117,57 @@ describe('message recipients', () => {
     ).toHaveLength(0);
   });
 
+  it('filters real workflow status keys before deduplication, intersecting legacy filters', () => {
+    const base = {
+      address: 'ada@example.test',
+      entryId: 'a',
+      classId: 'class-a',
+      verificationStatus: 'verified',
+      acceptanceStatus: 'waitlist',
+      paymentStatus: 'open' as const,
+      firstName: 'Ada',
+      lastName: 'Lovelace',
+      eventName: 'Run',
+      className: 'Open',
+      entryNumber: '1',
+    };
+    const candidates = [
+      { ...base, acceptanceStatus: 'accepted' },
+      { ...base, entryId: 'waitlist' },
+      {
+        ...base,
+        entryId: 'custom',
+        address: 'custom@example.test',
+        acceptanceStatus: 'custom-review',
+      },
+    ];
+    const filter = {
+      classIds: [],
+      statuses: [],
+      entryStatusIds: ['waitlist', 'custom-review'],
+      payment: 'any' as const,
+      entryIds: [],
+      additionalAddresses: [],
+    };
+    expect(
+      resolveMessageRecipientCandidates(candidates, filter).map(
+        (row) => row.entryId,
+      ),
+    ).toEqual(['waitlist', 'custom']);
+    expect(
+      resolveMessageRecipientCandidates(candidates, {
+        ...filter,
+        statuses: ['accepted'],
+      }),
+    ).toEqual([]);
+    expect(
+      resolveMessageRecipientCandidates(candidates, {
+        ...filter,
+        entryStatusIds: [],
+      }),
+    ).toHaveLength(2);
+  });
+
   it('deduplicates addresses case-insensitively and includes additional recipients', () => {
     const row = {
       address: 'Person@example.test',

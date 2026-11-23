@@ -10,6 +10,8 @@ export type EntryQuery = {
   acceptanceStatus: string;
   verificationStatus: string;
   paymentStatus: string;
+  /** `'true'` limits the list to entries lacking a required document. */
+  missingDocuments: string;
   search: string;
   sort: string;
   direction: string;
@@ -19,6 +21,7 @@ export const initialQuery: EntryQuery = {
   acceptanceStatus: '',
   verificationStatus: '',
   paymentStatus: '',
+  missingDocuments: '',
   search: '',
   sort: 'createdAt',
   direction: 'desc',

@@ -14,6 +14,9 @@ vi.mock('./useMessagesData.js', () => ({
     }));
     return {
       selection: ready({ count: 62, recipients }),
+      paymentSelection: ready({ count: 62, recipients }),
+      verificationSelection: ready({ count: 62, recipients }),
+      workflow: ready([]),
       candidates: ready({ count: 0, recipients: [] }),
       classes: ready([]),
       templates: ready([]),

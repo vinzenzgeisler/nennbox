@@ -122,8 +122,8 @@
   }
   .nb-workspace-split-preview.is-mobile-open {
     position: fixed;
-    z-index: 9;
-    inset: 0 0 56px;
+    z-index: var(--layer-sheet);
+    inset: 0 0 var(--mobile-nav-clearance);
     display: block;
     overflow: auto;
     background: var(--color-ivory);
@@ -143,8 +143,15 @@
   flex: 1 0 100%;
   margin: 0;
 }
+.nb-workspace-split-filters .nb-filter-bar,
+.nb-workspace-split-filters .nb-filter-bar-tabs {
+  min-width: 0;
+  max-width: 100%;
+}
+/* The status tabs never widen the page: they swipe inside their own row. */
 .nb-workspace-split-filters .nb-tab-list {
-  display: inline-flex;
+  display: flex;
+  width: fit-content;
   gap: 2px;
   padding: 3px;
   border: 0;

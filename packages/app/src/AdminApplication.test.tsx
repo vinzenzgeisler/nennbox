@@ -341,6 +341,7 @@ describe('AdminApplication event switch and detail access', () => {
     await mount();
     // No preview opens by itself; the list stays the start view.
     expect(container.querySelector('.is-mobile-open')).toBeNull();
+    expect(container.querySelector('.nb-preview-panel')).toBeNull();
     expect(textOf()).toContain('Alex Driver');
     expect(container.querySelector('.nb-app-breadcrumb select')).not.toBeNull();
     await click((button) => button.hasAttribute('data-entry-action'));
@@ -497,7 +498,7 @@ describe('AdminApplication event switch and detail access', () => {
     expect(container.querySelector('input[maxlength="16"]')).not.toBeNull();
   });
 
-  it('keeps workflow navigation in the event group but out of mobile navigation', async () => {
+  it('keeps workflow navigation in the event group and behind "Mehr" on mobile', async () => {
     narrow = true;
     await mount();
 
@@ -505,9 +506,15 @@ describe('AdminApplication event switch and detail access', () => {
       container.querySelector('.nb-admin-nav-group[aria-label="Veranstaltung"]')
         ?.textContent,
     ).toContain('Nennungsablauf');
+    const mobile = container.querySelector('.nb-admin-mobile-nav')!;
+    const primary = [...mobile.children]
+      .filter((child) => child.tagName === 'BUTTON')
+      .map((child) => child.textContent);
+    expect(primary).toHaveLength(4);
+    expect(primary.join()).not.toContain('Nennungsablauf');
     expect(
-      container.querySelector('.nb-admin-mobile-nav')?.textContent,
-    ).not.toContain('Nennungsablauf');
+      mobile.querySelector('.nb-admin-mobile-more-panel')?.textContent,
+    ).toContain('Nennungsablauf');
   });
 
   it('uses the actual next transition label and omits the acceptance hint for other actions', async () => {

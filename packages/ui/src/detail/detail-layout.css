@@ -51,7 +51,7 @@
   .nb-detail-rail > .nb-next-step {
     position: sticky;
     z-index: 5;
-    bottom: var(--mobile-nav-height);
+    bottom: var(--mobile-nav-clearance);
     padding-block: var(--space-3);
     background: var(--color-white);
   }

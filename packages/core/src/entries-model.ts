@@ -202,7 +202,14 @@ export interface EntryListQuery {
   readonly acceptanceStatus?: EntryAcceptanceStatus;
   readonly verificationStatus?: EntryVerificationStatus;
   readonly paymentStatus?:
-    'open' | 'partially_paid' | 'paid' | 'not_required' | 'not_relevant';
+    | 'open'
+    | 'partially_paid'
+    | 'paid'
+    | 'not_required'
+    | 'not_relevant'
+    | 'outstanding';
+  /** Only entries lacking a document the event requires. */
+  readonly missingDocuments?: true;
   readonly search?: string;
   // prettier-ignore
   readonly sort: 'createdAt' | 'requestedStartNumber' | 'acceptanceStatus' | 'verificationStatus';

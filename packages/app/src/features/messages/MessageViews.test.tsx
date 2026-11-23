@@ -27,6 +27,10 @@ it('keeps recipient filters, individual selection and E2E group semantics', () =
         filter={MessageRecipientFilterSchema.parse({})}
         onChange={onChange}
         classes={[]}
+        statuses={[
+          { key: 'accepted', labels: { de: 'Zugelassen' } },
+          { key: 'reserve', labels: { de: 'Vorauswahl' } },
+        ]}
         candidates={preview}
         selection={preview}
         loading={false}
@@ -47,8 +51,9 @@ it('keeps recipient filters, individual selection and E2E group semantics', () =
     select.dispatchEvent(new Event('change', { bubbles: true }));
   });
   expect(onChange).toHaveBeenLastCalledWith(
-    expect.objectContaining({ statuses: ['accepted'] }),
+    expect.objectContaining({ entryStatusIds: ['accepted'], statuses: [] }),
   );
+  expect(select.textContent).toContain('Vorauswahl');
   act(() =>
     host.querySelector<HTMLInputElement>('input[type=checkbox]')!.click(),
   );

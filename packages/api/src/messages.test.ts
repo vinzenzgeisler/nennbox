@@ -65,10 +65,13 @@ function appFor(permissions = context.permissions) {
       ok: false as const,
       error: { code: 'no-recipients' as const, message: 'No recipients' },
     }),
-    quickAction: async () => ({
-      ok: false,
-      error: { code: 'no-recipients', message: 'No matching recipients' },
-    }),
+    quickAction: vi.fn(async () => ({
+      ok: false as const,
+      error: {
+        code: 'no-recipients' as const,
+        message: 'No matching recipients',
+      },
+    })),
   };
   const objectStorage: ObjectStorageProvider = {
     put: async ({ organizationId: tenantId, body, contentType }) => ({
@@ -111,7 +114,7 @@ function appFor(permissions = context.permissions) {
       },
     }),
   );
-  return { app, send, calls };
+  return { app, send, calls, quickAction: messages.quickAction };
 }
 
 describe('message campaign routes', () => {
@@ -220,5 +223,60 @@ describe('message campaign routes', () => {
     const invalid = await request('invalid-001');
     expect(invalid.status).toBe(422);
     expect(await invalid.json()).toMatchObject({ code: 'no-recipients' });
+  });
+});
+
+describe('message quick action routes', () => {
+  it.each(['remind-open-payments', 'resend-verification'])(
+    'forwards the visible recipient filter for %s',
+    async (action) => {
+      const { app, quickAction } = appFor();
+      const recipients = {
+        classIds: [eventId],
+        statuses: [],
+        entryStatusIds: ['waitlist', 'custom-review'],
+        emailVerified: false,
+        payment: 'any',
+        entryIds: [orgId],
+        additionalAddresses: [],
+      };
+      const response = await app.request(
+        `/admin/events/${eventId}/messages/actions/${action}`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ recipients }),
+        },
+      );
+      expect(response.status).toBe(422);
+      expect(quickAction).toHaveBeenCalledWith(
+        expect.objectContaining({ organizationId: orgId }),
+        eventId,
+        action,
+        context.correlationId,
+        recipients,
+      );
+    },
+  );
+
+  it('rejects absent and invalid selections without invoking an event-wide action', async () => {
+    const { app, quickAction } = appFor();
+    for (const body of [
+      undefined,
+      '{}',
+      '{',
+      JSON.stringify({ recipients: { entryStatusIds: [42] } }),
+    ]) {
+      const response = await app.request(
+        `/admin/events/${eventId}/messages/actions/remind-open-payments`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          ...(body ? { body } : {}),
+        },
+      );
+      expect(response.status).toBe(400);
+    }
+    expect(quickAction).not.toHaveBeenCalled();
   });
 });

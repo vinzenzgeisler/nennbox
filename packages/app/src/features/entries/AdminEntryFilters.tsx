@@ -11,6 +11,7 @@ import {
 import type { EntryQuery } from './AdminEntriesModel.js';
 
 const paymentLabels: Record<string, string> = {
+  outstanding: 'Offen oder teilweise bezahlt',
   open: 'Offen',
   partially_paid: 'Teilweise bezahlt',
   paid: 'Bezahlt',
@@ -57,6 +58,15 @@ export function AdminEntryFilters({
             id: 'paymentStatus',
             label: `Zahlung: ${paymentLabels[draft.paymentStatus] ?? draft.paymentStatus}`,
             removeLabel: 'Zahlungsfilter entfernen',
+          },
+        ]
+      : []),
+    ...(draft.missingDocuments === 'true'
+      ? [
+          {
+            id: 'missingDocuments',
+            label: 'Unterlagen fehlen',
+            removeLabel: 'Filter fehlende Unterlagen entfernen',
           },
         ]
       : []),

@@ -1,6 +1,9 @@
+@import './entry-detail-progress.css';
 @import './entry-detail-sidebar.css';
 
 .nb-entry-page {
+  min-width: 0;
+  max-width: 100%;
   color: var(--nb-fg);
   font: 400 var(--nb-text-base)/1.45 var(--nb-font);
 }
@@ -21,6 +24,8 @@
 }
 .nb-entry-page-head {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
   padding: var(--nb-space-7) var(--nb-control-h) var(--nb-space-2);
   display: flex;
@@ -90,11 +95,20 @@
 }
 .nb-entry-page-tabs {
   display: flex;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
   gap: 2px;
   border-bottom: 1px solid var(--nb-border);
   margin-top: var(--nb-space-1);
 }
 .nb-entry-page-tabs button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  overflow: visible;
   height: 38px;
   border-radius: 0;
   padding: 0 var(--nb-space-3);
@@ -174,64 +188,6 @@
   color: var(--nb-fg);
   background: var(--nb-bg);
 }
-.nb-admission-progress {
-  container-type: inline-size;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: var(--nb-space-4) 18px;
-  border-radius: var(--nb-radius-lg);
-  background: var(--nb-bg-row-hover);
-  border: 1px solid var(--nb-border-row);
-}
-.nb-admission-progress > div {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--nb-space-3);
-  flex-wrap: wrap;
-}
-.nb-admission-progress > div > span {
-  color: var(--nb-fg-muted);
-  font-size: 13px;
-}
-.nb-admission-progress ol {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-.nb-admission-progress li {
-  display: flex;
-  flex-direction: column;
-  gap: var(--nb-space-2);
-  font-size: 13px;
-}
-.nb-admission-progress li i {
-  height: var(--nb-space-1);
-  border-radius: 2px;
-  background: var(--nb-border);
-}
-.nb-admission-progress li strong {
-  font-weight: 500;
-}
-.nb-admission-progress li span span {
-  color: var(--nb-fg-muted);
-}
-.nb-admission-progress .is-done i {
-  background: var(--nb-ok);
-}
-.nb-admission-progress .is-done span span {
-  color: var(--nb-ok-fg);
-}
-.nb-admission-progress .is-missing i {
-  background: var(--nb-warn);
-}
-.nb-admission-progress .is-missing span span {
-  color: var(--nb-warn-fg);
-}
 
 .nb-entry-properties dl > div {
   display: contents;
@@ -284,16 +240,4 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
-}
-
-/* Four requirements stay in balanced rows at every available content width. */
-@container (width < 710px) {
-  .nb-admission-progress ol {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@container (width < 350px) {
-  .nb-admission-progress ol {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }

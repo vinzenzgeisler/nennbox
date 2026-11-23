@@ -28,7 +28,6 @@ export const APP_NAVIGATION_REGISTRY: Array<{
       {
         id: 'overview',
         label: 'Übersicht',
-        mobileLabel: 'Start',
         icon: 'overview',
       },
       { id: 'entries', label: 'Nennungen', icon: 'list' },
@@ -41,7 +40,6 @@ export const APP_NAVIGATION_REGISTRY: Array<{
       {
         id: 'setup',
         label: 'Einrichten',
-        mobileLabel: 'Event',
         icon: 'calendar',
       },
     ],
@@ -52,7 +50,6 @@ export const APP_NAVIGATION_REGISTRY: Array<{
       {
         id: 'messages',
         label: 'Nachrichten',
-        mobileLabel: 'Post',
         icon: 'mail',
       },
     ],
@@ -60,12 +57,12 @@ export const APP_NAVIGATION_REGISTRY: Array<{
   {
     label: 'Konto',
     items: [
-      { id: 'exports', label: 'Exporte', icon: 'export' },
+      { id: 'exports', label: 'Exporte', icon: 'export', mobile: false },
       {
         id: 'account',
         label: 'Einstellungen',
-        mobileLabel: 'Konto',
         icon: 'settings',
+        mobile: false,
       },
     ],
   },

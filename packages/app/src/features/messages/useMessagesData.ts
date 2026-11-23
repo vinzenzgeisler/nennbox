@@ -94,6 +94,38 @@ export function useMessagesData(
     [],
     (signal) => messagesApi.campaigns(eventId, signal),
   );
+  const workflow = useRequest(
+    eventId,
+    'workflow',
+    [] as Array<{ key: string; labels: { de: string } }>,
+    (signal) => messagesApi.workflow(eventId, signal),
+  );
+  const paymentSelection = useRequest(
+    eventId,
+    filterKey + ':open',
+    emptyRecipients,
+    (signal) =>
+      recipients.payment !== 'any' && recipients.payment !== 'open'
+        ? Promise.resolve(emptyRecipients)
+        : messagesApi.recipients(
+            eventId,
+            { ...recipients, payment: 'open', additionalAddresses: [] },
+            signal,
+          ),
+  );
+  const verificationSelection = useRequest(
+    eventId,
+    filterKey + ':unverified',
+    emptyRecipients,
+    (signal) =>
+      recipients.emailVerified === true
+        ? Promise.resolve(emptyRecipients)
+        : messagesApi.recipients(
+            eventId,
+            { ...recipients, emailVerified: false, additionalAddresses: [] },
+            signal,
+          ),
+  );
   const rendered = useRequest<MessageRenderedPreview | null>(
     eventId,
     `${filterKey}:${subject}:${text}:${selection.value.count}`,
@@ -103,5 +135,15 @@ export function useMessagesData(
         ? messagesApi.render(eventId, recipients, subject, text, signal)
         : Promise.resolve(null),
   );
-  return { candidates, selection, classes, templates, campaigns, rendered };
+  return {
+    candidates,
+    selection,
+    classes,
+    templates,
+    campaigns,
+    rendered,
+    workflow,
+    paymentSelection,
+    verificationSelection,
+  };
 }

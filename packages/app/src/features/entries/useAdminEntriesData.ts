@@ -193,6 +193,8 @@ export function useAdminEntriesData({
       params.set('verificationStatus', applied.verificationStatus);
     if (applied.paymentStatus)
       params.set('paymentStatus', applied.paymentStatus);
+    if (applied.missingDocuments === 'true')
+      params.set('missingDocuments', 'true');
     if (applied.search.trim()) params.set('search', applied.search.trim());
 
     const requestedEventId = eventId;

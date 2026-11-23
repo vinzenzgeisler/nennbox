@@ -805,6 +805,7 @@ describe.skipIf(!databaseUrl)(
           name: 'message quick action',
           method: 'POST',
           path: `${event}/messages/actions/resend-verification`,
+          body: { recipients: filter },
           expect: nf,
         },
         {

@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { AppButton } from '../app-primitives/AppPrimitives.js';
 
 type OccupancyStyle = CSSProperties & Record<`--${string}`, string>;
 
@@ -21,6 +22,7 @@ export function OccupancyBar({
   unlimitedLabel,
   fullLabel,
   valueText,
+  onOpenEntries,
 }: {
   label: string;
   occupied: number;
@@ -28,6 +30,7 @@ export function OccupancyBar({
   unlimitedLabel: string;
   fullLabel: string;
   valueText: string;
+  onOpenEntries?: () => void;
 }) {
   const full = capacity !== null && occupied >= capacity;
   const style: OccupancyStyle = {
@@ -51,8 +54,21 @@ export function OccupancyBar({
         />
       )}
       <span className="nb-occupancy-count">
-        {occupied}
-        {capacity !== null && ` / ${capacity}`}
+        {onOpenEntries ? (
+          <AppButton
+            tone="ghost"
+            aria-label={`${label}: Nennungen öffnen`}
+            onClick={onOpenEntries}
+          >
+            {occupied}
+            {capacity !== null && ` / ${capacity}`}
+          </AppButton>
+        ) : (
+          <>
+            {occupied}
+            {capacity !== null && ` / ${capacity}`}
+          </>
+        )}
         {full && <b>{fullLabel}</b>}
       </span>
     </div>

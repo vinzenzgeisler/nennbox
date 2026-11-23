@@ -1,26 +1,26 @@
 import type { EventOverview } from '@nennbox/contracts';
 import {
   AppValueRow,
-  AppStatusPill,
+  AppWorkflowPill,
+  AppButton,
   AppSection,
-  type AppStatus,
 } from '@nennbox/ui';
-import { statusRows } from './overviewModel.js';
-
-const STATUS_TONES: Record<string, AppStatus> = {
-  pending: 'offen',
-  waitlisted: 'vor',
-  accepted: 'zu',
-  rejected: 'neg',
-  withdrawn: 'ab',
-};
+import {
+  statusRows,
+  type EntryFilters,
+  type OverviewStatus,
+} from './overviewModel.js';
 
 export function OverviewStatuses({
   statuses,
+  workflowStatuses,
+  onOpenEntries,
 }: {
   statuses: EventOverview['statuses'];
+  workflowStatuses: OverviewStatus[];
+  onOpenEntries: (filters: EntryFilters) => void;
 }) {
-  const rows = statusRows(statuses);
+  const rows = statusRows(statuses, workflowStatuses);
   return (
     <AppSection title="Nennungen je Status">
       {rows.length === 0 ? (
@@ -31,12 +31,22 @@ export function OverviewStatuses({
             <AppValueRow
               key={row.key}
               label={
-                <AppStatusPill status={STATUS_TONES[row.key] ?? 'offen'}>
-                  {row.label}
-                </AppStatusPill>
+                <AppWorkflowPill
+                  label={row.label}
+                  color={
+                    workflowStatuses.find((status) => status.key === row.key)
+                      ?.color ?? '#64748b'
+                  }
+                />
               }
             >
-              {row.count}
+              <AppButton
+                tone="ghost"
+                aria-label={`${row.label}: ${row.count} Nennungen öffnen`}
+                onClick={() => onOpenEntries({ acceptanceStatus: row.key })}
+              >
+                {row.count}
+              </AppButton>
             </AppValueRow>
           ))}
         </div>

@@ -50,6 +50,18 @@ const post = (body: unknown, signal?: AbortSignal): RequestInit => ({
   ...(signal ? { signal } : {}),
 });
 export const messagesApi = {
+  workflow: (eventId: string, signal: AbortSignal) =>
+    call(
+      `/admin/events/${encodeURIComponent(eventId)}/registration-workflow`,
+      z.object({
+        workflow: z.object({
+          statuses: z.array(
+            z.object({ key: z.string(), labels: z.object({ de: z.string() }) }),
+          ),
+        }),
+      }),
+      { signal },
+    ).then((value) => value.workflow.statuses),
   classes: (eventId: string, signal: AbortSignal) =>
     call(
       `/admin/events/${encodeURIComponent(eventId)}/classes`,
@@ -98,11 +110,12 @@ export const messagesApi = {
   quickAction: (
     eventId: string,
     action: 'resend-verification' | 'remind-open-payments',
+    recipients: MessageRecipientFilter,
   ) =>
     call(
       `${endpoint(eventId)}/actions/${action}`,
       MessageCampaignRecordSchema,
-      { method: 'POST' },
+      post({ recipients }),
     ),
   retry: (campaignId: string) =>
     call(

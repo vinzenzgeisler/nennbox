@@ -3,6 +3,7 @@ import {
   usePreviewPreference,
   useEntryEventHistory,
   readEntryEvent,
+  parseShellEvents,
   type ShellEvent,
 } from './entryWorkspacePreferences.js';
 import { usePreviewStatusChange } from './usePreviewStatusChange.js';
@@ -95,34 +96,7 @@ export function AdminApplication() {
       .then((response) => (response.ok ? response.json() : []))
       .then((rows: unknown) => {
         if (!active || !Array.isArray(rows)) return;
-        const parsed = rows.flatMap((row) => {
-          if (!row || typeof row !== 'object') return [];
-          const value = row as {
-            id?: unknown;
-            name?: unknown;
-            slug?: unknown;
-            registrationClosesAt?: unknown;
-            status?: unknown;
-          };
-          return typeof value.id === 'string' && typeof value.name === 'string'
-            ? [
-                {
-                  id: value.id,
-                  name: value.name,
-                  slug: typeof value.slug === 'string' ? value.slug : '',
-                  registrationClosesAt:
-                    typeof value.registrationClosesAt === 'string'
-                      ? value.registrationClosesAt
-                      : null,
-                  status: (value.status === 'open' ||
-                  value.status === 'closed' ||
-                  value.status === 'archived'
-                    ? value.status
-                    : 'draft') as 'draft' | 'open' | 'closed' | 'archived',
-                },
-              ]
-            : [];
-        });
+        const parsed = parseShellEvents(rows);
         setEvents(parsed);
         const first = parsed[0]?.id ?? '';
         setSelectedEvent((current) => {
@@ -245,10 +219,13 @@ export function AdminApplication() {
             onFiltersConsumed={() =>
               setEntriesTarget((current) => ({ ...current, filters: {} }))
             }
-            preview={previewOpen && !detailOpen ? entryPreview : undefined}
-            mobilePreviewOpen={
-              previewOpen && !detailOpen && Boolean(selectedEntry)
+            preview={
+              previewViewport && previewOpen && !detailOpen
+                ? entryPreview
+                : undefined
             }
+            // Below the preview breakpoint a row opens its detail; a stale selection never covers the list.
+            mobilePreviewOpen={false}
             eventId={selectedEvent}
             onEventChange={changeEvent}
             onTotalChange={setEntryCount}
@@ -275,6 +252,7 @@ export function AdminApplication() {
           />
         ) : view === 'messages' ? (
           <AdminMessages
+            key={selectedEvent}
             eventId={selectedEvent}
             seed={messageSeed ?? undefined}
           />
@@ -288,7 +266,7 @@ export function AdminApplication() {
                 ...current.filter((item) => item.id !== event.id),
                 { ...event, registrationClosesAt: null },
               ]);
-              setSelectedEvent(event.id);
+              changeEvent(event.id);
             }}
           />
         ) : view === 'modules' && identity?.canManageModules ? (

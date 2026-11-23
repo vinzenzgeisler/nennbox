@@ -76,10 +76,17 @@ function OverviewForEvent({ eventId, onOpenEntries, onTotalChange }: Props) {
         warnings={overview.warnings}
         onOpenEntries={onOpenEntries}
       />
-      <OverviewMetrics overview={overview} />
+      <OverviewMetrics overview={overview} onOpenEntries={onOpenEntries} />
       <AppGrid columns="two">
-        <OverviewStatuses statuses={overview.statuses} />
-        <OverviewClasses classes={overview.classes} />
+        <OverviewStatuses
+          statuses={overview.statuses}
+          workflowStatuses={overview.workflowStatuses}
+          onOpenEntries={onOpenEntries}
+        />
+        <OverviewClasses
+          classes={overview.classes}
+          onOpenEntries={onOpenEntries}
+        />
       </AppGrid>
     </AppView>
   );

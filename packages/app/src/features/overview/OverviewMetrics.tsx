@@ -1,22 +1,60 @@
 import type { EventOverview } from '@nennbox/contracts';
-import { Metric, MetricGrid } from '@nennbox/ui';
-import { deadlineText, formatMoney, totalEntries } from './overviewModel.js';
+import { AppButton, Metric, MetricGrid } from '@nennbox/ui';
+import {
+  deadlineText,
+  formatMoney,
+  totalEntries,
+  type EntryFilters,
+} from './overviewModel.js';
 
-export function OverviewMetrics({ overview }: { overview: EventOverview }) {
+export function OverviewMetrics({
+  overview,
+  onOpenEntries,
+}: {
+  overview: EventOverview;
+  onOpenEntries: (filters: EntryFilters) => void;
+}) {
   const { openPayments, missingDocuments } = overview;
   const deadline = deadlineText(overview.daysUntilRegistrationCloses);
   return (
     <MetricGrid label="Kennzahlen der Veranstaltung">
-      <Metric label="Nennungen" value={totalEntries(overview.statuses)} />
+      <Metric
+        label="Nennungen"
+        value={
+          <AppButton
+            tone="ghost"
+            aria-label="Alle Nennungen öffnen"
+            onClick={() => onOpenEntries({})}
+          >
+            {totalEntries(overview.statuses)}
+          </AppButton>
+        }
+      />
       <Metric
         label="Offene Zahlungen"
-        value={openPayments.count}
+        value={
+          <AppButton
+            tone="ghost"
+            aria-label="Nennungen mit offenen Zahlungen öffnen"
+            onClick={() => onOpenEntries({ paymentStatus: 'outstanding' })}
+          >
+            {openPayments.count}
+          </AppButton>
+        }
         detail={formatMoney(openPayments.amountCents, openPayments.currency)}
         tone={openPayments.count > 0 ? 'attention' : 'default'}
       />
       <Metric
         label="Fehlende Unterlagen"
-        value={missingDocuments.count}
+        value={
+          <AppButton
+            tone="ghost"
+            aria-label="Nennungen mit fehlenden Unterlagen öffnen"
+            onClick={() => onOpenEntries({ missingDocuments: 'true' })}
+          >
+            {missingDocuments.count}
+          </AppButton>
+        }
         detail="Nennungen mit fehlender Pflichtunterlage"
         tone={missingDocuments.count > 0 ? 'attention' : 'default'}
       />

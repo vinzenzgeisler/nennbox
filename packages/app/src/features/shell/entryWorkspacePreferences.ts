@@ -10,6 +10,7 @@ export function pushEntryEvent(id: string) {
       'acceptanceStatus',
       'verificationStatus',
       'paymentStatus',
+      'missingDocuments',
       'sort',
       'direction',
       'page',
@@ -68,3 +69,30 @@ export type ShellEvent = {
   registrationClosesAt: string | null;
   status: 'draft' | 'open' | 'closed' | 'archived';
 };
+
+/** Lenient read of `/admin/events`: rows without id and name are dropped, unknown status reads as draft. */
+export function parseShellEvents(rows: unknown[]): ShellEvent[] {
+  return rows.flatMap((row) => {
+    if (!row || typeof row !== 'object') return [];
+    const value = row as Partial<Record<keyof ShellEvent, unknown>>;
+    if (typeof value.id !== 'string' || typeof value.name !== 'string')
+      return [];
+    return [
+      {
+        id: value.id,
+        name: value.name,
+        slug: typeof value.slug === 'string' ? value.slug : '',
+        registrationClosesAt:
+          typeof value.registrationClosesAt === 'string'
+            ? value.registrationClosesAt
+            : null,
+        status:
+          value.status === 'open' ||
+          value.status === 'closed' ||
+          value.status === 'archived'
+            ? value.status
+            : 'draft',
+      },
+    ];
+  });
+}

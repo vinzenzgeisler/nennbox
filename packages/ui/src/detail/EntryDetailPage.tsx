@@ -1,5 +1,6 @@
 import { usePreviewResize } from '../workspace/usePreviewResize.js';
-import { useId, type ReactNode, type CSSProperties } from 'react';
+import { useId, useRef, type ReactNode, type CSSProperties } from 'react';
+import { useRevealActiveTab } from '../tabs/useRevealActiveTab.js';
 import { AppButton } from '../app-primitives/AppPrimitives.js';
 
 export type EntryDetailTab = { key: string; label: string; count?: number };
@@ -24,6 +25,8 @@ export function EntryDetailPage({
 }) {
   const id = useId();
   const { ref, width } = usePreviewResize();
+  const tabRow = useRef<HTMLElement>(null);
+  useRevealActiveTab(tabRow, activeTab);
   return (
     <div
       ref={ref}
@@ -33,7 +36,11 @@ export function EntryDetailPage({
       <div className="nb-entry-page-navigation">{navigation}</div>
       <div className="nb-entry-page-head">
         <div className="nb-entry-page-identity">{header}</div>
-        <nav aria-label="Bereiche der Nennung" className="nb-entry-page-tabs">
+        <nav
+          ref={tabRow}
+          aria-label="Bereiche der Nennung"
+          className="nb-entry-page-tabs"
+        >
           {tabs.map((tab) => (
             <AppButton
               key={tab.key}

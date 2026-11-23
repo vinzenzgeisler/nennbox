@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { useRevealActiveTab } from './useRevealActiveTab.js';
 export type TabItem = {
   id: string;
   label: string;
@@ -26,8 +27,10 @@ export function TabList({
     refs.current[next]?.focus();
   };
   const activeId = tabs.find((tab) => tab.id === selected)?.id ?? tabs[0]?.id;
+  const row = useRef<HTMLDivElement>(null);
+  useRevealActiveTab(row, activeId);
   return (
-    <div className="nb-tab-list" role="tablist" aria-label={label}>
+    <div ref={row} className="nb-tab-list" role="tablist" aria-label={label}>
       {tabs.map((tab, index) => (
         <button
           key={tab.id}

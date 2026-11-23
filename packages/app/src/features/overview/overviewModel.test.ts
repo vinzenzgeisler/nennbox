@@ -15,13 +15,35 @@ const warning = {
 } as const;
 
 describe('overview model', () => {
-  it('orders known status categories first and keeps custom ones by name', () => {
+  it('uses workflow labels, keys and order, including custom statuses sharing a category', () => {
+    const workflow = [
+      {
+        key: 'review',
+        labels: { de: 'Prüfung', en: 'Review' },
+        category: 'pending',
+        color: '#64748b',
+      },
+      {
+        key: 'shortlist',
+        labels: { de: 'Vorauswahl', en: 'Shortlist' },
+        category: 'pending',
+        color: '#64748b',
+      },
+      {
+        key: 'cancelled',
+        labels: { de: 'Abgesagt', en: 'Cancelled' },
+        category: 'withdrawn',
+        color: '#64748b',
+      },
+    ];
     expect(
-      statusRows({ zeta: 1, accepted: 4, pending: 2, alpha: 3 }).map(
-        (row) => row.key,
-      ),
-    ).toEqual(['pending', 'accepted', 'alpha', 'zeta']);
-    expect(statusRows({ accepted: 4 })[0]?.label).toBe('Zugelassen');
+      statusRows({ shortlist: 4, review: 2, legacy: 3 }, workflow),
+    ).toEqual([
+      { key: 'review', label: 'Prüfung', count: 2 },
+      { key: 'shortlist', label: 'Vorauswahl', count: 4 },
+      { key: 'cancelled', label: 'Abgesagt', count: 0 },
+      { key: 'legacy', label: 'legacy', count: 3 },
+    ]);
     expect(totalEntries({ accepted: 4, pending: 2 })).toBe(6);
   });
 

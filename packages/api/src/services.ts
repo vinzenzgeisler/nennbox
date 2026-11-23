@@ -61,6 +61,7 @@ export interface MessageService {
     eventId: string,
     action: 'resend-verification' | 'remind-open-payments',
     actor: string,
+    recipients?: MessageRecipientFilter,
   ): Promise<MessageCampaignSendResult<MessageCampaignData>>;
 }
 

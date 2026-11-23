@@ -3,14 +3,30 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { OverviewStatuses } from './OverviewStatuses.js';
 
+const workflowStatuses = [
+  ['pending', 'Offen'],
+  ['waitlisted', 'Vorauswahl'],
+  ['accepted', 'Zugelassen'],
+  ['rejected', 'Abgelehnt'],
+  ['withdrawn', 'Abgesagt'],
+].map(([key, de]) => ({
+  key: key!,
+  labels: { de: de!, en: de! },
+  category: key!,
+  color: '#64748b',
+}));
 function rows(statuses: Record<string, number>) {
   const host = document.createElement('div');
   host.innerHTML = renderToStaticMarkup(
-    <OverviewStatuses statuses={statuses} />,
+    <OverviewStatuses
+      statuses={statuses}
+      workflowStatuses={workflowStatuses}
+      onOpenEntries={() => {}}
+    />,
   );
   return Array.from(host.querySelectorAll('.nb-app-value-row')).map((row) => ({
     label: row.querySelector('.nb-app-pill')?.textContent,
-    count: row.querySelector('strong')?.textContent,
+    count: row.querySelector('button')?.textContent,
   }));
 }
 
@@ -26,10 +42,10 @@ describe('overview status rows', () => {
       }),
     ).toEqual([
       { label: 'Offen', count: '5' },
-      { label: 'Warteliste', count: '3' },
+      { label: 'Vorauswahl', count: '3' },
       { label: 'Zugelassen', count: '12' },
       { label: 'Abgelehnt', count: '0' },
-      { label: 'Zurückgezogen', count: '0' },
+      { label: 'Abgesagt', count: '0' },
     ]);
   });
   it('keeps custom and unnamed categories readable instead of rendering blank pills', () => {
@@ -41,10 +57,15 @@ describe('overview status rows', () => {
       ]),
     );
   });
-  it('shows an explicit empty state without placeholder rows', () => {
-    expect(rows({})).toEqual([]);
-    expect(renderToStaticMarkup(<OverviewStatuses statuses={{}} />)).toContain(
-      'Noch keine Nennungen.',
-    );
+  it('shows an explicit empty state when no statuses or workflow are available', () => {
+    expect(
+      renderToStaticMarkup(
+        <OverviewStatuses
+          statuses={{}}
+          workflowStatuses={[]}
+          onOpenEntries={() => {}}
+        />,
+      ),
+    ).toContain('Noch keine Nennungen.');
   });
 });
