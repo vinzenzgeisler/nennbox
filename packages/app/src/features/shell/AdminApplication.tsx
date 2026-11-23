@@ -258,6 +258,7 @@ export function AdminApplication() {
           />
         ) : view === 'messages' ? (
           <AdminMessages
+            key={selectedEvent}
             eventId={selectedEvent}
             seed={messageSeed ?? undefined}
           />
@@ -270,7 +271,7 @@ export function AdminApplication() {
                 ...current.filter((item) => item.id !== event.id),
                 { ...event, registrationClosesAt: null },
               ]);
-              setSelectedEvent(event.id);
+              changeEvent(event.id);
             }}
           />
         ) : view === 'modules' && identity?.canManageModules ? (

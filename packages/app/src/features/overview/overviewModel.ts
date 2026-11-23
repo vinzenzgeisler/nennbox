@@ -2,17 +2,15 @@ import type { EntryFilterKey, EventOverview } from '@nennbox/contracts';
 
 const MINOR_UNITS_PER_MAJOR = 100;
 
-export type EntryFilters = Partial<Record<EntryFilterKey, string>>;
-
-/** Display names of the workflow categories the overview groups the entries by. */
-const CATEGORY_LABELS: Record<string, string> = {
-  pending: 'Offen',
-  waitlisted: 'Warteliste',
-  accepted: 'Zugelassen',
-  rejected: 'Abgelehnt',
-  withdrawn: 'Zurückgezogen',
+export type EntryFilters = Partial<
+  Record<EntryFilterKey | 'missingDocuments', string>
+>;
+export type OverviewStatus = {
+  key: string;
+  labels: { de: string; en: string };
+  category: string;
+  color: string;
 };
-const CATEGORY_ORDER = Object.keys(CATEGORY_LABELS);
 
 export const formatMoney = (cents: number, currency: string): string =>
   new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(
@@ -21,22 +19,26 @@ export const formatMoney = (cents: number, currency: string): string =>
 
 export type StatusRow = { key: string; label: string; count: number };
 
-/** Known categories in workflow order, then any custom category by name. */
-export function statusRows(statuses: EventOverview['statuses']): StatusRow[] {
-  const rank = (key: string) => {
-    const index = CATEGORY_ORDER.indexOf(key);
-    return index === -1 ? CATEGORY_ORDER.length : index;
-  };
-  return Object.entries(statuses)
-    .map(([key, count]) => ({
-      key,
-      label: CATEGORY_LABELS[key] ?? (key.trim() || 'Unbekannter Status'),
-      count,
-    }))
-    .sort(
-      (a, b) =>
-        rank(a.key) - rank(b.key) || a.label.localeCompare(b.label, 'de'),
-    );
+/** Use exactly the active workflow's labels and order, never category aliases. */
+export function statusRows(
+  statuses: EventOverview['statuses'],
+  workflowStatuses: OverviewStatus[],
+): StatusRow[] {
+  const known = new Set(workflowStatuses.map((status) => status.key));
+  return [
+    ...workflowStatuses.map((status) => ({
+      key: status.key,
+      label: status.labels.de,
+      count: statuses[status.key] ?? 0,
+    })),
+    ...Object.entries(statuses)
+      .filter(([key]) => !known.has(key))
+      .map(([key, count]) => ({
+        key,
+        label: key.trim() || 'Unbekannter Status',
+        count,
+      })),
+  ];
 }
 
 export const totalEntries = (statuses: EventOverview['statuses']): number =>
