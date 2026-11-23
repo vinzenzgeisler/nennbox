@@ -31,7 +31,7 @@
   position: fixed;
   right: 24px;
   bottom: 24px;
-  z-index: 20;
+  z-index: var(--layer-toast);
   display: flex;
   align-items: center;
   gap: 16px;

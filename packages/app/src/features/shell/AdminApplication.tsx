@@ -219,10 +219,13 @@ export function AdminApplication() {
             onFiltersConsumed={() =>
               setEntriesTarget((current) => ({ ...current, filters: {} }))
             }
-            preview={previewOpen && !detailOpen ? entryPreview : undefined}
-            mobilePreviewOpen={
-              previewOpen && !detailOpen && Boolean(selectedEntry)
+            preview={
+              previewViewport && previewOpen && !detailOpen
+                ? entryPreview
+                : undefined
             }
+            // Below the preview breakpoint a row opens its detail; a stale selection never covers the list.
+            mobilePreviewOpen={false}
             eventId={selectedEvent}
             onEventChange={changeEvent}
             onTotalChange={setEntryCount}

@@ -341,6 +341,7 @@ describe('AdminApplication event switch and detail access', () => {
     await mount();
     // No preview opens by itself; the list stays the start view.
     expect(container.querySelector('.is-mobile-open')).toBeNull();
+    expect(container.querySelector('.nb-preview-panel')).toBeNull();
     expect(textOf()).toContain('Alex Driver');
     expect(container.querySelector('.nb-app-breadcrumb select')).not.toBeNull();
     await click((button) => button.hasAttribute('data-entry-action'));

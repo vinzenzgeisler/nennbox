@@ -20,7 +20,7 @@
   .nb-admin-workspace {
     --nb-page-gutter: var(--nb-space-4);
     display: block;
-    padding-bottom: 56px;
+    padding-bottom: var(--mobile-nav-clearance);
   }
   .nb-admin-workspace-main.is-inset {
     --nb-content-inset: var(--nb-space-3);
@@ -39,4 +39,18 @@
   padding: var(--nb-space-4) var(--nb-space-7) 0;
   color: var(--nb-fg-muted);
   font-size: 13px;
+}
+
+/* Floating feedback lifts above the bottom bar instead of covering its buttons. */
+@media (width <= 860px) {
+  .nb-admin-workspace .nb-toast,
+  .nb-admin-workspace .nb-selection {
+    bottom: calc(var(--mobile-nav-clearance) + var(--nb-space-3));
+  }
+  .nb-admin-workspace .nb-toast {
+    bottom: calc(
+      var(--mobile-nav-clearance) + var(--nb-space-3) +
+        var(--nb-selection-height, 0px)
+    );
+  }
 }

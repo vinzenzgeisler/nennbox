@@ -31,7 +31,17 @@
   --space-4: 16px;
   --space-5: 20px;
   --space-6: 24px;
-  --mobile-nav-height: 56px;
+  /* Bottom bar: its own height, the safe area comes on top (--mobile-nav-clearance). */
+  --mobile-nav-height: 64px;
+  --mobile-nav-clearance: calc(
+    var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px)
+  );
+  /* One stacking scale. Content stays below the bar; popovers, toasts and dialogs may cover it. */
+  --layer-sheet: 9;
+  --layer-bottom-nav: 30;
+  --layer-toast: 35;
+  --layer-popover: 40;
+  --layer-modal: 50;
   --space-8: 32px;
   --space-10: 40px;
   --space-12: 48px;

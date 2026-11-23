@@ -1,6 +1,6 @@
 .nb-selection {
   position: fixed;
-  z-index: 20;
+  z-index: var(--layer-toast);
   right: auto;
   bottom: var(--nb-space-6);
   left: 50%;
