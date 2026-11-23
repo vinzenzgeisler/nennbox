@@ -265,7 +265,7 @@ test('admin creates a class, terms and opens its public registration in the UI',
     202,
   );
   await expect(page.getByRole('status')).toContainText(
-    'Die Nennung wurde angenommen.',
+    'Nennung eingegangen. Bitte bestätige die E-Mail-Adresse über den zugesandten Link.',
   );
   await page.goto('/app');
   await page

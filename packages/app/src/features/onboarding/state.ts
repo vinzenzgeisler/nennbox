@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer } from 'react';
+import { useCallback, useEffect, useReducer, useState } from 'react';
 import {
   createOnboardingAnswers,
   nextOnboardingStep,
@@ -99,11 +99,18 @@ function load(): OnboardingState {
 /** Local, automatically saved state of the prototype; the connected flow replaces the storage. */
 export function useOnboardingState() {
   const [state, dispatch] = useReducer(reducer, undefined, load);
+  const [persistence, setPersistence] = useState<{
+    state: OnboardingState;
+    failed: boolean;
+  } | null>(null);
   useEffect(() => {
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(state));
+      // Reflect the result of synchronizing with external storage, not an optimistic edit.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPersistence({ state, failed: false });
     } catch {
-      /* private mode: the draft simply stays in memory */
+      setPersistence({ state, failed: true });
     }
   }, [state]);
   const patch = useCallback(
@@ -144,6 +151,11 @@ export function useOnboardingState() {
   const reset = useCallback(() => dispatch({ type: 'reset' }), []);
   return {
     state,
+    savedAt:
+      persistence?.state === state && !persistence.failed
+        ? state.savedAt
+        : null,
+    storageFailed: persistence?.failed ?? false,
     patch,
     go,
     next,

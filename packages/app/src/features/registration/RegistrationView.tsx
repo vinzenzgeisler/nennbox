@@ -214,20 +214,19 @@ export function RegistrationView({
                           setValues((old) => updateDriverField(old, key, value))
                         }
                       />
-                      {field.key === 'dateOfBirth' &&
-                        currentStep?.id === 'driver' && (
-                          <RegistrationPhoneField
-                            config={payload.registrationFormConfig}
-                            values={values}
-                            onChange={(patch) =>
-                              setValues((old) => ({ ...old, ...patch }))
-                            }
-                            t={t}
-                          />
-                        )}
                     </Fragment>
                   );
                 })
+              )}
+              {currentStep?.id === 'driver' && (
+                <RegistrationPhoneField
+                  config={payload.registrationFormConfig}
+                  values={values}
+                  onChange={(patch) =>
+                    setValues((old) => ({ ...old, ...patch }))
+                  }
+                  t={t}
+                />
               )}
               {currentStep?.id === 'driver' && (
                 <RegistrationContactFields

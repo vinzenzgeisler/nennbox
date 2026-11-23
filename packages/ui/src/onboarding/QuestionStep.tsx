@@ -57,6 +57,7 @@ export function QuestionStep({
       )
         return;
       const target = event.target as HTMLElement;
+      if (target.closest?.('[aria-modal="true"]')) return;
       if (/^[1-9]$/.test(event.key) && !typing(target)) {
         const input = root.current?.querySelectorAll<HTMLInputElement>(
           'input[data-choice]:not(:disabled)',
@@ -70,8 +71,8 @@ export function QuestionStep({
         event.key === 'Enter' &&
         !event.shiftKey &&
         submit.current &&
-        !['BUTTON', 'A', 'SUMMARY', 'TEXTAREA', 'SELECT'].includes(
-          target.tagName,
+        !target.closest?.(
+          'button, a, summary, textarea, select, input[type="file"], [contenteditable="true"]',
         )
       ) {
         event.preventDefault();

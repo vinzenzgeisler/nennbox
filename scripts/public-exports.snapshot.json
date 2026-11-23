@@ -288,6 +288,8 @@
     "PublicEventResponse",
     "PublicRegistrationRequest",
     "PublicRegistrationRequestSchema",
+    "PublicRegistrationResponse",
+    "PublicRegistrationResponseSchema",
     "PublicationPreferenceSchema",
     "ReasonCode",
     "RegistrationBranding",

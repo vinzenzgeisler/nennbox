@@ -11,7 +11,8 @@ import {
   entryExtras,
 } from './RegistrationDomain.js';
 import { asked, contactPayload } from './RegistrationPayloadFields.js';
-import { completeRegistrationPayment } from './completeRegistrationPayment.js';
+import type { RegistrationSubmissionResult } from './completeRegistrationPayment.js';
+import { createPaymentActions } from './registrationPaymentActions.js';
 import { hasMissingRequiredConsent } from './registrationConsentValidation.js';
 
 export function createRegistrationActions(
@@ -36,9 +37,6 @@ export function createRegistrationActions(
     guardianRequired,
     customAnswers,
     vehicles,
-    setSubmitted,
-    paymentChoice,
-    setPaymentInstructions,
     setDraftMessage,
     setSavingDraft,
     setCustomAnswers,
@@ -46,6 +44,7 @@ export function createRegistrationActions(
   } = model;
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (model.submitted || model.submitting) return;
     if (step < steps.length - 1) {
       if (
         step === steps.length - 2 &&
@@ -204,17 +203,9 @@ export function createRegistrationActions(
         },
       );
       if (!response.ok) throw new Error();
-      const result = (await response.json()) as Parameters<
-        typeof completeRegistrationPayment
-      >[0]['result'];
-      await completeRegistrationPayment({
-        result,
-        paymentChoice,
-        organizationId,
-        paymentMethods: payload!.registrationFormConfig.payments.onlineMethods,
-        setPaymentInstructions,
-        setSubmitted,
-      });
+      const result = (await response.json()) as RegistrationSubmissionResult;
+      model.setSubmissionResult(result);
+      await startPayment(result);
     } catch {
       setError(t.retry);
     } finally {
@@ -289,6 +280,10 @@ export function createRegistrationActions(
     }
   }
 
-  return { submit, saveDraft, uploadCustomField };
+  const { startPayment, retryPayment } = createPaymentActions(
+    model,
+    organizationId,
+  );
+  return { submit, saveDraft, uploadCustomField, retryPayment };
 }
 export type RegistrationActions = ReturnType<typeof createRegistrationActions>;
