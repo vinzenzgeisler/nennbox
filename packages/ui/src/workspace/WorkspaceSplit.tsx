@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useRef, type CSSProperties, type ReactNode } from 'react';
 import { usePreviewResize } from './usePreviewResize.js';
 import { useWorkspacePreview } from './useWorkspacePreview.js';
 /** The list owns its filters; the preview begins alongside them. */
@@ -15,6 +15,7 @@ export function WorkspaceSplit({
   previewLabel?: string;
   mobilePreviewOpen?: boolean | undefined;
 }) {
+  const drag = useRef<{ x: number; width: number } | null>(null);
   const previewAvailable = useWorkspacePreview();
   const { ref, width, maximum, resize } = usePreviewResize();
   return (
@@ -52,20 +53,21 @@ export function WorkspaceSplit({
               }
             }}
             onPointerDown={(event) => {
+              drag.current = { x: event.clientX, width };
               event.currentTarget.setPointerCapture(event.pointerId);
               event.preventDefault();
             }}
             onPointerMove={(event) => {
-              if (event.currentTarget.hasPointerCapture(event.pointerId))
-                resize(
-                  width +
-                    event.currentTarget.getBoundingClientRect().left -
-                    event.clientX,
-                );
+              if (drag.current)
+                resize(drag.current.width + drag.current.x - event.clientX);
             }}
-            onPointerUp={(event) =>
-              event.currentTarget.releasePointerCapture(event.pointerId)
-            }
+            onPointerUp={(event) => {
+              drag.current = null;
+              event.currentTarget.releasePointerCapture(event.pointerId);
+            }}
+            onLostPointerCapture={() => {
+              drag.current = null;
+            }}
           />
           {preview}
         </aside>

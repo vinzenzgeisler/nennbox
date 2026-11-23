@@ -35,6 +35,30 @@ it('restores width, supports separator keyboard resizing and persists it', async
     ),
   );
   expect(separator.getAttribute('aria-valuenow')).toBe('340');
+  // Pointer deltas stay anchored to pointerdown; repeated moves must not drift.
+  const handle = separator as HTMLElement;
+  handle.setPointerCapture = () => undefined;
+  handle.releasePointerCapture = () => undefined;
+  await act(async () =>
+    handle.dispatchEvent(
+      new MouseEvent('pointerdown', { clientX: 800, bubbles: true }),
+    ),
+  );
+  await act(async () =>
+    handle.dispatchEvent(
+      new MouseEvent('pointermove', { clientX: 780, bubbles: true }),
+    ),
+  );
+  expect(separator.getAttribute('aria-valuenow')).toBe('360');
+  await act(async () =>
+    handle.dispatchEvent(
+      new MouseEvent('pointermove', { clientX: 780, bubbles: true }),
+    ),
+  );
+  expect(separator.getAttribute('aria-valuenow')).toBe('360');
+  await act(async () =>
+    handle.dispatchEvent(new MouseEvent('pointerup', { bubbles: true })),
+  );
   await act(async () => root.unmount());
   localStorage.clear();
 });
