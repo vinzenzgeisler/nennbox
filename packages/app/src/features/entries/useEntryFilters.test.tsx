@@ -208,3 +208,28 @@ it('consumes shell targets once so a later remount restores edited URL filters',
   expect(state.page).toBe(3);
   expect(consumed).toHaveBeenCalledOnce();
 });
+
+it('opens an overview drilldown for open payments and missing documents as URL-backed list filters', () => {
+  window.history.replaceState(null, '', '/admin?eventId=event-a&search=old');
+  act(() =>
+    root.render(
+      <Harness revision={0} filters={{ missingDocuments: 'true' }} />,
+    ),
+  );
+  expect(state.applied).toMatchObject({ missingDocuments: 'true', search: '' });
+  expect(
+    new URLSearchParams(window.location.search).get('missingDocuments'),
+  ).toBe('true');
+  act(() =>
+    root.render(
+      <Harness revision={1} filters={{ paymentStatus: 'outstanding' }} />,
+    ),
+  );
+  expect(state.applied).toMatchObject({
+    paymentStatus: 'outstanding',
+    missingDocuments: '',
+  });
+  const params = new URLSearchParams(window.location.search);
+  expect(params.get('paymentStatus')).toBe('outstanding');
+  expect(params.has('missingDocuments')).toBe(false);
+});

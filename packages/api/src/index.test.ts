@@ -491,6 +491,52 @@ describe('api entry', () => {
       400,
     );
   });
+  it('accepts the overview drilldown filters outstanding payments and missing documents', async () => {
+    const org = '11111111-1111-4111-8111-111111111111';
+    const queries: unknown[] = [];
+    const app = createApp(
+      testDeps({
+        config: { deploymentMode: 'community', organizationId: org },
+        organizations: { getById: async () => null, update: async () => null },
+        events: {
+          listByOrganization: async () => [],
+          getById: async () => null,
+        },
+        authenticator: {
+          authenticate: async () => ({
+            issuer: 'https://id.example',
+            subject: 'admin',
+          }),
+        },
+        memberships: {
+          resolvePermissions: async () => new Set(['entry:read']),
+        },
+        entries: {
+          getById: async () => null,
+          listAdmin: async (_ctx, query) => {
+            queries.push(query);
+            return { items: [], total: 0 };
+          },
+          transition: async () => null,
+          softDelete: async () => null,
+        },
+      }),
+    );
+    expect(
+      (await app.request('/admin/entries?paymentStatus=outstanding')).status,
+    ).toBe(200);
+    expect(
+      (await app.request('/admin/entries?missingDocuments=true')).status,
+    ).toBe(200);
+    expect(queries).toEqual([
+      expect.objectContaining({ paymentStatus: 'outstanding' }),
+      expect.objectContaining({ missingDocuments: true }),
+    ]);
+    expect(queries[0]).not.toHaveProperty('missingDocuments');
+    expect(
+      (await app.request('/admin/entries?missingDocuments=false')).status,
+    ).toBe(400);
+  });
   it('returns the unchanged entry transition response without a registration form', async () => {
     const org = '11111111-1111-4111-8111-111111111111';
     const transitioned = { id: 'entry-1', verificationStatus: 'verified' };

@@ -8,6 +8,7 @@ import {
 } from '@nennbox/core';
 import { createDatabase, migrate } from './database-service.js';
 import { createOverviewRepository } from './event-overview.js';
+import { createEntryRepository } from './entry-repository.js';
 import { createEntryWorkflowRepository } from './entry-workflow.js';
 import { organizations, events, eventClasses } from './schema/organization.js';
 import {
@@ -167,6 +168,55 @@ describe.skipIf(!url)('PostgreSQL event overview', () => {
           ],
         },
       });
+      // The list filters behind the overview drilldowns must agree with the overview counts.
+      const entryRepository = createEntryRepository(db);
+      const listQuery = {
+        page: 1,
+        pageSize: 25,
+        eventId: event!.id,
+        sort: 'createdAt',
+        direction: 'desc',
+      } as const;
+      expect(
+        (
+          await entryRepository.listAdmin!(ctx, {
+            ...listQuery,
+            missingDocuments: true,
+          })
+        ).total,
+      ).toBe(1);
+      expect(
+        (
+          await entryRepository.listAdmin!(ctx, {
+            ...listQuery,
+            paymentStatus: 'outstanding',
+          })
+        ).total,
+      ).toBe(1);
+      await db
+        .update(invoices)
+        .set({ status: 'paid' })
+        .where(eq(invoices.eventId, event!.id));
+      expect(
+        (
+          await entryRepository.listAdmin!(ctx, {
+            ...listQuery,
+            paymentStatus: 'outstanding',
+          })
+        ).total,
+      ).toBe(0);
+      await db
+        .update(eventEntryDocumentTypes)
+        .set({ required: false })
+        .where(eq(eventEntryDocumentTypes.eventId, event!.id));
+      expect(
+        (
+          await entryRepository.listAdmin!(ctx, {
+            ...listQuery,
+            missingDocuments: true,
+          })
+        ).total,
+      ).toBe(0);
       const foreignCtx = createRequestContext({
         ...ctx,
         organizationId: organizationId('99999999-9999-4999-8999-999999999999'),

@@ -43,8 +43,10 @@ export function registerEntriesRoutes(context: ApiRoutesContext): void {
             'paid',
             'not_required',
             'not_relevant',
+            'outstanding',
           ])
           .optional(),
+        missingDocuments: z.literal('true').optional(),
         search: z.string().trim().max(120).optional(),
         sort: z
           .enum([
@@ -65,6 +67,7 @@ export function registerEntriesRoutes(context: ApiRoutesContext): void {
       acceptanceStatus,
       verificationStatus,
       paymentStatus,
+      missingDocuments,
       search,
     } = parsed.data;
     const query: EntryListQuery = {
@@ -77,6 +80,7 @@ export function registerEntriesRoutes(context: ApiRoutesContext): void {
       ...(acceptanceStatus ? { acceptanceStatus } : {}),
       ...(verificationStatus ? { verificationStatus } : {}),
       ...(paymentStatus ? { paymentStatus } : {}),
+      ...(missingDocuments ? { missingDocuments: true as const } : {}),
       ...(search ? { search } : {}),
     };
     const result = await deps.entries.listAdmin(context, query);

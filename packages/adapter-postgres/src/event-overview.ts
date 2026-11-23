@@ -4,6 +4,7 @@ import { events, eventClasses } from './schema/organization.js';
 import { entries } from './schema/entries.js';
 import { invoices } from './schema/billing.js';
 import type { Database } from './database.js';
+import { missingRequiredDocuments } from './sql-helpers.js';
 
 const EVENT_QUERY_LIMIT = 1;
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -103,23 +104,7 @@ export function createOverviewRepository(db: Database): OverviewRepository {
                 eq(entries.organizationId, ctx.organizationId),
                 eq(entries.eventId, eventId),
                 sql`${entries.deletedAt} is null`,
-                sql`exists (
-                select 1
-                from event_entry_document_type required_type
-                where required_type.organization_id = ${entries.organizationId}
-                  and required_type.event_id = ${entries.eventId}
-                  and required_type.enabled = true
-                  and required_type.required = true
-                  and not exists (
-                    select 1
-                    from entry_document submitted_document
-                    where submitted_document.organization_id = ${entries.organizationId}
-                      and submitted_document.event_id = ${entries.eventId}
-                      and submitted_document.entry_id = ${entries.id}
-                      and submitted_document.type_key = required_type.key
-                      and submitted_document.status in ('uploaded', 'reviewed')
-                  )
-              )`,
+                missingRequiredDocuments(),
               ),
             ),
         ]);

@@ -10,6 +10,7 @@ export function pushEntryEvent(id: string) {
       'acceptanceStatus',
       'verificationStatus',
       'paymentStatus',
+      'missingDocuments',
       'sort',
       'direction',
       'page',
