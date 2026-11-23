@@ -24,5 +24,6 @@ export type AdminEntriesProps = {
   eventId?: string;
   initialFilters?: EntryFilters;
   filterRevision?: number;
+  onFiltersConsumed?: (() => void) | undefined;
   onEventChange?: (id: string) => void;
 };

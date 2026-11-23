@@ -144,10 +144,9 @@ export function AdminEntryRow({
               .filter(
                 (edge) =>
                   edge.from === entry.acceptanceStatus &&
-                  (!capabilityEntry.availableActions ||
-                    capabilityEntry.availableActions.includes(
-                      `acceptance:${edge.to}`,
-                    )),
+                  capabilityEntry.availableActions?.includes(
+                    `acceptance:${edge.to}`,
+                  ),
               )
               .map((item) => {
                 const target = workflow?.statuses.find(

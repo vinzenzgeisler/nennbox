@@ -242,6 +242,9 @@ export function AdminApplication() {
           <AdminEntries
             filterRevision={entriesTarget.revision}
             initialFilters={entriesTarget.filters}
+            onFiltersConsumed={() =>
+              setEntriesTarget((current) => ({ ...current, filters: {} }))
+            }
             preview={previewOpen && !detailOpen ? entryPreview : undefined}
             mobilePreviewOpen={
               previewOpen && !detailOpen && Boolean(selectedEntry)

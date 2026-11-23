@@ -43,6 +43,7 @@ function AdminEntriesView({
   eventId: sharedEventId,
   initialFilters = {},
   filterRevision = 0,
+  onFiltersConsumed,
   onEventChange: onSharedEventChange,
 }: AdminEntriesProps) {
   const [internalDetailOpen, setInternalDetailOpen] = useState(false);
@@ -95,7 +96,13 @@ function AdminEntriesView({
     [eventId],
   );
   const { draft, setDraft, applied, setApplied, page, setPage } =
-    useEntryFilters(eventId, initialFilters, filterRevision, clearSelection);
+    useEntryFilters(
+      eventId,
+      initialFilters,
+      filterRevision,
+      clearSelection,
+      onFiltersConsumed,
+    );
   const {
     apiState,
     events,

@@ -48,6 +48,7 @@ export function useEntryFilters(
   initialFilters: EntryFilters,
   filterRevision: number,
   clearSelection: () => void,
+  onTargetConsumed?: (() => void) | undefined,
 ) {
   const [initial] = useState(() => readLocation(eventId, initialFilters));
   const [draft, setDraft] = useState<EntryQuery>(initial.query);
@@ -67,6 +68,10 @@ export function useEntryFilters(
     setPage(1);
     clearSelection();
   }, [filterRevision, initialFilters, clearSelection]);
+
+  useEffect(() => {
+    if (Object.keys(initialFilters).length) onTargetConsumed?.();
+  }, [initialFilters, onTargetConsumed]);
 
   useEffect(() => {
     const restore = () => {

@@ -9,8 +9,22 @@ let root: ReturnType<typeof createRoot>;
 let host: HTMLDivElement;
 let state: ReturnType<typeof useEntryFilters>;
 const clearSelection = vi.fn();
-function Harness({ revision = 0, filters = {} }) {
-  const current = useEntryFilters('event-a', filters, revision, clearSelection);
+function Harness({
+  revision = 0,
+  filters = {},
+  consumed = undefined,
+}: {
+  revision?: number;
+  filters?: import('../overview/overviewModel.js').EntryFilters;
+  consumed?: (() => void) | undefined;
+}) {
+  const current = useEntryFilters(
+    'event-a',
+    filters,
+    revision,
+    clearSelection,
+    consumed,
+  );
   useEffect(() => {
     state = current;
   });
@@ -170,4 +184,27 @@ it('handles actual browser Back and Forward without adding history entries', asy
   await travel('forward');
   expect(state.applied.search).toBe('second');
   expect(window.history.length).toBe(length);
+});
+
+it('consumes shell targets once so a later remount restores edited URL filters', () => {
+  let target: import('../overview/overviewModel.js').EntryFilters = {
+    search: 'original target',
+  };
+  const consumed = vi.fn(() => {
+    target = {};
+  });
+  act(() =>
+    root.render(<Harness revision={1} filters={target} consumed={consumed} />),
+  );
+  expect(consumed).toHaveBeenCalledOnce();
+  act(() => state.setDraft((value) => ({ ...value, search: 'edited search' })));
+  settleSearch();
+  act(() => state.setPage(3));
+  act(() => root.render(null));
+  act(() =>
+    root.render(<Harness revision={1} filters={target} consumed={consumed} />),
+  );
+  expect(state.applied.search).toBe('edited search');
+  expect(state.page).toBe(3);
+  expect(consumed).toHaveBeenCalledOnce();
 });
