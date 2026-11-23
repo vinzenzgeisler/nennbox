@@ -11,7 +11,8 @@ import {
   entryExtras,
 } from './RegistrationDomain.js';
 import { asked, contactPayload } from './RegistrationPayloadFields.js';
-import { completeRegistrationPayment } from './completeRegistrationPayment.js';
+import type { RegistrationSubmissionResult } from './completeRegistrationPayment.js';
+import { createPaymentActions } from './registrationPaymentActions.js';
 import { hasMissingRequiredConsent } from './registrationConsentValidation.js';
 
 export function createRegistrationActions(
@@ -36,9 +37,6 @@ export function createRegistrationActions(
     guardianRequired,
     customAnswers,
     vehicles,
-    setSubmitted,
-    paymentChoice,
-    setPaymentInstructions,
     setDraftMessage,
     setSavingDraft,
     setCustomAnswers,
@@ -205,9 +203,7 @@ export function createRegistrationActions(
         },
       );
       if (!response.ok) throw new Error();
-      const result = (await response.json()) as Parameters<
-        typeof completeRegistrationPayment
-      >[0]['result'];
+      const result = (await response.json()) as RegistrationSubmissionResult;
       model.setSubmissionResult(result);
       await startPayment(result);
     } catch {
@@ -284,28 +280,10 @@ export function createRegistrationActions(
     }
   }
 
-  function startPayment(
-    result: Parameters<typeof completeRegistrationPayment>[0]['result'],
-  ) {
-    return completeRegistrationPayment({
-      result,
-      paymentChoice,
-      organizationId,
-      paymentMethods: payload!.registrationFormConfig.payments.onlineMethods,
-      setPaymentInstructions,
-      setSubmitted,
-      setPaymentError: model.setPaymentError,
-    });
-  }
-  async function retryPayment() {
-    if (!model.submissionResult || model.submitting) return;
-    setSubmitting(true);
-    try {
-      await startPayment(model.submissionResult);
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  const { startPayment, retryPayment } = createPaymentActions(
+    model,
+    organizationId,
+  );
   return { submit, saveDraft, uploadCustomField, retryPayment };
 }
 export type RegistrationActions = ReturnType<typeof createRegistrationActions>;

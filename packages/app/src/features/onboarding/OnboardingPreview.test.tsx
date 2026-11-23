@@ -20,6 +20,7 @@ afterEach(() => {
   act(() => root?.unmount());
   container.remove();
   root = undefined;
+  vi.restoreAllMocks();
 });
 
 const heading = () => container.querySelector('h1')!.textContent;
@@ -83,6 +84,36 @@ const rows = () =>
 const row = (label: string) => rows().find((item) => item.label === label);
 
 describe('onboarding prototype', () => {
+  it('only confirms saved answers after storage succeeds and recovers after a failure', () => {
+    pick('Passkey');
+    expect(container.textContent).toContain('Gespeichert ·');
+    const setItem = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      });
+    click(button('Weiter'));
+    type('Vereinsname', 'MSC Test');
+    expect(container.textContent).not.toContain('Gespeichert ·');
+    expect(container.querySelector('[role=status]')?.textContent).toContain(
+      'Nur für diese Sitzung',
+    );
+    click(button('Später fortsetzen'));
+    expect(heading()).toBe('Dein Stand bleibt in dieser Sitzung');
+    expect(container.textContent).not.toContain(
+      'Alle Antworten bleiben auf diesem Gerät erhalten',
+    );
+    click(button('Weitermachen'));
+    expect(heading()).toBe('Wie heißt euer Verein?');
+    setItem.mockRestore();
+    type('Vereinsname', 'MSC Gespeichert');
+    expect(container.textContent).toContain('Gespeichert ·');
+    expect(container.textContent).not.toContain('Nur für diese Sitzung');
+    expect(
+      JSON.parse(window.localStorage.getItem(storageKey)!).answers.clubName,
+    ).toBe('MSC Gespeichert');
+  });
+
   it('starts with the account question and cannot continue before an answer', () => {
     expect(heading()).toBe('Wie willst du dich anmelden?');
     expect(button('Weiter').disabled).toBe(true);
@@ -243,6 +274,29 @@ describe('onboarding prototype', () => {
     expect(row('Klassen')?.value.replaceAll('\u00a0', ' ')).toContain(
       '4 vorgeschlagen, ab 80 €',
     );
+  });
+
+  it('shows the session-only notice when only logo storage fails', () => {
+    pick('Passkey');
+    click(button('Weiter'));
+    type('Vereinsname', 'MSC Logo');
+    click(button('Weiter'));
+    const original = Storage.prototype.setItem;
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (
+      this: Storage,
+      key,
+      value,
+    ) {
+      if (key.endsWith('.logo.v1')) throw new DOMException('Quota exceeded');
+      original.call(this, key, value);
+    });
+    click(button(/Blau und Gelb/));
+    expect(container.querySelector('.nb-onb-upload-art img')).not.toBeNull();
+    expect(container.textContent).not.toContain('Gespeichert ·');
+    expect(container.querySelector('[role=status]')?.textContent).toContain(
+      'Nur für diese Sitzung',
+    );
+    expect(window.localStorage.getItem(storageKey)).not.toBeNull();
   });
 
   it('restores a selected logo and clears it when the prototype restarts', () => {

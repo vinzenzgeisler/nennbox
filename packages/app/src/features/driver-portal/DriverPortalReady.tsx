@@ -29,11 +29,18 @@ export function DriverPortalReady({
   view: View;
   working: boolean;
   upload: (entryId: string, typeKey: string, file: File) => Promise<void>;
-  save: (entryId: string, fields: Record<string, string>) => Promise<void>;
+  save: (entryId: string, fields: Record<string, string>) => Promise<boolean>;
   pay: () => Promise<void>;
   setWithdrawId: (id: string) => void;
   onLogout: () => void;
 }) {
+  const [changes, setChanges] = useState<Record<string, string>>({});
+  const values = { ...view.contact, ...changes };
+  const changedFields = Object.fromEntries(
+    view.editableFields
+      .filter((key) => (values[key] ?? '') !== (view.contact?.[key] ?? ''))
+      .map((key) => [key, values[key] ?? '']),
+  );
   const missing = view.entries.flatMap((entry) =>
     entry.documents
       .filter(
@@ -133,9 +140,23 @@ export function DriverPortalReady({
                   <CorrectionForm
                     entry={entry}
                     fields={view.editableFields}
-                    contact={view.contact}
+                    values={values}
+                    onChange={(key, value) =>
+                      setChanges((previous) => ({ ...previous, [key]: value }))
+                    }
+                    changes={changedFields}
                     working={working}
-                    onSave={save}
+                    onSave={async (entryId, fields) => {
+                      if (await save(entryId, fields)) {
+                        setChanges((previous) =>
+                          Object.fromEntries(
+                            Object.entries(previous).filter(
+                              ([key, value]) => value !== fields[key],
+                            ),
+                          ),
+                        );
+                      }
+                    }}
                   />
                 )}
               {entry.status !== 'withdrawn' && (
@@ -230,19 +251,20 @@ export function DriverPortalReady({
 function CorrectionForm({
   entry,
   fields,
-  contact,
+  values,
+  changes,
+  onChange,
   working,
   onSave,
 }: {
   entry: Entry;
   fields: string[];
-  contact: View['contact'];
+  values: Record<string, string | null>;
+  changes: Record<string, string>;
+  onChange: (key: string, value: string) => void;
   working: boolean;
   onSave: (entryId: string, fields: Record<string, string>) => Promise<void>;
 }) {
-  const [values, setValues] = useState<Record<string, string>>(() =>
-    Object.fromEntries(fields.map((key) => [key, contact?.[key] ?? ''])),
-  );
   return (
     <FormSection
       title="Angaben korrigieren"
@@ -253,7 +275,7 @@ function CorrectionForm({
         className="driver-portal-correction"
         onSubmit={(event) => {
           event.preventDefault();
-          void onSave(entry.id, values);
+          if (Object.keys(changes).length) void onSave(entry.id, changes);
         }}
       >
         {fields.map((key) => (
@@ -261,12 +283,13 @@ function CorrectionForm({
             key={key}
             label={labels[key] ?? key}
             value={values[key] ?? ''}
-            onChange={(event) =>
-              setValues({ ...values, [key]: event.target.value })
-            }
+            onChange={(event) => onChange(key, event.target.value)}
           />
         ))}
-        <Button type="submit" disabled={working}>
+        <Button
+          type="submit"
+          disabled={working || !Object.keys(changes).length}
+        >
           Änderungen speichern
         </Button>
       </form>

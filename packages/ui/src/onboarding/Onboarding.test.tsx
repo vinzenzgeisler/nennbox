@@ -195,6 +195,29 @@ describe('QuestionStep keyboard', () => {
     });
     expect(onSubmit).not.toHaveBeenCalled();
   });
+  it.each(['input[type="file"]', 'textarea', 'button span'])(
+    'leaves Enter to %s without advancing the question',
+    (selector) => {
+      const onSubmit = vi.fn();
+      const view = mount(
+        <QuestionStep eyebrow="Setup" title="Logo" onSubmit={onSubmit}>
+          <input type="file" />
+          <textarea />
+          <button type="button">
+            <span>Upload</span>
+          </button>
+        </QuestionStep>,
+      );
+      const event = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        cancelable: true,
+      });
+      act(() => view.querySelector(selector)!.dispatchEvent(event));
+      expect(onSubmit).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    },
+  );
   it('moves focus to the new question heading', () => {
     const view = mount(<Question />);
     expect(document.activeElement).toBe(view.querySelector('h1'));
@@ -391,6 +414,7 @@ describe('actions, sections, emerging list, fields and shell', () => {
     vi.useRealTimers();
   });
   it('collapses "Das entsteht" behind a labelled bar on narrow screens and closes with Escape', () => {
+    const onSubmit = vi.fn();
     const view = mount(
       <OnboardingShell
         brand="NENNBOX"
@@ -413,7 +437,7 @@ describe('actions, sections, emerging list, fields and shell', () => {
           close: 'Schließen',
         }}
       >
-        <p>Frage</p>
+        <Question onSubmit={onSubmit} />
       </OnboardingShell>,
     );
     const toggle = view.querySelector<HTMLButtonElement>(
@@ -424,7 +448,36 @@ describe('actions, sections, emerging list, fields and shell', () => {
     expect(
       view.querySelector('.nb-emerging')?.classList.contains('is-open'),
     ).toBe(false);
+    toggle.focus();
     act(() => toggle.click());
+    const sheet = view.querySelector<HTMLElement>('[role="dialog"]')!;
+    const close = sheet.querySelector('button')!;
+    expect(sheet.getAttribute('aria-modal')).toBe('true');
+    expect(document.activeElement).toBe(close);
+    for (const key of ['Enter', '1']) {
+      act(() =>
+        close.dispatchEvent(
+          new KeyboardEvent('keydown', { key, bubbles: true }),
+        ),
+      );
+    }
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(view.querySelector('input:checked')).toBeNull();
+    expect(view.querySelector('main')?.hasAttribute('inert')).toBe(true);
+    expect(view.querySelector('header')?.hasAttribute('inert')).toBe(true);
+    for (const shiftKey of [false, true]) {
+      const tab = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        shiftKey,
+        bubbles: true,
+        cancelable: true,
+      });
+      act(() => close.dispatchEvent(tab));
+      expect(tab.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe(close);
+    }
+    act(() => toggle.focus());
+    expect(document.activeElement).toBe(close);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(
       view.querySelector('.nb-emerging')?.classList.contains('is-open'),
@@ -432,6 +485,13 @@ describe('actions, sections, emerging list, fields and shell', () => {
     act(() =>
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })),
     );
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(toggle);
+    expect(view.querySelector('main')?.hasAttribute('inert')).toBe(false);
+    expect(view.querySelector('[role=dialog]')).toBeNull();
+    act(() => toggle.click());
+    act(() => close.click());
+    expect(document.activeElement).toBe(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
   });
   it('reports progress to assistive technology', () => {

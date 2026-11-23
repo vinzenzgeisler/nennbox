@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState } from 'react';
+import React, { useId, useState } from 'react';
 import { EmergingContext } from './EmergingContext.js';
 
 export type OnboardingShellProps = {
@@ -47,14 +47,6 @@ export function OnboardingShell({
 }: OnboardingShellProps) {
   const [open, setOpen] = useState(false);
   const id = useId();
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
   const percent = Math.round(Math.min(1, Math.max(0, progress)) * 100);
   return (
     <div

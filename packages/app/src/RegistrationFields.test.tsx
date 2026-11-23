@@ -29,7 +29,13 @@ const form = (fields: Record<string, { state: string }>, legacy = false) => ({
     registrationClosesAt: null,
   },
   currency: 'EUR',
-  pricing: [],
+  pricing: [] as Array<{
+    classId: string;
+    baseCents: number;
+    additionalEntryAdjustmentCents: number;
+    earlyBirdDeadline: string | null;
+    earlyBirdDiscountCents: number;
+  }>,
   registrationFormConfig: {
     ...defaultRegistrationFormConfig,
     fields: legacy
@@ -264,7 +270,7 @@ describe('public registration contact and vehicle fields', () => {
         ...form({}).registrationFormConfig,
         payments: {
           ...defaultRegistrationFormConfig.payments,
-          onlineMethods: ['card'],
+          onlineMethods: ['card' as const],
         },
       },
     };

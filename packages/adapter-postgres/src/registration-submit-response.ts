@@ -1,10 +1,16 @@
 import type { TransactionDatabase } from './database.js';
 import { organizationPaymentRecipients } from './schema/billing.js';
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
+import { entries } from './schema/entries.js';
 
 export interface RegistrationSubmissionResponse {
   accepted: true;
   entryCount: number;
+  entries: Array<{
+    entryId: string;
+    status: 'pending' | 'waitlisted';
+    waitlistPosition: number | null;
+  }>;
   invoiceId?: string;
   paymentInstructions?: {
     accountName: string;
@@ -27,13 +33,13 @@ export async function createRegistrationSubmissionResponse({
   tx,
   organizationId,
   invoice,
-  entryCount,
+  entryIds,
 }: {
   tx: TransactionDatabase;
   organizationId: string;
   invoice: Invoice | null;
-  entryCount: number;
-}) {
+  entryIds: string[];
+}): Promise<RegistrationSubmissionResponse> {
   const [recipient] = invoice
     ? await tx
         .select({
@@ -44,9 +50,36 @@ export async function createRegistrationSubmissionResponse({
         .from(organizationPaymentRecipients)
         .where(eq(organizationPaymentRecipients.organizationId, organizationId))
     : [];
+  const rows = await tx
+    .select({
+      entryId: entries.id,
+      status: entries.acceptanceStatus,
+      waitlistPosition: entries.waitlistPosition,
+    })
+    .from(entries)
+    .where(
+      and(
+        eq(entries.organizationId, organizationId),
+        inArray(entries.id, entryIds),
+      ),
+    );
+  const byId = new Map(rows.map((row) => [row.entryId, row]));
+  const submittedEntries = entryIds.map(
+    (id): RegistrationSubmissionResponse['entries'][number] => {
+      const row = byId.get(id);
+      if (!row || (row.status !== 'pending' && row.status !== 'waitlisted'))
+        throw new Error('Unexpected newly submitted entry status');
+      return {
+        entryId: row.entryId,
+        status: row.status,
+        waitlistPosition: row.waitlistPosition,
+      };
+    },
+  );
   return {
     accepted: true as const,
-    entryCount,
+    entryCount: entryIds.length,
+    entries: submittedEntries,
     ...(invoice
       ? {
           invoiceId: invoice.id,

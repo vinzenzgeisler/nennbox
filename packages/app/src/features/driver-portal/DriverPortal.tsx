@@ -1,33 +1,19 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Banner, Button, Dialog, Field, Wordmark } from '@nennbox/ui';
-import type { View } from './driverPortalTypes.js';
 import { DriverPortalReady } from './DriverPortalReady.js';
 import { passengerBrandStyle } from '../passenger/passengerBrand.js';
 import './driver-portal.css';
 
-const portalUrl = '/public/driver-portal';
-async function json(url: string, method = 'GET', body?: unknown) {
-  const response = await fetch(url, {
-    method,
-    credentials: 'same-origin',
-    cache: 'no-store',
-    ...(body === undefined
-      ? {}
-      : {
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(body),
-        }),
-  });
-  if (!response.ok) throw new Error('Anfrage fehlgeschlagen');
-  return response.json();
-}
+import {
+  json,
+  portalUrl,
+  useDriverPortalAccess,
+} from './useDriverPortalAccess.js';
 
 export function DriverPortal({ eventSlug }: { eventSlug: string }) {
   const [email, setEmail] = useState('');
-  const [phase, setPhase] = useState<
-    'loading' | 'request' | 'sent' | 'ready' | 'invalid'
-  >('loading');
-  const [view, setView] = useState<View | null>(null);
+  const { phase, setPhase, view, setView, refresh, retry } =
+    useDriverPortalAccess();
   const [notice, setNotice] = useState(() => {
     const result = new URLSearchParams(location.search).get('payment');
     if (result === 'success')
@@ -38,36 +24,6 @@ export function DriverPortal({ eventSlug }: { eventSlug: string }) {
   });
   const [working, setWorking] = useState(false);
   const [withdrawId, setWithdrawId] = useState<string | null>(null);
-  const redeemed = useRef<string | null>(null);
-  const refresh = async () => {
-    const data = (await json(portalUrl)) as View;
-    setView(data);
-    setPhase('ready');
-  };
-  useEffect(() => {
-    const openLink = () => {
-      const token = new URLSearchParams(location.hash.slice(1)).get('token');
-      if (!token) {
-        void Promise.resolve()
-          .then(refresh)
-          .catch(() => setPhase('request'));
-        return;
-      }
-      if (redeemed.current === token) return;
-      redeemed.current = token;
-      history.replaceState(
-        history.state,
-        '',
-        location.pathname + location.search,
-      );
-      void json(`${portalUrl}/redeem`, 'POST', { token })
-        .then(refresh)
-        .catch(() => setPhase('invalid'));
-    };
-    openLink();
-    window.addEventListener('hashchange', openLink);
-    return () => window.removeEventListener('hashchange', openLink);
-  }, []);
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (!params.has('payment')) return;
@@ -143,8 +99,10 @@ export function DriverPortal({ eventSlug }: { eventSlug: string }) {
       await json(`${portalUrl}/entries/${entryId}`, 'PATCH', { fields });
       await refresh();
       setNotice('Deine Angaben wurden gespeichert.');
+      return true;
     } catch {
       setNotice('Deine Angaben konnten nicht gespeichert werden.');
+      return false;
     } finally {
       setWorking(false);
     }
@@ -160,7 +118,7 @@ export function DriverPortal({ eventSlug }: { eventSlug: string }) {
         await refresh();
       } catch {
         setView(null);
-        setPhase('request');
+        setPhase('error');
       }
       setNotice('Die Nennung wurde zurückgezogen.');
     } catch {
@@ -209,6 +167,14 @@ export function DriverPortal({ eventSlug }: { eventSlug: string }) {
         )}
         {phase === 'loading' && (
           <p role="status">Deine Nennung wird geladen …</p>
+        )}
+        {phase === 'error' && (
+          <Banner tone="error" title="Technischer Fehler">
+            Deine Nennung konnte nicht geladen werden. Bitte versuche es erneut.
+            <Button variant="text" onClick={() => void retry()}>
+              Erneut laden
+            </Button>
+          </Banner>
         )}
         {phase === 'invalid' && (
           <Banner tone="warning" title="Link nicht mehr gültig">

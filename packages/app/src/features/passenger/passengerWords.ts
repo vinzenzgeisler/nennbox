@@ -1,6 +1,9 @@
 export const passengerWords = {
   de: {
     loading: 'Dein Link wird geprüft …',
+    loadError:
+      'Technischer Fehler: Deine Daten konnten nicht geladen werden. Bitte versuche es erneut.',
+    reload: 'Erneut laden',
     unavailable:
       'Dieser Link ist ungültig, abgelaufen oder wurde bereits verwendet. Bitte wende dich an das Nennbüro.',
     title: 'Deine Daten als Beifahrer',
@@ -26,6 +29,9 @@ export const passengerWords = {
   },
   en: {
     loading: 'Checking your link …',
+    loadError:
+      'Technical error: Your details could not be loaded. Please try again.',
+    reload: 'Reload',
     unavailable:
       'This link is invalid, expired or has already been used. Please contact the entry office.',
     title: 'Your details as co-driver',

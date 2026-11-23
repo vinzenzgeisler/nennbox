@@ -1,21 +1,10 @@
-type PaymentInstructions = {
-  accountName: string;
-  iban: string;
-  bic: string | null;
-  paymentReference: string;
-  amountCents: number;
-  currency: string;
-};
+import type { PublicRegistrationResponse } from '@nennbox/contracts';
 
-export type RegistrationSubmissionResult = {
-  invoiceId?: string;
-  paymentInstructions?: PaymentInstructions;
-  entries?: Array<{
-    entryId: string;
-    status: 'pending' | 'waitlisted';
-    waitlistPosition: number | null;
-  }>;
-};
+type PaymentInstructions = NonNullable<
+  PublicRegistrationResponse['paymentInstructions']
+>;
+// Keep compatibility with a cached response from an older server.
+export type RegistrationSubmissionResult = Partial<PublicRegistrationResponse>;
 
 export async function completeRegistrationPayment({
   result,

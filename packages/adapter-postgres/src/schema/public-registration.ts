@@ -14,6 +14,7 @@ import {
 import { sql } from 'drizzle-orm';
 import { organizations, events } from './organization.js';
 import { registrationGroups } from './entries.js';
+import type { RegistrationSubmissionResponse } from '../registration-submit-response.js';
 
 export const publicEntrySubmissions = pgTable(
   'public_entry_submission',
@@ -23,10 +24,7 @@ export const publicEntrySubmissions = pgTable(
     submissionId: uuid('submission_id').notNull(),
     requestFingerprint: text('request_fingerprint'),
     registrationGroupId: uuid('registration_group_id'),
-    response: jsonb('response').$type<{
-      accepted: true;
-      entryCount: number;
-    } | null>(),
+    response: jsonb('response').$type<RegistrationSubmissionResponse | null>(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
