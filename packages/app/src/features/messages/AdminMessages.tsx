@@ -34,7 +34,7 @@ function EventMessages({
   eventId: string;
   seed?: MessageSeed | undefined;
 }) {
-  const { draft, setDraft } = useMessageDraft(eventId, seed);
+  const { draft, setDraft, seedKept } = useMessageDraft(eventId, seed);
   const { filter, search, addresses, subject, body, attachments } = draft;
   const setField = <K extends keyof typeof draft>(
     field: K,
@@ -123,6 +123,14 @@ function EventMessages({
         key.current = crypto.randomUUID();
       } else await messagesApi.quickAction(eventId, action, filter);
       if (activeEvent.current === currentEvent) {
+        // A sent message is no draft any more; keep the recipient filter for the next one.
+        if (action === 'send')
+          setDraft((current) => ({
+            ...current,
+            subject: '',
+            body: '',
+            attachments: [],
+          }));
         setConfirm(null);
         setNotice('Nachricht wurde für den Versand eingeplant.');
         setRevision((value) => value + 1);
@@ -155,6 +163,12 @@ function EventMessages({
                     {request.error}
                   </AppNotice>
                 ),
+            )}
+            {seedKept && (
+              <AppNotice tone="info">
+                Ein ungesendeter Entwurf wurde beibehalten. Die gewählte Nennung
+                wurde nicht übernommen.
+              </AppNotice>
             )}
             {error && <AppNotice tone="error">{error}</AppNotice>}
             {notice && <p role="status">{notice}</p>}

@@ -176,3 +176,39 @@ it('reports a failed message preview exactly once, inside the preview', async ()
     alerts[0]!.closest('section, [aria-label="Nachrichtenvorschau"]'),
   ).not.toBeNull();
 });
+
+it('clears a sent message so the next seed applies, but never replaces unsent text', async () => {
+  vi.spyOn(messagesApi, 'send').mockResolvedValue({} as never);
+  await act(async () =>
+    root.render(<AdminMessages eventId="first" seed={seed} />),
+  );
+  await act(async () => button('Nachricht senden').click());
+  await act(async () => button('Jetzt senden').click());
+  expect(host.querySelector('textarea[rows="9"]')?.textContent).toBe('');
+  const other = {
+    entryId: '10000000-0000-4000-8000-000000000002',
+    subject: 'Neu',
+    body: 'Neuer Text',
+  };
+  await act(async () => root.render(<p>Andere Ansicht</p>));
+  await act(async () =>
+    root.render(<AdminMessages eventId="first" seed={other} />),
+  );
+  expect(host.querySelector('textarea[rows="9"]')?.textContent).toBe(
+    'Neuer Text',
+  );
+  expect(sessionStorage.getItem('nennbox:message-draft:first')).toContain(
+    other.entryId,
+  );
+  // Unsent text now exists: a further seed must keep it and say so.
+  await act(async () => root.render(<p>Andere Ansicht</p>));
+  await act(async () =>
+    root.render(<AdminMessages eventId="first" seed={seed} />),
+  );
+  expect(host.querySelector('textarea[rows="9"]')?.textContent).toBe(
+    'Neuer Text',
+  );
+  expect(host.textContent).toContain(
+    'Ein ungesendeter Entwurf wurde beibehalten',
+  );
+});
