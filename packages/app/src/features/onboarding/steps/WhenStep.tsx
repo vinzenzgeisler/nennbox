@@ -1,6 +1,6 @@
 import { OnboardingField, OnboardingSwitch, QuestionStep } from '@nennbox/ui';
 import { addDays, suggestEntryDeadline } from '@nennbox/contracts';
-import { formatDay } from '../format.js';
+import { formatDay } from '../../../format.js';
 import type { StepProps } from './types.js';
 
 export function WhenStep({

@@ -34,107 +34,108 @@ export function WorkflowStatusesEditor({
       title="Nennungsstatus"
       description="Lege die sichtbaren Status und ihre Bedeutung fest."
     >
-      {workflow.statuses.map((status, index) => (
-        <AppEditorRow
-          key={status.id ?? status.key}
-          label={'Status ' + (index + 1) + ' bearbeiten'}
-          preview={
-            <AppWorkflowPill
-              label={status.labels.de || status.key}
-              color={status.color}
-            />
-          }
-          description={[
-            status.labels.en,
-            categories.find(([value]) => value === status.category)?.[1],
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-          open={expanded === index}
-          onToggle={() => setExpanded(expanded === index ? null : index)}
-        >
-          <AppGrid>
-            <AppTextInput
-              label="Interner Schlüssel"
-              aria-label={'Status ' + (index + 1) + ' Schlüssel'}
-              value={status.key}
-              onChange={(event) =>
-                updateStatus(index, { key: event.target.value })
-              }
-            />
-            <AppTextInput
-              label="Deutsche Bezeichnung"
-              aria-label={'Status ' + (index + 1) + ' Bezeichnung'}
-              value={status.labels.de}
-              onChange={(event) =>
-                updateStatus(index, {
-                  labels: { ...status.labels, de: event.target.value },
-                })
-              }
-            />
-            <AppTextInput
-              label="Englische Bezeichnung"
-              aria-label={'Status ' + (index + 1) + ' englische Bezeichnung'}
-              value={status.labels.en}
-              onChange={(event) =>
-                updateStatus(index, {
-                  labels: { ...status.labels, en: event.target.value },
-                })
-              }
-            />
-            <AppTextInput
-              label="Statusfarbe"
-              aria-label={'Status ' + (index + 1) + ' Farbe'}
-              type="color"
-              value={
-                /^#[0-9a-f]{6}$/i.test(status.color) ? status.color : '#000000'
-              }
-              onChange={(event) =>
-                updateStatus(index, { color: event.target.value })
-              }
-            />
-            <AppSelect
-              label="Bedeutung"
-              aria-label={'Status ' + (index + 1) + ' Bedeutung'}
-              value={status.category}
-              onChange={(event) =>
-                updateStatus(index, { category: event.target.value })
-              }
-            >
-              {categories.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </AppSelect>
-          </AppGrid>
-          <WorkflowRemoveButton
-            confirmation={{
-              title: 'Status entfernen?',
-              message:
-                'Der Status und alle zugehörigen Übergänge werden entfernt.',
-              reasonLabel: 'Grund',
-              cancelLabel: 'Abbrechen',
-              confirmLabel: 'Status entfernen',
-              closeLabel: 'Dialog schließen',
-            }}
-            onConfirm={() => {
-              setExpanded(null);
-              updateWorkflow({
-                ...workflow,
-                statuses: workflow.statuses.filter((_, i) => i !== index),
-                transitions: workflow.transitions.filter(
-                  (edge) =>
-                    edge.from !== (status.id ?? status.key) &&
-                    edge.to !== (status.id ?? status.key),
-                ),
-              });
-            }}
+      <div className="nb-app-editor-list">
+        {workflow.statuses.map((status, index) => (
+          <AppEditorRow
+            key={status.id ?? status.key}
+            label={'Status ' + (index + 1) + ' bearbeiten'}
+            preview={
+              <AppWorkflowPill
+                label={status.labels.de || status.key}
+                color={status.color}
+              />
+            }
+            description={
+              categories.find(([value]) => value === status.category)?.[1] ?? ''
+            }
+            open={expanded === index}
+            onToggle={() => setExpanded(expanded === index ? null : index)}
           >
-            Status entfernen
-          </WorkflowRemoveButton>
-        </AppEditorRow>
-      ))}
+            <AppGrid>
+              <AppTextInput
+                label="Interner Schlüssel"
+                aria-label={'Status ' + (index + 1) + ' Schlüssel'}
+                value={status.key}
+                onChange={(event) =>
+                  updateStatus(index, { key: event.target.value })
+                }
+              />
+              <AppTextInput
+                label="Deutsche Bezeichnung"
+                aria-label={'Status ' + (index + 1) + ' Bezeichnung'}
+                value={status.labels.de}
+                onChange={(event) =>
+                  updateStatus(index, {
+                    labels: { ...status.labels, de: event.target.value },
+                  })
+                }
+              />
+              <AppTextInput
+                label="Englische Bezeichnung"
+                aria-label={'Status ' + (index + 1) + ' englische Bezeichnung'}
+                value={status.labels.en}
+                onChange={(event) =>
+                  updateStatus(index, {
+                    labels: { ...status.labels, en: event.target.value },
+                  })
+                }
+              />
+              <AppTextInput
+                label="Statusfarbe"
+                aria-label={'Status ' + (index + 1) + ' Farbe'}
+                type="color"
+                value={
+                  /^#[0-9a-f]{6}$/i.test(status.color)
+                    ? status.color
+                    : '#000000'
+                }
+                onChange={(event) =>
+                  updateStatus(index, { color: event.target.value })
+                }
+              />
+              <AppSelect
+                label="Bedeutung"
+                aria-label={'Status ' + (index + 1) + ' Bedeutung'}
+                value={status.category}
+                onChange={(event) =>
+                  updateStatus(index, { category: event.target.value })
+                }
+              >
+                {categories.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </AppSelect>
+            </AppGrid>
+            <WorkflowRemoveButton
+              confirmation={{
+                title: 'Status entfernen?',
+                message:
+                  'Der Status und alle zugehörigen Übergänge werden entfernt.',
+                reasonLabel: 'Grund',
+                cancelLabel: 'Abbrechen',
+                confirmLabel: 'Status entfernen',
+                closeLabel: 'Dialog schließen',
+              }}
+              onConfirm={() => {
+                setExpanded(null);
+                updateWorkflow({
+                  ...workflow,
+                  statuses: workflow.statuses.filter((_, i) => i !== index),
+                  transitions: workflow.transitions.filter(
+                    (edge) =>
+                      edge.from !== (status.id ?? status.key) &&
+                      edge.to !== (status.id ?? status.key),
+                  ),
+                });
+              }}
+            >
+              Status entfernen
+            </WorkflowRemoveButton>
+          </AppEditorRow>
+        ))}
+      </div>
       <AppButton
         onClick={() => {
           setExpanded(workflow.statuses.length);

@@ -6,7 +6,7 @@ import {
   type OnboardingAnswers,
   type OnboardingStepId,
 } from '@nennbox/contracts';
-import { formatDay, formatRange } from '../format.js';
+import { formatDay, formatRange } from '../../../format.js';
 import { languageName } from '../languages.js';
 import type { Outcome } from '../state.js';
 

@@ -1,7 +1,5 @@
 import type { EntryFilterKey, EventOverview } from '@nennbox/contracts';
 
-const MINOR_UNITS_PER_MAJOR = 100;
-
 export type EntryFilters = Partial<
   Record<EntryFilterKey | 'missingDocuments', string>
 >;
@@ -12,10 +10,7 @@ export type OverviewStatus = {
   color: string;
 };
 
-export const formatMoney = (cents: number, currency: string): string =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(
-    cents / MINOR_UNITS_PER_MAJOR,
-  );
+export { formatMoney } from '../../format.js';
 
 export type StatusRow = { key: string; label: string; count: number };
 

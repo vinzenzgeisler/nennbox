@@ -60,3 +60,11 @@
   height: 16px;
   stroke-width: 1.6;
 }
+
+/* Phone: search owns the first line; filter and sort share the second. */
+@media (width <= 640px) {
+  .nb-entry-search {
+    flex: 1 0 100%;
+    max-width: none;
+  }
+}

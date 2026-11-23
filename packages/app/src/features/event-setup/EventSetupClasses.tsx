@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatFeeText } from '../../format.js';
 import { AppEditorRow, AppTextInput, AppSelect, AppButton } from '@nennbox/ui';
 import type {
   SetupDraft,
@@ -43,7 +44,7 @@ export function EventSetupClasses({
           key={item.id ?? index}
           label={`Klasse ${index + 1} bearbeiten`}
           preview={item.name || 'Neue Klasse'}
-          description={`${item.code || 'Kürzel'} · ${item.fee || '0,00'} €`}
+          description={`${item.code || 'Kürzel'} · ${formatFeeText(item.fee)}`}
           open={!closedClasses.includes(index)}
           onToggle={() =>
             setClosedClasses((current) =>

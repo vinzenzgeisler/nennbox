@@ -178,3 +178,36 @@ it('starts compact and opens newly added statuses and transitions', () => {
       ?.getAttribute('aria-expanded'),
   ).toBe('true');
 });
+
+it('lists statuses by German name and category only; the English label lives in the editor', () => {
+  mount();
+  const summaries = [
+    ...host.querySelectorAll<HTMLElement>('.nb-app-editor-summary'),
+  ];
+  const statusRows = summaries.filter((row) =>
+    row.getAttribute('aria-label')?.startsWith('Status '),
+  );
+  for (const row of statusRows) {
+    expect(row.textContent).not.toMatch(/Waitlisted|Accepted|Rejected|Pending/);
+  }
+  const vorauswahl = statusRows.find((row) =>
+    row.textContent?.includes('Warteliste'),
+  );
+  expect(
+    vorauswahl?.querySelector('.nb-app-editor-description')?.textContent,
+  ).toBe('Warteliste');
+  const english = host.querySelector<HTMLInputElement>(
+    '[aria-label$="englische Bezeichnung"]',
+  );
+  expect(english).not.toBeNull();
+});
+
+it('renders status and transition rows inside a gap-free compact list', () => {
+  mount();
+  const lists = host.querySelectorAll('.nb-app-editor-list');
+  expect(lists).toHaveLength(2);
+  for (const list of lists)
+    expect(list.querySelectorAll('.nb-app-editor-row').length).toBeGreaterThan(
+      0,
+    );
+});

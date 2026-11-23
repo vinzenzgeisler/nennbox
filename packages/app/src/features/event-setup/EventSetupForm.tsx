@@ -49,14 +49,6 @@ export function EventSetupForm({
             </option>
           ))}
         </AppSelect>
-        <AppButton
-          type="button"
-          tone="secondary"
-          disabled={busy}
-          onClick={onReset}
-        >
-          Neue Veranstaltung einrichten
-        </AppButton>
       </div>
       <form
         className="nb-app-stack"

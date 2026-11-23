@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ReasonDialog, SelectField, TextInput } from '@nennbox/ui';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import { formatMoney } from './entryDetailModel.js';
+import { formatAmountInput } from '../../../format.js';
 import type { EntryAdminAction } from './useEntryDetailApi.js';
 
 export type AdminActionKind =
@@ -27,12 +28,9 @@ export function EntryAdminActionDialog({
   const details = entry.adminDetails;
   const [classId, setClassId] = useState('');
   const [amount, setAmount] = useState(() =>
-    (
-      (entry.priceSnapshot?.totalCents ?? details?.invoice?.totalCents ?? 0) /
-      100
-    )
-      .toFixed(2)
-      .replace('.', ','),
+    formatAmountInput(
+      entry.priceSnapshot?.totalCents ?? details?.invoice?.totalCents ?? 0,
+    ),
   );
   const [visibility, setVisibility] = useState<'internal' | 'driver'>(
     'internal',

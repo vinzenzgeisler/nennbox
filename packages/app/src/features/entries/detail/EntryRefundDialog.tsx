@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ReasonDialog, SelectField, TextInput } from '@nennbox/ui';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import { formatMoney } from './entryDetailModel.js';
+import { formatAmountInput } from '../../../format.js';
 import { parseEuroToCents } from './EntryPaymentDialog.js';
 
 type Invoice = NonNullable<NonNullable<Entry['adminDetails']>['invoice']>;
@@ -34,7 +35,7 @@ export function EntryRefundDialog({
     (payment) => payment.providerPaymentId === providerPaymentId,
   );
   const [amount, setAmount] = useState(() =>
-    ((payments[0]?.refundableCents ?? 0) / 100).toFixed(2).replace('.', ','),
+    formatAmountInput(payments[0]?.refundableCents ?? 0),
   );
   const [idempotencyKey] = useState(() => crypto.randomUUID());
   const cents = parseEuroToCents(amount);
@@ -73,9 +74,7 @@ export function EntryRefundDialog({
               (payment) => payment.providerPaymentId === event.target.value,
             );
             setProviderPaymentId(event.target.value);
-            setAmount(
-              ((next?.refundableCents ?? 0) / 100).toFixed(2).replace('.', ','),
-            );
+            setAmount(formatAmountInput(next?.refundableCents ?? 0));
           }}
         >
           {payments.map((payment) => (

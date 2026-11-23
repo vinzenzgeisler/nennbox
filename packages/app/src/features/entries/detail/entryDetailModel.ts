@@ -1,4 +1,5 @@
 import type { EntryResponse as Entry } from '@nennbox/contracts';
+import { formatMoney } from '../../../format.js';
 
 export const NOT_GIVEN = 'nicht angegeben';
 
@@ -29,16 +30,12 @@ const short = formatter({
   minute: '2-digit',
 });
 const dateOnly = formatter({ dateStyle: 'medium' });
-const euro = (cents: number, currency: string) =>
-  new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(
-    cents / 100,
-  );
 
 export const formatDateTime = (iso: string) =>
   full.format(new Date(iso)).replace(', ', ' ');
 export const formatShortDateTime = (iso: string) =>
   short.format(new Date(iso)).replace(', ', ' ');
-export const formatMoney = euro;
+export { formatMoney };
 export const formatBirthDate = (value: string | null | undefined) =>
   value ? dateOnly.format(new Date(`${value}T12:00:00`)) : null;
 
