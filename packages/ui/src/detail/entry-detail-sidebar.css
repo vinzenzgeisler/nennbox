@@ -1,0 +1,68 @@
+.nb-entry-overview-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  align-items: start;
+  gap: var(--nb-space-7);
+}
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-entry-overview-columns
+  > .nb-detail-section {
+  padding: 0;
+}
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-entry-overview-columns
+  .nb-media-detail {
+  grid-template-columns: minmax(0, 1fr);
+}
+:where(.nb-admin-workspace, .nb-app-design)
+  .nb-entry-overview-columns
+  .nb-field-item {
+  grid-template-columns: minmax(0, 120px) minmax(0, 1fr);
+}
+.nb-entry-page-sidebar .nb-admission-progress ol {
+  grid-template-columns: minmax(0, 1fr);
+}
+.nb-entry-page-sidebar .nb-admission-progress li {
+  flex-direction: row;
+  align-items: center;
+}
+.nb-entry-page-sidebar .nb-admission-progress li i {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+}
+.nb-entry-sidebar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nb-space-3);
+}
+.nb-entry-recent-note p {
+  margin: var(--nb-space-2) 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.nb-entry-recent-note footer {
+  color: var(--nb-fg-muted);
+  font-size: var(--nb-text-sm);
+}
+@media (width < 1000px) {
+  .nb-entry-page .nb-entry-page-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nb-entry-page .nb-entry-page-sidebar {
+    padding: var(--nb-space-5) 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--nb-border-row);
+  }
+}
+@media (width < 600px) {
+  .nb-entry-page .nb-entry-page-head,
+  .nb-entry-page .nb-entry-page-navigation,
+  .nb-entry-page .nb-entry-page-body {
+    padding-inline: var(--nb-space-4);
+  }
+  .nb-entry-page-tabs {
+    overflow-x: auto;
+  }
+}

@@ -21,28 +21,33 @@ export function EntryConfirmation({
   const [job, setJob] = useState<PdfJob | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [statusError, setStatusError] = useState(false);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
   useEffect(() => {
-    if (!job || job.status !== 'running') return;
+    if (!job || job.status !== 'running' || statusError) return;
     const request = new AbortController();
     const timer = window.setTimeout(() => {
       void exportsApi
         .status(job.id, request.signal)
         .then((status) => {
-          if (!request.signal.aborted)
+          if (!request.signal.aborted) {
+            setError('');
             setJob({ id: job.id, status: status.status });
+          }
         })
         .catch(() => {
-          if (!request.signal.aborted)
+          if (!request.signal.aborted) {
+            setStatusError(true);
             setError('Der PDF-Status konnte nicht geladen werden.');
+          }
         });
     }, POLL_INTERVAL_MS);
     return () => {
       window.clearTimeout(timer);
       request.abort();
     };
-  }, [job]);
+  }, [job, statusError]);
   async function create() {
     controller.current?.abort();
     const request = new AbortController();
@@ -88,7 +93,20 @@ export function EntryConfirmation({
   return (
     <DetailSection title="Nennbestätigung">
       {error && <p role="alert">{error}</p>}
-      {job?.status === 'running' && <p role="status">PDF wird erstellt …</p>}
+      {job?.status === 'running' && !statusError && (
+        <p role="status">PDF wird erstellt …</p>
+      )}
+      {statusError && (
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setError('');
+            setStatusError(false);
+          }}
+        >
+          PDF-Status erneut laden
+        </Button>
+      )}
       {job?.status === 'failed' && (
         <p role="alert">Die PDF-Erstellung ist fehlgeschlagen.</p>
       )}
@@ -100,13 +118,15 @@ export function EntryConfirmation({
           PDF herunterladen
         </Button>
       ) : (
-        <Button
-          variant="secondary"
-          disabled={busy || job?.status === 'running'}
-          onClick={() => void create()}
-        >
-          {busy ? 'PDF wird angefordert …' : 'PDF erstellen'}
-        </Button>
+        !statusError && (
+          <Button
+            variant="secondary"
+            disabled={busy || job?.status === 'running'}
+            onClick={() => void create()}
+          >
+            {busy ? 'PDF wird angefordert …' : 'PDF erstellen'}
+          </Button>
+        )
       )}
     </DetailSection>
   );

@@ -1,3 +1,4 @@
+import type { OnEntryQuickAction } from './entryQuickActions.js';
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import {
@@ -19,10 +20,15 @@ import { AdminEntryListStatus } from './AdminEntryListStatus.js';
 
 type Selection = { eventId: string; ids: Set<string> };
 type Props = {
+  onQuickAction?: OnEntryQuickAction | undefined;
+  canMessage?: boolean | undefined;
   preview?: ReactNode;
   mobilePreviewOpen?: boolean | undefined;
   eventId: string;
   apiState: ApiState;
+  workflowError?: ApiState | null | undefined;
+  onRetry?: (() => void | Promise<void>) | undefined;
+  onRetryWorkflow?: (() => void) | undefined;
   draft: EntryQuery;
   setDraft: Dispatch<SetStateAction<EntryQuery>>;
   changeSort: (sort: string, direction?: string) => void;
@@ -77,9 +83,30 @@ export function AdminEntryList(props: Props) {
   const countAll = Object.values(counts).reduce((sum, value) => sum + value, 0);
   const content = (
     <>
-      <AdminEntryListStatus apiState={apiState} total={total} />
+      <AdminEntryListStatus
+        apiState={apiState}
+        total={total}
+        workflowError={props.workflowError}
+        onRetry={props.onRetry}
+        onRetryWorkflow={props.onRetryWorkflow}
+      />
       <DataTable
-        headers={['Nennung', 'Klasse', 'Status', 'Vollständigkeit', '']}
+        headerCellClassNames={[
+          'nb-entry-column-label',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          'nb-entry-column-label',
+        ]}
+        headers={[
+          'Auswahl',
+          'Nennung',
+          'Klasse',
+          'Status',
+          'Vollständigkeit',
+          'Aktionen',
+        ]}
       >
         {apiState === 'ready' &&
           items.map((entry) => (
@@ -95,11 +122,13 @@ export function AdminEntryList(props: Props) {
               openEntry={openEntry}
               openDetail={openDetail}
               onChangeStatus={onChangeStatus}
+              onQuickAction={props.onQuickAction}
+              canMessage={props.canMessage}
             />
           ))}
         {apiState === 'ready' && !items.length && (
           <tr>
-            <td colSpan={5}>Keine Nennungen für diese Filter.</td>
+            <td colSpan={6}>Keine Nennungen für diese Filter.</td>
           </tr>
         )}
       </DataTable>

@@ -753,7 +753,6 @@ test('admin records payment from entry detail UI', async ({
     stripeEnabled ? /"paidCents":900/ : /"paidCents":1000/,
   );
 
-  await entryDetail.locator('summary[aria-label="Weitere Aktionen"]').click();
   await entryDetail.getByRole('button', { name: 'Klasse ändern' }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('Neue Klasse').selectOption({ label: 'Beta Class' });
@@ -768,7 +767,6 @@ test('admin records payment from entry detail UI', async ({
     'Klasse geändert',
   );
 
-  await entryDetail.locator('summary[aria-label="Weitere Aktionen"]').click();
   await entryDetail.getByRole('button', { name: 'Betrag anpassen' }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByLabel(/Neuer Betrag/).fill('12,00');
@@ -780,7 +778,6 @@ test('admin records payment from entry detail UI', async ({
     'Betrag angepasst',
   );
 
-  await entryDetail.locator('summary[aria-label="Weitere Aktionen"]').click();
   await entryDetail.getByRole('button', { name: 'Notiz hinzufügen' }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('Sichtbarkeit').selectOption('internal');
@@ -789,7 +786,6 @@ test('admin records payment from entry detail UI', async ({
   await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
     'Alpha internal note',
   );
-  await entryDetail.locator('summary[aria-label="Weitere Aktionen"]').click();
   await entryDetail.getByRole('button', { name: 'Notiz hinzufügen' }).click();
   dialog = page.getByRole('dialog');
   await dialog.getByLabel('Sichtbarkeit').selectOption('driver');
@@ -802,7 +798,6 @@ test('admin records payment from entry detail UI', async ({
     'Alpha driver note',
   );
 
-  await entryDetail.locator('summary[aria-label="Weitere Aktionen"]').click();
   await entryDetail.getByRole('button', { name: 'Nennung löschen …' }).click();
   dialog = page.getByRole('dialog');
   await dialog

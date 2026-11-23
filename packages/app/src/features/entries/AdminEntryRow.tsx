@@ -1,16 +1,13 @@
-import { assignedNumber } from './entryStartNumber.js';
+import { useEffect, useRef, useState } from 'react';
+import { EntryQuickMenu } from './EntryQuickMenu.js';
+import { type OnEntryQuickAction } from './entryQuickActions.js';
+import { assignedNumber, numberWish } from './entryStartNumber.js';
 import { EntryDataHints } from './EntryDataHints.js';
 import type { Dispatch, SetStateAction } from 'react';
-import type { EntryResponse as Entry } from '@nennbox/contracts';
-import {
-  CompletionDots,
-  EntryListRow,
-  EntryStatusMenu,
-  HintLabel,
-  Menu,
-  MenuItem,
-} from '@nennbox/ui';
+import { EntryResponse, type EntryResponse as Entry } from '@nennbox/contracts';
+import { CompletionDots, EntryListRow, EntryStatusMenu } from '@nennbox/ui';
 import { completionStates } from './completionStates.js';
+import { request } from './AdminEntriesModel.js';
 import type { WorkflowView } from './AdminEntriesModel.js';
 type Selection = { eventId: string; ids: Set<string> };
 export function AdminEntryRow({
@@ -24,7 +21,11 @@ export function AdminEntryRow({
   openEntry,
   openDetail,
   onChangeStatus,
+  onQuickAction,
+  canMessage,
 }: {
+  onQuickAction?: OnEntryQuickAction | undefined;
+  canMessage?: boolean | undefined;
   entry: Entry;
   eventId: string;
   selected: Entry | null;
@@ -36,6 +37,40 @@ export function AdminEntryRow({
   openDetail?: ((id: string) => Promise<void>) | undefined;
   onChangeStatus: (entry: Entry, status: string) => Promise<void>;
 }) {
+  const [capabilities, setCapabilities] = useState<{
+    source: Entry;
+    value: Entry;
+  } | null>(null);
+  const capabilityEntry =
+    capabilities?.source === entry
+      ? capabilities.value
+      : selected?.id === entry.id
+        ? selected
+        : entry;
+  const capabilityRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => capabilityRequest.current?.abort(), [entry]);
+  const loadStatusCapabilities = async () => {
+    capabilityRequest.current?.abort();
+    const controller = new AbortController();
+    capabilityRequest.current = controller;
+    try {
+      const response = await request(
+        `/admin/entries/${encodeURIComponent(entry.id)}`,
+        { signal: controller.signal },
+      );
+      if (!response.ok) return;
+      const parsed = EntryResponse.safeParse(await response.json());
+      if (
+        parsed.success &&
+        parsed.data.id === entry.id &&
+        !controller.signal.aborted
+      )
+        setCapabilities({ source: entry, value: parsed.data });
+    } catch {
+      /* A failed capability read must not enable actions. */
+    }
+  };
+  const statusRef = useRef<HTMLSpanElement>(null);
   const details = entry.adminDetails;
   const name = details?.driver.name ?? 'Name nicht verfügbar';
   const vehicle = details
@@ -47,20 +82,14 @@ export function AdminEntryRow({
       vehicle={vehicle}
       imageUrl={details?.vehicle.imageUrl ?? null}
       imageAlt="Fahrzeugbild"
-      hints={
-        <>
-          {entry.waitlistPosition != null && (
-            <HintLabel>Warteliste · Platz {entry.waitlistPosition}</HintLabel>
-          )}
-          <EntryDataHints entry={entry} />
-        </>
-      }
+      hints={<EntryDataHints entry={entry} compact />}
       className={
         details?.eventClass.name ??
         classes.find((item) => item.id === entry.classId)?.name ??
         '—'
       }
       number={assignedNumber(entry)}
+      requestedNumber={numberWish(entry)}
       selected={selected?.id === entry.id}
       dimmed={['rejected', 'withdrawn'].includes(
         workflow?.statuses.find((item) => item.key === entry.acceptanceStatus)
@@ -79,45 +108,68 @@ export function AdminEntryRow({
       onOpen={() => void openEntry(entry.id)}
       onOpenDetail={() => void openDetail?.(entry.id)}
       status={
-        <EntryStatusMenu
-          label={
-            workflow?.statuses.find(
-              (item) => item.key === entry.acceptanceStatus,
-            )?.labels.de ?? entry.acceptanceStatus
-          }
-          tone={statusTone(
-            workflow?.statuses.find(
-              (item) => item.key === entry.acceptanceStatus,
-            )?.category,
-          )}
-          options={(workflow?.transitions ?? [])
-            .filter((item) => item.from === entry.acceptanceStatus)
-            .map((item) => {
-              const target = workflow?.statuses.find(
-                (status) => status.key === item.to,
-              );
-              return {
-                key: item.to,
-                label: target?.labels.de ?? item.to,
-                tone: statusTone(target?.category),
-              };
-            })}
-          onChange={(status) => void onChangeStatus(entry, status)}
-        />
+        <span
+          ref={statusRef}
+          onClickCapture={(event) => {
+            if (
+              event.target instanceof Element &&
+              event.target.closest('summary')
+            )
+              void loadStatusCapabilities();
+          }}
+        >
+          <EntryStatusMenu
+            label={
+              workflow?.statuses.find(
+                (item) => item.key === entry.acceptanceStatus,
+              )?.labels.de ?? entry.acceptanceStatus
+            }
+            tone={statusTone(
+              workflow?.statuses.find(
+                (item) => item.key === entry.acceptanceStatus,
+              )?.category,
+            )}
+            options={(workflow?.transitions ?? [])
+              .filter(
+                (edge) =>
+                  edge.from === entry.acceptanceStatus &&
+                  capabilityEntry.availableActions?.includes(
+                    `acceptance:${edge.to}`,
+                  ),
+              )
+              .map((item) => {
+                const target = workflow?.statuses.find(
+                  (status) => status.key === item.to,
+                );
+                return {
+                  key: item.to,
+                  label: target?.labels.de ?? item.to,
+                  tone: statusTone(target?.category),
+                };
+              })}
+            onChange={(status) => void onChangeStatus(entry, status)}
+          />
+        </span>
       }
       completion={<CompletionDots states={completionStates(entry)} />}
       openActionId={entry.id}
       menu={
-        <Menu label={`Weitere Aktionen für ${name}`}>
-          {openDetail && (
-            <MenuItem onClick={() => void openDetail(entry.id)}>
-              Öffnen
-            </MenuItem>
-          )}
-          <MenuItem onClick={() => void openEntry(entry.id)}>
-            Vorschau öffnen
-          </MenuItem>
-        </Menu>
+        <EntryQuickMenu
+          entry={entry}
+          name={name}
+          onEntryLoaded={(value) => setCapabilities({ source: entry, value })}
+          workflow={workflow}
+          openDetail={openDetail}
+          onQuickAction={onQuickAction}
+          canMessage={canMessage}
+          openStatus={() => {
+            const status = statusRef.current?.querySelector('details');
+            if (status) {
+              status.open = true;
+              status.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+            }
+          }}
+        />
       }
     />
   );

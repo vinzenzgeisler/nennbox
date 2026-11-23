@@ -1,4 +1,7 @@
-import { assignedNumber } from '../entryStartNumber.js';
+import { EntryHistorySection } from './EntryHistorySection.js';
+import type { TimelineItem } from './entryDetailModel.js';
+import { EntryRecentNote } from './EntryRecentNote.js';
+import { numberWish, assignedNumber } from '../entryStartNumber.js';
 import { EntryDataHints } from '../EntryDataHints.js';
 import { useState } from 'react';
 import { AppButton, Banner, Textarea } from '@nennbox/ui';
@@ -7,12 +10,14 @@ import type { Outcome } from '../AdminEntriesModel.js';
 import { formatMoney } from './entryDetailModel.js';
 export function EntryProperties({
   entry,
+  recent = [],
   busy,
   saveNote,
   onNumber,
   onOpenRelated,
 }: {
   entry: Entry;
+  recent?: TimelineItem[];
   busy: boolean;
   saveNote: (text: string) => Promise<Outcome>;
   onNumber: () => void;
@@ -21,6 +26,10 @@ export function EntryProperties({
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const invoice = entry.adminDetails?.invoice;
+  const hasHints = Boolean(
+    numberWish(entry) ||
+    entry.statusProjection?.hints.some((hint) => hint.present),
+  );
   return (
     <>
       <section className="nb-entry-properties">
@@ -71,16 +80,22 @@ export function EntryProperties({
               </dd>
             </>
           )}
-          <dt>Hinweise</dt>
-          <dd>
-            <EntryDataHints
-              entry={entry}
-              onOpenRelated={onOpenRelated}
-              busy={busy}
-            />
-          </dd>
+          {hasHints && (
+            <>
+              <dt>Hinweise</dt>
+              <dd>
+                <EntryDataHints
+                  entry={entry}
+                  onOpenRelated={onOpenRelated}
+                  busy={busy}
+                />
+              </dd>
+            </>
+          )}
         </dl>
       </section>
+      <EntryHistorySection title="Zuletzt" items={recent.slice(0, 3)} />
+      <EntryRecentNote entry={entry} />
       {entry.availableActions?.includes('note:internal') && (
         <form
           className="nb-entry-note"

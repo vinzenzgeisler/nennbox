@@ -10,6 +10,14 @@ import {
 } from '@nennbox/ui';
 import type { EntryQuery } from './AdminEntriesModel.js';
 
+const paymentLabels: Record<string, string> = {
+  open: 'Offen',
+  partially_paid: 'Teilweise bezahlt',
+  paid: 'Bezahlt',
+  not_required: 'Nicht erforderlich',
+  not_relevant: 'Nicht relevant',
+};
+
 export function AdminEntryFilters({
   draft,
   setDraft,
@@ -47,7 +55,7 @@ export function AdminEntryFilters({
       ? [
           {
             id: 'paymentStatus',
-            label: `Zahlung: ${draft.paymentStatus}`,
+            label: `Zahlung: ${paymentLabels[draft.paymentStatus] ?? draft.paymentStatus}`,
             removeLabel: 'Zahlungsfilter entfernen',
           },
         ]
@@ -127,11 +135,11 @@ export function AdminEntryFilters({
           }
         >
           <option value="">Alle</option>
-          <option value="open">Offen</option>
-          <option value="partially_paid">Teilweise bezahlt</option>
-          <option value="paid">Bezahlt</option>
-          <option value="not_required">Nicht erforderlich</option>
-          <option value="not_relevant">Nicht relevant</option>
+          {Object.entries(paymentLabels).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
         </SelectField>
       </div>
       <div id={sortId} className="nb-entry-filter-options" hidden={!sortOpen}>

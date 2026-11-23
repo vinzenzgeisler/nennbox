@@ -7,12 +7,35 @@ export function EntryDataHints({
   entry,
   onOpenRelated,
   busy = false,
+  compact = false,
 }: {
   entry: Entry;
+  compact?: boolean;
   onOpenRelated?: ((id: string) => Promise<void>) | undefined;
   busy?: boolean;
 }) {
   const wish = numberWish(entry);
+  if (compact) {
+    const doubleStarter = entry.statusProjection?.hints.find(
+      (hint) => hint.present && hint.key === 'double_starter',
+    );
+    if (doubleStarter) {
+      const numbers = doubleStarter.relatedEntries
+        ?.map((related) => related.startNumber)
+        .filter(Boolean);
+      return (
+        <HintLabel>
+          Doppelstarter
+          {numbers?.length ? ` (auch Nr. ${numbers.join(', ')})` : ''}
+        </HintLabel>
+      );
+    }
+    return entry.statusProjection?.hints.some(
+      (hint) => hint.present && hint.key === 'passenger',
+    ) ? (
+      <HintLabel>mit Beifahrer</HintLabel>
+    ) : null;
+  }
   return (
     <>
       {wish && <HintLabel>Wunsch: {wish}</HintLabel>}

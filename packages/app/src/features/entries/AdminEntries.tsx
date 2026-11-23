@@ -1,14 +1,11 @@
+import { useEntryQuickRequest } from './useEntryQuickRequest.js';
+import { useEntryBulkSelection } from './EntrySelectionState.js';
 import { EntryDetailHost } from './detail/EntryDetailHost.js';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { EntryEventPicker } from './EntryEventPicker.js';
 import { EntryStatusToast } from './EntryStatusToast.js';
 import { useEntryListStatusChanges } from './useEntryListStatusChanges.js';
-import {
-  applyEntrySort,
-  initialQuery,
-  request,
-  type EntryQuery,
-} from './AdminEntriesModel.js';
+import { applyEntrySort, initialQuery } from './AdminEntriesModel.js';
 import { AdminEntriesState } from './AdminEntriesState.js';
 import { AdminEntryList } from './AdminEntryList.js';
 import { useAdminEntryActions } from './useAdminEntryActions.js';
@@ -19,17 +16,15 @@ import { useOpenEntryDetail } from './useOpenEntryDetail.js';
 import { useEntryChangesRefresh } from './useEntryChangesRefresh.js';
 import { useSharedSelection } from './useSharedSelection.js';
 import type { AdminEntriesProps } from './AdminEntriesProps.js';
-import { useEntrySearch } from './useEntrySearch.js';
+import { useAutoPreviewEntry } from './useAutoPreviewEntry.js';
+import { useEntryCounts } from './useEntryCounts.js';
+import { useEntryDetailNavigation } from './useEntryDetailNavigation.js';
+import { useEntryFilters } from './useEntryFilters.js';
 
 /** Event changes reset view state and cancel requests scoped to the previous event. */
 
 export function AdminEntries(props: AdminEntriesProps = {}) {
-  return (
-    <AdminEntriesView
-      key={`${props.eventId ?? 'standalone'}:${props.filterRevision ?? 0}`}
-      {...props}
-    />
-  );
+  return <AdminEntriesView key={props.eventId ?? 'standalone'} {...props} />;
 }
 
 function AdminEntriesView({
@@ -37,9 +32,11 @@ function AdminEntriesView({
   preview,
   mobilePreviewOpen,
   autoPreview = false,
+  autoSelectFirst = autoPreview,
   onOpenDetail,
   onMessage,
   onCloseDetail,
+  onClosePreview,
   onSelectionChange,
   onWorkflowChange,
   entriesRevision = 0,
@@ -49,10 +46,12 @@ function AdminEntriesView({
   onTotalChange,
   eventId: sharedEventId,
   initialFilters = {},
+  filterRevision = 0,
+  onFiltersConsumed,
   onEventChange: onSharedEventChange,
 }: AdminEntriesProps) {
   const [internalDetailOpen, setInternalDetailOpen] = useState(false);
-  const autoPreviewedEvent = useRef('');
+  const [detailTab, setDetailTab] = useState('overview');
   const isDetailOpen = detailOpen ?? internalDetailOpen;
   const openDetail = useCallback(() => {
     if (onOpenDetail) onOpenDetail();
@@ -62,56 +61,41 @@ function AdminEntriesView({
     if (onCloseDetail) onCloseDetail();
     else setInternalDetailOpen(false);
   }, [onCloseDetail]);
-  const [localEventId, setLocalEventId] = useState('');
+  const [localEventId, setLocalEventId] = useState(
+    () => new URLSearchParams(window.location.search).get('eventId') ?? '',
+  );
   const eventId = sharedEventId ?? localEventId;
-  const [page, setPage] = useState(1);
   const pageSize = 12;
   const [refreshRevision, setRefreshRevision] = useState(0);
-  const [draft, setDraft] = useState<EntryQuery>({
-    ...initialQuery,
-    ...initialFilters,
-  });
-  const [applied, setApplied] = useState<EntryQuery>({
-    ...initialQuery,
-    ...initialFilters,
-  });
   const [selected, setSelected] = useSharedSelection(
     sharedSelectedEntry,
     onSelectionChange,
   );
   const [actionError, setActionError] = useState('');
-  const [counts, setCounts] = useState<Record<string, number>>({});
-  useEffect(() => {
-    if (!eventId) return;
-    const controller = new AbortController();
-    request(`/admin/events/${encodeURIComponent(eventId)}/entry-counts`, {
-      signal: controller.signal,
-    })
-      .then((response) => (response.ok ? response.json() : Promise.reject()))
-      .then((data: { total: number; statuses: Record<string, number> }) => {
-        if (!controller.signal.aborted) {
-          setCounts(data.statuses);
-          onTotalChange?.(data.total);
-        }
-      })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [eventId, refreshRevision, onTotalChange]);
-  const [selection, setSelection] = useState<{
-    eventId: string;
-    ids: Set<string>;
-  }>({ eventId, ids: new Set() });
+  const counts = useEntryCounts(eventId, refreshRevision, onTotalChange);
+  const [selection, setSelection] = useEntryBulkSelection(eventId);
   const selectedIds =
     selection.eventId === eventId ? selection.ids : new Set<string>();
   const clearSelection = useCallback(
     () => setSelection({ eventId, ids: new Set() }),
-    [eventId],
+    [eventId, setSelection],
   );
+  const { draft, setDraft, applied, setApplied, page, setPage } =
+    useEntryFilters(
+      eventId,
+      initialFilters,
+      filterRevision,
+      clearSelection,
+      onFiltersConsumed,
+    );
   const {
     apiState,
     events,
     workflow,
-    items,
+    workflowError,
+    retryWorkflow,
+    retryEntries,
+    items: listItems,
     total,
     totalPages,
     classes,
@@ -124,6 +108,11 @@ function AdminEntriesView({
     refreshRevision,
     setActionError,
   });
+  // Saved detail responses update the hidden list immediately, before its refetch.
+  const items = useMemo(
+    () => listItems.map((item) => (item.id === selected?.id ? selected : item)),
+    [listItems, selected],
+  );
   useEffect(() => onWorkflowChange?.(workflow), [onWorkflowChange, workflow]);
   const {
     setReason,
@@ -155,24 +144,21 @@ function AdminEntriesView({
       setRefreshRevision,
       setActionError,
     });
+  const detailNavigation = useEntryDetailNavigation({
+    eventId,
+    applied,
+    items,
+    selected,
+    page,
+    pageSize,
+    total,
+    openEntry,
+    setPage,
+    setActionError,
+  });
   const openEntryDetail = useOpenEntryDetail(selected, openEntry, openDetail);
-  useEffect(() => {
-    if (
-      !autoPreview ||
-      !eventId ||
-      !items.length ||
-      autoPreviewedEvent.current === eventId ||
-      !workflow
-    )
-      return;
-    autoPreviewedEvent.current = eventId;
-    const firstPending = items.find(
-      (item) =>
-        workflow.statuses.find((status) => status.key === item.acceptanceStatus)
-          ?.category === 'waitlisted',
-    );
-    void openEntry((firstPending ?? items[0]!).id);
-  }, [autoPreview, eventId, items, workflow, openEntry]);
+  const quick = useEntryQuickRequest(openEntryDetail);
+  useAutoPreviewEntry({ autoSelectFirst, eventId, items, workflow, openEntry });
   usePreviewAdvance({
     eventId,
     items,
@@ -191,9 +177,9 @@ function AdminEntriesView({
     openEntry,
     openDetail,
     closeDetail,
+    closePreview: onClosePreview,
     setSelected,
   });
-  useEntrySearch(draft, setApplied, setPage, clearSelection);
 
   function changeEvent(nextEventId: string) {
     resetData();
@@ -244,10 +230,15 @@ function AdminEntriesView({
       )}
       {!(isDetailOpen && selected) && (
         <AdminEntryList
+          onQuickAction={quick.onQuickAction}
+          canMessage={Boolean(onMessage)}
           preview={preview}
           mobilePreviewOpen={mobilePreviewOpen}
           eventId={eventId}
           apiState={apiState}
+          workflowError={workflowError}
+          onRetryWorkflow={retryWorkflow}
+          onRetry={retryEntries}
           draft={draft}
           setDraft={setDraft}
           changeSort={changeSort}
@@ -273,6 +264,12 @@ function AdminEntriesView({
       )}
       {isDetailOpen && selected && (
         <EntryDetailHost
+          activeTab={detailTab}
+          onTab={setDetailTab}
+          navigate={detailNavigation.navigate}
+          navigationBusy={detailNavigation.busy}
+          quickActionRequest={quick.request}
+          onQuickActionHandled={quick.clear}
           key={selected.id}
           selected={selected}
           classes={classes}
@@ -289,7 +286,6 @@ function AdminEntriesView({
           page={page}
           pageSize={pageSize}
           total={total}
-          openEntry={openEntry}
           setSelected={setSelected}
           setRefreshRevision={setRefreshRevision}
         />

@@ -7,7 +7,7 @@ export function EntryDetailNavigation({
   pageSize,
   total,
   busy,
-  openEntry,
+  navigate,
 }: {
   items: Entry[];
   selected: Entry;
@@ -15,9 +15,10 @@ export function EntryDetailNavigation({
   pageSize: number;
   total: number;
   busy: boolean;
-  openEntry: (id: string) => Promise<void>;
+  navigate: (direction: -1 | 1) => Promise<void>;
 }) {
   const index = items.findIndex((item) => item.id === selected.id);
+  const position = (page - 1) * pageSize + index;
   return (
     <span>
       <span>
@@ -28,9 +29,9 @@ export function EntryDetailNavigation({
       <AppButton
         tone="ghost"
         aria-label="Vorherige Nennung"
-        disabled={busy || index <= 0}
+        disabled={busy || index < 0 || position <= 0}
         onClick={() => {
-          if (index > 0) void openEntry(items[index - 1]!.id);
+          void navigate(-1);
         }}
       >
         ↑
@@ -38,10 +39,9 @@ export function EntryDetailNavigation({
       <AppButton
         tone="ghost"
         aria-label="Nächste Nennung"
-        disabled={busy || index < 0 || index >= items.length - 1}
+        disabled={busy || index < 0 || position >= total - 1}
         onClick={() => {
-          if (index >= 0 && index < items.length - 1)
-            void openEntry(items[index + 1]!.id);
+          void navigate(1);
         }}
       >
         ↓

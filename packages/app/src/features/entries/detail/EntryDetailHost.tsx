@@ -7,7 +7,8 @@ export function EntryDetailHost({
   page,
   pageSize,
   total,
-  openEntry,
+  navigate,
+  navigationBusy,
   setSelected,
   setRefreshRevision,
   ...props
@@ -16,7 +17,8 @@ export function EntryDetailHost({
   page: number;
   pageSize: number;
   total: number;
-  openEntry: (id: string) => Promise<void>;
+  navigate: (direction: -1 | 1) => Promise<void>;
+  navigationBusy: boolean;
   setSelected: Dispatch<SetStateAction<Entry | null>>;
   setRefreshRevision: Dispatch<SetStateAction<number>>;
 }) {
@@ -30,8 +32,8 @@ export function EntryDetailHost({
           page={page}
           pageSize={pageSize}
           total={total}
-          busy={props.busy}
-          openEntry={openEntry}
+          busy={props.busy || navigationBusy}
+          navigate={navigate}
         />
       }
       onUpdated={(entry, refresh = true) => {

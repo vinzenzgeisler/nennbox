@@ -9,9 +9,11 @@ export type AdminEntriesProps = {
   preview?: ReactNode;
   mobilePreviewOpen?: boolean | undefined;
   autoPreview?: boolean;
+  autoSelectFirst?: boolean;
   onOpenDetail?: () => void;
   onMessage?: (seed: MessageSeed) => void;
   onCloseDetail?: () => void;
+  onClosePreview?: () => void;
   onSelectionChange?: (entry: Entry | null) => void;
   onWorkflowChange?: (workflow: WorkflowView | null) => void;
   entriesRevision?: number;
@@ -22,5 +24,6 @@ export type AdminEntriesProps = {
   eventId?: string;
   initialFilters?: EntryFilters;
   filterRevision?: number;
+  onFiltersConsumed?: (() => void) | undefined;
   onEventChange?: (id: string) => void;
 };
