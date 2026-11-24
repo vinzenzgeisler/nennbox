@@ -8,6 +8,7 @@ import {
   primaryKey,
   foreignKey,
   check,
+  index,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { organizations, events } from './organization.js';
@@ -40,6 +41,22 @@ export const workbasketConfigurations = pgTable(
       'workbasket_configuration_object_check',
       sql`jsonb_typeof(${t.config})='object'`,
     ),
+  ],
+);
+
+export const workbasketInvalidations = pgTable(
+  'workbasket_invalidation',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id').notNull(),
+    eventId: uuid('event_id').notNull(),
+  },
+  (t) => [
+    index('workbasket_invalidation_event').on(t.organizationId, t.eventId),
+    foreignKey({
+      columns: [t.organizationId, t.eventId],
+      foreignColumns: [events.organizationId, events.id],
+    }).onDelete('cascade'),
   ],
 );
 

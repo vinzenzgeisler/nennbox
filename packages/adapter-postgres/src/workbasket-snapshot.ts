@@ -32,7 +32,9 @@ export async function loadWorkbasketSnapshot(
     await db.execute(sql`
     SELECT e.id,e.class_id AS "classId",to_char(e.created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "createdAt",
       (e.created_at AT TIME ZONE o.timezone)::date::text AS "createdOn",
-      e.acceptance_status AS status,p.first_name AS "firstName",p.last_name AS "lastName",
+      (SELECT s->>'category' FROM jsonb_array_elements(w.workflow->'statuses') s
+       WHERE coalesce(s->>'id',s->>'key')=e.acceptance_status) AS status,
+      e.acceptance_status AS "statusKey",p.first_name AS "firstName",p.last_name AS "lastName",
       p.date_of_birth::text AS "dateOfBirth",coalesce(g.contact_email,p.email) AS email,
       e.vehicle_id AS "vehicleId",v.vin,v.registration,v.displacement_cc AS "displacementCc",
       v.year,g.guardian_name AS "guardianName",g.license_valid_until::text AS "licenseValidUntil",
@@ -56,6 +58,7 @@ export async function loadWorkbasketSnapshot(
       coalesce(i.status='paid',false) AS paid
     FROM entry e
     JOIN organization o ON o.id=e.organization_id
+    JOIN entry_workflow_revision w ON w.organization_id=e.organization_id AND w.id=e.workflow_revision_id
     JOIN person p ON p.organization_id=e.organization_id AND p.id=e.driver_person_id
     JOIN vehicle v ON v.organization_id=e.organization_id AND v.id=e.vehicle_id
     JOIN registration_group g ON g.organization_id=e.organization_id AND g.event_id=e.event_id AND g.id=e.registration_group_id
@@ -64,5 +67,8 @@ export async function loadWorkbasketSnapshot(
     ORDER BY e.id
   `)
   ).rows;
+  for (const entry of entries)
+    if (!entry.status)
+      throw new Error(`Unknown entry status: ${entry.statusKey}`);
   return { ...event, classes, entries } as unknown as WorkbasketSnapshot;
 }

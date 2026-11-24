@@ -29,6 +29,8 @@ export interface WorkbasketEntry {
   readonly createdOn?: string;
   /** Workflow category, not a custom display label. Inactive categories are ignored. */
   readonly status: string;
+  /** Persisted workflow reference, kept separate from the resolved category. */
+  readonly statusKey?: string;
   readonly paid: boolean;
   readonly documentsComplete: boolean;
   readonly firstName: string;

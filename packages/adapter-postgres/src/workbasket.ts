@@ -96,9 +96,16 @@ export function createWorkbasketRepository(db: Database): WorkbasketRepository {
           WHERE organization_id=${ctx.organizationId} AND event_id=${eventId} FOR UPDATE
         `)
         ).rows[0]!;
+        // Drain before taking the source snapshot. Concurrent writers append independent
+        // rows, including commits during projection; rollback restores drained signals.
+        const invalidated = await tx.execute(sql`
+          DELETE FROM workbasket_invalidation
+          WHERE organization_id=${ctx.organizationId} AND event_id=${eventId}
+          RETURNING id
+        `);
         let tasks = cache.tasks as WorkbasketTask[];
         let generation = Number(cache.generation);
-        if (cache.dirty || !cache.fresh) {
+        if (cache.dirty || !cache.fresh || invalidated.rowCount) {
           const snapshot = await loadWorkbasketSnapshot(tx, ctx, eventId);
           const config = (await configuration(tx, ctx, eventId))
             .effective as WorkbasketConfig;
