@@ -72,7 +72,7 @@
   .nb-action-group {
   padding: 0;
 }
-.nb-entry-sidebar-actions > h2 {
+.nb-entry-page-sidebar .nb-entry-sidebar-actions > h2 {
   margin-bottom: 0;
 }
 .nb-entry-sidebar-actions .nb-rail-label {
@@ -82,6 +82,8 @@
   width: 100%;
 }
 .nb-entry-sidebar-actions .nb-icon {
+  width: var(--nb-space-4);
+  height: var(--nb-space-4);
   flex: none;
 }
 .nb-entry-danger-actions {

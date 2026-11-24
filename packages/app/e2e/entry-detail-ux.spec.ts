@@ -24,6 +24,9 @@ for (const width of [1440, 1024, 390]) {
     await page.locator('#username').fill(process.env.COMMUNITY_ADMIN_EMAIL!);
     await page.locator('#password').fill(process.env.COMMUNITY_ADMIN_PASSWORD!);
     await page.locator('#kc-login').click();
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Nennungen', exact: true }),
+    ).toBeVisible({ timeout: 15_000 });
     const row = page.locator('.nb-entry-list-row').first();
     await expect(row).toBeVisible();
     await row.locator('[data-entry-action]').dblclick();
@@ -120,6 +123,24 @@ for (const width of [1440, 1024, 390]) {
         `${evidence}/metrics-${width}.json`,
         JSON.stringify(metrics),
       );
+    }
+    if (width === 390) {
+      await destructive
+        .getByRole('button', { name: 'Nennung löschen …' })
+        .click();
+      const dialog = page.getByRole('dialog', {
+        name: 'Nennung löschen',
+        exact: true,
+      });
+      await dialog
+        .getByRole('textbox')
+        .fill('Isolierter UX-Smoke: Bestätigung und Rückmeldung');
+      await dialog
+        .getByRole('button', { name: 'Nennung löschen', exact: true })
+        .click();
+      await expect(detail).not.toBeVisible();
+      await expect(page.getByRole('status')).toContainText('Nennung gelöscht');
+      expect(errors).toEqual([]);
     }
     await context.close();
   });

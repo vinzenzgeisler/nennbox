@@ -137,7 +137,7 @@ export function EntryActionRail({
         <ActionGroup title="Vor Ort">
           {onSite.map((action) => (
             <RailAction
-              icon={<Icon name="settings" />}
+              icon={<Icon name="approval" />}
               key={action.dimension}
               disabled={busy}
               onClick={() => onDimension(action)}
@@ -196,7 +196,7 @@ export function EntryActionRail({
           {onRequestDocument &&
             requestableUploads(entry).map((line) => (
               <RailAction
-                icon={<Icon name="settings" />}
+                icon={<Icon name="document" />}
                 key={line.key}
                 disabled={busy}
                 onClick={() => onRequestDocument(line)}
@@ -217,7 +217,7 @@ export function EntryActionRail({
         <ActionGroup title="Status">
           {regular.map((step) => (
             <RailAction
-              icon={<Icon name="settings" />}
+              icon={<Icon name="switch" />}
               key={step.to}
               disabled={busy}
               onClick={() => onStatus(step)}
