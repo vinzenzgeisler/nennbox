@@ -1,5 +1,7 @@
 {
-  "packages/adapter-local-storage/src/index.ts": ["createLocalObjectStorage"],
+  "packages/adapter-local-storage/src/index.ts": [
+    "createLocalObjectStorage"
+  ],
   "packages/adapter-oidc/src/index.ts": [
     "OIDCConfig",
     "createOIDCIdentityProvider"
@@ -577,6 +579,7 @@
     "RefundIntentResult",
     "RefundPolicy",
     "RefundPolicyTier",
+    "RefundRejectedError",
     "RefundReservation",
     "RefundReservationRequest",
     "RefundTrigger",

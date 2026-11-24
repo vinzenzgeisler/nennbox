@@ -49,6 +49,12 @@ export async function openRefundIntent(
     .for('update')
     .limit(1);
   if (!invoice) return;
+  const [running] = rows<{ id: string }>(
+    await tx.execute(
+      sql`select id from payment_refund_reservation where organization_id = ${organizationId} and invoice_id = ${invoice.id} and status = 'reserved' and source = 'automatic' limit 1`,
+    ),
+  );
+  if (running) return;
   const active = await countActiveEntries(tx, organizationId, entry.groupId);
   const [state] = rows<{ refundable: number }>(
     await tx.execute(sql`
@@ -156,7 +162,8 @@ export function createRefundIntentRepository(
           select invoice_id from payment_refund_intent
           where organization_id = ${ctx.organizationId}
             and ((status = 'pending' and created_at < now() - make_interval(secs => ${retryAfterSeconds}))
-              or (status = 'processing' and claimed_at < now() - make_interval(secs => ${retryAfterSeconds})))
+              or (status = 'processing' and claimed_at < now() - make_interval(secs => ${retryAfterSeconds}))
+              or (status = 'failed' and updated_at < now() - make_interval(secs => ${retryAfterSeconds}) and exists (select 1 from payment_refund_reservation r where r.organization_id = payment_refund_intent.organization_id and r.intent_id = payment_refund_intent.id and r.status = 'reserved')))
           order by created_at limit 50`),
       ).map((row) => row.invoice_id),
     claim: async (ctx, invoiceId): Promise<ClaimedRefundIntent | null> => {
@@ -173,7 +180,8 @@ export function createRefundIntentRepository(
             select id from payment_refund_intent
             where organization_id = ${ctx.organizationId} and invoice_id = ${invoiceId}
               and (status = 'pending'
-                or (status = 'processing' and claimed_at < now() - make_interval(secs => ${retryAfterSeconds})))
+                or (status = 'processing' and claimed_at < now() - make_interval(secs => ${retryAfterSeconds}))
+              or (status = 'failed' and updated_at < now() - make_interval(secs => ${retryAfterSeconds}) and exists (select 1 from payment_refund_reservation r where r.organization_id = payment_refund_intent.organization_id and r.intent_id = payment_refund_intent.id and r.status = 'reserved')))
             order by created_at limit 1 for update skip locked)
           returning id, trigger, cancelled_at`),
       );

@@ -60,6 +60,7 @@ export async function reserveRefund(
       )
       .limit(1);
     if (existing) {
+      if (existing.status === 'rejected') return { status: 'unavailable' };
       if (
         existing.invoiceId !== request.invoiceId ||
         existing.providerPaymentId !== request.providerPaymentId ||
@@ -171,6 +172,14 @@ export async function reserveRefund(
         intentId:
           request.source.kind === 'automatic' ? request.source.intentId : null,
         amountCents,
+        actor:
+          request.source.kind === 'manual'
+            ? request.source.actor
+            : 'system:refund-policy',
+        reason:
+          request.source.kind === 'manual'
+            ? request.source.reason
+            : 'Automatic cancellation refund',
       })
       .returning();
     return reserved(created!, invoice.currency);
@@ -206,4 +215,44 @@ export async function completeReservation(
         eq(paymentRefundReservations.status, 'reserved'),
       ),
     );
+}
+
+/** A definitive provider failure can release funds; transport errors cannot. */
+export async function rejectReservation(
+  db: Database,
+  ctx: RequestContext,
+  key: string,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [operation] = await tx
+      .select()
+      .from(paymentRefundReservations)
+      .where(
+        and(
+          eq(paymentRefundReservations.organizationId, ctx.organizationId),
+          eq(paymentRefundReservations.idempotencyKey, key),
+        ),
+      );
+    if (!operation) return;
+    await tx
+      .select({ id: invoices.id })
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.organizationId, ctx.organizationId),
+          eq(invoices.id, operation.invoiceId),
+        ),
+      )
+      .for('update');
+    await tx
+      .update(paymentRefundReservations)
+      .set({ status: 'rejected', updatedAt: new Date() })
+      .where(
+        and(
+          eq(paymentRefundReservations.organizationId, ctx.organizationId),
+          eq(paymentRefundReservations.id, operation.id),
+          eq(paymentRefundReservations.status, 'reserved'),
+        ),
+      );
+  });
 }

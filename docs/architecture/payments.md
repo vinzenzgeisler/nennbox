@@ -65,7 +65,7 @@ Configured per organization and overridable per event in the registration settin
 - After the commit the API ends all open checkouts of the invoice (nobody can pay afterwards), then takes the intent (`UPDATE … RETURNING`, status `processing`) and calls the provider with keys derived from the intent (`auto-refund:<intent>:<payment>`). The refund is recorded in the ledger as actor `system:refund-policy`.
 - **The share is taken from what was paid**, not from what is left: `min(paid × percent − already refunded, still refundable)`, rounded down to whole cents. 100,00 paid, 50,00 refunded by hand and a rule of 50 % therefore refunds nothing more.
 - A failure never undoes the cancellation. The intent becomes `failed` with a short reason (`provider_unavailable`, `ledger_rejected`, `intent_data_missing`) and the admin entry detail shows it with a pointer to the manual refund.
-- **Retry:** an intent that stays `pending` or `processing` for longer than the retry delay (default 10 minutes, `PAYMENT_REFUND_RETRY_AFTER_MS` in the worker) is taken up again by the `payment_refund_retry` worker job (every five minutes, per organization, Community worker only for its own organization). The provider keys stay the same and the share is computed from what was already refunded, so a half-finished run cannot refund twice. `failed` intents are not retried automatically.
+- **Retry:** an intent that stays `pending` or `processing` for longer than the retry delay (default 10 minutes, `PAYMENT_REFUND_RETRY_AFTER_MS` in the worker) is taken up again by the `payment_refund_retry` worker job (every five minutes, per organization, Community worker only for its own organization). The provider keys stay the same and the share is computed from what was already refunded, so a half-finished run cannot refund twice. `failed` intents with an unresolved reservation are retried with the same stored operation; other failed intents require office action.
 - Recording a refund checks for an already recorded provider refund id only after it holds the invoice lock, so a parallel duplicate answers `duplicate` instead of failing on the unique key and turning a successful refund into `failed`.
 
 ## Secrets
@@ -114,3 +114,23 @@ rows are durable closure work: the refund retry worker scans them per tenant,
 checks that the group is still fully cancelled, and expires the links. A provider
 outage leaves these rows pending for the next run. The API resolves the invoice
 independently of refundable receipts and closes these links immediately too.
+
+
+Failed automatic intents with unresolved reservations remain in the delayed retry
+queue. Manual reservations persist their original actor and reason and are also
+resumed by the worker, even after the dialog closes. A lost response or booking
+failure therefore never requires a new key, nor silently abandons reserved funds.
+Definitive provider rejection remains visible; uncertain reservations are never
+released just because a request failed.
+
+Stripe refund metadata contains a hash of the persisted operation key. Before
+creating a refund, the adapter scans all refund pages for that payment and reuses
+the matching operation. This survives Stripe's short-lived idempotency cache, so
+a delayed worker cannot send the rule's amount twice after cache expiry.
+
+Only an authoritative provider refund state `failed`/`canceled` raises
+`RefundRejectedError`. That operation becomes `rejected` under the invoice lock,
+releasing its reservation without creating a fictitious negative ledger entry.
+Transport failures and unknown responses never release funds. Definitive rejection
+therefore permits a new office operation or reactivation; ambiguous operations
+continue to block reactivation until recovery settles their original key.

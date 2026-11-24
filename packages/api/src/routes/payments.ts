@@ -2,6 +2,7 @@ import type { ApiRoutesContext } from './context.js';
 import { z } from 'zod';
 import { createInvoiceCheckout } from './invoice-checkout.js';
 import {
+  RefundRejectedError,
   recordInvoicePayment,
   correctInvoicePayment,
   updatePaymentRecipient,
@@ -188,7 +189,12 @@ export function registerPaymentProviderRoutes(context: ApiRoutesContext): void {
         invoiceId,
         providerPaymentId: parsed.data.providerPaymentId,
         idempotencyKey: parsed.data.idempotencyKey,
-        source: { kind: 'manual', amountCents: parsed.data.amountCents },
+        source: {
+          kind: 'manual',
+          amountCents: parsed.data.amountCents,
+          actor,
+          reason: parsed.data.reason,
+        },
       });
     } catch (error) {
       deps.logger.warn('Stripe refund could not be reserved', {
@@ -214,6 +220,11 @@ export function registerPaymentProviderRoutes(context: ApiRoutesContext): void {
         reason: parsed.data.reason,
       });
     } catch (error) {
+      if (error instanceof RefundRejectedError)
+        await deps.paymentRefunds.rejectReservation?.(
+          guard.context,
+          reservation.idempotencyKey,
+        );
       deps.logger.warn('Stripe provider refund failed', {
         errorName: error instanceof Error ? error.name : 'unknown',
       });

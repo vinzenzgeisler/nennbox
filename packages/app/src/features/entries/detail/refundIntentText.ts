@@ -12,6 +12,8 @@ const failureText: Record<string, string> = {
     'Zahlung nach Absage eingegangen; manuelle Erstattung erforderlich',
   intent_data_missing:
     'Rechnung oder Veranstaltung der Erstattung wurde nicht gefunden',
+  provider_rejected:
+    'Stripe hat die Erstattung endgültig abgelehnt. Der reservierte Betrag ist wieder freigegeben',
   provider_unavailable: 'Stripe war nicht erreichbar oder hat abgelehnt',
   reactivated_during_refund:
     'Die Nennung wurde wieder aufgenommen, während die Erstattung lief. Bitte prüfe im Stripe-Dashboard, ob sie ausgeführt wurde',

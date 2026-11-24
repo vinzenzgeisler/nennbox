@@ -3,6 +3,9 @@ import { runMigrations } from 'graphile-worker';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   createCheckoutRepository,
+  createPaymentRefundRepository,
+  createRefundIntentRepository,
+  paymentRefundReservations,
   createDatabase,
   entries,
   eventClasses,
@@ -17,7 +20,12 @@ import {
   vehicles,
   type Database,
 } from '@nennbox/adapter-postgres';
-import type { PaymentProvider } from '@nennbox/core';
+import {
+  settleCancellationRefund,
+  RefundRejectedError,
+  type PaymentProvider,
+  type RequestContext,
+} from '@nennbox/core';
 import { createRefundRetryTask } from './refund-retry.js';
 
 const url = process.env.NENNBOX_TEST_DATABASE_URL;
@@ -305,4 +313,176 @@ describe.skipIf(!url)('automatic refund retry job (PostgreSQL)', () => {
     expect(calls).toBe(2);
     expect(await repo.pendingSessions(ctx, s.invoiceId)).toHaveLength(0);
   });
+  it.each(['automatic', 'manual'] as const)(
+    'recovers an unresolved %s operation with the persisted key and amount, without a second transfer',
+    async (source) => {
+      const s = await seed('recover-' + source, {
+        status: 'pending',
+        ageMinutes: 30,
+      });
+      const ctx = { organizationId: s.orgId } as RequestContext;
+      const refunds = createPaymentRefundRepository(db);
+      const intents = createRefundIntentRepository(db);
+      const transfers = new Map<string, { id: string; amountCents: number }>();
+      let calls = 0;
+      const provider = {
+        refund: async (request: {
+          idempotencyKey: string;
+          amountCents: number;
+        }) => {
+          calls++;
+          const existing = transfers.get(request.idempotencyKey);
+          if (existing) {
+            expect(request.amountCents).toBe(existing.amountCents);
+            return existing;
+          }
+          const refund = {
+            id: 're-recover-' + s.invoiceId,
+            amountCents: request.amountCents,
+          };
+          transfers.set(request.idempotencyKey, refund);
+          return refund;
+        },
+      } as unknown as PaymentProvider;
+      if (source === 'automatic') {
+        const result = await settleCancellationRefund(ctx, s.invoiceId, {
+          intents,
+          refunds: { ...refunds, recordRefund: async () => null },
+          provider,
+        });
+        expect(result).toMatchObject({
+          status: 'failed',
+          failure: 'ledger_rejected',
+        });
+        await db
+          .update(paymentRefundIntents)
+          .set({ updatedAt: new Date(0) })
+          .where(eq(paymentRefundIntents.id, s.intentId));
+      } else {
+        const [payment] = await db
+          .select()
+          .from(invoicePayments)
+          .where(eq(invoicePayments.invoiceId, s.invoiceId));
+        const operation = await refunds.reserve(ctx, {
+          invoiceId: s.invoiceId,
+          providerPaymentId: payment!.providerPaymentId!,
+          idempotencyKey: crypto.randomUUID(),
+          source: {
+            kind: 'manual',
+            amountCents: 2100,
+            actor: 'office:original',
+            reason: 'Original reason',
+          },
+        });
+        if (operation.status !== 'reserved')
+          throw new Error('Reservation failed');
+        await provider.refund({
+          organizationId: ctx.organizationId,
+          invoiceId: s.invoiceId,
+          paymentId: operation.providerPaymentId,
+          idempotencyKey: operation.idempotencyKey,
+          amountCents: operation.amountCents,
+          reason: 'Original reason',
+        });
+        // Browser disappears after transfer, before booking; persisted operation survives.
+        await db
+          .delete(paymentRefundIntents)
+          .where(eq(paymentRefundIntents.id, s.intentId));
+        await db
+          .update(paymentRefundReservations)
+          .set({ updatedAt: new Date(0) })
+          .where(eq(paymentRefundReservations.invoiceId, s.invoiceId));
+      }
+      const task = createRefundRetryTask({
+        db,
+        provider,
+        deploymentMode: 'community',
+        communityOrganizationId: s.orgId,
+      });
+      await task();
+      expect(calls).toBe(2);
+      expect(transfers.size).toBe(1);
+      const ledger = await db
+        .select()
+        .from(invoicePayments)
+        .where(eq(invoicePayments.invoiceId, s.invoiceId));
+      const returned = ledger.filter((p) => p.amountCents < 0);
+      expect(returned).toHaveLength(1);
+      expect(returned[0]).toMatchObject({
+        amountCents: -2100,
+        actor: source === 'manual' ? 'office:original' : 'system:refund-policy',
+      });
+      if (source === 'manual')
+        expect(returned[0]?.reason).toBe('Original reason');
+      const [operation] = await db
+        .select()
+        .from(paymentRefundReservations)
+        .where(eq(paymentRefundReservations.invoiceId, s.invoiceId));
+      expect(operation?.status).toBe('completed');
+      await task();
+      expect(calls).toBe(2);
+    },
+  );
+  it.each(['automatic', 'manual'] as const)(
+    'releases only an authoritatively rejected %s operation',
+    async (source) => {
+      const s = await seed('rejected-' + source, {
+        status: 'pending',
+        ageMinutes: 30,
+      });
+      const ctx = { organizationId: s.orgId } as RequestContext;
+      const refunds = createPaymentRefundRepository(db);
+      const [payment] = await db
+        .select()
+        .from(invoicePayments)
+        .where(eq(invoicePayments.invoiceId, s.invoiceId));
+      const provider = {
+        refund: async () => {
+          throw new RefundRejectedError();
+        },
+      } as unknown as PaymentProvider;
+      if (source === 'automatic') {
+        const result = await settleCancellationRefund(ctx, s.invoiceId, {
+          refunds,
+          intents: createRefundIntentRepository(db),
+          provider,
+        });
+        expect(result).toMatchObject({
+          status: 'failed',
+          failure: 'provider_rejected',
+        });
+      } else {
+        const reserved = await refunds.reserve(ctx, {
+          invoiceId: s.invoiceId,
+          providerPaymentId: payment!.providerPaymentId!,
+          idempotencyKey: crypto.randomUUID(),
+          source: { kind: 'manual', amountCents: 2100 },
+        });
+        expect(reserved.status).toBe('reserved');
+        await db
+          .update(paymentRefundReservations)
+          .set({ updatedAt: new Date(0) })
+          .where(eq(paymentRefundReservations.invoiceId, s.invoiceId));
+        await createRefundRetryTask({
+          db,
+          provider,
+          deploymentMode: 'community',
+          communityOrganizationId: s.orgId,
+        })();
+      }
+      const [operation] = await db
+        .select()
+        .from(paymentRefundReservations)
+        .where(eq(paymentRefundReservations.invoiceId, s.invoiceId));
+      expect(operation?.status).toBe('rejected');
+      expect(
+        await refunds.reserve(ctx, {
+          invoiceId: s.invoiceId,
+          providerPaymentId: payment!.providerPaymentId!,
+          idempotencyKey: crypto.randomUUID(),
+          source: { kind: 'manual', amountCents: 2100 },
+        }),
+      ).toMatchObject({ status: 'reserved', amountCents: 2100 });
+    },
+  );
 });

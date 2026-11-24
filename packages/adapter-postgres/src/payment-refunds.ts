@@ -9,6 +9,7 @@ import {
 import { deriveInvoiceStatus } from '@nennbox/core';
 import {
   completeReservation,
+  rejectReservation,
   reserveRefund,
 } from './payment-refund-reservations.js';
 
@@ -48,6 +49,7 @@ export function createPaymentRefundRepository(
         currency: row.currency,
       };
     },
+    rejectReservation: (ctx, key) => rejectReservation(db, ctx, key),
     reserve: (ctx, request) => reserveRefund(db, ctx, request),
     recordRefund: async (ctx, input) =>
       db.transaction(async (tx) => {

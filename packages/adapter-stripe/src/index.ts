@@ -1,4 +1,6 @@
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { RefundRejectedError } from '@nennbox/core';
 import Stripe from 'stripe';
 import type {
   CheckoutSessionExpiryRequest,
@@ -162,6 +164,27 @@ export function createStripePaymentProvider(
       return null;
     },
     async refund(request: PaymentRefundRequest) {
+      // Stripe may forget an idempotency key after 24 hours. The operation marker
+      // on the refund itself survives that cache and protects delayed workers.
+      const operation = createHash('sha256')
+        .update(request.idempotencyKey)
+        .digest('hex');
+      for await (const existing of stripe.refunds.list({
+        payment_intent: request.paymentId,
+        limit: 100,
+      })) {
+        if (
+          existing.metadata?.operation !== operation ||
+          existing.metadata.organizationId !== request.organizationId ||
+          existing.metadata.invoiceId !== request.invoiceId
+        )
+          continue;
+        if (existing.amount !== request.amountCents)
+          throw new Error('Refund requires reconciliation');
+        if (existing.status === 'failed' || existing.status === 'canceled')
+          throw new RefundRejectedError();
+        return { id: existing.id };
+      }
       const refund = await stripe.refunds.create(
         {
           payment_intent: request.paymentId,
@@ -171,12 +194,15 @@ export function createStripePaymentProvider(
             organizationId: request.organizationId,
             invoiceId: request.invoiceId,
             reason: request.reason,
+            operation,
           },
         },
         {
           idempotencyKey: request.idempotencyKey,
         },
       );
+      if (refund.status === 'failed' || refund.status === 'canceled')
+        throw new RefundRejectedError();
       return { id: refund.id };
     },
   };

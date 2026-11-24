@@ -1,3 +1,4 @@
+import { RefundRejectedError } from './payment-provider.js';
 import type { RequestContext } from './context.js';
 import type {
   PaymentProvider,
@@ -179,6 +180,7 @@ export async function settleCancellationRefund(
     result = { status: 'skipped', percent, refundedCents, failure: null };
   } else {
     let stopped: RefundIntentResult | null = null;
+    let operationKey: string | null = null;
     try {
       for (const payment of intent.payments) {
         // The amount is decided inside the invoice lock, from the ledger and from
@@ -214,6 +216,7 @@ export async function settleCancellationRefund(
             ? 'Absage durch den Fahrer'
             : 'Ablehnung'
         }`;
+        operationKey = reservation.idempotencyKey;
         const refund = await deps.provider.refund({
           idempotencyKey: reservation.idempotencyKey,
           organizationId: ctx.organizationId,
@@ -243,12 +246,16 @@ export async function settleCancellationRefund(
         failure: null,
       };
     } catch (error) {
+      if (error instanceof RefundRejectedError && operationKey)
+        await deps.refunds.rejectReservation?.(ctx, operationKey);
       result = failed(
         percent,
         refundedCents,
         error instanceof Error && error.message === 'ledger_rejected'
           ? 'ledger_rejected'
-          : 'provider_unavailable',
+          : error instanceof RefundRejectedError
+            ? 'provider_rejected'
+            : 'provider_unavailable',
       );
     }
   }

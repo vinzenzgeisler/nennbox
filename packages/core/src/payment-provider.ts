@@ -212,7 +212,12 @@ export interface RefundReservationRequest {
   readonly idempotencyKey: string;
   /** Manual: exactly this amount. Automatic: derived from the rule inside the lock. */
   readonly source:
-    | { readonly kind: 'manual'; readonly amountCents: number }
+    | {
+        readonly kind: 'manual';
+        readonly amountCents: number;
+        readonly actor?: string;
+        readonly reason?: string;
+      }
     | {
         readonly kind: 'automatic';
         readonly intentId: string;
@@ -221,6 +226,11 @@ export interface RefundReservationRequest {
 }
 
 export interface PaymentRefundRepository {
+  /** Release only a provider-confirmed rejected operation, never an ambiguous failure. */
+  rejectReservation?(
+    ctx: import('./context.js').RequestContext,
+    key: string,
+  ): Promise<void>;
   getRefundable(
     ctx: import('./context.js').RequestContext,
     invoiceId: string,
@@ -247,4 +257,12 @@ export interface PaymentRefundRepository {
       reservationKey?: string;
     },
   ): Promise<'recorded' | 'duplicate' | null>;
+}
+
+/** Only throw after the provider authoritatively confirms that no refund succeeded. */
+export class RefundRejectedError extends Error {
+  constructor() {
+    super('Refund definitively rejected');
+    this.name = 'RefundRejectedError';
+  }
 }

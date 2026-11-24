@@ -1,3 +1,4 @@
+import { retryManualRefundReservations } from './refund-reservation-retry.js';
 import { and, eq } from 'drizzle-orm';
 import {
   checkoutSessions,
@@ -53,6 +54,12 @@ export function createRefundRetryTask(deps: {
         capabilities: new Set(),
         correlationId: `refund-retry:${tenantId}`,
       });
+      await retryManualRefundReservations(
+        deps.db,
+        ctx,
+        deps.provider,
+        deps.retryAfterMs ?? 10 * 60_000,
+      );
       // Pending session rows themselves are the durable checkout-closure queue,
       // including unpaid invoices that never had a refundable payment/intent.
       const pending = await deps.db

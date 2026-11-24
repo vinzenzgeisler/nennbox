@@ -147,6 +147,8 @@ export const paymentRefundReservations = pgTable(
     providerPaymentId: text('provider_payment_id').notNull(),
     idempotencyKey: text('idempotency_key').notNull(),
     source: text('source').notNull(),
+    actor: text('actor').notNull().default('system:refund-recovery'),
+    reason: text('reason').notNull().default('Refund recovery'),
     intentId: uuid('intent_id').references(() => paymentRefundIntents.id, {
       onDelete: 'cascade',
     }),
@@ -176,7 +178,7 @@ export const paymentRefundReservations = pgTable(
     ),
     check(
       'payment_refund_reservation_status_check',
-      sql`${t.status} in ('reserved','completed')`,
+      sql`${t.status} in ('reserved','completed','rejected')`,
     ),
   ],
 );
