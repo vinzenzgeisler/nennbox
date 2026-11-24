@@ -60,6 +60,7 @@
     "createStartNumberService",
     "createTimingRepository",
     "createVehicleRepository",
+    "createWorkbasketRepository",
     "driverPortalLinks",
     "driverPortalSessions",
     "emailDeliveries",
@@ -124,7 +125,9 @@
     "startNumberRanges",
     "userIdentities",
     "vehicles",
-    "withOrganizationTransaction"
+    "withOrganizationTransaction",
+    "workbasketCache",
+    "workbasketConfigurations"
   ],
   "packages/adapter-s3/src/index.ts": [
     "S3ObjectStorageConfig",
@@ -595,6 +598,16 @@
     "VehicleInput",
     "VehicleRepository",
     "VehicleType",
+    "WorkbasketClass",
+    "WorkbasketConfig",
+    "WorkbasketConfigOverrides",
+    "WorkbasketConfiguration",
+    "WorkbasketEntry",
+    "WorkbasketRepository",
+    "WorkbasketResult",
+    "WorkbasketRuleId",
+    "WorkbasketSnapshot",
+    "WorkbasketTask",
     "allocateNextStartNumbers",
     "allowAllModuleEntitlements",
     "assertEntryTransition",
@@ -635,6 +648,7 @@
     "entryStatusMeanings",
     "entryWorkflowCategories",
     "evaluateEventOpenReadiness",
+    "evaluateWorkbasket",
     "findAvailableOrgaCode",
     "fingerprintMessageRequest",
     "generateOrgaCode",
@@ -690,6 +704,7 @@
     "resolveMessageRecipientCandidates",
     "resolveOrganizationModuleCapabilities",
     "resolveRegistrationFieldStates",
+    "resolveWorkbasketConfig",
     "sendMessageCampaign",
     "setClassPriceRule",
     "setEntryDocumentTypes",
@@ -714,7 +729,9 @@
     "validateIban",
     "validateMessageTemplate",
     "validatePaymentRecipient",
-    "verifyObjectStorageContract"
+    "validateWorkbasketConfig",
+    "verifyObjectStorageContract",
+    "workbasketRuleIds"
   ],
   "packages/ui/src/index.ts": [
     "ActionGroup",

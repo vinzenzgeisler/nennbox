@@ -1,3 +1,4 @@
+import { registerWorkbasketRoutes } from './workbasket.js';
 import type { ApiRoutesContext } from './context.js';
 import { registerStartNumberRoutes } from './start-numbers.js';
 import { z } from 'zod';
@@ -26,6 +27,7 @@ export function registerEventsRoutes(context: ApiRoutesContext): void {
   const { app, deps, resolvePublicContext, requireMember } = context;
   registerEventSetupRoute(context);
   registerStartNumberRoutes(context);
+  registerWorkbasketRoutes(context);
   app.get('/admin/events/:eventId', async (c) => {
     const guard = await requireMember(c.req.raw);
     if (!guard.ok) return c.json({ error: guard.error }, guard.status);

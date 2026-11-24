@@ -143,6 +143,13 @@ export const eventClasses = pgTable(
     vehicleType: text('vehicle_type').notNull(),
     sortOrder: integer('sort_order').notNull().default(0),
     maxParticipants: integer('max_participants'),
+    allowsMultipleStarts: boolean('allows_multiple_starts')
+      .notNull()
+      .default(false),
+    minDisplacementCc: integer('min_displacement_cc'),
+    maxDisplacementCc: integer('max_displacement_cc'),
+    minYear: integer('min_year'),
+    maxYear: integer('max_year'),
     closed: boolean('closed').notNull().default(false),
     passengerMode: text('passenger_mode').notNull().default('optional'),
     createdAt: timestamp('created_at', { withTimezone: true })

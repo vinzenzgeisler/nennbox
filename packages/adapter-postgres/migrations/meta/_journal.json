@@ -295,6 +295,20 @@
       "when": 1794422200009,
       "tag": "0041_invoice_paid_at",
       "breakpoints": false
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794422200010,
+      "tag": "0042_workbasket",
+      "breakpoints": false
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794422200011,
+      "tag": "0043_workbasket_invalidation_log",
+      "breakpoints": true
     }
   ]
 }
