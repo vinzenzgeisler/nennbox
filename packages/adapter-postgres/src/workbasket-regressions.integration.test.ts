@@ -9,8 +9,9 @@ const url = process.env.NENNBOX_TEST_DATABASE_URL;
 describe.skipIf(!url)('workbasket review regressions', () => {
   it('resolves every standard and custom category from the pinned tenant workflow, not the current revision or display key', async () => {
     const { db, pool } = await createDatabase(url!);
+    const seedFixture = workbasketSeed(db);
     try {
-      const a = await workbasketSeed(db)('workflow');
+      const a = await seedFixture('workflow');
       const repo = createWorkbasketRepository(db);
       await pool.query('UPDATE vehicle SET displacement_cc=1900 WHERE id=$1', [
         a.vehicle.id,
@@ -75,16 +76,18 @@ describe.skipIf(!url)('workbasket review regressions', () => {
         }
       }
     } finally {
+      await seedFixture.cleanup();
       await pool.end();
     }
   });
 
   it('allows another entry writer to finish before the first writer touches that entry', async () => {
     const { db, pool } = await createDatabase(url!);
+    const seedFixture = workbasketSeed(db);
     const a = await pool.connect(),
       b = await pool.connect();
     try {
-      const seed = await workbasketSeed(db)('concurrency');
+      const seed = await seedFixture('concurrency');
       const other = (
         await pool.query(
           'INSERT INTO entry(organization_id,event_id,class_id,registration_group_id,driver_person_id,vehicle_id,orga_code) SELECT organization_id,event_id,class_id,registration_group_id,driver_person_id,vehicle_id,$2 FROM entry WHERE id=$1 RETURNING id',
@@ -163,14 +166,16 @@ describe.skipIf(!url)('workbasket review regressions', () => {
       await b.query('ROLLBACK');
       a.release();
       b.release();
+      await seedFixture.cleanup();
       await pool.end();
     }
   });
 
   it('restores drained invalidations if projection fails', async () => {
     const { db, pool } = await createDatabase(url!);
+    const seedFixture = workbasketSeed(db);
     try {
-      const a = await workbasketSeed(db)('rollback');
+      const a = await seedFixture('rollback');
       const repo = createWorkbasketRepository(db);
       const before = (await repo.tasks(a.ctx, a.event.id))!;
       await pool.query(
@@ -202,6 +207,7 @@ describe.skipIf(!url)('workbasket review regressions', () => {
         before.generation + 1,
       );
     } finally {
+      await seedFixture.cleanup();
       await pool.end();
     }
   });

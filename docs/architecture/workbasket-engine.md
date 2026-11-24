@@ -35,7 +35,8 @@ and at most 100; enabled must be boolean. Unknown keys and coercion are rejected
 Class limits and double-start permission are event-class data; default limits
 are open and double starts are not exempted unless both different classes allow
 them. Same-class duplicate applications remain warnings. Empty identities never
-match. Withdrawn, deleted and rejected registrations are ignored. Rules never
+match. Entry tasks and warnings ignore withdrawn, deleted and rejected
+registrations; capacity deliberately counts rejected registrations (see below). Rules never
 guess missing birth dates, displacement, year or expiration dates.
 
 Rule input storage adds VIN, license-valid-until, document-valid-until and class

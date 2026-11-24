@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 import { createRequestContext, organizationId } from '@nennbox/core';
 import type { Database } from './database.js';
 import { organizations, events, eventClasses } from './schema/organization.js';
@@ -11,6 +11,7 @@ import {
 
 export function workbasketSeed(db: Database) {
   const suffix = crypto.randomUUID();
+  const created: string[] = [];
   const seed = async (label: string) => {
     const [org] = await db
       .insert(organizations)
@@ -21,6 +22,7 @@ export function workbasketSeed(db: Database) {
         locale: 'de',
       })
       .returning();
+    created.push(org!.id);
     const [event] = await db
       .insert(events)
       .values({
@@ -99,5 +101,14 @@ export function workbasketSeed(db: Database) {
       ctx,
     };
   };
-  return seed;
+  return Object.assign(seed, {
+    cleanup: async () => {
+      if (created.length) {
+        await db.delete(events).where(inArray(events.organizationId, created));
+        await db
+          .delete(organizations)
+          .where(inArray(organizations.id, created));
+      }
+    },
+  });
 }
