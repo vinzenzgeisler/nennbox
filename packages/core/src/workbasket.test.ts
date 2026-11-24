@@ -550,10 +550,86 @@ describe('all rules are independently switchable, explained, deterministic and p
       }),
     ).toEqual(tasks);
     expect(JSON.stringify(rich)).toBe(before);
+    const explanations: Record<WorkbasketRuleId, [string, string[], string]> = {
+      ready: [
+        'Unterlagen vollständig, bezahlt und ohne aktive Warnung: bereit zum Zulassen.',
+        ['documentsComplete', 'paid', 'status'],
+        'task',
+      ],
+      missingDocuments: [
+        'Unterlagen fehlen seit mindestens 7 Tagen.',
+        ['documentsComplete', 'createdAt'],
+        'task',
+      ],
+      paymentOpen: [
+        'Zahlung offen; Nennschluss ist am 2026-06-15.',
+        ['paid', 'closingDate'],
+        'task',
+      ],
+      displacement: [
+        'Hubraum 1 liegt außerhalb der Klassengrenzen (1000–offen).',
+        ['displacementCc', 'minDisplacementCc', 'maxDisplacementCc'],
+        'warning',
+      ],
+      year: [
+        'Baujahr 1900 liegt außerhalb der Klassengrenzen (1980–offen).',
+        ['year', 'minYear', 'maxYear'],
+        'warning',
+      ],
+      expiredLicense: [
+        'Die Lizenz ist am Veranstaltungstag abgelaufen.',
+        ['licenseValidUntil', 'eventDate'],
+        'warning',
+      ],
+      expiredDocument: [
+        'Mindestens ein Dokument ist am Veranstaltungstag abgelaufen.',
+        ['documentValidUntil', 'eventDate'],
+        'warning',
+      ],
+      minorGuardian: [
+        'Am Veranstaltungstag minderjährig; Erziehungsberechtigte fehlen.',
+        ['dateOfBirth', 'guardianName', 'eventDate'],
+        'warning',
+      ],
+      duplicateStartNumber: [
+        'Die Startnummer ist mehrfach vergeben.',
+        ['startNumber'],
+        'warning',
+      ],
+      duplicatePerson: [
+        'Dieselbe Person ist mehrfach genannt; Doppelstarts sind nicht beidseitig erlaubt.',
+        ['firstName', 'lastName', 'dateOfBirth', 'email'],
+        'warning',
+      ],
+      duplicateVehicle: [
+        'Dasselbe Fahrzeug ist mehrfach genannt; Doppelstarts sind nicht beidseitig erlaubt.',
+        ['vehicleId'],
+        'warning',
+      ],
+      capacityNear: [
+        'Klasse fast voll: 4 von 1 Plätzen belegt.',
+        ['maxParticipants', 'status', 'waitlistOfferedUntil'],
+        'warning',
+      ],
+      waitlistPromotion: [
+        'Freier Klassenplatz: Nachrücken von der Warteliste prüfen; keine automatische Zulassung.',
+        [
+          'maxParticipants',
+          'status',
+          'waitlistPosition',
+          'waitlistOfferedUntil',
+        ],
+        'task',
+      ],
+    };
+    expect(new Set(tasks.map((t) => t.ruleId))).toEqual(
+      new Set(workbasketRuleIds),
+    );
     for (const task of tasks) {
-      expect(task.reason.length).toBeGreaterThan(10);
-      expect(task.fields.length).toBeGreaterThan(0);
-      expect(['warning', 'task']).toContain(task.severity);
+      const [reason, fields, severity] = explanations[task.ruleId];
+      expect(task.reason).toBe(reason);
+      expect([...task.fields].sort()).toEqual([...fields].sort());
+      expect(task.severity).toBe(severity);
     }
   });
 });

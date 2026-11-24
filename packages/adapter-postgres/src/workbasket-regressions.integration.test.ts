@@ -93,6 +93,8 @@ describe.skipIf(!url)('workbasket review regressions', () => {
       ).rows[0].id;
       const repo = createWorkbasketRepository(db);
       const before = (await repo.tasks(seed.ctx, seed.event.id))!;
+      const bPid = (await b.query('SELECT pg_backend_pid() AS pid')).rows[0]
+        .pid;
       await a.query('BEGIN');
       await b.query('BEGIN');
       // A holds X. B must be able to commit Y without waiting on A's event cache.
@@ -125,7 +127,7 @@ describe.skipIf(!url)('workbasket review regressions', () => {
       while (!finished && performance.now() < deadline) {
         const state = await pool.query(
           'SELECT wait_event FROM pg_stat_activity WHERE pid=$1',
-          [b.processID],
+          [bPid],
         );
         if (state.rows[0]?.wait_event === 'transactionid') {
           observed = true;

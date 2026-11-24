@@ -1,13 +1,10 @@
+import { duplicateTasks } from './workbasket-duplicates.js';
 import { resolveWorkbasketConfig } from './workbasket-config.js';
 import type {
   WorkbasketConfig,
   WorkbasketConfigOverrides,
 } from './workbasket-config.js';
-import {
-  duplicateFields,
-  entryWarnings,
-  workbasketDay,
-} from './workbasket-checks.js';
+import { entryWarnings, workbasketDay } from './workbasket-checks.js';
 import type {
   WorkbasketEntry,
   WorkbasketSnapshot,
@@ -75,44 +72,7 @@ export function evaluateWorkbasket(
       ),
     );
 
-  for (let i = 0; i < entries.length; i++) {
-    const a = entries[i]!;
-    for (const b of entries.slice(i + 1)) {
-      const matches = duplicateFields(a, b);
-      if (matches.number)
-        for (const entry of [a, b])
-          add(
-            'duplicateStartNumber',
-            entry,
-            'Die Startnummer ist mehrfach vergeben.',
-            ['startNumber'],
-            'warning',
-          );
-      const allowed =
-        a.classId !== b.classId &&
-        classes.get(a.classId)?.allowsMultipleStarts === true &&
-        classes.get(b.classId)?.allowsMultipleStarts === true;
-      if (allowed) continue;
-      for (const entry of [a, b]) {
-        if (matches.person.length)
-          add(
-            'duplicatePerson',
-            entry,
-            'Dieselbe Person ist mehrfach genannt; Doppelstarts sind nicht beidseitig erlaubt.',
-            matches.person,
-            'warning',
-          );
-        if (matches.vehicle.length)
-          add(
-            'duplicateVehicle',
-            entry,
-            'Dasselbe Fahrzeug ist mehrfach genannt; Doppelstarts sind nicht beidseitig erlaubt.',
-            matches.vehicle,
-            'warning',
-          );
-      }
-    }
-  }
+  tasks.push(...duplicateTasks(entries, classes, config));
 
   const warned = new Set(
     tasks
@@ -123,6 +83,7 @@ export function evaluateWorkbasket(
   for (const entry of entries) {
     const created = workbasketDay(entry.createdOn ?? entry.createdAt);
     if (
+      config.missingDocuments.enabled &&
       !entry.documentsComplete &&
       created !== null &&
       today - created >= config.missingDocuments.days
@@ -139,6 +100,7 @@ export function evaluateWorkbasket(
       );
     // The window remains open after closing until payment is recorded.
     if (
+      config.paymentOpen.enabled &&
       !entry.paid &&
       closing !== null &&
       today >= closing - config.paymentOpen.days
@@ -150,6 +112,7 @@ export function evaluateWorkbasket(
         ['paid', 'closingDate'],
       );
     if (
+      config.ready.enabled &&
       entry.status !== 'accepted' &&
       !waiting(entry) &&
       entry.paid &&
@@ -165,6 +128,8 @@ export function evaluateWorkbasket(
   }
 
   for (const klass of snapshot.classes) {
+    if (!config.capacityNear.enabled && !config.waitlistPromotion.enabled)
+      continue;
     const maximum = klass.maxParticipants ?? Infinity;
     if (maximum <= 0) continue;
     const members = snapshot.entries.filter(
@@ -192,6 +157,7 @@ export function evaluateWorkbasket(
         reason: `Klasse fast voll: ${occupied} von ${maximum} Plätzen belegt.`,
         fields: ['maxParticipants', 'status', 'waitlistOfferedUntil'],
       });
+    if (!config.waitlistPromotion.enabled) continue;
     const queue = members
       .filter(
         (entry) =>
@@ -219,7 +185,7 @@ export function evaluateWorkbasket(
         ],
       );
   }
-  // One task per rule/entry/class, merging evidence from multiple duplicate pairs.
+  // One task per rule/entry/class, including malformed repeated input IDs.
   const unique = new Map<string, WorkbasketTask>();
   for (const task of tasks) {
     const key = JSON.stringify([task.ruleId, task.entryId, task.classId]);

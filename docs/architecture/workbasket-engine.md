@@ -56,13 +56,30 @@ also invalidate the component. Deleting/moving records considers old and new sco
 
 The first read after a change recomputes that event once; unchanged reads fetch
 the stored JSON and counters without reading entry/person/vehicle/document tables.
-No global entry scan runs per page request. Cache row locks serialize consumers
-and concurrent invalidation, preventing lost dirty signals. Generation increases
+No global entry scan runs per page request. Cache row locks serialize consumers only. Writers append independent transactional
+invalidation rows and never lock the event cache. Under its cache lock a reader
+drains visible signals **before** loading sources; later writer commits remain
+pending for the next read. A failed projection rolls back both the drain and
+cache update, preventing lost signals. Several changes before a read are bundled
+into one generation; there is no time debounce or deliberately stale interval. Generation increases
 only on recalculation. Configuration and snapshots are read in the transaction.
 Time-based rules expire the cache at the next organization-local midnight or
 next outstanding waitlist deadline, whichever comes first.
 
-Capacity follows #29: every non-withdrawn, non-waitlisted registration occupies a place (including pending applications), plus unexpired waitlist offers. Already-sent offers are not proposed again before the existing expiration worker has processed them.
+Status references are resolved against each entry's tenant-scoped, pinned workflow
+revision (stable ID, or key for legacy revisions). Raw references remain in
+`statusKey`; rules consume only the category. Unknown references fail projection
+instead of producing an admission suggestion. Changing the current revision does
+not reinterpret existing entries.
+
+Capacity follows #29 for standard statuses: every non-withdrawn, non-waitlisted registration occupies a place (including pending applications), plus unexpired waitlist offers. Already-sent offers are not proposed again before the existing expiration worker has processed them.
+For custom workflows the advisory projection applies these same **category**
+semantics; the older #29 mutation service still compares literal raw statuses.
+This existing custom-workflow limitation of that service is not changed here:
+a workbasket suggestion is not proof of eligibility for an authoritative offer,
+and callers must still invoke the existing action service (never mutate from a
+projection). In particular, rejected entries still count towards capacity, but
+do not receive reminders, duplicate warnings or admission tasks.
 
 The pure core receives its clock/calendar values as input and has no HTTP,
 database or runtime clock dependency. Tasks carry stable ruleId, entryId (null
