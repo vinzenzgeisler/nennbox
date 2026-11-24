@@ -508,7 +508,7 @@ test('Community registration and admin lifecycle with API setup', async ({
   await expect(preview).toContainText('Angenommen');
   await preview.getByRole('button', { name: 'Nennung öffnen' }).click();
   const entryDetail = page.locator('.nb-entry-page');
-  const detailTabs = entryDetail.getByRole('navigation', {
+  const detailTabs = entryDetail.getByRole('tablist', {
     name: 'Bereiche der Nennung',
   });
   await expect(entryDetail).toBeVisible();
@@ -526,7 +526,7 @@ test('Community registration and admin lifecycle with API setup', async ({
   ])
     await expect(entryDetail).toContainText(value);
   // Evidence, downloads and payment live on the explicit documents tab.
-  await detailTabs.getByRole('button', { name: /^Unterlagen\b/ }).click();
+  await detailTabs.getByRole('tab', { name: /^Unterlagen\b/ }).click();
   // The accepted consent is shown from its stored evidence, with the exact wording.
   const consents = entryDetail.getByRole('region', { name: 'Einwilligungen' });
   await expect(consents).toContainText('participation');
@@ -684,7 +684,7 @@ test('admin records payment from entry detail UI', async ({
     .locator('button[data-entry-action]')
     .dblclick();
   const entryDetail = page.locator('.nb-entry-page');
-  const detailTabs = entryDetail.getByRole('navigation', {
+  const detailTabs = entryDetail.getByRole('tablist', {
     name: 'Bereiche der Nennung',
   });
   await expect(entryDetail).toBeVisible();
@@ -692,7 +692,7 @@ test('admin records payment from entry detail UI', async ({
 
   // Stripe-enabled runs reach the ledger through the signed browser webhook;
   // the baseline Community smoke records a bank/manual payment here.
-  await detailTabs.getByRole('button', { name: /^Unterlagen\b/ }).click();
+  await detailTabs.getByRole('tab', { name: /^Unterlagen\b/ }).click();
   const documents = entryDetail.getByRole('region', {
     name: 'Unterlagen und Zahlung',
     exact: true,

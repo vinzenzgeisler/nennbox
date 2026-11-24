@@ -26,7 +26,6 @@ export function EntryDetailPage({
   const id = useId();
   const { ref, width } = usePreviewResize();
   const tabRow = useRef<HTMLDivElement>(null);
-  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   useRevealActiveTab(tabRow, activeTab);
   return (
     <div
@@ -47,9 +46,6 @@ export function EntryDetailPage({
             <AppButton
               key={tab.key}
               tone="ghost"
-              ref={(node) => {
-                tabRefs.current[index] = node;
-              }}
               role="tab"
               id={`${id}-${tab.key}-tab`}
               aria-selected={tab.key === activeTab}
@@ -69,7 +65,9 @@ export function EntryDetailPage({
                 if (next === null) return;
                 event.preventDefault();
                 onTab(tabs[next]!.key);
-                tabRefs.current[next]?.focus();
+                tabRow.current
+                  ?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+                  [next]?.focus();
               }}
               onClick={() => onTab(tab.key)}
             >
