@@ -160,7 +160,9 @@ export function AdminEntryList(props: Props) {
         {apiState === 'ready' && !visibleItems.length && (
           <tr>
             <td colSpan={6}>
-              Keine Nennungen für diese Filter auf dieser Seite.
+              {warningFilter === 'all' || !items.length
+                ? 'Keine Nennungen für diese Filter.'
+                : 'Keine Nennungen für diese Filter auf dieser Seite.'}
             </td>
           </tr>
         )}
