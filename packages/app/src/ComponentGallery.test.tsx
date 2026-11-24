@@ -41,6 +41,26 @@ describe('component review gallery', () => {
     ])
       expect(container.textContent).toContain(text);
   });
+  it('shows the semantic action icons in the catalogue', () => {
+    container = document.createElement('div');
+    document.body.append(container);
+    root = createRoot(container);
+    act(() => root!.render(<ComponentGallery />));
+    for (const name of [
+      'person',
+      'amount',
+      'note',
+      'link',
+      'warning',
+      'payment',
+      'tag',
+      'trash',
+    ]) {
+      expect(
+        container.querySelector(`.nb-icon[aria-label="${name}"]`),
+      ).not.toBeNull();
+    }
+  });
   it('uses the M6 approval icon path', () => {
     container = document.createElement('div');
     document.body.append(container);

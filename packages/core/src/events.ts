@@ -1,3 +1,5 @@
+import { validateClass } from './event-class-validation.js';
+export { validateClass } from './event-class-validation.js';
 import { OrganizationId } from './context.js';
 import { RequestContext } from './context.js';
 import type { PassengerMode } from './passengers.js';
@@ -74,6 +76,11 @@ export interface EventClass {
   vehicleType: VehicleType;
   sortOrder: number;
   maxParticipants: number | null;
+  allowsMultipleStarts?: boolean | undefined;
+  minDisplacementCc?: number | null | undefined;
+  maxDisplacementCc?: number | null | undefined;
+  minYear?: number | null | undefined;
+  maxYear?: number | null | undefined;
   closed: boolean;
   passengerMode: PassengerMode;
 }
@@ -279,41 +286,4 @@ export async function updateEventClass(
   if (!(await deps.events.getById(ctx, eventId))) return null;
   validateClass(patch, true);
   return deps.classes.update(ctx, eventId, classId, patch);
-}
-
-export function validateClass(
-  input: Partial<EventClassInput>,
-  partial = false,
-): void {
-  if (
-    (!partial || 'name' in input) &&
-    (!input.name?.trim() || input.name.length > 120)
-  )
-    throw new Error('Invalid class name');
-  if (
-    (!partial || 'code' in input) &&
-    (!input.code || input.code.length > 24 || !/^[A-Z0-9-]+$/.test(input.code))
-  )
-    throw new Error('Invalid class code');
-  if (
-    input.vehicleType !== undefined &&
-    !['car', 'motorcycle', 'kart', 'other'].includes(input.vehicleType)
-  )
-    throw new Error('Invalid vehicle type');
-  if (
-    input.sortOrder !== undefined &&
-    (!Number.isInteger(input.sortOrder) || input.sortOrder < 0)
-  )
-    throw new Error('Invalid sort order');
-  if (
-    input.passengerMode !== undefined &&
-    !['none', 'optional', 'required'].includes(input.passengerMode)
-  )
-    throw new Error('Invalid passenger mode');
-  if (
-    input.maxParticipants !== undefined &&
-    input.maxParticipants !== null &&
-    (!Number.isInteger(input.maxParticipants) || input.maxParticipants < 1)
-  )
-    throw new Error('Invalid participant limit');
 }

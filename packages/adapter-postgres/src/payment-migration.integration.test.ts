@@ -1,4 +1,10 @@
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  rmSync,
+  cpSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -175,4 +181,70 @@ describe.skipIf(!url)('migrations (PostgreSQL)', () => {
       }
     });
   });
+  it.each([
+    'main',
+    'payments-preview-42',
+    'payments-preview-43',
+    'payments-preview-44',
+  ] as const)(
+    'converges an already migrated %s database without losing either feature',
+    async (release) => {
+      const folder = migrationsUpTo(
+        release === 'main'
+          ? '0043_workbasket_invalidation_log'
+          : '0041_invoice_paid_at',
+      );
+      try {
+        if (release.startsWith('payments-preview')) {
+          const path = join(folder, 'meta', '_journal.json');
+          const journal = JSON.parse(readFileSync(path, 'utf8'));
+          for (const [idx, source, tag] of [
+            [42, '0045_payment_completion', '0042_payment_completion'],
+            [43, '0046_refund_reservation', '0043_refund_reservation'],
+            [44, '0047_refund_recovery', '0044_refund_recovery'],
+          ] as const) {
+            if (idx > Number(release.split('-').at(-1))) continue;
+            cpSync(
+              join(migrationsFolder, source + '.sql'),
+              join(folder, tag + '.sql'),
+            );
+            journal.entries.push({
+              idx,
+              version: '7',
+              when: 1794422200010 + idx - 42,
+              tag,
+              breakpoints: false,
+            });
+          }
+          writeFileSync(path, JSON.stringify(journal));
+        }
+        await withDatabase(async (databaseUrl) => {
+          await migrate(databaseUrl, { migrationsFolder: folder });
+          await migrate(databaseUrl);
+          const client = new pg.Client({ connectionString: databaseUrl });
+          await client.connect();
+          try {
+            const { rows } = await client.query(
+              `select to_regclass('public.workbasket_configuration')::text as basket,to_regclass('public.workbasket_invalidation')::text as invalidation,to_regclass('public.payment_refund_reservation')::text as reservation`,
+            );
+            expect(rows[0]).toEqual({
+              basket: 'workbasket_configuration',
+              invalidation: 'workbasket_invalidation',
+              reservation: 'payment_refund_reservation',
+            });
+            const columns = (
+              await client.query(
+                `select table_name,column_name from information_schema.columns where table_schema='public' and ((table_name='invoice_payment' and column_name='method') or (table_name='payment_refund_reservation' and column_name='actor'))`,
+              )
+            ).rows;
+            expect(columns).toHaveLength(2);
+          } finally {
+            await client.end();
+          }
+        });
+      } finally {
+        rmSync(folder, { recursive: true, force: true });
+      }
+    },
+  );
 });

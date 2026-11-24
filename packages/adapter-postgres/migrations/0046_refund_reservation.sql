@@ -4,7 +4,7 @@
 -- computing a new amount, and concurrent refunds see each other's reservations.
 -- 'reserved' counts against what can still be refunded until the ledger entry
 -- is written (status 'completed', same transaction).
-CREATE TABLE payment_refund_reservation (
+CREATE TABLE IF NOT EXISTS payment_refund_reservation (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL,
   invoice_id uuid NOT NULL,
@@ -20,4 +20,4 @@ CREATE TABLE payment_refund_reservation (
   CONSTRAINT payment_refund_reservation_invoice_fk FOREIGN KEY (organization_id, invoice_id) REFERENCES invoice (organization_id, id) ON DELETE CASCADE,
   CONSTRAINT payment_refund_reservation_key_unique UNIQUE (organization_id, idempotency_key)
 );
-CREATE INDEX payment_refund_reservation_open_idx ON payment_refund_reservation (organization_id, invoice_id, provider_payment_id) WHERE status = 'reserved';
+CREATE INDEX IF NOT EXISTS payment_refund_reservation_open_idx ON payment_refund_reservation (organization_id, invoice_id, provider_payment_id) WHERE status = 'reserved';

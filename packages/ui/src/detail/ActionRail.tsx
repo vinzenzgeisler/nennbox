@@ -33,24 +33,31 @@ export function NextStepButton({
 }
 export function ActionGroup({
   title,
+  hideTitle = false,
   children,
 }: {
   title: string;
+  hideTitle?: boolean;
   children: ReactNode;
 }) {
   return (
-    <section className="nb-action-group">
-      <h3 className="nb-rail-label">{title}</h3>
+    <section
+      className="nb-action-group"
+      aria-label={hideTitle ? title : undefined}
+    >
+      {!hideTitle && <h3 className="nb-rail-label">{title}</h3>}
       <div>{children}</div>
     </section>
   );
 }
 export function RailAction({
   tone = 'default',
+  icon,
   children,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   tone?: 'default' | 'danger';
+  icon?: ReactNode;
 }) {
   return (
     <button
@@ -58,7 +65,8 @@ export function RailAction({
       {...props}
       className={`nb-rail-action nb-rail-${tone}`}
     >
-      {children}
+      {icon}
+      <span>{children}</span>
     </button>
   );
 }

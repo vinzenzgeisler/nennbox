@@ -1,3 +1,7 @@
+DO $payment_completion$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'invoice_payment' AND column_name = 'method') THEN
+    EXECUTE $migration$
 -- Payment method per ledger entry. Provider payments and their refunds are
 -- "online"; everything an organizer records by hand stays "manual".
 ALTER TABLE invoice_payment ADD COLUMN method text NOT NULL DEFAULT 'manual';
@@ -59,3 +63,7 @@ ALTER TABLE email_template_version DROP CONSTRAINT email_template_version_key_ch
 ALTER TABLE email_template_version ADD CONSTRAINT email_template_version_key_check CHECK (template_key IN ('verification','registration-resume','entry-received','accepted','rejected','status-change','message-campaign','passenger-link','driver-portal-link','payment-received'));
 ALTER TABLE email_outbox DROP CONSTRAINT email_outbox_template_key_check;
 ALTER TABLE email_outbox ADD CONSTRAINT email_outbox_template_key_check CHECK (template_key IN ('verification','registration-resume','entry-received','accepted','rejected','status-change','message-campaign','passenger-link','driver-portal-link','payment-received'));
+
+$migration$;
+  END IF;
+END $payment_completion$;

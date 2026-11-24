@@ -44,3 +44,11 @@ export * from './start-numbers.js';
 export * from './start-number-service.js';
 
 export * from './onboarding.js';
+
+export * from './workbasket.js';
+
+export type {
+  WorkbasketRepository,
+  WorkbasketResult,
+  WorkbasketConfiguration,
+} from './workbasket-repository.js';
