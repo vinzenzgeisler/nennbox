@@ -1,7 +1,6 @@
 # Smarter Arbeitskorb: engine and data layer
 
-This is the first implementation slice of #194 (wave 2 of #196). No new UI or
-bulk mutation is part of this slice. All findings are advisory. Admission,
+This documents the engine/data layer and administrative UI of #194 (wave 2 of #196). All findings are advisory. Admission,
 document reminders, payment reminders and promotion still require explicit
 confirmation through the existing action services. In particular, a
 `waitlistPromotion` task does not reserve a seat: the existing #29
@@ -104,8 +103,34 @@ composite foreign keys prevent cache/configuration crossing tenant boundaries.
 The PostgreSQL integration test proves cache reuse, invalidation, concurrent
 read reuse, time expiry, configuration inheritance and cross-tenant denial.
 
+## Administrative UI
+
+The overview starts with “Heute zu tun”. Findings are ordered by warning,
+reminder/capacity task, then admission. Rule counts, reasons and evidence come
+from the server projection; filtering and paging only change presentation.
+Entry tasks open their exact entry; class tasks open the class-filtered list.
+The entry list shows compact findings with a filter explicitly scoped to the
+current page. Detail findings sit beside the implicated driver, vehicle,
+start-number or document fields. Failed warning reads are not treated as clean
+entries.
+
+Bulk admission prepares a named target list and asks for an audit reason.
+The detail response now includes `acceptanceTransitions` with category and
+German label, resolved against the entry's pinned workflow and filtered by the
+same permissions/roles as `availableActions`. The browser never infers an
+accepted category from a status key or the event's latest workflow. Before each
+sequential existing transition call it refreshes both advisory eligibility and
+permissions. Results distinguish successful entries from skipped/failed ones.
+
+Document/payment reminders use editable templates, the existing rendered
+recipient preview, explicit recipient counts and confirmed campaign creation.
+The preview includes exclusions; eligibility and recipient identity are checked
+again before sending. An uncertain campaign response keeps the same request
+body and idempotency key. Queued recipients are not labelled as sent; the result
+supports status refresh and lists per-recipient failures.
+
 ## Follow-up
 
-“Today to do” overview, inline list/detail warnings, editable metadata controls,
-bulk admission/reminders and explicitly confirmed promotion interactions are not
-implemented here. This PR must not close #194 as a whole.
+Editable engine configuration/metadata controls and explicitly confirmed
+waitlist promotion interactions remain separate work. This UI does not claim
+that a capacity suggestion authorizes a promotion. The issue remains open.

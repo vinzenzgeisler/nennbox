@@ -1,3 +1,4 @@
+import { WorkbasketOverview } from '../workbasket/WorkbasketOverview.js';
 import { useCallback, useEffect } from 'react';
 import { AppEmptyState, AppView, AppGrid } from '@nennbox/ui';
 import {
@@ -17,6 +18,7 @@ type Props = {
   eventId: string;
   onOpenEntries: (filters: EntryFilters) => void;
   onTotalChange: (total: number) => void;
+  onOpenEntry?: (id: string) => void;
 };
 
 /** Key figures of the selected event; keyed by event so nothing carries over. */
@@ -24,6 +26,7 @@ export function AdminOverview({
   eventId,
   onOpenEntries,
   onTotalChange,
+  onOpenEntry,
 }: Props) {
   return eventId ? (
     <OverviewForEvent
@@ -31,13 +34,19 @@ export function AdminOverview({
       eventId={eventId}
       onOpenEntries={onOpenEntries}
       onTotalChange={onTotalChange}
+      {...(onOpenEntry ? { onOpenEntry } : {})}
     />
   ) : (
     <NoEventSelected appDesign />
   );
 }
 
-function OverviewForEvent({ eventId, onOpenEntries, onTotalChange }: Props) {
+function OverviewForEvent({
+  eventId,
+  onOpenEntries,
+  onTotalChange,
+  onOpenEntry,
+}: Props) {
   const load = useCallback(
     (signal: AbortSignal) => overviewApi.load(eventId, signal),
     [eventId],
@@ -62,15 +71,21 @@ function OverviewForEvent({ eventId, onOpenEntries, onTotalChange }: Props) {
   const overview = state.data;
   const hasContent =
     totalEntries(overview.statuses) > 0 || overview.classes.length > 0;
-  if (!hasContent)
-    return (
-      <AppEmptyState
-        title="Noch keine Nennungen"
-        description="Sobald die ersten Nennungen eingehen, erscheinen hier Kennzahlen, Belegung und Hinweise."
-      />
-    );
   return (
     <AppView>
+      {onOpenEntry && (
+        <WorkbasketOverview
+          eventId={eventId}
+          onOpenEntry={onOpenEntry}
+          onOpenClass={(classId) => onOpenEntries({ classId })}
+        />
+      )}
+      {!hasContent && (
+        <AppEmptyState
+          title="Noch keine Nennungen"
+          description="Sobald die ersten Nennungen eingehen, erscheinen hier Kennzahlen, Belegung und Hinweise."
+        />
+      )}
       <OverviewWarnings
         eventId={eventId}
         warnings={overview.warnings}

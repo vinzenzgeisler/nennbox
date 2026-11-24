@@ -1,3 +1,5 @@
+import { EntryWarnings } from '../warnings/EntryWarnings.js';
+import type { EntryWarning } from '../warnings/entryWarnings.js';
 import { EntryHistorySection } from './EntryHistorySection.js';
 import type { TimelineItem } from './entryDetailModel.js';
 import { EntryRecentNote } from './EntryRecentNote.js';
@@ -10,6 +12,7 @@ import type { Outcome } from '../AdminEntriesModel.js';
 import { formatMoney } from './entryDetailModel.js';
 export function EntryProperties({
   entry,
+  warnings,
   recent = [],
   busy,
   saveNote,
@@ -17,6 +20,7 @@ export function EntryProperties({
   onOpenRelated,
 }: {
   entry: Entry;
+  warnings?: EntryWarning[] | undefined;
   recent?: TimelineItem[];
   busy: boolean;
   saveNote: (text: string) => Promise<Outcome>;
@@ -42,6 +46,7 @@ export function EntryProperties({
                 ? `${assignedNumber(entry)} · bestätigt`
                 : 'Vergeben'}
             </AppButton>
+            <EntryWarnings warnings={warnings} fields={['startNumber']} />
           </dd>
           <dt>Eingang</dt>
           <dd>

@@ -53,6 +53,11 @@ it('advertises only authorized targets from the pinned workflow, including stabl
     const app = createApp(
       testDeps({
         config: { deploymentMode: 'community', organizationId: org },
+        organizations: { getById: async () => null, update: async () => null },
+        events: {
+          listByOrganization: async () => [],
+          getById: async () => null,
+        },
         authenticator: {
           authenticate: async () => ({
             issuer: 'https://id.example',

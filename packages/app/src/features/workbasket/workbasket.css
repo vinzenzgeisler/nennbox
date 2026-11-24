@@ -1,0 +1,29 @@
+.nb-workbasket-task {
+  display: grid;
+  gap: var(--nb-space-2);
+  padding: var(--nb-space-4);
+  border: 1px solid var(--nb-border-row);
+  border-radius: var(--nb-radius-sm);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.nb-workbasket-task p {
+  margin: 0;
+}
+
+.nb-workbasket-task > button {
+  justify-self: start;
+}
+
+.nb-workbasket-fields {
+  color: var(--nb-fg-muted);
+  font-size: var(--nb-text-sm);
+}
+
+.nb-workbasket-message-preview {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-width: 0;
+  font: inherit;
+}

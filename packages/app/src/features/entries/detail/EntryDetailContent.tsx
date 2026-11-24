@@ -1,3 +1,5 @@
+import { EntryWarnings } from '../warnings/EntryWarnings.js';
+import type { EntryWarning } from '../warnings/entryWarnings.js';
 import { Banner } from '@nennbox/ui';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { Pending } from './EntryDetailPending.js';
@@ -18,6 +20,7 @@ import { EntryConfirmation } from './EntryConfirmation.js';
 import { EntryHistorySection } from './EntryHistorySection.js';
 export function EntryDetailContent({
   entry,
+  warnings = [],
   tab,
   numberOpen,
   error,
@@ -34,6 +37,7 @@ export function EntryDetailContent({
   setPending,
 }: {
   entry: Entry;
+  warnings?: EntryWarning[];
   tab: string;
   numberOpen: boolean;
   error: string;
@@ -66,24 +70,28 @@ export function EntryDetailContent({
         <>
           <div className="nb-entry-overview-columns">
             <EntryDriverSection
+              warnings={warnings}
               driver={entry.adminDetails!.driver}
               passenger={entry.adminDetails!.passenger ?? null}
               busy={api.busy}
               onSave={api.saveDriver}
             />
             <EntryVehicleSection
+              warnings={warnings}
               vehicle={entry.adminDetails!.vehicle}
               eventClass={entry.adminDetails!.eventClass}
               busy={api.busy}
               onSave={api.saveVehicle}
             />
           </div>
+          <EntryWarnings warnings={warnings} fields={['documentValidUntil']} />
           <EntryPassengerBlocks details={entry.adminDetails!} />
           <EntryCustomAnswers answers={entry.adminDetails!.customAnswers} />
         </>
       )}
       {tab === 'documents' && (
         <>
+          <EntryWarnings warnings={warnings} fields={['documentValidUntil']} />
           <EntryDocumentsSection
             entry={entry}
             busy={busy || api.busy}
