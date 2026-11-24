@@ -19,12 +19,19 @@ const workflow = {
 };
 const openEntry = vi.fn(async () => undefined);
 let width = 1280;
-function Probe({ auto = true }: { auto?: boolean }) {
+function Probe({
+  auto = true,
+  selected = null,
+}: {
+  auto?: boolean;
+  selected?: EntryResponse | null;
+}) {
   useAutoPreviewEntry({
     autoSelectFirst: auto,
     eventId: 'event',
     items,
     workflow,
+    selected,
     openEntry,
   });
   return null;
@@ -68,4 +75,17 @@ it('does not open an automatic preview just below the breakpoint', () => {
   act(() => root.render(<Probe auto={false} />));
   act(() => root.render(<Probe />));
   expect(openEntry).toHaveBeenCalledExactlyOnceWith('first');
+});
+
+// A double click on the first row of a not yet previewed event: the first click selects the row
+// and switches the preview on, which used to re-arm the automatic preview. Its reload cleared the
+// selection and closed the detail that the double click had just opened.
+it('never replaces an entry the user already opened', () => {
+  width = 1280;
+  act(() => root.render(<Probe auto={false} />));
+  act(() => root.render(<Probe selected={items[0]!} />));
+  expect(openEntry).not.toHaveBeenCalled();
+  // The reload of the opened entry clears the selection for a moment; still nothing automatic.
+  act(() => root.render(<Probe selected={null} />));
+  expect(openEntry).not.toHaveBeenCalled();
 });
