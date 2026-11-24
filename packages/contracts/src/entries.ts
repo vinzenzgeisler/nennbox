@@ -56,6 +56,11 @@ export const EntryResponse = z
     createdAt: z.string().datetime({ offset: true }),
     revision: z.number().int().min(1).optional(),
     availableActions: z.array(z.string()).optional(),
+    acceptanceTransitions: z
+      .array(
+        z.object({ to: z.string(), label: z.string(), category: z.string() }),
+      )
+      .optional(),
     deletedAt: z.string().datetime({ offset: true }).nullable(),
     deletionReason: z.string().nullable(),
     adminHistory: z
