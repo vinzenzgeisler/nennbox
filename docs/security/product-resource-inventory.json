@@ -1080,6 +1080,102 @@
           "name": "submits public registrations atomically, validates custom fields and files, and verifies tenant isolation"
         }
       ]
+    },
+    {
+      "id": "workbasket_configuration",
+      "kind": "table",
+      "tenantKey": "server RequestContext.organizationId + event_id where applicable",
+      "isolation": "Organization-scoped repository queries, event existence checks and composite ownership foreign keys; HTTP routes enforce member read/write permissions. Cache invalidation resolves source records within their organization.",
+      "negativeTests": [
+        {
+          "file": "packages/adapter-postgres/src/workbasket.integration.test.ts",
+          "name": "caches unchanged reads; recomputes only affected events; isolates reads, writes and shared identities"
+        }
+      ]
+    },
+    {
+      "id": "workbasket_cache",
+      "kind": "table",
+      "tenantKey": "server RequestContext.organizationId + event_id where applicable",
+      "isolation": "Organization-scoped repository queries, event existence checks and composite ownership foreign keys; HTTP routes enforce member read/write permissions. Cache invalidation resolves source records within their organization.",
+      "negativeTests": [
+        {
+          "file": "packages/adapter-postgres/src/workbasket.integration.test.ts",
+          "name": "caches unchanged reads; recomputes only affected events; isolates reads, writes and shared identities"
+        }
+      ]
+    },
+    {
+      "id": "admin-event-workbasket-get",
+      "kind": "route",
+      "tenantKey": "server RequestContext.organizationId + event_id where applicable",
+      "isolation": "Organization-scoped repository queries, event existence checks and composite ownership foreign keys; HTTP routes enforce member read/write permissions. Cache invalidation resolves source records within their organization.",
+      "negativeTests": [
+        {
+          "file": "packages/adapter-postgres/src/workbasket.integration.test.ts",
+          "name": "caches unchanged reads; recomputes only affected events; isolates reads, writes and shared identities"
+        }
+      ]
+    },
+    {
+      "id": "admin-entry-warnings-get",
+      "kind": "route",
+      "tenantKey": "server RequestContext.organizationId + event_id where applicable",
+      "isolation": "Organization-scoped repository queries, event existence checks and composite ownership foreign keys; HTTP routes enforce member read/write permissions. Cache invalidation resolves source records within their organization.",
+      "negativeTests": [
+        {
+          "file": "packages/adapter-postgres/src/workbasket.integration.test.ts",
+          "name": "caches unchanged reads; recomputes only affected events; isolates reads, writes and shared identities"
+        }
+      ]
+    },
+    {
+      "id": "admin-event-workbasket-configuration-get",
+      "kind": "route",
+      "tenantKey": "server RequestContext.organizationId + event_id where applicable",
+      "isolation": "Organization-scoped repository queries, event existence checks and composite ownership foreign keys; HTTP routes enforce member read/write permissions. Cache invalidation resolves source records within their organization.",
+      "negativeTests": [
+        {
+          "file": "packages/adapter-postgres/src/workbasket.integration.test.ts",
+          "name": "caches unchanged reads; recomputes only affected events; isolates reads, writes and shared identities"
+        }
+      ]
+    },
+    {
+      "id": "admin-event-workbasket-configuration-put",
+      "kind": "route",
+      "tenantKey": "server RequestContext.organizationId + event_id where applicable",
+      "isolation": "Organization-scoped repository queries, event existence checks and composite ownership foreign keys; HTTP routes enforce member read/write permissions. Cache invalidation resolves source records within their organization.",
+      "negativeTests": [
+        {
+          "file": "packages/adapter-postgres/src/workbasket.integration.test.ts",
+          "name": "caches unchanged reads; recomputes only affected events; isolates reads, writes and shared identities"
+        }
+      ]
+    },
+    {
+      "id": "admin-organization-workbasket-configuration-get",
+      "kind": "route",
+      "tenantKey": "server RequestContext.organizationId + event_id where applicable",
+      "isolation": "Organization-scoped repository queries, event existence checks and composite ownership foreign keys; HTTP routes enforce member read/write permissions. Cache invalidation resolves source records within their organization.",
+      "negativeTests": [
+        {
+          "file": "packages/adapter-postgres/src/workbasket.integration.test.ts",
+          "name": "caches unchanged reads; recomputes only affected events; isolates reads, writes and shared identities"
+        }
+      ]
+    },
+    {
+      "id": "admin-organization-workbasket-configuration-put",
+      "kind": "route",
+      "tenantKey": "server RequestContext.organizationId + event_id where applicable",
+      "isolation": "Organization-scoped repository queries, event existence checks and composite ownership foreign keys; HTTP routes enforce member read/write permissions. Cache invalidation resolves source records within their organization.",
+      "negativeTests": [
+        {
+          "file": "packages/adapter-postgres/src/workbasket.integration.test.ts",
+          "name": "caches unchanged reads; recomputes only affected events; isolates reads, writes and shared identities"
+        }
+      ]
     }
   ]
 }
