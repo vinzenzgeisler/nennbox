@@ -89,3 +89,28 @@ Checkout creation is serialized on the invoice row in PostgreSQL, including the 
 `payments.checkoutLifetimeMinutes` is configurable in the organization registration configuration and overridable per event (30–1440 minutes, default **60 minutes**). Checkout sends the expiry to Stripe, which closes the checkout even if the driver never returns; its signed expiry event closes the local state. Elapsed sessions are never reused, even if the webhook is delayed; the next attempt reconciles them with the provider before replacement. This expiry governs unpaid hosted checkout, not an already submitted asynchronous SEPA debit, whose eventual outcome remains authoritative.
 
 Cancellation and webhook settlement serialize on the invoice row. If settlement wins, cancellation sees the booked funds and queues the policy intent. If cancellation wins, later money is still recorded truthfully but marked **payment_after_cancellation** as a failed refund intent, visible in the office invoice detail with a manual-refund action. This applies even when the policy is disabled or a former refund intent was completed. No normal payment confirmation is sent for this case. A cancelled invoice remains cancelled after settlement/refund.
+
+
+### Atomic refund operations and reactivation
+
+Manual and automatic refunds reserve an operation in `payment_refund_reservation`
+under the invoice row lock **before** calling the provider. The stored key and
+amount remain unchanged on retry. Ledger booking completes the reservation in
+the same transaction. Unresolved reservations count against the remaining funds;
+when a cancellation rule applies, manual operations also share its gross target.
+The claim snapshot is only a list of payments, never authority for an amount.
+
+Acceptance changes lock the invoice before changing entry rows. Reactivation
+invalidates old intents in that transaction. If a provider operation is still
+reserved (including an uncertain response), reactivation answers HTTP 409
+`Refund in progress; reconcile before reactivation` instead of silently resuming
+participation. Do not delete an unresolved reservation to retry with a new key:
+first reconcile its persisted operation with the provider and book the result.
+The defensive automatic reservation check also refuses stale intents for active
+groups, even when legacy data bypassed the normal transition.
+
+Unpaid cancellation does not need a refund intent. Its pending checkout session
+rows are durable closure work: the refund retry worker scans them per tenant,
+checks that the group is still fully cancelled, and expires the links. A provider
+outage leaves these rows pending for the next run. The API resolves the invoice
+independently of refundable receipts and closes these links immediately too.

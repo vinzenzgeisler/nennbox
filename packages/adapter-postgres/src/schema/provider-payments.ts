@@ -132,3 +132,51 @@ export const paymentRefundIntents = pgTable(
     ),
   ],
 );
+
+/**
+ * A refund reserved under the invoice lock before the provider is called. It
+ * keeps the amount and idempotency key stable across retries and counts against
+ * what can still be refunded until the ledger entry exists.
+ */
+export const paymentRefundReservations = pgTable(
+  'payment_refund_reservation',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: uuid('organization_id').notNull(),
+    invoiceId: uuid('invoice_id').notNull(),
+    providerPaymentId: text('provider_payment_id').notNull(),
+    idempotencyKey: text('idempotency_key').notNull(),
+    source: text('source').notNull(),
+    intentId: uuid('intent_id').references(() => paymentRefundIntents.id, {
+      onDelete: 'cascade',
+    }),
+    amountCents: integer('amount_cents').notNull(),
+    status: text('status').notNull().default('reserved'),
+    providerRefundId: text('provider_refund_id'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.organizationId, t.invoiceId],
+      foreignColumns: [invoices.organizationId, invoices.id],
+      name: 'payment_refund_reservation_invoice_fk',
+    }).onDelete('cascade'),
+    unique('payment_refund_reservation_key_unique').on(
+      t.organizationId,
+      t.idempotencyKey,
+    ),
+    check(
+      'payment_refund_reservation_source_check',
+      sql`${t.source} in ('manual','automatic')`,
+    ),
+    check(
+      'payment_refund_reservation_status_check',
+      sql`${t.status} in ('reserved','completed')`,
+    ),
+  ],
+);

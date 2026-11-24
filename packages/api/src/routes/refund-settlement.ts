@@ -17,7 +17,9 @@ export async function settleRefundAfterCancellation(
   if (!deps.refundIntents || !deps.paymentProvider || !deps.paymentRefunds)
     return null;
   try {
-    const invoiceId = await deps.refundIntents.openInvoiceForEntry(
+    // A group that takes part again must not keep an old refund order.
+    await deps.refundIntents.closeIfReactivated(ctx, entryId);
+    const invoiceId = await deps.refundIntents.cancelledInvoiceForEntry(
       ctx,
       entryId,
     );
@@ -35,10 +37,12 @@ export async function settleRefundAfterCancellation(
         invoiceId,
         open.map((session) => session.id),
       );
-      if (ended !== 'expired')
+      if (ended !== 'expired') {
         deps.logger.warn('Open checkout of a cancelled registration', {
           outcome: ended,
         });
+        if (ended === 'unavailable') return null; // Pending sessions remain durable for retry.
+      }
     }
     const result = await settleCancellationRefund(ctx, invoiceId, {
       intents: deps.refundIntents,

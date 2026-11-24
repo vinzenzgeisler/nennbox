@@ -70,6 +70,28 @@ export async function openRefundIntent(
     .onConflictDoNothing();
 }
 
+async function invoiceOfEntry(
+  db: Pick<Database, 'select'>,
+  organizationId: string,
+  entryId: string,
+): Promise<{ invoiceId: string; groupId: string } | null> {
+  const [row] = await db
+    .select({ invoiceId: invoices.id, groupId: entries.registrationGroupId })
+    .from(entries)
+    .innerJoin(
+      invoices,
+      and(
+        eq(invoices.organizationId, entries.organizationId),
+        eq(invoices.registrationGroupId, entries.registrationGroupId),
+      ),
+    )
+    .where(
+      and(eq(entries.organizationId, organizationId), eq(entries.id, entryId)),
+    )
+    .limit(1);
+  return row ?? null;
+}
+
 export const DEFAULT_REFUND_RETRY_AFTER_MS = 10 * 60_000;
 
 export function createRefundIntentRepository(
@@ -81,19 +103,52 @@ export function createRefundIntentRepository(
     Math.round((options.retryAfterMs ?? DEFAULT_REFUND_RETRY_AFTER_MS) / 1000),
   );
   return {
-    openInvoiceForEntry: async (ctx, entryId) => {
-      const [intent] = await db
-        .select({ invoiceId: paymentRefundIntents.invoiceId })
-        .from(paymentRefundIntents)
-        .where(
-          and(
-            eq(paymentRefundIntents.organizationId, ctx.organizationId),
-            eq(paymentRefundIntents.entryId, entryId),
-            eq(paymentRefundIntents.status, 'pending'),
-          ),
+    cancelledInvoiceForEntry: async (ctx, entryId) => {
+      const target = await invoiceOfEntry(db, ctx.organizationId, entryId);
+      if (!target) return null;
+      const active = await countActiveEntries(
+        db,
+        ctx.organizationId,
+        target.groupId,
+      );
+      return active === 0 ? target.invoiceId : null;
+    },
+    closeIfReactivated: async (ctx, entryId) => {
+      await db.transaction(async (tx) => {
+        const target = await invoiceOfEntry(tx, ctx.organizationId, entryId);
+        if (!target) return;
+        // Same lock as the refund reservation: either this commits first and the
+        // reservation sees the closed intent, or the reservation was made first.
+        await tx
+          .select({ id: invoices.id })
+          .from(invoices)
+          .where(
+            and(
+              eq(invoices.organizationId, ctx.organizationId),
+              eq(invoices.id, target.invoiceId),
+            ),
+          )
+          .for('update');
+        if (
+          (await countActiveEntries(tx, ctx.organizationId, target.groupId)) ===
+          0
         )
-        .limit(1);
-      return intent?.invoiceId ?? null;
+          return;
+        await tx
+          .update(paymentRefundIntents)
+          .set({
+            status: 'skipped',
+            failure: 'registration_reactivated',
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(paymentRefundIntents.organizationId, ctx.organizationId),
+              eq(paymentRefundIntents.invoiceId, target.invoiceId),
+              eq(paymentRefundIntents.status, 'pending'),
+            ),
+          );
+      });
     },
     staleInvoiceIds: async (ctx) =>
       rows<{ invoice_id: string }>(
@@ -201,6 +256,7 @@ export function createRefundIntentRepository(
           and(
             eq(paymentRefundIntents.organizationId, ctx.organizationId),
             eq(paymentRefundIntents.id, intentId),
+            eq(paymentRefundIntents.status, 'processing'),
           ),
         );
     },

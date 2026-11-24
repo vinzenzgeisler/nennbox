@@ -165,7 +165,12 @@ export function registerEntriesRoutes(context: ApiRoutesContext): void {
             }
           : result,
       );
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message === 'refund_in_progress')
+        return c.json(
+          { error: 'Refund in progress; reconcile before reactivation' },
+          409,
+        );
       return c.json({ error: 'Forbidden or invalid transition' }, 403);
     }
   });

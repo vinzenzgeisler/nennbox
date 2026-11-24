@@ -13,6 +13,8 @@ const failureText: Record<string, string> = {
   intent_data_missing:
     'Rechnung oder Veranstaltung der Erstattung wurde nicht gefunden',
   provider_unavailable: 'Stripe war nicht erreichbar oder hat abgelehnt',
+  reactivated_during_refund:
+    'Die Nennung wurde wieder aufgenommen, während die Erstattung lief. Bitte prüfe im Stripe-Dashboard, ob sie ausgeführt wurde',
   ledger_rejected:
     'Die Erstattung konnte nicht im Zahlungsprotokoll verbucht werden',
 };
@@ -26,6 +28,11 @@ export function refundIntentText(
     return 'Die automatische Erstattung nach der Absage steht noch aus. Bleibt sie länger offen, wird sie automatisch erneut versucht.';
   if (intent.status === 'done')
     return `Automatisch erstattet: ${formatMoney(intent.refundedCents, currency)} (${intent.percent ?? 0} % laut Erstattungsregel).`;
+  if (
+    intent.status === 'skipped' &&
+    intent.failure === 'registration_reactivated'
+  )
+    return 'Keine automatische Erstattung: Die Nennung wurde wieder aufgenommen, bevor erstattet wurde.';
   if (intent.status === 'skipped')
     return 'Keine automatische Erstattung: Die Erstattungsregel sieht für diesen Zeitpunkt nichts vor.';
   const reason = failureText[intent.failure ?? ''] ?? 'Unbekannter Fehler';

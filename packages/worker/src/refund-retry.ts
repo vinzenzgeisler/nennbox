@@ -1,5 +1,7 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import {
+  checkoutSessions,
+  createCheckoutRepository,
   createPaymentRefundRepository,
   createRefundIntentRepository,
   organizations,
@@ -32,6 +34,7 @@ export function createRefundRetryTask(deps: {
   const intents = createRefundIntentRepository(deps.db, {
     ...(deps.retryAfterMs ? { retryAfterMs: deps.retryAfterMs } : {}),
   });
+  const checkouts = createCheckoutRepository(deps.db);
   const refunds = createPaymentRefundRepository(deps.db);
   return async () => {
     const tenantIds = deps.communityOrganizationId
@@ -50,8 +53,42 @@ export function createRefundRetryTask(deps: {
         capabilities: new Set(),
         correlationId: `refund-retry:${tenantId}`,
       });
-      for (const invoiceId of await intents.staleInvoiceIds(ctx)) {
+      // Pending session rows themselves are the durable checkout-closure queue,
+      // including unpaid invoices that never had a refundable payment/intent.
+      const pending = await deps.db
+        .selectDistinct({ invoiceId: checkoutSessions.invoiceId })
+        .from(checkoutSessions)
+        .where(
+          and(
+            eq(checkoutSessions.organizationId, tenantId),
+            eq(checkoutSessions.status, 'checkout_pending'),
+          ),
+        );
+      const invoiceIds = new Set(await intents.staleInvoiceIds(ctx));
+      for (const row of pending) {
+        if ((await checkouts.get(ctx, row.invoiceId))?.allEntriesCancelled)
+          invoiceIds.add(row.invoiceId);
+      }
+      for (const invoiceId of invoiceIds) {
         try {
+          // Cancellation intents also exist for unpaid invoices. Do not finish
+          // one until every copied checkout link is closed at the provider.
+          const invoice = await checkouts.get(ctx, invoiceId);
+          if (invoice?.allEntriesCancelled) {
+            for (const session of await checkouts.pendingSessions(
+              ctx,
+              invoiceId,
+            )) {
+              const outcome = await deps.provider.expireCheckoutSession({
+                organizationId: ctx.organizationId,
+                sessionId: session.id,
+              });
+              if (outcome === 'expired')
+                await checkouts.markSessionsExpired(ctx, invoiceId, [
+                  session.id,
+                ]);
+            }
+          }
           const result = await settleCancellationRefund(ctx, invoiceId, {
             intents,
             refunds,

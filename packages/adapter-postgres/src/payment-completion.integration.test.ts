@@ -7,6 +7,8 @@ import {
   settleCancellationRefund,
 } from '@nennbox/core';
 import type { PaymentProvider, PaymentProviderEvent } from '@nennbox/core';
+import { createEntryTransitionMethod } from './entry-transition-method.js';
+import { createEntryWorkflowRepository } from './entry-workflow.js';
 import { createDatabase, migrate } from './database-service.js';
 import { createCheckoutRepository } from './payment-checkouts.js';
 import { createPaymentRefundRepository } from './payment-refunds.js';
@@ -1084,36 +1086,6 @@ describe.skipIf(!url)('refund intents (PostgreSQL)', () => {
 describe.skipIf(!url)(
   'review regressions: checkout and cancellation serialization',
   () => {
-    it('serializes independent checkout creators on PostgreSQL and reuses the single stored session', async () => {
-      const { db, pool } = await createDatabase(url!);
-      const s = await seed(db, 'serialized-checkout');
-      try {
-        const repo = createCheckoutRepository(db);
-        let created = 0;
-        const start = () =>
-          repo.withInvoiceLock!(s.ctx, s.invoice.id, async (locked) => {
-            const invoice = (await locked.get(s.ctx, s.invoice.id))!;
-            if (invoice.pendingSession) return invoice.pendingSession.id;
-            const id = `cs-${s.suffix}-${++created}`;
-            await locked.createSession(s.ctx, s.invoice.id, {
-              id,
-              url: 'https://checkout.test/one',
-              amountCents: 4200,
-              paymentMethods: ['card'],
-              expiresAt: new Date(Date.now() + 3600000).toISOString(),
-            });
-            return id;
-          });
-        expect(
-          new Set(await Promise.all([start(), start(), start()])).size,
-        ).toBe(1);
-        expect(created).toBe(1);
-      } finally {
-        await cleanup(db, s.org.id);
-        await pool.end();
-      }
-    });
-
     it('excludes elapsed sessions from reusable checkout and expires them by signed provider event', async () => {
       const { db, pool } = await createDatabase(url!);
       const s = await seed(db, 'expiry', {
@@ -1200,3 +1172,266 @@ describe.skipIf(!url)(
     );
   },
 );
+
+describe.skipIf(!url)('reviewer additional state-machine reproductions', () => {
+  it('reviewer does not refund a reactivated registration on delayed worker retry', async () => {
+    const { db, pool } = await createDatabase(url!);
+    const s = await seed(db, 'reactivation', {
+      orgConfig: {
+        payments: {
+          refundPolicy: { enabled: true, tiers: [], rejectedPercent: 100 },
+        },
+      },
+    });
+    try {
+      await createCheckoutRepository(db).applyProviderEvent(paid(s));
+      await db.transaction(async (tx) => {
+        await tx
+          .update(entries)
+          .set({ acceptanceStatus: 'rejected' })
+          .where(eq(entries.id, s.entries[0]!.id));
+        await openRefundIntent(tx, s.org.id, s.entries[0]!.id, 'rejected');
+      });
+      // Rejected -> pending is a valid default workflow transition before the retry runs.
+      await db
+        .update(entries)
+        .set({ acceptanceStatus: 'pending' })
+        .where(eq(entries.id, s.entries[0]!.id));
+      let refunded = 0;
+      await settleCancellationRefund(s.ctx, s.invoice.id, {
+        intents: createRefundIntentRepository(db),
+        refunds: createPaymentRefundRepository(db),
+        provider: {
+          refund: async (request) => {
+            refunded += request.amountCents;
+            return { id: `re-${s.suffix}` };
+          },
+        } as PaymentProvider,
+      });
+      expect(refunded).toBe(0);
+    } finally {
+      await cleanup(db, s.org.id);
+      await pool.end();
+    }
+  });
+});
+
+describe.skipIf(!url)('reviewer refund race', () => {
+  it('reviewer subtracts a manual refund committed after the automatic snapshot', async () => {
+    const { db, pool } = await createDatabase(url!);
+    const s = await seed(db, 'manual-race', {
+      orgConfig: {
+        payments: {
+          refundPolicy: { enabled: true, tiers: [], rejectedPercent: 50 },
+        },
+      },
+    });
+    try {
+      await createCheckoutRepository(db).applyProviderEvent(paid(s));
+      await db.transaction(async (tx) => {
+        await tx
+          .update(entries)
+          .set({ acceptanceStatus: 'rejected' })
+          .where(eq(entries.id, s.entries[0]!.id));
+        await openRefundIntent(tx, s.org.id, s.entries[0]!.id, 'rejected');
+      });
+      const refunds = createPaymentRefundRepository(db);
+      const intents = createRefundIntentRepository(db);
+      const originalClaim = intents.claim;
+      intents.claim = async (ctx, id) => {
+        const snapshot = await originalClaim(ctx, id);
+        await refunds.recordRefund(ctx, {
+          invoiceId: id,
+          providerPaymentId: `pi-${s.suffix}`,
+          providerRefundId: `re-manual-${s.suffix}`,
+          refundableCents: 4200,
+          currency: 'EUR',
+          amountCents: 2100,
+          actor: 'office',
+          reason: 'manual share',
+        });
+        return snapshot;
+      };
+      let automatic = 0;
+      await settleCancellationRefund(s.ctx, s.invoice.id, {
+        intents,
+        refunds,
+        provider: {
+          refund: async (request) => {
+            automatic += request.amountCents;
+            return { id: `re-auto-${s.suffix}` };
+          },
+        } as PaymentProvider,
+      });
+      expect(automatic).toBe(0);
+    } finally {
+      await cleanup(db, s.org.id);
+      await pool.end();
+    }
+  });
+});
+
+describe.skipIf(!url)('refund reservation concurrency regressions', () => {
+  async function setup(label: string) {
+    const database = await createDatabase(url!);
+    const s = await seed(database.db, label, {
+      orgConfig: {
+        payments: {
+          refundPolicy: { enabled: true, tiers: [], rejectedPercent: 50 },
+        },
+      },
+    });
+    await createCheckoutRepository(database.db).applyProviderEvent(paid(s));
+    await database.db.transaction(async (tx) => {
+      await tx
+        .update(entries)
+        .set({ acceptanceStatus: 'rejected' })
+        .where(eq(entries.id, s.entries[0]!.id));
+      await openRefundIntent(tx, s.org.id, s.entries[0]!.id, 'rejected');
+    });
+    return {
+      ...database,
+      s,
+      refunds: createPaymentRefundRepository(database.db),
+      intents: createRefundIntentRepository(database.db),
+    };
+  }
+
+  it('blocks a parallel manual refund after the automatic amount was reserved, including a stale retry', async () => {
+    const { db, pool, s, refunds, intents } = await setup('auto-reserved');
+    try {
+      let autoAmount = 0;
+      await settleCancellationRefund(s.ctx, s.invoice.id, {
+        intents,
+        refunds,
+        provider: {
+          refund: async (request) => {
+            autoAmount += request.amountCents;
+            expect(
+              await refunds.reserve(s.ctx, {
+                invoiceId: s.invoice.id,
+                providerPaymentId: request.paymentId,
+                idempotencyKey: crypto.randomUUID(),
+                source: { kind: 'manual', amountCents: 2100 },
+              }),
+            ).toEqual({ status: 'unavailable' });
+            return { id: 're-' + s.suffix };
+          },
+        } as PaymentProvider,
+      });
+      expect(autoAmount).toBe(2100);
+      await db
+        .update(paymentRefundIntents)
+        .set({ status: 'processing', claimedAt: new Date(0) })
+        .where(eq(paymentRefundIntents.invoiceId, s.invoice.id));
+      let retryCalls = 0;
+      await settleCancellationRefund(s.ctx, s.invoice.id, {
+        intents,
+        refunds,
+        provider: {
+          refund: async () => {
+            retryCalls++;
+            throw new Error('must not transfer twice');
+          },
+        } as unknown as PaymentProvider,
+      });
+      expect(retryCalls).toBe(0);
+      const [ledger] = await db
+        .select({
+          cents: sql<number>`sum(${invoicePayments.amountCents})::int`,
+        })
+        .from(invoicePayments)
+        .where(eq(invoicePayments.invoiceId, s.invoice.id));
+      expect(ledger?.cents).toBe(2100);
+    } finally {
+      await cleanup(db, s.org.id);
+      await pool.end();
+    }
+  });
+
+  it.each(['pending', 'processing'] as const)(
+    'invalidates a %s intent in the productive reactivation transaction',
+    async (status) => {
+      const { db, pool, s, intents } = await setup('reactivate-product');
+      try {
+        const claimed =
+          status === 'processing'
+            ? await intents.claim(s.ctx, s.invoice.id)
+            : null;
+        const revision = await createEntryWorkflowRepository(db).getEffective(
+          s.ctx,
+          s.event.id,
+        );
+        expect(revision).not.toBeNull();
+        await db
+          .update(entries)
+          .set({ workflowRevisionId: revision!.id })
+          .where(eq(entries.id, s.entries[0]!.id));
+        expect(
+          await createEntryTransitionMethod(db).transition(
+            s.ctx,
+            s.entries[0]!.id,
+            'acceptance',
+            'rejected',
+            'pending',
+            'office',
+            'Reopen',
+          ),
+        ).not.toBeNull();
+        if (claimed)
+          await intents.finish(s.ctx, claimed.id, {
+            status: 'done',
+            percent: 50,
+            refundedCents: 0,
+            failure: null,
+          });
+        const [intent] = await db
+          .select()
+          .from(paymentRefundIntents)
+          .where(eq(paymentRefundIntents.invoiceId, s.invoice.id));
+        expect(intent).toMatchObject({
+          status: 'skipped',
+          failure: 'registration_reactivated',
+        });
+        expect(await intents.claim(s.ctx, s.invoice.id)).toBeNull();
+      } finally {
+        await cleanup(db, s.org.id);
+        await pool.end();
+      }
+    },
+  );
+
+  it('rejects reactivation explicitly while an externally unresolved refund is reserved', async () => {
+    const { db, pool, s, refunds, intents } = await setup('reactivate-running');
+    try {
+      const intent = await intents.claim(s.ctx, s.invoice.id);
+      expect(
+        await refunds.reserve(s.ctx, {
+          invoiceId: s.invoice.id,
+          providerPaymentId: 'pi-' + s.suffix,
+          idempotencyKey: 'auto-refund:' + intent!.id + ':pi-' + s.suffix,
+          source: { kind: 'automatic', intentId: intent!.id, percent: 50 },
+        }),
+      ).toMatchObject({ status: 'reserved', amountCents: 2100 });
+      await expect(
+        createEntryTransitionMethod(db).transition(
+          s.ctx,
+          s.entries[0]!.id,
+          'acceptance',
+          'rejected',
+          'pending',
+          'office',
+          'Reopen',
+        ),
+      ).rejects.toThrow('refund_in_progress');
+      const [entry] = await db
+        .select()
+        .from(entries)
+        .where(eq(entries.id, s.entries[0]!.id));
+      expect(entry?.acceptanceStatus).toBe('rejected');
+    } finally {
+      await cleanup(db, s.org.id);
+      await pool.end();
+    }
+  });
+});

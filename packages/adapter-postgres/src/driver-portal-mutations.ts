@@ -14,6 +14,7 @@ import { eventDriverPortalFields } from './schema/driver-portal.js';
 import { registrationGroups, entries } from './schema/entries.js';
 import { events } from './schema/organization.js';
 import type { Database } from './database.js';
+import { guardRefundTransition } from './refund-transition.js';
 import { openRefundIntent } from './payment-refund-intents.js';
 import type { createDriverPortalAccess } from './driver-portal-access.js';
 import type { DriverPortalField } from './driver-portal.js';
@@ -170,6 +171,13 @@ export function createDriverPortalMutations(
         return false;
       }
       return db.transaction(async (tx) => {
+        await guardRefundTransition(
+          tx,
+          ctx.organizationId,
+          entryId,
+          target.id ?? target.key,
+          'withdrawn',
+        );
         const now = new Date();
         const [updated] = await tx
           .update(entries)

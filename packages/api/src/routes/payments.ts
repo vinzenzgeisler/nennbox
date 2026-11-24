@@ -176,24 +176,41 @@ export function registerPaymentProviderRoutes(context: ApiRoutesContext): void {
       .strict()
       .safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
-    const payment = await deps.paymentRefunds.getRefundable(
-      guard.context,
-      c.req.param('invoiceId'),
-      parsed.data.providerPaymentId,
-    );
-    if (!payment || parsed.data.amountCents > payment.refundableCents)
-      return c.json({ error: 'Refund amount unavailable' }, 409);
+    const invoiceId = c.req.param('invoiceId');
     const actor = guard.context.subject
       ? `${guard.context.subject.issuer}#${guard.context.subject.subject}`
       : guard.context.correlationId;
+    // Reserve first: the amount is checked against the ledger and against refunds
+    // reserved by others (automatic ones included) under the invoice lock.
+    let reservation;
+    try {
+      reservation = await deps.paymentRefunds.reserve(guard.context, {
+        invoiceId,
+        providerPaymentId: parsed.data.providerPaymentId,
+        idempotencyKey: parsed.data.idempotencyKey,
+        source: { kind: 'manual', amountCents: parsed.data.amountCents },
+      });
+    } catch (error) {
+      deps.logger.warn('Stripe refund could not be reserved', {
+        errorName: error instanceof Error ? error.name : 'unknown',
+      });
+      return c.json({ error: 'Refund unavailable' }, 503);
+    }
+    if (reservation.status === 'completed')
+      return c.json(
+        { refundId: reservation.providerRefundId, duplicate: true },
+        201,
+      );
+    if (reservation.status !== 'reserved')
+      return c.json({ error: 'Refund amount unavailable' }, 409);
     let refund: { readonly id: string };
     try {
       refund = await deps.paymentProvider.refund({
-        idempotencyKey: parsed.data.idempotencyKey,
+        idempotencyKey: reservation.idempotencyKey,
         organizationId: guard.context.organizationId,
-        invoiceId: payment.invoiceId,
-        paymentId: payment.providerPaymentId,
-        amountCents: parsed.data.amountCents,
+        invoiceId: reservation.invoiceId,
+        paymentId: reservation.providerPaymentId,
+        amountCents: reservation.amountCents,
         reason: parsed.data.reason,
       });
     } catch (error) {
@@ -204,11 +221,15 @@ export function registerPaymentProviderRoutes(context: ApiRoutesContext): void {
     }
     try {
       const result = await deps.paymentRefunds.recordRefund(guard.context, {
-        ...payment,
-        amountCents: parsed.data.amountCents,
+        invoiceId: reservation.invoiceId,
+        providerPaymentId: reservation.providerPaymentId,
+        refundableCents: reservation.amountCents,
+        currency: reservation.currency,
+        amountCents: reservation.amountCents,
         providerRefundId: refund.id,
         actor,
         reason: parsed.data.reason,
+        reservationKey: reservation.idempotencyKey,
       });
       return result
         ? c.json(

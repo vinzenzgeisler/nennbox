@@ -7,6 +7,9 @@ import {
   type PaymentProvider,
   type PaymentRefundRepository,
   type RefundIntentRepository,
+  type RefundReservation,
+  type RefundReservationRequest,
+  type RequestContext,
 } from '@nennbox/core';
 import { createApp } from './app.js';
 import { testDeps } from './testing.js';
@@ -45,6 +48,7 @@ function makeApp(
   options: {
     sessionPaid?: boolean;
     intent?: boolean;
+    unpaid?: boolean;
     providerFails?: boolean;
     configured?: boolean;
   } = {},
@@ -55,17 +59,36 @@ function makeApp(
   });
   const finish = vi.fn(async () => {});
   const warn = vi.fn();
+  const closeIfReactivated = vi.fn(async () => {});
+  const cancelledInvoiceForEntry = vi.fn(async () =>
+    options.intent === false && !options.unpaid ? null : 'invoice-1',
+  );
+  const claim = vi.fn(async () => (options.unpaid ? null : claimed));
   const refundIntents: RefundIntentRepository = {
     staleInvoiceIds: async () => [],
-    openInvoiceForEntry: async () =>
-      options.intent === false ? null : 'invoice-1',
-    claim: async () => claimed,
+    closeIfReactivated,
+    cancelledInvoiceForEntry,
+    claim,
     finish,
   };
-  const paymentRefunds = {
+  const reserve = vi.fn(
+    async (
+      _ctx: RequestContext,
+      request: RefundReservationRequest,
+    ): Promise<RefundReservation> => ({
+      status: 'reserved',
+      invoiceId: request.invoiceId,
+      providerPaymentId: request.providerPaymentId,
+      idempotencyKey: request.idempotencyKey,
+      amountCents: 4200,
+      currency: 'EUR',
+    }),
+  );
+  const paymentRefunds: PaymentRefundRepository = {
     getRefundable: async () => null,
+    reserve,
     recordRefund: async () => 'recorded' as const,
-  } as PaymentRefundRepository;
+  };
   const expire = vi.fn(async (): Promise<'expired' | 'completed'> =>
     options.sessionPaid ? 'completed' : 'expired',
   );
@@ -89,15 +112,17 @@ function makeApp(
             paymentReference: 'RF',
             currency: 'EUR',
             totalCents: 4200,
-            paidCents: 4200,
-            status: 'paid',
+            paidCents: options.unpaid ? 0 : 4200,
+            status: options.unpaid ? 'cancelled' : 'paid',
             providerPayments: [],
-            refundIntent: {
-              status: 'pending',
-              percent: null,
-              refundedCents: 0,
-              failure: null,
-            },
+            refundIntent: options.unpaid
+              ? null
+              : {
+                  status: 'pending',
+                  percent: null,
+                  refundedCents: 0,
+                  failure: null,
+                },
           },
         },
       }) as never,
@@ -154,7 +179,18 @@ function makeApp(
         reason: 'Fahrer hat abgesagt',
       }),
     });
-  return { withdraw, refund, finish, warn, expire, markSessionsExpired };
+  return {
+    withdraw,
+    refund,
+    reserve,
+    finish,
+    claim,
+    warn,
+    expire,
+    markSessionsExpired,
+    closeIfReactivated,
+    cancelledInvoiceForEntry,
+  };
 }
 
 describe('automatic refund after an admin cancellation', () => {
@@ -224,6 +260,41 @@ describe('automatic refund after an admin cancellation', () => {
     expect(expire.mock.invocationCallOrder[0]!).toBeLessThan(
       refund.mock.invocationCallOrder[0]!,
     );
+  });
+
+  it('expires an unpaid cancelled invoice checkout even when no refund intent exists', async () => {
+    const s = makeApp({ intent: false, unpaid: true });
+    const response = await s.withdraw();
+    expect(response.status).toBe(200);
+    expect(s.closeIfReactivated).toHaveBeenCalledWith(
+      expect.anything(),
+      'entry-1',
+    );
+    expect(s.cancelledInvoiceForEntry).toHaveBeenCalledWith(
+      expect.anything(),
+      'entry-1',
+    );
+    expect(s.expire).toHaveBeenCalledWith({
+      organizationId: org,
+      sessionId: 'cs_open',
+    });
+    expect(s.markSessionsExpired).toHaveBeenCalledWith(
+      expect.anything(),
+      'invoice-1',
+      ['cs_open'],
+    );
+    expect(s.claim).toHaveBeenCalledWith(expect.anything(), 'invoice-1');
+    expect(s.expire.mock.invocationCallOrder[0]!).toBeLessThan(
+      s.claim.mock.invocationCallOrder[0]!,
+    );
+    expect(s.reserve).not.toHaveBeenCalled();
+    expect(s.refund).not.toHaveBeenCalled();
+    expect(s.finish).not.toHaveBeenCalled();
+    expect((await response.json()).adminDetails.invoice).toMatchObject({
+      paidCents: 0,
+      status: 'cancelled',
+      refundIntent: null,
+    });
   });
 
   it('keeps going and logs when a checkout was paid meanwhile, leaving that session untouched', async () => {

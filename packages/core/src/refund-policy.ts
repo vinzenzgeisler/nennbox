@@ -107,11 +107,19 @@ export interface RefundIntentResult {
 }
 
 export interface RefundIntentRepository {
-  /** Invoice with an open refund intent caused by this entry's cancellation. */
-  openInvoiceForEntry(
+  /**
+   * Invoice of the entry's registration group when every entry of the group is
+   * withdrawn or rejected, with or without a refund intent; null otherwise.
+   */
+  cancelledInvoiceForEntry(
     ctx: RequestContext,
     entryId: string,
   ): Promise<string | null>;
+  /**
+   * Called after a status change: when the entry's group takes part again, waiting
+   * intents of its invoice are closed. A refund already reserved is dealt with when it resumes.
+   */
+  closeIfReactivated(ctx: RequestContext, entryId: string): Promise<void>;
   /** Invoices whose intent waits or was taken but not finished for longer than the retry delay. */
   staleInvoiceIds(ctx: RequestContext): Promise<readonly string[]>;
   /**
@@ -129,6 +137,17 @@ export interface RefundIntentRepository {
     result: RefundIntentResult,
   ): Promise<void>;
 }
+
+const failed = (
+  percent: number,
+  refundedCents: number,
+  failure: string,
+): RefundIntentResult => ({
+  status: 'failed',
+  percent,
+  refundedCents,
+  failure,
+});
 
 export const AUTOMATIC_REFUND_ACTOR = 'system:refund-policy';
 
@@ -159,49 +178,78 @@ export async function settleCancellationRefund(
   if (percent <= 0) {
     result = { status: 'skipped', percent, refundedCents, failure: null };
   } else {
+    let stopped: RefundIntentResult | null = null;
     try {
       for (const payment of intent.payments) {
-        // The share is taken from what was paid, then reduced by what already went back.
-        const amountCents = refundDueCents(
-          payment.paidCents,
-          payment.refundableCents,
-          percent,
-        );
-        if (amountCents <= 0) continue;
+        // The amount is decided inside the invoice lock, from the ledger and from
+        // what other refunds reserved; the claim's snapshot only names the payments.
+        const reservation = await deps.refunds.reserve(ctx, {
+          invoiceId: intent.invoiceId,
+          providerPaymentId: payment.providerPaymentId,
+          idempotencyKey: `auto-refund:${intent.id}:${payment.providerPaymentId}`,
+          source: { kind: 'automatic', intentId: intent.id, percent },
+        });
+        if (reservation.status === 'nothing_due') continue;
+        if (reservation.status === 'completed') continue;
+        if (reservation.status === 'reactivated') {
+          stopped =
+            refundedCents > 0
+              ? failed(percent, refundedCents, 'reactivated_during_refund')
+              : {
+                  status: 'skipped',
+                  percent,
+                  refundedCents,
+                  failure: 'registration_reactivated',
+                };
+          break;
+        }
+        if (reservation.status === 'needs_review') {
+          stopped = failed(percent, refundedCents, 'reactivated_during_refund');
+          break;
+        }
+        if (reservation.status !== 'reserved')
+          throw new Error('ledger_rejected');
         const reason = `Automatische Erstattung (${percent} %) bei ${
           intent.trigger === 'withdrawn'
             ? 'Absage durch den Fahrer'
             : 'Ablehnung'
         }`;
         const refund = await deps.provider.refund({
-          idempotencyKey: `auto-refund:${intent.id}:${payment.providerPaymentId}`,
+          idempotencyKey: reservation.idempotencyKey,
           organizationId: ctx.organizationId,
           invoiceId: intent.invoiceId,
-          paymentId: payment.providerPaymentId,
-          amountCents,
+          paymentId: reservation.providerPaymentId,
+          amountCents: reservation.amountCents,
           reason,
         });
         const recorded = await deps.refunds.recordRefund(ctx, {
-          ...payment,
-          amountCents,
+          invoiceId: reservation.invoiceId,
+          providerPaymentId: reservation.providerPaymentId,
+          refundableCents: payment.refundableCents,
+          currency: reservation.currency,
+          amountCents: reservation.amountCents,
           providerRefundId: refund.id,
           actor: AUTOMATIC_REFUND_ACTOR,
           reason,
+          reservationKey: reservation.idempotencyKey,
         });
         if (!recorded) throw new Error('ledger_rejected');
-        refundedCents += amountCents;
+        refundedCents += reservation.amountCents;
       }
-      result = { status: 'done', percent, refundedCents, failure: null };
-    } catch (error) {
-      result = {
-        status: 'failed',
+      result = stopped ?? {
+        status: 'done',
         percent,
         refundedCents,
-        failure:
-          error instanceof Error && error.message === 'ledger_rejected'
-            ? 'ledger_rejected'
-            : 'provider_unavailable',
+        failure: null,
       };
+    } catch (error) {
+      result = failed(
+        percent,
+        refundedCents,
+        error instanceof Error && error.message === 'ledger_rejected'
+          ? 'ledger_rejected'
+          : 'provider_unavailable',
+      );
     }
   }
   await deps.intents.finish(ctx, intent.id, result);

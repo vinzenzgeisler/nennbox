@@ -2,6 +2,7 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import { runMigrations } from 'graphile-worker';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
+  createCheckoutRepository,
   createDatabase,
   entries,
   eventClasses,
@@ -259,5 +260,49 @@ describe.skipIf(!url)('automatic refund retry job (PostgreSQL)', () => {
     // One failed (visible in the admin detail), the other one was still processed.
     expect(states).toEqual(['done', 'failed']);
     expect(warnings).toContain('Automatic refund retry failed');
+  });
+  it('retries closing an unpaid cancellation checkout after a provider outage without a refund intent', async () => {
+    const s = await seed('unpaid-close', { status: 'pending', ageMinutes: 30 });
+    await db
+      .delete(paymentRefundIntents)
+      .where(eq(paymentRefundIntents.invoiceId, s.invoiceId));
+    await db
+      .delete(invoicePayments)
+      .where(eq(invoicePayments.invoiceId, s.invoiceId));
+    await db
+      .update(invoices)
+      .set({ status: 'open' })
+      .where(eq(invoices.id, s.invoiceId));
+    const ctx = { organizationId: s.orgId } as Parameters<
+      ReturnType<typeof createCheckoutRepository>['createSession']
+    >[0];
+    const repo = createCheckoutRepository(db);
+    await repo.createSession(ctx, s.invoiceId, {
+      id: 'cs-' + s.invoiceId,
+      url: 'https://checkout.test/unpaid',
+      amountCents: 4200,
+      paymentMethods: ['card'],
+      expiresAt: null,
+    });
+    let calls = 0;
+    const task = createRefundRetryTask({
+      db,
+      deploymentMode: 'community',
+      communityOrganizationId: s.orgId,
+      provider: {
+        expireCheckoutSession: async () => {
+          if (++calls === 1) throw new Error('offline');
+          return 'expired';
+        },
+        refund: async () => {
+          throw new Error('unpaid: no refund');
+        },
+      } as unknown as PaymentProvider,
+    });
+    await task();
+    expect(await repo.pendingSessions(ctx, s.invoiceId)).toHaveLength(1);
+    await task();
+    expect(calls).toBe(2);
+    expect(await repo.pendingSessions(ctx, s.invoiceId)).toHaveLength(0);
   });
 });

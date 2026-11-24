@@ -174,12 +174,68 @@ export interface RefundablePayment {
   readonly currency: string;
 }
 
+/**
+ * What reserving a refund under the invoice lock decided. A reservation fixes
+ * the amount and the provider idempotency key: a retry resumes the same
+ * operation instead of computing a new amount from a stale snapshot.
+ */
+export type RefundReservation =
+  | {
+      readonly status: 'reserved';
+      readonly invoiceId: string;
+      readonly providerPaymentId: string;
+      readonly idempotencyKey: string;
+      readonly amountCents: number;
+      readonly currency: string;
+    }
+  /** Same operation already booked in the ledger; nothing to do any more. */
+  | {
+      readonly status: 'completed';
+      readonly amountCents: number;
+      readonly providerRefundId: string | null;
+    }
+  /** Automatic: the rule's share is already given back or reserved. */
+  | { readonly status: 'nothing_due' }
+  /** Manual: amount exceeds what is left, or the key belongs to another operation. */
+  | { readonly status: 'unavailable' }
+  /** Automatic: the group takes part again (or the intent was withdrawn); no money moved. */
+  | { readonly status: 'reactivated' }
+  /**
+   * Automatic: the registration took part again while a reserved refund may
+   * already be running at the provider. It is not resumed; the organizer settles it.
+   */
+  | { readonly status: 'needs_review' };
+
+export interface RefundReservationRequest {
+  readonly invoiceId: string;
+  readonly providerPaymentId: string;
+  readonly idempotencyKey: string;
+  /** Manual: exactly this amount. Automatic: derived from the rule inside the lock. */
+  readonly source:
+    | { readonly kind: 'manual'; readonly amountCents: number }
+    | {
+        readonly kind: 'automatic';
+        readonly intentId: string;
+        readonly percent: number;
+      };
+}
+
 export interface PaymentRefundRepository {
   getRefundable(
     ctx: import('./context.js').RequestContext,
     invoiceId: string,
     providerPaymentId: string,
   ): Promise<RefundablePayment | null>;
+  /**
+   * Reserves a refund atomically per invoice: what the rule allows, what was
+   * already refunded and what other refunds reserved are computed inside the
+   * same invoice lock the ledger booking uses. Every refund, manual or
+   * automatic, must reserve before it calls the provider.
+   */
+  reserve(
+    ctx: import('./context.js').RequestContext,
+    request: RefundReservationRequest,
+  ): Promise<RefundReservation>;
   recordRefund(
     ctx: import('./context.js').RequestContext,
     input: RefundablePayment & {
@@ -187,6 +243,8 @@ export interface PaymentRefundRepository {
       providerRefundId: string;
       actor: string;
       reason: string;
+      /** Idempotency key of the reservation this refund fulfils; completed in the same transaction. */
+      reservationKey?: string;
     },
   ): Promise<'recorded' | 'duplicate' | null>;
 }

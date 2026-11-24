@@ -7,6 +7,10 @@ import {
   invoicePaymentAuditEvents,
 } from './schema/billing.js';
 import { deriveInvoiceStatus } from '@nennbox/core';
+import {
+  completeReservation,
+  reserveRefund,
+} from './payment-refund-reservations.js';
 
 export function createPaymentRefundRepository(
   db: Database,
@@ -44,6 +48,7 @@ export function createPaymentRefundRepository(
         currency: row.currency,
       };
     },
+    reserve: (ctx, request) => reserveRefund(db, ctx, request),
     recordRefund: async (ctx, input) =>
       db.transaction(async (tx) => {
         const [invoice] = await tx
@@ -69,7 +74,16 @@ export function createPaymentRefundRepository(
             ),
           )
           .limit(1);
-        if (existing.length) return 'duplicate';
+        if (existing.length) {
+          if (input.reservationKey)
+            await completeReservation(
+              tx,
+              ctx.organizationId,
+              input.reservationKey,
+              input.providerRefundId,
+            );
+          return 'duplicate';
+        }
         const [refundable] = await tx
           .select({
             amount: sql<number>`coalesce(sum(${invoicePayments.amountCents}) filter (where ${invoicePayments.providerRefundId} is null and ${invoicePayments.amountCents} > 0), 0)::int + coalesce(sum(${invoicePayments.amountCents}) filter (where ${invoicePayments.providerRefundId} is not null), 0)::int`,
@@ -134,6 +148,13 @@ export function createPaymentRefundRepository(
               eq(invoices.organizationId, ctx.organizationId),
               eq(invoices.id, input.invoiceId),
             ),
+          );
+        if (input.reservationKey)
+          await completeReservation(
+            tx,
+            ctx.organizationId,
+            input.reservationKey,
+            input.providerRefundId,
           );
         return 'recorded';
       }),

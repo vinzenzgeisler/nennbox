@@ -10,6 +10,10 @@ import type { Database } from './database.js';
 import type { EntryRepository } from '@nennbox/core';
 import { attachAdminEntryDetails } from './entry-admin-details.js';
 import { offerWaitlistSeat } from './waitlist-offer.js';
+import {
+  guardRefundTransition,
+  invalidateReactivatedRefunds,
+} from './refund-transition.js';
 import { openRefundIntent } from './payment-refund-intents.js';
 
 export function createEntryTransitionMethod(
@@ -27,6 +31,14 @@ export function createEntryTransitionMethod(
       workflow,
     ) =>
       db.transaction(async (tx) => {
+        if (transition === 'acceptance')
+          await guardRefundTransition(
+            tx,
+            ctx.organizationId,
+            id,
+            toStatus,
+            workflow?.statusCategory,
+          );
         const statusColumn =
           transition === 'verification'
             ? entries.verificationStatus
@@ -83,6 +95,8 @@ export function createEntryTransitionMethod(
               : 'rejected',
           );
         }
+        if (transition === 'acceptance')
+          await invalidateReactivatedRefunds(tx, ctx.organizationId, id);
         if (transition === 'acceptance' && workflow?.notification) {
           const [recipient] = await tx
             .select({

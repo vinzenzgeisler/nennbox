@@ -13,6 +13,8 @@ import type {
   ClaimedRefundIntent,
   PaymentProvider,
   PaymentRefundRepository,
+  RefundReservation,
+  RefundReservationRequest,
   RefundIntentRepository,
   RefundPolicy,
   RequestContext,
@@ -124,7 +126,8 @@ describe('settling a cancellation refund', () => {
   ) {
     const finish = vi.fn(async () => {});
     const intents: RefundIntentRepository = {
-      openInvoiceForEntry: async () => 'invoice-1',
+      cancelledInvoiceForEntry: async () => 'invoice-1',
+      closeIfReactivated: async () => {},
       staleInvoiceIds: async () => [],
       claim: vi.fn(async () => intent),
       finish,
@@ -132,16 +135,38 @@ describe('settling a cancellation refund', () => {
     const recordRefund = vi.fn(async () =>
       options.ledger === undefined ? ('recorded' as const) : options.ledger,
     );
-    const refunds = {
+    const reserve = vi.fn(
+      async (
+        _ctx: RequestContext,
+        request: RefundReservationRequest,
+      ): Promise<RefundReservation> => ({
+        status: 'reserved',
+        invoiceId: request.invoiceId,
+        providerPaymentId: request.providerPaymentId,
+        idempotencyKey: request.idempotencyKey,
+        amountCents: request.providerPaymentId === 'pi_1' ? 1500 : 600,
+        currency: 'EUR',
+      }),
+    );
+    const refunds: PaymentRefundRepository = {
       getRefundable: async () => null,
+      reserve,
       recordRefund,
-    } as PaymentRefundRepository;
+    };
     const refund = vi.fn(async (request: { idempotencyKey: string }) => {
       if (options.refundFails) throw new Error('stripe down');
       return { id: `re_${request.idempotencyKey}` };
     });
     const provider = { refund } as unknown as PaymentProvider;
-    return { intents, refunds, provider, finish, recordRefund, refund };
+    return {
+      intents,
+      refunds,
+      provider,
+      finish,
+      recordRefund,
+      reserve,
+      refund,
+    };
   }
 
   it('refunds the share of every online payment with keys derived from the intent and records them as the system', async () => {
@@ -153,6 +178,16 @@ describe('settling a cancellation refund', () => {
       refundedCents: 2100,
       failure: null,
     });
+    expect(s.reserve).toHaveBeenCalledTimes(2);
+    expect(s.reserve).toHaveBeenCalledWith(ctx, {
+      invoiceId: 'invoice-1',
+      providerPaymentId: 'pi_1',
+      idempotencyKey: 'auto-refund:intent-1:pi_1',
+      source: { kind: 'automatic', intentId: 'intent-1', percent: 50 },
+    });
+    expect(s.reserve.mock.invocationCallOrder[0]!).toBeLessThan(
+      s.refund.mock.invocationCallOrder[0]!,
+    );
     expect(s.refund).toHaveBeenCalledTimes(2);
     expect(s.refund).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -168,6 +203,7 @@ describe('settling a cancellation refund', () => {
         providerPaymentId: 'pi_2',
         amountCents: 600,
         actor: AUTOMATIC_REFUND_ACTOR,
+        reservationKey: 'auto-refund:intent-1:pi_2',
         reason: expect.stringContaining('50 %'),
       }),
     );
@@ -205,6 +241,7 @@ describe('settling a cancellation refund', () => {
       percent: 0,
     });
     expect(s.refund).not.toHaveBeenCalled();
+    expect(s.reserve).not.toHaveBeenCalled();
   });
 
   it('does nothing when no intent is waiting', async () => {
@@ -228,6 +265,7 @@ describe('settling a cancellation refund', () => {
         },
       ],
     }));
+    s.reserve.mockResolvedValue({ status: 'nothing_due' });
     const result = await settleCancellationRefund(ctx, 'invoice-1', s);
     expect(result).toEqual({
       status: 'done',
@@ -235,6 +273,42 @@ describe('settling a cancellation refund', () => {
       refundedCents: 0,
       failure: null,
     });
+    expect(s.reserve).toHaveBeenCalledWith(ctx, {
+      invoiceId: 'invoice-1',
+      providerPaymentId: 'pi_1',
+      idempotencyKey: 'auto-refund:intent-1:pi_1',
+      source: { kind: 'automatic', intentId: 'intent-1', percent: 50 },
+    });
     expect(s.refund).not.toHaveBeenCalled();
+    expect(s.recordRefund).not.toHaveBeenCalled();
+  });
+
+  it('uses the locked reservation amount rather than the claimed payment snapshot', async () => {
+    const s = setup();
+    s.reserve.mockResolvedValueOnce({
+      status: 'reserved',
+      invoiceId: 'invoice-1',
+      providerPaymentId: 'pi_1',
+      idempotencyKey: 'auto-refund:intent-1:pi_1',
+      amountCents: 250,
+      currency: 'EUR',
+    });
+    expect(await settleCancellationRefund(ctx, 'invoice-1', s)).toEqual({
+      status: 'done',
+      percent: 50,
+      refundedCents: 850,
+      failure: null,
+    });
+    expect(s.refund).toHaveBeenCalledWith(
+      expect.objectContaining({ paymentId: 'pi_1', amountCents: 250 }),
+    );
+    expect(s.recordRefund).toHaveBeenCalledWith(
+      ctx,
+      expect.objectContaining({
+        providerPaymentId: 'pi_1',
+        amountCents: 250,
+        reservationKey: 'auto-refund:intent-1:pi_1',
+      }),
+    );
   });
 });
