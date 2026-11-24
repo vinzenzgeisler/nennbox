@@ -82,6 +82,50 @@ test('admin creates a class, terms and opens its public registration in the UI',
     name: 'Abschnittsnavigation',
   });
   await setupNav
+    .getByRole('link', { name: /Veranstalter und Zahlung/ })
+    .click();
+  const organizerSettings = page.locator('#event-setup-organizer');
+  await expect(
+    organizerSettings.getByText('Zahlungsarten für diese Veranstaltung', {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    organizerSettings.getByLabel(
+      'Online-Zahlungen bei Absage automatisch erstatten',
+    ),
+  ).toBeVisible();
+  await organizerSettings.getByLabel('Karte', { exact: true }).check();
+  await organizerSettings
+    .getByRole('button', {
+      name: 'Zahlungseinstellungen speichern',
+      exact: true,
+    })
+    .click();
+  await expect(
+    organizerSettings.getByText('Zahlungseinstellungen gespeichert.', {
+      exact: true,
+    }),
+  ).toBeVisible();
+  if (verificationDir) {
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.screenshot({
+        path: `${verificationDir}/payment-settings-${width}.png`,
+        fullPage: true,
+      });
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+      ).toBeLessThanOrEqual(width);
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+  }
+  await setupNav.getByRole('link', { name: /Formularfelder/ }).click();
+  await expect(page.locator('#event-setup-form-fields')).not.toContainText(
+    'Zahlungsarten',
+  );
+  await expect(organizerSettings).not.toBeVisible();
+  await setupNav
     .getByRole('link', { name: /Startnummern & Warteliste/ })
     .click();
   const numberSettings = page.getByRole('region', {
