@@ -158,7 +158,14 @@ function AdminEntriesView({
   });
   const openEntryDetail = useOpenEntryDetail(selected, openEntry, openDetail);
   const quick = useEntryQuickRequest(openEntryDetail);
-  useAutoPreviewEntry({ autoSelectFirst, eventId, items, workflow, openEntry });
+  useAutoPreviewEntry({
+    autoSelectFirst,
+    eventId,
+    items,
+    workflow,
+    selected,
+    openEntry,
+  });
   usePreviewAdvance({
     eventId,
     items,
