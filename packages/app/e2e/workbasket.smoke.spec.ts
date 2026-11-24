@@ -3,12 +3,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 
 test.use({
   launchOptions: {
-    args: [
-      '--disable-gpu',
-      '--renderer-process-limit=1',
-      '--single-process',
-      '--no-zygote',
-    ],
+    args: ['--disable-gpu', '--renderer-process-limit=1'],
   },
 });
 
@@ -84,6 +79,56 @@ for (const width of [1440, 1024, 390]) {
           `${evidence}/metrics-${width}.json`,
           JSON.stringify(measurements, null, 2),
         );
+      }
+      const campaigns: string[] = [];
+      page.on('request', (request) => {
+        if (request.method() === 'POST' && request.url().endsWith('/campaigns'))
+          campaigns.push(request.url());
+      });
+      await basket
+        .getByRole('button', { name: 'Unterlagen anfordern', exact: true })
+        .click();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+      await dialog
+        .getByRole('textbox', { name: 'Betreff' })
+        .fill(`Arbeitskorb-Smoke ${width}`);
+      await expect(
+        dialog.getByRole('button', { name: /^Jetzt an/ }),
+      ).toHaveCount(0);
+      await dialog.getByRole('button', { name: 'Vorschau erstellen' }).click();
+      await expect(
+        dialog.getByRole('heading', { name: /Verbindliche Empfängervorschau/ }),
+      ).toBeVisible();
+      expect(campaigns).toEqual([]);
+      expect(
+        await dialog.evaluate(
+          (element) => element.scrollWidth <= element.clientWidth,
+        ),
+      ).toBe(true);
+      if (evidence)
+        await page.screenshot({ path: `${evidence}/reminder-${width}.png` });
+      await page.keyboard.press('Escape');
+      await expect(dialog).not.toBeVisible();
+      if (width === 1440) {
+        await basket
+          .getByRole('button', { name: 'Unterlagen anfordern', exact: true })
+          .click();
+        await dialog.getByRole('button', { name: /^Jetzt an/ }).click();
+        await expect(
+          dialog.getByRole('heading', { name: 'Versandergebnis', exact: true }),
+        ).toBeVisible();
+        expect(campaigns).toHaveLength(1);
+        await expect(
+          dialog.getByRole('group', { name: 'Versand je Empfänger' }),
+        ).toBeVisible();
+        await dialog
+          .getByRole('button', { name: 'Versandstatus aktualisieren' })
+          .click();
+        if (evidence)
+          await page.screenshot({ path: `${evidence}/result-${width}.png` });
+        await page.keyboard.press('Escape');
+        await expect(dialog).not.toBeVisible();
       }
       const open = basket
         .getByRole('button', { name: 'Nennung öffnen', exact: true })
