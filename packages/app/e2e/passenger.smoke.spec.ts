@@ -289,8 +289,8 @@ test('A co-driver completes data and consents through the personal link; the off
   await expect(spare).toContainText('Fiat 131 Abarth');
   await expect(spare).toContainText('Ersatz');
   await detail
-    .getByRole('navigation', { name: 'Bereiche der Nennung' })
-    .getByRole('button', { name: /^Unterlagen/ })
+    .getByRole('tablist', { name: 'Bereiche der Nennung' })
+    .getByRole('tab', { name: /^Unterlagen/ })
     .click();
   const consents = detail.getByRole('region', {
     name: 'Einwilligungen Beifahrer',

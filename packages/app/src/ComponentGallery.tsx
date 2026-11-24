@@ -206,6 +206,14 @@ export function ComponentGallery() {
               'check',
               'settings',
               'switch',
+              'person',
+              'amount',
+              'note',
+              'link',
+              'warning',
+              'payment',
+              'tag',
+              'trash',
             ] as const
           ).map((name) => (
             <span className="nb-icon-sample" key={name}>

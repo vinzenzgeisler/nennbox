@@ -251,7 +251,7 @@ async function selectDetailTab(label: string) {
   expect(tab).toBeDefined();
   await act(async () => tab!.click());
   await flush();
-  expect(tab!.getAttribute('aria-pressed')).toBe('true');
+  expect(tab!.getAttribute('aria-selected')).toBe('true');
 }
 async function openDetailMenu() {
   // Actions are directly available in the persistent sidebar after #217.

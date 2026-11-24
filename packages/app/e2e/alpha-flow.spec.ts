@@ -508,7 +508,7 @@ test('Community registration and admin lifecycle with API setup', async ({
   await expect(preview).toContainText('Angenommen');
   await preview.getByRole('button', { name: 'Nennung öffnen' }).click();
   const entryDetail = page.locator('.nb-entry-page');
-  const detailTabs = entryDetail.getByRole('navigation', {
+  const detailTabs = entryDetail.getByRole('tablist', {
     name: 'Bereiche der Nennung',
   });
   await expect(entryDetail).toBeVisible();
@@ -526,7 +526,7 @@ test('Community registration and admin lifecycle with API setup', async ({
   ])
     await expect(entryDetail).toContainText(value);
   // Evidence, downloads and payment live on the explicit documents tab.
-  await detailTabs.getByRole('button', { name: /^Unterlagen\b/ }).click();
+  await detailTabs.getByRole('tab', { name: /^Unterlagen\b/ }).click();
   // The accepted consent is shown from its stored evidence, with the exact wording.
   const consents = entryDetail.getByRole('region', { name: 'Einwilligungen' });
   await expect(consents).toContainText('participation');
@@ -557,9 +557,7 @@ test('Community registration and admin lifecycle with API setup', async ({
   if (!pdfPath) throw new Error('PDF download path is missing');
   expect(readFileSync(pdfPath).subarray(0, 4).toString()).toBe('%PDF');
   await shots('admin-entry-detail');
-  await detailTabs
-    .getByRole('button', { name: 'Verlauf', exact: true })
-    .click();
+  await detailTabs.getByRole('tab', { name: 'Verlauf', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
     /zugelassen|angenommen/i,
   );
@@ -684,7 +682,7 @@ test('admin records payment from entry detail UI', async ({
     .locator('button[data-entry-action]')
     .dblclick();
   const entryDetail = page.locator('.nb-entry-page');
-  const detailTabs = entryDetail.getByRole('navigation', {
+  const detailTabs = entryDetail.getByRole('tablist', {
     name: 'Bereiche der Nennung',
   });
   await expect(entryDetail).toBeVisible();
@@ -692,7 +690,7 @@ test('admin records payment from entry detail UI', async ({
 
   // Stripe-enabled runs reach the ledger through the signed browser webhook;
   // the baseline Community smoke records a bank/manual payment here.
-  await detailTabs.getByRole('button', { name: /^Unterlagen\b/ }).click();
+  await detailTabs.getByRole('tab', { name: /^Unterlagen\b/ }).click();
   const documents = entryDetail.getByRole('region', {
     name: 'Unterlagen und Zahlung',
     exact: true,
@@ -717,9 +715,7 @@ test('admin records payment from entry detail UI', async ({
       .fill('Alpha E2E partial refund');
     await dialog.getByRole('button', { name: 'Erstattung auslösen' }).click();
     await expect(dialog).toHaveCount(0);
-    await detailTabs
-      .getByRole('button', { name: 'Verlauf', exact: true })
-      .click();
+    await detailTabs.getByRole('tab', { name: 'Verlauf', exact: true }).click();
     await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
       'Zahlung erstattet',
     );
@@ -737,9 +733,7 @@ test('admin records payment from entry detail UI', async ({
     await expect(
       entryDetail.getByRole('button', { name: 'Zahlung erfassen' }),
     ).toHaveCount(0);
-    await detailTabs
-      .getByRole('button', { name: 'Verlauf', exact: true })
-      .click();
+    await detailTabs.getByRole('tab', { name: 'Verlauf', exact: true }).click();
     await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
       'Zahlung eingegangen',
     );

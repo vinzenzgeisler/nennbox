@@ -1,5 +1,6 @@
 import {
   ActionGroup,
+  Icon,
   NextStep,
   NextStepButton,
   RailAction,
@@ -101,6 +102,8 @@ export function EntryActionRail({
   onPassenger: (kind: 'add' | 'link') => void;
 }) {
   const { primary, others } = statusSteps(entry, workflow);
+  const regular = others.filter((step) => !step.danger);
+  const destructive = others.filter((step) => step.danger);
   const missing = missingRequirements(entry);
   const invoice = entry.adminDetails?.invoice;
   const onSite = (entry.statusProjection?.dimensions ?? []).flatMap((item) => {
@@ -134,6 +137,7 @@ export function EntryActionRail({
         <ActionGroup title="Vor Ort">
           {onSite.map((action) => (
             <RailAction
+              icon={<Icon name="approval" />}
               key={action.dimension}
               disabled={busy}
               onClick={() => onDimension(action)}
@@ -146,12 +150,20 @@ export function EntryActionRail({
       {(canPay || canVerify) && (
         <ActionGroup title="Prüfung und Zahlung">
           {canVerify && (
-            <RailAction disabled={busy} onClick={onVerify}>
+            <RailAction
+              icon={<Icon name="check" />}
+              disabled={busy}
+              onClick={onVerify}
+            >
               E-Mail verifizieren
             </RailAction>
           )}
           {canPay && (
-            <RailAction disabled={busy} onClick={onPayment}>
+            <RailAction
+              icon={<Icon name="payment" />}
+              disabled={busy}
+              onClick={onPayment}
+            >
               Zahlung erfassen
             </RailAction>
           )}
@@ -160,12 +172,20 @@ export function EntryActionRail({
       {(canAddPassenger || canLinkPassenger) && (
         <ActionGroup title="Beifahrer">
           {canAddPassenger && (
-            <RailAction disabled={busy} onClick={() => onPassenger('add')}>
+            <RailAction
+              icon={<Icon name="person" />}
+              disabled={busy}
+              onClick={() => onPassenger('add')}
+            >
               Beifahrer nachmelden
             </RailAction>
           )}
           {canLinkPassenger && (
-            <RailAction disabled={busy} onClick={() => onPassenger('link')}>
+            <RailAction
+              icon={<Icon name="link" />}
+              disabled={busy}
+              onClick={() => onPassenger('link')}
+            >
               Persönlichen Link erstellen
             </RailAction>
           )}
@@ -176,6 +196,7 @@ export function EntryActionRail({
           {onRequestDocument &&
             requestableUploads(entry).map((line) => (
               <RailAction
+                icon={<Icon name="document" />}
                 key={line.key}
                 disabled={busy}
                 onClick={() => onRequestDocument(line)}
@@ -183,17 +204,21 @@ export function EntryActionRail({
                 {line.label} nachfordern
               </RailAction>
             ))}
-          <RailAction disabled={busy} onClick={onMessage}>
+          <RailAction
+            icon={<Icon name="mail" />}
+            disabled={busy}
+            onClick={onMessage}
+          >
             Nachricht schreiben
           </RailAction>
         </ActionGroup>
       )}
-      {others.length > 0 && (
+      {regular.length > 0 && (
         <ActionGroup title="Status">
-          {others.map((step) => (
+          {regular.map((step) => (
             <RailAction
+              icon={<Icon name="switch" />}
               key={step.to}
-              tone={step.danger ? 'danger' : 'default'}
               disabled={busy}
               onClick={() => onStatus(step)}
             >
@@ -210,7 +235,6 @@ export function EntryActionRail({
             'adjust_amount',
             'note:internal',
             'note:driver',
-            'delete',
           ].includes(action),
       ) && (
         <ActionGroup title="Nennung verwalten">
@@ -219,6 +243,7 @@ export function EntryActionRail({
               action.startsWith('change_class:'),
             )) && (
             <RailAction
+              icon={<Icon name="tag" />}
               disabled={busy}
               onClick={() => onAdminAction('change_class')}
             >
@@ -227,6 +252,7 @@ export function EntryActionRail({
           )}
           {entry.availableActions?.includes('adjust_amount') && (
             <RailAction
+              icon={<Icon name="amount" />}
               disabled={busy}
               onClick={() => onAdminAction('adjust_amount')}
             >
@@ -235,20 +261,43 @@ export function EntryActionRail({
           )}
           {(entry.availableActions?.includes('note:internal') ||
             entry.availableActions?.includes('note:driver')) && (
-            <RailAction disabled={busy} onClick={() => onAdminAction('note')}>
+            <RailAction
+              icon={<Icon name="note" />}
+              disabled={busy}
+              onClick={() => onAdminAction('note')}
+            >
               Notiz hinzufügen
             </RailAction>
           )}
-          {entry.availableActions?.includes('delete') && (
-            <RailAction
-              tone="danger"
-              disabled={busy}
-              onClick={() => onAdminAction('delete')}
-            >
-              Nennung löschen …
-            </RailAction>
-          )}
         </ActionGroup>
+      )}
+      {(destructive.length > 0 ||
+        entry.availableActions?.includes('delete')) && (
+        <div className="nb-entry-danger-actions">
+          <ActionGroup title="Ablehnen und Löschen" hideTitle>
+            {destructive.map((step) => (
+              <RailAction
+                icon={<Icon name="warning" />}
+                key={step.to}
+                tone="danger"
+                disabled={busy}
+                onClick={() => onStatus(step)}
+              >
+                {step.label}
+              </RailAction>
+            ))}
+            {entry.availableActions?.includes('delete') && (
+              <RailAction
+                icon={<Icon name="trash" />}
+                tone="danger"
+                disabled={busy}
+                onClick={() => onAdminAction('delete')}
+              >
+                Nennung löschen …
+              </RailAction>
+            )}
+          </ActionGroup>
+        </div>
       )}
       <RailNote>
         Nur mögliche Aktionen werden gezeigt. Erledigtes wie die Zahlung
