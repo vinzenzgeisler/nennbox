@@ -25,6 +25,7 @@ export const checkoutSessions = pgTable(
     url: text('url').notNull(),
     status: text('status').notNull().default('checkout_pending'),
     amountCents: integer('amount_cents'),
+    paymentMethods: text('payment_methods').array(),
     expiresAt: timestamp('expires_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -96,6 +97,7 @@ export const paymentRefundIntents = pgTable(
     percent: integer('percent'),
     refundedCents: integer('refunded_cents').notNull().default(0),
     failure: text('failure'),
+    claimedAt: timestamp('claimed_at', { withTimezone: true }),
     cancelledAt: timestamp('cancelled_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -119,14 +121,14 @@ export const paymentRefundIntents = pgTable(
     }).onDelete('cascade'),
     uniqueIndex('payment_refund_intent_open_unique')
       .on(t.organizationId, t.invoiceId)
-      .where(sql`${t.status} in ('pending','done')`),
+      .where(sql`${t.status} in ('pending','processing','done')`),
     check(
       'payment_refund_intent_trigger_check',
       sql`${t.trigger} in ('withdrawn','rejected')`,
     ),
     check(
       'payment_refund_intent_status_check',
-      sql`${t.status} in ('pending','done','failed','skipped')`,
+      sql`${t.status} in ('pending','processing','done','failed','skipped')`,
     ),
   ],
 );

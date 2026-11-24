@@ -2,6 +2,10 @@ import { run } from 'graphile-worker';
 import { and, eq } from 'drizzle-orm';
 import { createDatabase, organizations } from '@nennbox/adapter-postgres';
 import { createSmtpMailProvider } from '@nennbox/adapter-smtp';
+import {
+  createStripePaymentProvider,
+  resolveStripeSecretFiles,
+} from '@nennbox/adapter-stripe';
 import { validateMailConfig } from '@nennbox/contracts';
 import { staticCanonicalOrigin } from '@nennbox/core';
 import { createProductWorker, type ProductWorkerEdition } from './product.js';
@@ -38,6 +42,32 @@ const smtp =
 console.info(
   `Mail delivery capability: ${smtp ? 'enabled' : 'disabled (SMTP or CANONICAL_BASE_URL is not fully configured)'}`,
 );
+const stripeEnv = resolveStripeSecretFiles(env);
+if (
+  Boolean(stripeEnv.STRIPE_SECRET_KEY) !==
+  Boolean(stripeEnv.STRIPE_WEBHOOK_SECRET)
+)
+  throw new Error(
+    'Invalid configuration variables: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET',
+  );
+// Single-account provider: Community only. Cloud supplies an account-aware provider.
+const paymentProvider =
+  mode === 'community' &&
+  stripeEnv.STRIPE_SECRET_KEY &&
+  stripeEnv.STRIPE_WEBHOOK_SECRET
+    ? createStripePaymentProvider({
+        secretKey: stripeEnv.STRIPE_SECRET_KEY,
+        webhookSecret: stripeEnv.STRIPE_WEBHOOK_SECRET,
+        ...(stripeEnv.STRIPE_API_BASE_URL
+          ? { apiBaseUrl: stripeEnv.STRIPE_API_BASE_URL }
+          : {}),
+      })
+    : undefined;
+const refundRetryAfterMs = Number(env.PAYMENT_REFUND_RETRY_AFTER_MS ?? 600_000);
+if (!Number.isSafeInteger(refundRetryAfterMs) || refundRetryAfterMs < 60_000)
+  throw new Error(
+    'PAYMENT_REFUND_RETRY_AFTER_MS must be at least 60000 milliseconds',
+  );
 const { db, pool } = await createDatabase(databaseUrl);
 const storage = readStorageConfiguration(env);
 
@@ -60,6 +90,9 @@ const { taskList } = createProductWorker({
   db,
   edition: await readEdition(),
   ...(storage ? { storage } : {}),
+  ...(paymentProvider
+    ? { payments: { provider: paymentProvider, refundRetryAfterMs } }
+    : {}),
   registrationUploadRetentionDays: parseRegistrationUploadRetentionDays(
     env.REGISTRATION_UPLOAD_RETENTION_DAYS,
   ),
@@ -74,15 +107,15 @@ const { taskList } = createProductWorker({
     : {}),
   onRejected: (task, reason) => console.warn(`Rejected job ${task}: ${reason}`),
 });
+const crontab = [
+  ...(storage ? ['*/5 * * * * registration_upload_cleanup'] : []),
+  '* * * * * waitlist_deadlines',
+  ...(paymentProvider ? ['*/5 * * * * payment_refund_retry'] : []),
+];
 const runner = await run({
   connectionString: databaseUrl,
   taskList,
-  ...(storage
-    ? {
-        crontab:
-          '*/5 * * * * registration_upload_cleanup\n* * * * * waitlist_deadlines',
-      }
-    : { crontab: '* * * * * waitlist_deadlines' }),
+  crontab: crontab.join('\n'),
 });
 const stop = async () => {
   await runner.stop();

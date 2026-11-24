@@ -75,25 +75,25 @@ const defaultCopy: Record<MailTemplateKey, Record<MailLocale, MailTemplate>> = {
   'entry-received': {
     de: {
       subject: 'Nennung eingegangen: {{eventName}}',
-      text: 'Hallo {{recipientName}}, deine Nennung für {{eventName}} ist eingegangen. {{paymentSummary}} Deine Nennung und die Zahlung findest du hier: {{portalUrl}}',
-      html: '<p>Hallo {{recipientName}}, deine Nennung für {{eventName}} ist eingegangen.</p><p>{{paymentSummary}}</p><p><a href="{{portalUrl}}">Meine Nennung öffnen</a></p>',
+      text: 'Hallo {{recipientName}}, deine Nennung für {{eventName}} ist eingegangen. {{paymentSummary}} Auf „Meine Nennung“ kannst du dir einen persönlichen Zugangslink per E-Mail zuschicken lassen und dort deine Nennung ansehen und bezahlen: {{portalUrl}}',
+      html: '<p>Hallo {{recipientName}}, deine Nennung für {{eventName}} ist eingegangen.</p><p>{{paymentSummary}}</p><p><a href="{{portalUrl}}">Meine Nennung: Zugangslink anfordern</a></p><p>Dort lässt du dir einen persönlichen Link per E-Mail schicken, mit dem du deine Nennung ansiehst und bezahlst.</p>',
     },
     en: {
       subject: 'Entry received: {{eventName}}',
-      text: 'Hello {{recipientName}}, your entry for {{eventName}} was received. {{paymentSummary}} You can see your entry and payment here: {{portalUrl}}',
-      html: '<p>Hello {{recipientName}}, your entry for {{eventName}} was received.</p><p>{{paymentSummary}}</p><p><a href="{{portalUrl}}">Open my entry</a></p>',
+      text: 'Hello {{recipientName}}, your entry for {{eventName}} was received. {{paymentSummary}} On “My entry” you can have a personal access link sent to you by email to view your entry and pay: {{portalUrl}}',
+      html: '<p>Hello {{recipientName}}, your entry for {{eventName}} was received.</p><p>{{paymentSummary}}</p><p><a href="{{portalUrl}}">My entry: request access link</a></p><p>There you can have a personal link sent to you by email to view your entry and pay.</p>',
     },
   },
   'payment-received': {
     de: {
       subject: 'Zahlung eingegangen: {{eventName}}',
-      text: 'Hallo {{recipientName}}, deine Zahlung von {{amount}} für {{eventName}} ist eingegangen (Verwendungszweck {{paymentReference}}). Vielen Dank! Deine Nennung findest du hier: {{portalUrl}}',
-      html: '<p>Hallo {{recipientName}}, deine Zahlung von {{amount}} für {{eventName}} ist eingegangen (Verwendungszweck {{paymentReference}}). Vielen Dank!</p><p><a href="{{portalUrl}}">Meine Nennung öffnen</a></p>',
+      text: 'Hallo {{recipientName}}, deine Zahlung von {{amount}} für {{eventName}} ist eingegangen (Verwendungszweck {{paymentReference}}). Vielen Dank! Deine Nennung siehst du unter „Meine Nennung“; dort lässt du dir einen persönlichen Zugangslink per E-Mail schicken: {{portalUrl}}',
+      html: '<p>Hallo {{recipientName}}, deine Zahlung von {{amount}} für {{eventName}} ist eingegangen (Verwendungszweck {{paymentReference}}). Vielen Dank!</p><p><a href="{{portalUrl}}">Meine Nennung: Zugangslink anfordern</a></p>',
     },
     en: {
       subject: 'Payment received: {{eventName}}',
-      text: 'Hello {{recipientName}}, we received your payment of {{amount}} for {{eventName}} (reference {{paymentReference}}). Thank you! You can see your entry here: {{portalUrl}}',
-      html: '<p>Hello {{recipientName}}, we received your payment of {{amount}} for {{eventName}} (reference {{paymentReference}}). Thank you!</p><p><a href="{{portalUrl}}">Open my entry</a></p>',
+      text: 'Hello {{recipientName}}, we received your payment of {{amount}} for {{eventName}} (reference {{paymentReference}}). Thank you! You can see your entry under “My entry”, where you have a personal access link sent to you by email: {{portalUrl}}',
+      html: '<p>Hello {{recipientName}}, we received your payment of {{amount}} for {{eventName}} (reference {{paymentReference}}). Thank you!</p><p><a href="{{portalUrl}}">My entry: request access link</a></p>',
     },
   },
   accepted: {

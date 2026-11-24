@@ -12,6 +12,7 @@ import {
   paymentProviderEvents,
 } from './schema/provider-payments.js';
 import { queuePaymentReceivedMail } from './payment-mail.js';
+import { countActiveEntries } from './entry-group-activity.js';
 
 const sumLedger = (
   tx: TransactionDatabase,
@@ -54,7 +55,6 @@ export async function applyProviderEventInTransaction(
     .for('update');
   if (
     !invoice ||
-    invoice.status === 'cancelled' ||
     invoice.currency.toLowerCase() !== event.currency.toLowerCase()
   )
     return 'not_found';
@@ -93,9 +93,18 @@ export async function applyProviderEventInTransaction(
       .limit(1);
     if (existing.length) return 'duplicate';
     mismatch = event.amountCents !== outstanding;
-    const reason = mismatch
-      ? `Stripe payment ${event.paymentId} (Betrag weicht vom offenen Betrag ab: erwartet ${outstanding}, erhalten ${event.amountCents} ${event.currency.toUpperCase()})`
-      : `Stripe payment ${event.paymentId}`;
+    const cancelled =
+      invoice.status === 'cancelled' ||
+      (await countActiveEntries(
+        tx,
+        event.organizationId,
+        invoice.registrationGroupId,
+      )) === 0;
+    const reason = cancelled
+      ? `Zahlung nach Absage: ${event.paymentId}; manuelle Erstattung erforderlich`
+      : mismatch
+        ? `Stripe payment ${event.paymentId} (Betrag weicht vom offenen Betrag ab: erwartet ${outstanding}, erhalten ${event.amountCents} ${event.currency.toUpperCase()})`
+        : `Stripe payment ${event.paymentId}`;
     const [payment] = await tx
       .insert(invoicePayments)
       .values({
@@ -118,10 +127,13 @@ export async function applyProviderEventInTransaction(
     await tx
       .update(invoices)
       .set({
-        status: deriveInvoiceStatus(
-          invoice.totalCents,
-          await sumLedger(tx, event.organizationId, event.invoiceId),
-        ),
+        status:
+          invoice.status === 'cancelled'
+            ? 'cancelled'
+            : deriveInvoiceStatus(
+                invoice.totalCents,
+                await sumLedger(tx, event.organizationId, event.invoiceId),
+              ),
       })
       .where(
         and(
@@ -129,7 +141,17 @@ export async function applyProviderEventInTransaction(
           eq(invoices.id, event.invoiceId),
         ),
       );
-    await queuePaymentReceivedMail(db, tx, event);
+    if (cancelled) {
+      // Received funds must remain in the ledger, but never disappear on a withdrawn entry.
+      // Reopen even a completed policy intent: late money needs an explicit office decision.
+      await tx.execute(sql`
+        insert into payment_refund_intent (organization_id, invoice_id, entry_id, trigger, status, failure)
+        select ${event.organizationId}, ${invoice.id}, e.id, 'withdrawn', 'failed', 'payment_after_cancellation'
+        from entry e where e.organization_id = ${event.organizationId} and e.registration_group_id = ${invoice.registrationGroupId}
+        order by e.created_at limit 1
+        on conflict (organization_id, invoice_id) where status in ('pending', 'processing', 'done')
+        do update set status = 'failed', failure = 'payment_after_cancellation', updated_at = now()`);
+    } else await queuePaymentReceivedMail(db, tx, event);
   }
   // A terminal session state is never left again (database trigger), so a late
   // "expired" after "paid" cannot undo it. Without a session id (account-aware

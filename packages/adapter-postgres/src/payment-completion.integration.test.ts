@@ -1,6 +1,6 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { runMigrations } from 'graphile-worker';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import {
   createRequestContext,
   organizationId,
@@ -26,12 +26,22 @@ import {
   registrationGroups,
   vehicles,
 } from './index.js';
-import { checkoutSessions } from './schema/provider-payments.js';
+import {
+  checkoutSessions,
+  paymentRefundIntents,
+} from './schema/provider-payments.js';
 import { groupEmailVerifications } from './schema/public-registration.js';
 import { createRegistrationVerificationMethods } from './registration-verification.js';
 import { emailOutbox } from './mail-schema.js';
 
 const url = process.env.NENNBOX_TEST_DATABASE_URL;
+
+// One migration for every describe below; none of them depends on another one having run.
+beforeAll(async () => {
+  if (!url) return;
+  await migrate(url);
+  await runMigrations({ connectionString: url });
+});
 
 async function cleanup(
   db: Awaited<ReturnType<typeof createDatabase>>['db'],
@@ -176,8 +186,6 @@ const paid = (
 
 describe.skipIf(!url)('payment completion (PostgreSQL)', () => {
   it('keeps checkout state independent of event order: late expired after paid, per session', async () => {
-    await migrate(url!);
-    await runMigrations({ connectionString: url! });
     const { db, pool } = await createDatabase(url!);
     const s = await seed(db, 'order');
     try {
@@ -187,6 +195,7 @@ describe.skipIf(!url)('payment completion (PostgreSQL)', () => {
           id,
           url: `https://checkout.test/${id}`,
           amountCents: 4200,
+          paymentMethods: ['card'],
           expiresAt: null,
         });
       const first = paid(s);
@@ -404,6 +413,7 @@ describe.skipIf(!url)('payment completion (PostgreSQL)', () => {
         id: 'cs_old',
         url: 'https://checkout.test/old',
         amountCents: 4200,
+        paymentMethods: ['card'],
         expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
       });
       const open = await repo.get(s.ctx, s.invoice.id);
@@ -421,6 +431,7 @@ describe.skipIf(!url)('payment completion (PostgreSQL)', () => {
         id: 'cs_stale',
         url: 'https://checkout.test/stale',
         amountCents: 4200,
+        paymentMethods: ['card'],
         expiresAt: new Date(Date.now() - 60_000).toISOString(),
       });
       expect((await repo.get(s.ctx, s.invoice.id))?.pendingSession).toBeNull();
@@ -438,7 +449,7 @@ describe.skipIf(!url)(
       createCheckoutSession: async () => {
         throw new Error('unused');
       },
-      expireCheckoutSession: async () => {},
+      expireCheckoutSession: async () => 'expired' as const,
       verifyWebhook: async () => null,
       refund: async (request) => {
         calls.push(request);
@@ -698,5 +709,489 @@ describe.skipIf(!url)(
         await pool.end();
       }
     });
+  },
+);
+
+describe.skipIf(!url)('concurrent payment paths (PostgreSQL)', () => {
+  const expiredEvent = (s: Awaited<ReturnType<typeof seed>>) => ({
+    id: `evt-expired-${crypto.randomUUID()}`,
+    organizationId: organizationId(s.org.id),
+    invoiceId: s.invoice.id,
+    sessionId: `cs-${s.suffix}`,
+    type: 'expired' as const,
+    amountCents: 4200,
+    currency: 'eur',
+    paymentId: null,
+  });
+  const sessionStatus = async (
+    db: Awaited<ReturnType<typeof createDatabase>>['db'],
+    id: string,
+  ) =>
+    (
+      await db
+        .select({ status: checkoutSessions.status })
+        .from(checkoutSessions)
+        .where(eq(checkoutSessions.providerSessionId, id))
+    )[0]?.status;
+
+  it('ends with the session paid and one ledger entry when "paid" and "expired" arrive at the same time, in either order', async () => {
+    const { db, pool } = await createDatabase(url!);
+    const first = await seed(db, 'race-a');
+    const second = await seed(db, 'race-b');
+    try {
+      const repo = createCheckoutRepository(db);
+      for (const s of [first, second])
+        await repo.createSession(s.ctx, s.invoice.id, {
+          id: `cs-${s.suffix}`,
+          url: 'https://checkout.test/x',
+          amountCents: 4200,
+          paymentMethods: ['card'],
+          expiresAt: null,
+        });
+      await Promise.all([
+        repo.applyProviderEvent(paid(first)),
+        repo.applyProviderEvent(expiredEvent(first)),
+      ]);
+      await Promise.all([
+        repo.applyProviderEvent(expiredEvent(second)),
+        repo.applyProviderEvent(paid(second)),
+      ]);
+      for (const s of [first, second]) {
+        expect(await sessionStatus(db, `cs-${s.suffix}`)).toBe('paid');
+        expect(
+          await db
+            .select()
+            .from(invoicePayments)
+            .where(eq(invoicePayments.invoiceId, s.invoice.id)),
+        ).toHaveLength(1);
+      }
+    } finally {
+      await cleanup(db, first.org.id, second.org.id);
+      await pool.end();
+    }
+  });
+
+  it('applies one event exactly once when the same event id is delivered in parallel', async () => {
+    const { db, pool } = await createDatabase(url!);
+    const s = await seed(db, 'parallel-dup');
+    try {
+      const repo = createCheckoutRepository(db);
+      const event = paid(s);
+      const results = await Promise.all([
+        repo.applyProviderEvent(event),
+        repo.applyProviderEvent(event),
+        repo.applyProviderEvent(event),
+      ]);
+      expect(results.filter((result) => result === 'applied')).toHaveLength(1);
+      expect(results.filter((result) => result === 'duplicate')).toHaveLength(
+        2,
+      );
+      expect(
+        await db
+          .select()
+          .from(invoicePayments)
+          .where(eq(invoicePayments.invoiceId, s.invoice.id)),
+      ).toHaveLength(1);
+    } finally {
+      await cleanup(db, s.org.id);
+      await pool.end();
+    }
+  });
+
+  it('stores one session when a double click creates the same provider session twice', async () => {
+    const { db, pool } = await createDatabase(url!);
+    const s = await seed(db, 'double-click');
+    try {
+      const repo = createCheckoutRepository(db);
+      const session = {
+        id: `cs-${s.suffix}`,
+        url: 'https://checkout.test/same',
+        amountCents: 4200,
+        paymentMethods: ['card', 'sepa_debit'] as ('card' | 'sepa_debit')[],
+        expiresAt: null,
+      };
+      await Promise.all([
+        repo.createSession(s.ctx, s.invoice.id, session),
+        repo.createSession(s.ctx, s.invoice.id, session),
+      ]);
+      const open = (await repo.get(s.ctx, s.invoice.id))!.openSessions;
+      expect(open).toHaveLength(1);
+      expect(open[0]).toMatchObject({
+        amountCents: 4200,
+        paymentMethods: ['card', 'sepa_debit'],
+      });
+    } finally {
+      await cleanup(db, s.org.id);
+      await pool.end();
+    }
+  });
+
+  it('answers a duplicate provider refund id with "duplicate" instead of failing on the unique key', async () => {
+    const { db, pool } = await createDatabase(url!);
+    const s = await seed(db, 'refund-race');
+    try {
+      await createCheckoutRepository(db).applyProviderEvent(paid(s));
+      const refunds = createPaymentRefundRepository(db);
+      const input = {
+        invoiceId: s.invoice.id,
+        providerPaymentId: `pi-${s.suffix}`,
+        refundableCents: 4200,
+        currency: 'EUR',
+        amountCents: 1000,
+        providerRefundId: `re-${s.suffix}`,
+        actor: 'tester',
+        reason: 'doppelt ausgelöst',
+      };
+      const results = await Promise.all([
+        refunds.recordRefund(s.ctx, input),
+        refunds.recordRefund(s.ctx, input),
+        refunds.recordRefund(s.ctx, input),
+      ]);
+      expect(results.filter((result) => result === 'recorded')).toHaveLength(1);
+      expect(results.filter((result) => result === 'duplicate')).toHaveLength(
+        2,
+      );
+      const refundsInLedger = (
+        await db
+          .select()
+          .from(invoicePayments)
+          .where(eq(invoicePayments.invoiceId, s.invoice.id))
+      ).filter((row) => row.amountCents < 0);
+      expect(refundsInLedger).toHaveLength(1);
+    } finally {
+      await cleanup(db, s.org.id);
+      await pool.end();
+    }
+  });
+
+  it('queues exactly one refund intent when the last two entries are withdrawn at the same time', async () => {
+    const { db, pool } = await createDatabase(url!);
+    const s = await seed(db, 'last-two', {
+      orgConfig: { payments: { refundPolicy: refundRule } },
+      entryCount: 2,
+    });
+    try {
+      await createCheckoutRepository(db).applyProviderEvent(paid(s));
+      // Both transactions have written their status change before either one counts
+      // the remaining entries; only the invoice lock lets the second one see the first.
+      let ready = 0;
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const withdraw = (entryId: string) =>
+        db.transaction(async (tx) => {
+          await tx
+            .update(entries)
+            .set({ acceptanceStatus: 'withdrawn' })
+            .where(eq(entries.id, entryId));
+          if (++ready === 2) release();
+          await gate;
+          await openRefundIntent(tx, s.org.id, entryId, 'withdrawn');
+        });
+      await Promise.all(s.entries.map((entry) => withdraw(entry.id)));
+      const intents = await db
+        .select()
+        .from(paymentRefundIntents)
+        .where(eq(paymentRefundIntents.organizationId, s.org.id));
+      expect(intents).toHaveLength(1);
+      expect(intents[0]?.status).toBe('pending');
+    } finally {
+      await cleanup(db, s.org.id);
+      await pool.end();
+    }
+  });
+});
+
+const refundRule = {
+  enabled: true,
+  tiers: [{ daysBefore: 0, percent: 50 }],
+  rejectedPercent: 100,
+};
+
+describe.skipIf(!url)('refund intents (PostgreSQL)', () => {
+  const cancelAll = async (
+    db: Awaited<ReturnType<typeof createDatabase>>['db'],
+    s: Awaited<ReturnType<typeof seed>>,
+  ) =>
+    db.transaction(async (tx) => {
+      for (const entry of s.entries)
+        await tx
+          .update(entries)
+          .set({ acceptanceStatus: 'withdrawn' })
+          .where(eq(entries.id, entry.id));
+      await openRefundIntent(tx, s.org.id, s.entries[0]!.id, 'withdrawn');
+    });
+  const provider = (calls: unknown[]) =>
+    ({
+      refund: async (request: { idempotencyKey: string }) => {
+        calls.push(request);
+        return { id: `re_${request.idempotencyKey}` };
+      },
+    }) as unknown as PaymentProvider;
+
+  it('hands one intent to exactly one of several parallel claimers and marks it in progress', async () => {
+    const { db, pool } = await createDatabase(url!);
+    const s = await seed(db, 'claim', {
+      orgConfig: { payments: { refundPolicy: refundRule } },
+      startsOn: '2035-06-15',
+    });
+    try {
+      await createCheckoutRepository(db).applyProviderEvent(paid(s));
+      await cancelAll(db, s);
+      const intents = createRefundIntentRepository(db);
+      const claims = await Promise.all([
+        intents.claim(s.ctx, s.invoice.id),
+        intents.claim(s.ctx, s.invoice.id),
+        intents.claim(s.ctx, s.invoice.id),
+      ]);
+      expect(claims.filter(Boolean)).toHaveLength(1);
+      const [row] = await db
+        .select()
+        .from(paymentRefundIntents)
+        .where(eq(paymentRefundIntents.organizationId, s.org.id));
+      expect(row?.status).toBe('processing');
+      expect(row?.claimedAt).toBeInstanceOf(Date);
+      // While the holder is working, nobody takes it over.
+      expect(await intents.claim(s.ctx, s.invoice.id)).toBeNull();
+    } finally {
+      await cleanup(db, s.org.id);
+      await pool.end();
+    }
+  });
+
+  it('lets a retry take over an intent that stayed pending or in progress past the delay, for its own organization only', async () => {
+    const { db, pool } = await createDatabase(url!);
+    const a = await seed(db, 'retry-a', {
+      orgConfig: { payments: { refundPolicy: refundRule } },
+      startsOn: '2035-06-15',
+    });
+    const b = await seed(db, 'retry-b', {
+      orgConfig: { payments: { refundPolicy: refundRule } },
+      startsOn: '2035-06-15',
+    });
+    try {
+      const checkouts = createCheckoutRepository(db);
+      for (const s of [a, b]) {
+        await checkouts.applyProviderEvent(paid(s));
+        await cancelAll(db, s);
+      }
+      const intents = createRefundIntentRepository(db, {
+        retryAfterMs: 60_000,
+      });
+      // Fresh intents are not stale yet.
+      expect(await intents.staleInvoiceIds(a.ctx)).toEqual([]);
+      // A took by a worker that died: processing for 11 minutes. B is merely old and pending.
+      await intents.claim(a.ctx, a.invoice.id);
+      await db.execute(
+        sql`update payment_refund_intent set claimed_at = now() - interval '11 minutes' where organization_id = ${a.org.id}`,
+      );
+      await db.execute(
+        sql`update payment_refund_intent set created_at = now() - interval '11 minutes' where organization_id = ${b.org.id}`,
+      );
+      expect(await intents.staleInvoiceIds(a.ctx)).toEqual([a.invoice.id]);
+      expect(await intents.staleInvoiceIds(b.ctx)).toEqual([b.invoice.id]);
+      const calls: Array<{ organizationId: string }> = [];
+      for (const s of [a, b]) {
+        const result = await settleCancellationRefund(s.ctx, s.invoice.id, {
+          intents,
+          refunds: createPaymentRefundRepository(db),
+          provider: provider(calls),
+        });
+        expect(result).toMatchObject({ status: 'done', refundedCents: 2100 });
+      }
+      expect(calls.map((call) => call.organizationId).sort()).toEqual(
+        [a.org.id, b.org.id].sort(),
+      );
+      expect(await intents.staleInvoiceIds(a.ctx)).toEqual([]);
+    } finally {
+      await cleanup(db, a.org.id, b.org.id);
+      await pool.end();
+    }
+  });
+
+  it('gives back nothing more when half was already refunded by hand and the rule says 50 %', async () => {
+    const { db, pool } = await createDatabase(url!);
+    const s = await seed(db, 'manual-first', {
+      totalCents: 10_000,
+      orgConfig: { payments: { refundPolicy: refundRule } },
+      startsOn: '2035-06-15',
+    });
+    try {
+      await createCheckoutRepository(db).applyProviderEvent(
+        paid(s, { amountCents: 10_000 }),
+      );
+      const refunds = createPaymentRefundRepository(db);
+      expect(
+        await refunds.recordRefund(s.ctx, {
+          invoiceId: s.invoice.id,
+          providerPaymentId: `pi-${s.suffix}`,
+          refundableCents: 10_000,
+          currency: 'EUR',
+          amountCents: 5_000,
+          providerRefundId: `re-manual-${s.suffix}`,
+          actor: 'admin',
+          reason: 'Kulanz',
+        }),
+      ).toBe('recorded');
+      await cancelAll(db, s);
+      const calls: unknown[] = [];
+      const result = await settleCancellationRefund(s.ctx, s.invoice.id, {
+        intents: createRefundIntentRepository(db),
+        refunds,
+        provider: provider(calls),
+      });
+      expect(result).toEqual({
+        status: 'done',
+        percent: 50,
+        refundedCents: 0,
+        failure: null,
+      });
+      expect(calls).toHaveLength(0);
+    } finally {
+      await cleanup(db, s.org.id);
+      await pool.end();
+    }
+  });
+
+  it('reports a registration as cancelled for checkout only once every entry is withdrawn', async () => {
+    const { db, pool } = await createDatabase(url!);
+    const s = await seed(db, 'cancelled-flag', { entryCount: 2 });
+    try {
+      const repo = createCheckoutRepository(db);
+      expect((await repo.get(s.ctx, s.invoice.id))?.allEntriesCancelled).toBe(
+        false,
+      );
+      await db
+        .update(entries)
+        .set({ acceptanceStatus: 'withdrawn' })
+        .where(eq(entries.id, s.entries[0]!.id));
+      expect((await repo.get(s.ctx, s.invoice.id))?.allEntriesCancelled).toBe(
+        false,
+      );
+      await db
+        .update(entries)
+        .set({ acceptanceStatus: 'rejected' })
+        .where(eq(entries.id, s.entries[1]!.id));
+      expect((await repo.get(s.ctx, s.invoice.id))?.allEntriesCancelled).toBe(
+        true,
+      );
+    } finally {
+      await cleanup(db, s.org.id);
+      await pool.end();
+    }
+  });
+});
+
+describe.skipIf(!url)(
+  'review regressions: checkout and cancellation serialization',
+  () => {
+    it('serializes independent checkout creators on PostgreSQL and reuses the single stored session', async () => {
+      const { db, pool } = await createDatabase(url!);
+      const s = await seed(db, 'serialized-checkout');
+      try {
+        const repo = createCheckoutRepository(db);
+        let created = 0;
+        const start = () =>
+          repo.withInvoiceLock!(s.ctx, s.invoice.id, async (locked) => {
+            const invoice = (await locked.get(s.ctx, s.invoice.id))!;
+            if (invoice.pendingSession) return invoice.pendingSession.id;
+            const id = `cs-${s.suffix}-${++created}`;
+            await locked.createSession(s.ctx, s.invoice.id, {
+              id,
+              url: 'https://checkout.test/one',
+              amountCents: 4200,
+              paymentMethods: ['card'],
+              expiresAt: new Date(Date.now() + 3600000).toISOString(),
+            });
+            return id;
+          });
+        expect(
+          new Set(await Promise.all([start(), start(), start()])).size,
+        ).toBe(1);
+        expect(created).toBe(1);
+      } finally {
+        await cleanup(db, s.org.id);
+        await pool.end();
+      }
+    });
+
+    it('excludes elapsed sessions from reusable checkout and expires them by signed provider event', async () => {
+      const { db, pool } = await createDatabase(url!);
+      const s = await seed(db, 'expiry', {
+        orgConfig: { payments: { checkoutLifetimeMinutes: 90 } },
+        eventConfig: { payments: { checkoutLifetimeMinutes: 30 } },
+      });
+      try {
+        const repo = createCheckoutRepository(db);
+        await repo.createSession(s.ctx, s.invoice.id, {
+          id: `cs-${s.suffix}`,
+          url: 'https://checkout.test/old',
+          amountCents: 4200,
+          paymentMethods: ['card'],
+          expiresAt: new Date(Date.now() - 60000).toISOString(),
+        });
+        expect(await repo.get(s.ctx, s.invoice.id)).toMatchObject({
+          pendingSession: null,
+          checkoutLifetimeMinutes: 30,
+        });
+        await repo.applyProviderEvent({
+          ...paid(s),
+          id: `evt-exp-${s.suffix}`,
+          type: 'expired',
+          paymentId: null,
+        });
+        expect(
+          (await repo.get(s.ctx, s.invoice.id))!.openSessions,
+        ).toHaveLength(0);
+      } finally {
+        await cleanup(db, s.org.id);
+        await pool.end();
+      }
+    });
+
+    it.each(['before', 'parallel'] as const)(
+      'makes payment %s cancellation visible for refund instead of silently accepting it',
+      async (order) => {
+        const { db, pool } = await createDatabase(url!);
+        const s = await seed(db, `cancel-race-${order}`);
+        try {
+          const cancel = () =>
+            db.transaction(async (tx) => {
+              await tx
+                .update(entries)
+                .set({ acceptanceStatus: 'withdrawn' })
+                .where(eq(entries.id, s.entries[0]!.id));
+              await openRefundIntent(
+                tx,
+                s.org.id,
+                s.entries[0]!.id,
+                'withdrawn',
+              );
+            });
+          const pay = () =>
+            createCheckoutRepository(db).applyProviderEvent(paid(s));
+          if (order === 'before') {
+            await cancel();
+            await pay();
+          } else await Promise.all([cancel(), pay()]);
+          const intents = await db
+            .select()
+            .from(paymentRefundIntents)
+            .where(eq(paymentRefundIntents.invoiceId, s.invoice.id));
+          expect(intents).toHaveLength(1);
+          expect(['pending', 'failed']).toContain(intents[0]!.status);
+          if (order === 'before')
+            expect(intents[0]).toMatchObject({
+              status: 'failed',
+              failure: 'payment_after_cancellation',
+            });
+          expect(
+            await createCheckoutRepository(db).get(s.ctx, s.invoice.id),
+          ).toMatchObject({ allEntriesCancelled: true, paidCents: 4200 });
+        } finally {
+          await cleanup(db, s.org.id);
+          await pool.end();
+        }
+      },
+    );
   },
 );

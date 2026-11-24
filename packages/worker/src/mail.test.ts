@@ -178,6 +178,9 @@ describe('mail outbox worker', () => {
         },
       );
       expect(confirmation.text).toContain('Offener Betrag: 42,00 €');
+      // The link opens the portal's sign-in page: the mail must say so.
+      expect(confirmation.text).toMatch(/Zugangslink|access link/);
+      expect(payment.text).toMatch(/Zugangslink|access link/);
       expect(confirmation.text).toContain(
         'https://example.test/events/bergpreis/my-entry',
       );

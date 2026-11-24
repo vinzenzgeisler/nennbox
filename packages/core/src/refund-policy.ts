@@ -67,6 +67,27 @@ export function refundShareCents(
   return Math.floor((refundableCents * percent) / 100);
 }
 
+/** An online payment of the invoice with what was received and what can still be given back. */
+export interface IntentPayment extends RefundablePayment {
+  /** Gross amount received for this payment, before any refund. */
+  readonly paidCents: number;
+}
+
+export function refundDueCents(
+  paidCents: number,
+  refundableCents: number,
+  percent: number,
+): number {
+  const alreadyRefunded = paidCents - refundableCents;
+  return Math.max(
+    0,
+    Math.min(
+      refundShareCents(paidCents, percent) - alreadyRefunded,
+      refundableCents,
+    ),
+  );
+}
+
 export interface ClaimedRefundIntent {
   readonly id: string;
   readonly invoiceId: string;
@@ -74,7 +95,7 @@ export interface ClaimedRefundIntent {
   readonly cancelledAt: Date;
   readonly eventStartsOn: string;
   readonly policy: RefundPolicy;
-  readonly payments: readonly RefundablePayment[];
+  readonly payments: readonly IntentPayment[];
 }
 
 export interface RefundIntentResult {
@@ -91,7 +112,13 @@ export interface RefundIntentRepository {
     ctx: RequestContext,
     entryId: string,
   ): Promise<string | null>;
-  /** Takes the open intent of the invoice, if any; null when nothing is waiting. */
+  /** Invoices whose intent waits or was taken but not finished for longer than the retry delay. */
+  staleInvoiceIds(ctx: RequestContext): Promise<readonly string[]>;
+  /**
+   * Takes the open intent of the invoice, if any, and marks it as in progress;
+   * null when nothing is waiting. An intent held for longer than the retry delay
+   * can be taken again, so a crash never leaves a refund stuck.
+   */
   claim(
     ctx: RequestContext,
     invoiceId: string,
@@ -134,7 +161,12 @@ export async function settleCancellationRefund(
   } else {
     try {
       for (const payment of intent.payments) {
-        const amountCents = refundShareCents(payment.refundableCents, percent);
+        // The share is taken from what was paid, then reduced by what already went back.
+        const amountCents = refundDueCents(
+          payment.paidCents,
+          payment.refundableCents,
+          percent,
+        );
         if (amountCents <= 0) continue;
         const reason = `Automatische Erstattung (${percent} %) bei ${
           intent.trigger === 'withdrawn'

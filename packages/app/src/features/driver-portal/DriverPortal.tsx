@@ -5,6 +5,7 @@ import { passengerBrandStyle } from '../passenger/passengerBrand.js';
 import './driver-portal.css';
 
 import {
+  HttpError,
   json,
   portalUrl,
   useDriverPortalAccess,
@@ -47,8 +48,12 @@ export function DriverPortal({ eventSlug }: { eventSlug: string }) {
         url: string;
       };
       window.location.assign(url);
-    } catch {
-      setNotice('Die Online-Zahlung konnte nicht gestartet werden.');
+    } catch (error) {
+      setNotice(
+        error instanceof HttpError && error.status === 409
+          ? 'Für diese Nennung läuft bereits eine Zahlung oder sie wurde schon bezahlt. Der Zahlungsstand wird aktualisiert, sobald Stripe sie bestätigt.'
+          : 'Die Online-Zahlung konnte nicht gestartet werden.',
+      );
       setWorking(false);
     }
   };

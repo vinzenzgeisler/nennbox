@@ -1,6 +1,7 @@
 import { settleCancellationRefund } from '@nennbox/core';
 import type { RefundIntentResult, RequestContext } from '@nennbox/core';
 import type { ApiDeps } from '../types.js';
+import { expireOpenCheckouts } from './invoice-checkout.js';
 
 /**
  * Runs the automatic refund that the cancellation of an entry may have queued.
@@ -21,6 +22,24 @@ export async function settleRefundAfterCancellation(
       entryId,
     );
     if (!invoiceId) return null;
+    // Nobody can pay for a cancelled registration afterwards: end its open
+    // checkouts before refunding, so no payment arrives after the refund ran.
+    if (deps.checkoutRepository) {
+      const open = await deps.checkoutRepository.pendingSessions(
+        ctx,
+        invoiceId,
+      );
+      const ended = await expireOpenCheckouts(
+        deps,
+        ctx,
+        invoiceId,
+        open.map((session) => session.id),
+      );
+      if (ended !== 'expired')
+        deps.logger.warn('Open checkout of a cancelled registration', {
+          outcome: ended,
+        });
+    }
     const result = await settleCancellationRefund(ctx, invoiceId, {
       intents: deps.refundIntents,
       refunds: deps.paymentRefunds,

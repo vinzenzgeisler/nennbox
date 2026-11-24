@@ -81,6 +81,7 @@ export type {
   MailLocale,
 } from './mail.js';
 export { createModuleTasks } from './modules.js';
+export { createRefundRetryTask } from './refund-retry.js';
 export type { ModuleTasksOptions, ModuleJobHandlerInput } from './modules.js';
 export { createProductWorker } from './product.js';
 export type {

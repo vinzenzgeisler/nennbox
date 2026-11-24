@@ -30,7 +30,7 @@ describe.skipIf(!apiBaseUrl)('Stripe mock checkout', () => {
         organizationId: organizationId('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
         sessionId: session.id,
       }),
-    ).resolves.toBeUndefined();
+    ).resolves.toBe('expired');
     await expect(
       provider.refund({
         idempotencyKey: '00000000-0000-4000-8000-000000000001',

@@ -33,6 +33,7 @@ export function registerDriverPortalPaymentRoute(
       (slug) => `/events/${encodeURIComponent(slug)}/my-entry`,
     );
     if (result.status === 201) return c.json({ url: result.url }, 201);
+    if (result.status === 409) return c.json({ error: 'Payment pending' }, 409);
     return result.status === 404
       ? c.json({ error: 'Not found' }, 404)
       : c.json({ error: 'Unavailable' }, 503);
@@ -52,6 +53,8 @@ export function registerDriverPortalPaymentRoute(
       view.payment.invoiceId,
     );
     if (result === 'cancelled') return c.json({ cancelled: true });
+    if (result === 'completed')
+      return c.json({ error: 'Payment pending' }, 409);
     return result === 'nothing_pending'
       ? c.json({ error: 'Not found' }, 404)
       : c.json({ error: 'Unavailable' }, 503);

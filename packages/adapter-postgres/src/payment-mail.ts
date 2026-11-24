@@ -132,8 +132,8 @@ export async function queueEntryReceivedMail(
         ? 'Die Startgebühr ist bezahlt.'
         : 'Your entry fee is paid.'
       : de
-        ? `Offener Betrag: ${formatMailAmount(open, recipient.currency, locale)} (Verwendungszweck ${recipient.paymentReference}). Über den Link kannst du jederzeit online bezahlen.`
-        : `Amount due: ${formatMailAmount(open, recipient.currency, locale)} (payment reference ${recipient.paymentReference}). You can pay online at any time using the link.`;
+        ? `Offener Betrag: ${formatMailAmount(open, recipient.currency, locale)} (Verwendungszweck ${recipient.paymentReference}). Online bezahlen kannst du jederzeit unter „Meine Nennung“.`
+        : `Amount due: ${formatMailAmount(open, recipient.currency, locale)} (payment reference ${recipient.paymentReference}). You can pay online at any time under “My entry”.`;
   await enqueueMailOutbox(
     db,
     args.organizationId,

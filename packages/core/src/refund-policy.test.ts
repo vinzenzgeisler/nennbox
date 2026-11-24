@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   AUTOMATIC_REFUND_ACTOR,
+  refundDueCents,
   daysBeforeEvent,
   disabledRefundPolicy,
   organizationId,
@@ -76,6 +77,20 @@ describe('refund policy', () => {
   });
 });
 
+describe('refund due on a partly refunded payment', () => {
+  it('takes the share from what was paid, not from what is left', () => {
+    // 100,00 paid, 50,00 refunded by hand, rule 50 %: the 50 % are already given back.
+    expect(refundDueCents(10_000, 5_000, 50)).toBe(0);
+    // Rule 80 %: 30,00 are still owed.
+    expect(refundDueCents(10_000, 5_000, 80)).toBe(3_000);
+    // Never more than what can still be refunded.
+    expect(refundDueCents(10_000, 1_000, 100)).toBe(1_000);
+    // Nothing refunded yet: plain share, rounded down.
+    expect(refundDueCents(10_001, 10_001, 50)).toBe(5_000);
+    expect(refundDueCents(10_000, 0, 100)).toBe(0);
+  });
+});
+
 describe('settling a cancellation refund', () => {
   const ctx = {
     organizationId: organizationId('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
@@ -92,12 +107,14 @@ describe('settling a cancellation refund', () => {
         invoiceId: 'invoice-1',
         providerPaymentId: 'pi_1',
         refundableCents: 3000,
+        paidCents: 3000,
         currency: 'EUR',
       },
       {
         invoiceId: 'invoice-1',
         providerPaymentId: 'pi_2',
         refundableCents: 1200,
+        paidCents: 1200,
         currency: 'EUR',
       },
     ],
@@ -108,6 +125,7 @@ describe('settling a cancellation refund', () => {
     const finish = vi.fn(async () => {});
     const intents: RefundIntentRepository = {
       openInvoiceForEntry: async () => 'invoice-1',
+      staleInvoiceIds: async () => [],
       claim: vi.fn(async () => intent),
       finish,
     };
@@ -194,5 +212,29 @@ describe('settling a cancellation refund', () => {
     s.intents.claim = vi.fn(async () => null);
     expect(await settleCancellationRefund(ctx, 'invoice-1', s)).toBeNull();
     expect(s.finish).not.toHaveBeenCalled();
+  });
+
+  it('refunds nothing more when the organizer already refunded the share by hand', async () => {
+    const s = setup();
+    s.intents.claim = vi.fn(async () => ({
+      ...intent,
+      payments: [
+        {
+          invoiceId: 'invoice-1',
+          providerPaymentId: 'pi_1',
+          paidCents: 10_000,
+          refundableCents: 5_000,
+          currency: 'EUR',
+        },
+      ],
+    }));
+    const result = await settleCancellationRefund(ctx, 'invoice-1', s);
+    expect(result).toEqual({
+      status: 'done',
+      percent: 50,
+      refundedCents: 0,
+      failure: null,
+    });
+    expect(s.refund).not.toHaveBeenCalled();
   });
 });

@@ -11,6 +11,7 @@ import { events, organizations } from './schema/organization.js';
 export interface EffectivePaymentSettings {
   readonly onlineMethods: readonly OnlinePaymentMethod[];
   readonly bankTransfer: boolean;
+  readonly checkoutLifetimeMinutes: number;
   readonly refundPolicy: RefundPolicy;
 }
 
@@ -65,6 +66,12 @@ export function mergePaymentSettings(
   return {
     onlineMethods: methods,
     bankTransfer: merged.bankTransfer !== false,
+    checkoutLifetimeMinutes:
+      Number.isInteger(merged.checkoutLifetimeMinutes) &&
+      Number(merged.checkoutLifetimeMinutes) >= 30 &&
+      Number(merged.checkoutLifetimeMinutes) <= 1440
+        ? Number(merged.checkoutLifetimeMinutes)
+        : 60,
     refundPolicy: readRefundPolicy(merged.refundPolicy),
   };
 }

@@ -46,6 +46,19 @@ export function createPaymentRefundRepository(
     },
     recordRefund: async (ctx, input) =>
       db.transaction(async (tx) => {
+        const [invoice] = await tx
+          .select()
+          .from(invoices)
+          .where(
+            and(
+              eq(invoices.organizationId, ctx.organizationId),
+              eq(invoices.id, input.invoiceId),
+            ),
+          )
+          .for('update');
+        if (!invoice) return null;
+        // Only after the invoice lock: a concurrent call with the same provider refund id
+        // has committed by now, so this one answers 'duplicate' instead of failing on the unique key.
         const existing = await tx
           .select({ id: invoicePayments.id })
           .from(invoicePayments)
@@ -57,17 +70,6 @@ export function createPaymentRefundRepository(
           )
           .limit(1);
         if (existing.length) return 'duplicate';
-        const [invoice] = await tx
-          .select()
-          .from(invoices)
-          .where(
-            and(
-              eq(invoices.organizationId, ctx.organizationId),
-              eq(invoices.id, input.invoiceId),
-            ),
-          )
-          .for('update');
-        if (!invoice || invoice.status === 'cancelled') return null;
         const [refundable] = await tx
           .select({
             amount: sql<number>`coalesce(sum(${invoicePayments.amountCents}) filter (where ${invoicePayments.providerRefundId} is null and ${invoicePayments.amountCents} > 0), 0)::int + coalesce(sum(${invoicePayments.amountCents}) filter (where ${invoicePayments.providerRefundId} is not null), 0)::int`,
@@ -119,10 +121,13 @@ export function createPaymentRefundRepository(
         await tx
           .update(invoices)
           .set({
-            status: deriveInvoiceStatus(
-              invoice.totalCents,
-              Number(sum?.amount ?? 0),
-            ),
+            status:
+              invoice.status === 'cancelled'
+                ? 'cancelled'
+                : deriveInvoiceStatus(
+                    invoice.totalCents,
+                    Number(sum?.amount ?? 0),
+                  ),
           })
           .where(
             and(

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   defaultEntryWorkflow,
   organizationId,
+  type CheckoutRepository,
   type ClaimedRefundIntent,
   type PaymentProvider,
   type PaymentRefundRepository,
@@ -34,6 +35,7 @@ const claimed: ClaimedRefundIntent = {
       invoiceId: 'invoice-1',
       providerPaymentId: 'pi_1',
       refundableCents: 4200,
+      paidCents: 4200,
       currency: 'EUR',
     },
   ],
@@ -41,6 +43,7 @@ const claimed: ClaimedRefundIntent = {
 
 function makeApp(
   options: {
+    sessionPaid?: boolean;
     intent?: boolean;
     providerFails?: boolean;
     configured?: boolean;
@@ -53,6 +56,7 @@ function makeApp(
   const finish = vi.fn(async () => {});
   const warn = vi.fn();
   const refundIntents: RefundIntentRepository = {
+    staleInvoiceIds: async () => [],
     openInvoiceForEntry: async () =>
       options.intent === false ? null : 'invoice-1',
     claim: async () => claimed,
@@ -62,8 +66,17 @@ function makeApp(
     getRefundable: async () => null,
     recordRefund: async () => 'recorded' as const,
   } as PaymentRefundRepository;
+  const expire = vi.fn(async (): Promise<'expired' | 'completed'> =>
+    options.sessionPaid ? 'completed' : 'expired',
+  );
+  const markSessionsExpired = vi.fn(async () => {});
+  const checkoutRepository = {
+    pendingSessions: async () => [{ id: 'cs_open' }],
+    markSessionsExpired,
+  } as unknown as CheckoutRepository;
   const paymentProvider = {
     refund,
+    expireCheckoutSession: expire,
   } as unknown as PaymentProvider;
   const transition = vi.fn(
     async () =>
@@ -123,7 +136,12 @@ function makeApp(
       logger: { info() {}, warn, error() {} },
       ...(options.configured === false
         ? {}
-        : { paymentProvider, paymentRefunds, refundIntents }),
+        : {
+            paymentProvider,
+            paymentRefunds,
+            refundIntents,
+            checkoutRepository,
+          }),
     }),
   );
   const withdraw = () =>
@@ -136,7 +154,7 @@ function makeApp(
         reason: 'Fahrer hat abgesagt',
       }),
     });
-  return { withdraw, refund, finish, warn };
+  return { withdraw, refund, finish, warn, expire, markSessionsExpired };
 }
 
 describe('automatic refund after an admin cancellation', () => {
@@ -189,5 +207,35 @@ describe('automatic refund after an admin cancellation', () => {
     const unconfigured = makeApp({ configured: false });
     expect((await unconfigured.withdraw()).status).toBe(200);
     expect(unconfigured.refund).not.toHaveBeenCalled();
+  });
+
+  it('ends the open checkouts of the cancelled registration before refunding, so nothing is paid afterwards', async () => {
+    const { withdraw, refund, expire, markSessionsExpired } = makeApp();
+    expect((await withdraw()).status).toBe(200);
+    expect(expire).toHaveBeenCalledWith({
+      organizationId: org,
+      sessionId: 'cs_open',
+    });
+    expect(markSessionsExpired).toHaveBeenCalledWith(
+      expect.anything(),
+      'invoice-1',
+      ['cs_open'],
+    );
+    expect(expire.mock.invocationCallOrder[0]!).toBeLessThan(
+      refund.mock.invocationCallOrder[0]!,
+    );
+  });
+
+  it('keeps going and logs when a checkout was paid meanwhile, leaving that session untouched', async () => {
+    const { withdraw, refund, warn, markSessionsExpired } = makeApp({
+      sessionPaid: true,
+    });
+    expect((await withdraw()).status).toBe(200);
+    expect(markSessionsExpired).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      'Open checkout of a cancelled registration',
+      { outcome: 'completed' },
+    );
+    expect(refund).toHaveBeenCalled();
   });
 });

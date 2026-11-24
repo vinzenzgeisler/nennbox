@@ -139,7 +139,8 @@
   ],
   "packages/adapter-stripe/src/index.ts": [
     "StripePaymentProviderOptions",
-    "createStripePaymentProvider"
+    "createStripePaymentProvider",
+    "resolveStripeSecretFiles"
   ],
   "packages/api/src/index.ts": [
     "ApiDeps",
@@ -472,6 +473,7 @@
     "EventStatus",
     "ExternalIdentity",
     "IdentityProvider",
+    "IntentPayment",
     "InvoicePaymentRepository",
     "InvoiceRecord",
     "InvoiceRepository",
@@ -690,6 +692,7 @@
     "projectStartNumber",
     "queueArtifactJob",
     "recordInvoicePayment",
+    "refundDueCents",
     "refundPercent",
     "refundShareCents",
     "registrationBirthDateMatches",
@@ -931,6 +934,7 @@
     "createMailOutboxTask",
     "createModuleTasks",
     "createProductWorker",
+    "createRefundRetryTask",
     "createRegistrationUploadCleanupTask",
     "defaultMailTemplate",
     "deploymentModeFromConfig",

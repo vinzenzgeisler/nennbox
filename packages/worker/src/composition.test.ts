@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { composeWorkerTasks } from './index.js';
+import type { Database } from '@nennbox/adapter-postgres';
+import type { PaymentProvider } from '@nennbox/core';
+import { composeWorkerTasks, createProductWorker } from './index.js';
 
 describe('worker task composition', () => {
   it('composes shared and assembly-owned handlers and runs the selected task', async () => {
@@ -25,5 +27,23 @@ describe('worker task composition', () => {
     expect(() => composeWorkerTasks({ 'Capitalized.Task': task })).toThrow(
       /Invalid worker task name/,
     );
+  });
+
+  it('registers the refund retry job only when a payment provider is configured', () => {
+    const base = {
+      db: {} as Database,
+      edition: { deploymentMode: 'cloud' as const },
+    };
+    expect(Object.keys(createProductWorker(base).taskList)).not.toContain(
+      'payment_refund_retry',
+    );
+    expect(
+      Object.keys(
+        createProductWorker({
+          ...base,
+          payments: { provider: {} as PaymentProvider },
+        }).taskList,
+      ),
+    ).toContain('payment_refund_retry');
   });
 });

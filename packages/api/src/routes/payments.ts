@@ -153,6 +153,8 @@ export function registerPaymentProviderRoutes(context: ApiRoutesContext): void {
       if (result.status === 201) return c.json({ url: result.url }, 201);
       if (result.status === 400)
         return c.json({ error: 'Payment method unavailable' }, 400);
+      if (result.status === 409)
+        return c.json({ error: 'Payment pending' }, 409);
       return result.status === 404
         ? c.json({ error: 'Not found' }, 404)
         : c.json({ error: 'Unavailable' }, 503);

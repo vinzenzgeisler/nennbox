@@ -189,6 +189,7 @@ const registrationFormConfigObject = z
           .max(4),
         bankTransfer: z.boolean(),
         refundPolicy: RefundPolicySchema.optional(),
+        checkoutLifetimeMinutes: z.number().int().min(30).max(1440).optional(),
       })
       .strict()
       .default({ onlineMethods: [], bankTransfer: true }),

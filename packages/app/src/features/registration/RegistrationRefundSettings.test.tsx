@@ -24,7 +24,15 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function Harness({ initial }: { initial: RegistrationFormConfig }) {
+function Harness({
+  initial,
+  onProblem,
+  showProblems,
+}: {
+  initial: RegistrationFormConfig;
+  onProblem?: (problem: string | null) => void;
+  showProblems?: boolean;
+}) {
   const [config, setConfig] = useState(initial);
   useEffect(() => {
     latest = config;
@@ -33,6 +41,8 @@ function Harness({ initial }: { initial: RegistrationFormConfig }) {
     <RegistrationRefundSettings
       config={config}
       updateConfig={(updater) => setConfig(updater)}
+      {...(onProblem ? { onProblem } : {})}
+      {...(showProblems ? { showProblems } : {})}
     />
   );
 }
@@ -53,6 +63,22 @@ async function typeInto(input: HTMLInputElement, value: string) {
 }
 
 describe('refund rule settings', () => {
+  const inputs = () => [
+    ...container.querySelectorAll<HTMLInputElement>(
+      'input:not([type="checkbox"])',
+    ),
+  ];
+  const enable = () =>
+    act(async () =>
+      container
+        .querySelector<HTMLInputElement>('input[type="checkbox"]')!
+        .click(),
+    );
+  const blur = (input: HTMLInputElement) =>
+    act(async () => {
+      input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    });
+
   it('is off by default and hides the tiers until switched on', async () => {
     await mount();
     expect(container.querySelector('input[type="checkbox"]')).not.toBeNull();
@@ -61,22 +87,10 @@ describe('refund rule settings', () => {
 
   it('builds a rule with tiers that the shared contract accepts', async () => {
     await mount();
-    await act(async () =>
-      container
-        .querySelector<HTMLInputElement>('input[type="checkbox"]')!
-        .click(),
-    );
+    await enable();
     await act(async () => button('Stufe hinzufügen').click());
-    const inputs = container.querySelectorAll<HTMLInputElement>(
-      'input:not([type="checkbox"])',
-    );
-    await typeInto(inputs[0]!, '28');
-    await typeInto(
-      container.querySelectorAll<HTMLInputElement>(
-        'input:not([type="checkbox"])',
-      )[1]!,
-      '100',
-    );
+    await typeInto(inputs()[0]!, '28');
+    await typeInto(inputs()[1]!, '100');
     expect(latest.payments.refundPolicy).toEqual({
       enabled: true,
       tiers: [{ daysBefore: 28, percent: 100 }],
@@ -85,20 +99,107 @@ describe('refund rule settings', () => {
     expect(RegistrationFormConfigSchema.safeParse(latest).success).toBe(true);
   });
 
-  it('keeps percentages within 0 to 100 and warns about two tiers with the same day count', async () => {
-    await mount();
+  it('keeps an emptied field empty instead of turning it into 0, and reports the problem only after a save attempt', async () => {
+    const problems: Array<string | null> = [];
     await act(async () =>
-      container
-        .querySelector<HTMLInputElement>('input[type="checkbox"]')!
-        .click(),
+      root.render(
+        <Harness
+          initial={defaultRegistrationFormConfig}
+          onProblem={(problem) => problems.push(problem)}
+        />,
+      ),
     );
+    await enable();
+    await act(async () => button('Stufe hinzufügen').click());
+    await typeInto(inputs()[1]!, '');
+    expect(inputs()[1]!.value).toBe('');
+    // The stored rule keeps the last complete value; the save is blocked instead.
+    expect(latest.payments.refundPolicy!.tiers[0]!.percent).toBe(50);
+    expect(problems.at(-1)).toContain('Prozentsatz');
+    expect(container.textContent).not.toContain('Bitte eine ganze Zahl');
+    await act(async () =>
+      root.render(
+        <Harness
+          initial={latest}
+          showProblems
+          onProblem={(problem) => problems.push(problem)}
+        />,
+      ),
+    );
+    expect(container.textContent).toContain('Bitte eine ganze Zahl');
+    await typeInto(inputs()[1]!, '30');
+    expect(problems.at(-1)).toBeNull();
+  });
+
+  it('rejects text, decimals and out-of-range numbers instead of coercing them', async () => {
+    const problems: Array<string | null> = [];
+    await act(async () =>
+      root.render(
+        <Harness
+          initial={defaultRegistrationFormConfig}
+          onProblem={(problem) => problems.push(problem)}
+        />,
+      ),
+    );
+    await enable();
+    await act(async () => button('Stufe hinzufügen').click());
+    for (const bad of ['abc', '12,5', '250', '-3']) {
+      await typeInto(inputs()[1]!, bad);
+      expect(problems.at(-1), bad).not.toBeNull();
+      expect(latest.payments.refundPolicy!.tiers[0]!.percent).toBe(50);
+    }
+  });
+
+  it('sorts the tiers by days, most days first, when a day field is left', async () => {
+    await mount();
+    await enable();
     await act(async () => button('Stufe hinzufügen').click());
     await act(async () => button('Stufe hinzufügen').click());
-    const percent = container.querySelectorAll<HTMLInputElement>(
-      'input:not([type="checkbox"])',
-    )[1]!;
-    await typeInto(percent, '250');
-    expect(latest.payments.refundPolicy!.tiers[0]!.percent).toBe(100);
+    await typeInto(inputs()[0]!, '7');
+    await typeInto(inputs()[2]!, '28');
+    await blur(inputs()[0]!);
+    expect(inputs().map((input) => input.value)).toEqual([
+      '28',
+      '50',
+      '7',
+      '50',
+      '100',
+    ]);
+    expect(
+      latest.payments.refundPolicy!.tiers.map((t) => t.daysBefore),
+    ).toEqual([28, 7]);
+  });
+
+  it('warns in German when a later tier refunds more than an earlier one, without blocking', async () => {
+    const problems: Array<string | null> = [];
+    await act(async () =>
+      root.render(
+        <Harness
+          initial={defaultRegistrationFormConfig}
+          onProblem={(problem) => problems.push(problem)}
+        />,
+      ),
+    );
+    await enable();
+    await act(async () => button('Stufe hinzufügen').click());
+    await act(async () => button('Stufe hinzufügen').click());
+    await typeInto(inputs()[0]!, '28');
+    await typeInto(inputs()[1]!, '30');
+    await typeInto(inputs()[2]!, '14');
+    await typeInto(inputs()[3]!, '80');
+    const warning = container.querySelector('[role="status"]')?.textContent;
+    expect(warning).toContain('„bis 14 Tage“ erstattet mit 80 %');
+    expect(warning).toContain('mehr als die frühere Stufe „bis 28 Tage“');
+    expect(problems.at(-1)).toBeNull();
+    await typeInto(inputs()[3]!, '20');
+    expect(container.querySelector('[role="status"]')).toBeNull();
+  });
+
+  it('flags two tiers with the same day count and lets one be removed', async () => {
+    await mount();
+    await enable();
+    await act(async () => button('Stufe hinzufügen').click());
+    await act(async () => button('Stufe hinzufügen').click());
     expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       'andere Anzahl Tage',
     );

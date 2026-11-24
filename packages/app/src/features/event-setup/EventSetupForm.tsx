@@ -8,6 +8,7 @@ import {
 import { EventSetupClasses } from './EventSetupClasses.js';
 import type { FormEvent } from 'react';
 import { EventOrganizerFields } from './EventOrganizerFields.js';
+import { EventPaymentSettings } from './EventPaymentSettings.js';
 import type { SetupDraft } from './eventSetupApi.js';
 
 export function EventSetupForm({
@@ -175,6 +176,18 @@ export function EventSetupForm({
           setDraft={setDraft}
           busy={busy}
           onClearRecipient={onClearRecipient}
+          paymentSettings={
+            draft.id ? (
+              <EventPaymentSettings key={draft.id} eventId={draft.id} />
+            ) : (
+              <AppSection title="Zahlungsarten und Erstattung">
+                <p>
+                  Speichere die Veranstaltung zuerst als Entwurf, dann legst du
+                  hier Zahlungsarten und die Erstattungsregel fest.
+                </p>
+              </AppSection>
+            )
+          }
         />
         <div
           id="event-setup-actions"

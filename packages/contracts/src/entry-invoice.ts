@@ -23,7 +23,7 @@ export const AdminEntryInvoiceSchema = z
     /** Outcome of the automatic refund after a cancellation, if one was triggered. */
     refundIntent: z
       .object({
-        status: z.enum(['pending', 'done', 'failed', 'skipped']),
+        status: z.enum(['pending', 'processing', 'done', 'failed', 'skipped']),
         percent: z.number().int().min(0).max(100).nullable(),
         refundedCents: z.number().int().nonnegative(),
         failure: z.string().nullable(),

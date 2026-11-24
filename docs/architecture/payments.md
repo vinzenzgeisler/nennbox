@@ -9,7 +9,7 @@ Payment state stays in NENNBOX: the invoice and its append-only ledger (`invoice
 | Call | Purpose |
 | --- | --- |
 | `createCheckoutSession` | Hosted checkout for the open balance of one invoice; returns id, URL and expiry. |
-| `expireCheckoutSession` | "Zahlung abbrechen": ends an unpaid checkout so its link stops working. |
+| `expireCheckoutSession` | Ends an unpaid checkout so its link stops working ("Zahlung abbrechen", replacing a checkout, cancelling a registration). Resolves `expired`, or `completed` when the payer already paid it; that session is never replaced. |
 | `verifyWebhook` | Checks the signature and maps the notification to a `PaymentProviderEvent`. Throws on an invalid signature or incomplete content, returns `null` for an authentic event that carries nothing to apply (other type, SEPA debit that is still pending). |
 | `refund` | Full or partial refund of one provider payment, idempotent by key. |
 
@@ -25,8 +25,11 @@ POST /public/driver-portal/payment/…                    ├─▶ failed
 
 - The amount is always the open balance from the ledger, never from the request. The return URLs use the canonical origin, never the request host.
 - Payment methods are the ones enabled for the event (organization default, overridden by the event, same merge as the registration form). No enabled method means no online payment: the form hides the option, the portal hides the button, the endpoint answers 400/503.
-- One unpaid checkout per invoice is resumed instead of duplicated ("später bezahlen"): the portal and the confirmation mail link to the portal, where "Zahlung fortsetzen" returns the open session. A session created for an outdated amount is replaced. The provider idempotency key contains the number of earlier sessions, so a replacement never receives the provider's cached, dead session.
-- "Zahlung abbrechen" expires the session at the provider first and marks it locally only after that worked. A checkout that was paid in the meantime stays paid (the provider refuses to expire it and the call reports an error).
+- An unpaid checkout is resumed ("später bezahlen") only while it still matches: same open amount, same set of methods as the event setting now, and not past its expiry. The session stores both when it is created; sessions from before that (NULL) never match.
+- Anything else open is **ended at the provider first** (`expireCheckoutSession`), marked locally afterwards, and only then is the replacement created. Otherwise the old link would stay payable next to the new one and the invoice could be paid twice. If the provider reports one of them as already paid (`completed`) or the call fails, no second checkout is opened (HTTP 409 / 503) and the driver is told. A payment that still arrives twice is booked as it is; the admin detail then shows the overpayment with the way to refund it.
+- The provider idempotency key contains the number of earlier sessions, so a replacement never receives the provider's cached, dead session. A double click sends the same key twice; the second request gets the same session and the session row is stored once (`ON CONFLICT DO NOTHING`).
+- A registration whose entries are all withdrawn or rejected cannot be paid any more (404).
+- "Zahlung abbrechen" ends every unpaid checkout the same way. A checkout that was paid in the meantime stays paid (409).
 - State per session is stored in `payment_checkout_session`. A database trigger keeps the outcome independent of event order: `paid` is never left again, and `failed`/`expired` can still become `paid` when money arrives later.
 
 ## Webhook
@@ -58,12 +61,16 @@ Configured per organization and overridable per event in the registration settin
 - A withdrawal (driver or admin) follows the tiers. A rejection by the organizer refunds `rejectedPercent`, regardless of timing.
 - The invoice belongs to a registration group, so the rule fires when **every** entry of the group is withdrawn or rejected. Cancelling one of several entries is refunded by hand.
 - Only online payments are refunded automatically. Bank transfers are refunded by the organizer.
-- The cancelling transaction only writes a `payment_refund_intent`. After it committed, the API calls the provider with keys derived from the intent (`auto-refund:<intent>:<payment>`) and records the refund in the ledger as actor `system:refund-policy`. The share is rounded down to whole cents.
-- A failure never undoes the cancellation. The intent becomes `failed` with a short reason (`provider_unavailable`, `ledger_rejected`) and the admin entry detail shows it with a pointer to the manual refund.
+- The cancelling transaction locks the invoice, counts the entries that are still active and writes a `payment_refund_intent`. The lock matters: two cancellations of the last two entries run in separate transactions and would otherwise each see the other as still active, so no refund would be queued at all.
+- After the commit the API ends all open checkouts of the invoice (nobody can pay afterwards), then takes the intent (`UPDATE … RETURNING`, status `processing`) and calls the provider with keys derived from the intent (`auto-refund:<intent>:<payment>`). The refund is recorded in the ledger as actor `system:refund-policy`.
+- **The share is taken from what was paid**, not from what is left: `min(paid × percent − already refunded, still refundable)`, rounded down to whole cents. 100,00 paid, 50,00 refunded by hand and a rule of 50 % therefore refunds nothing more.
+- A failure never undoes the cancellation. The intent becomes `failed` with a short reason (`provider_unavailable`, `ledger_rejected`, `intent_data_missing`) and the admin entry detail shows it with a pointer to the manual refund.
+- **Retry:** an intent that stays `pending` or `processing` for longer than the retry delay (default 10 minutes, `PAYMENT_REFUND_RETRY_AFTER_MS` in the worker) is taken up again by the `payment_refund_retry` worker job (every five minutes, per organization, Community worker only for its own organization). The provider keys stay the same and the share is computed from what was already refunded, so a half-finished run cannot refund twice. `failed` intents are not retried automatically.
+- Recording a refund checks for an already recorded provider refund id only after it holds the invoice lock, so a parallel duplicate answers `duplicate` instead of failing on the unique key and turning a successful refund into `failed`.
 
 ## Secrets
 
-`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` come from the environment or, as `STRIPE_SECRET_KEY_FILE` / `STRIPE_WEBHOOK_SECRET_FILE`, from a file (Docker/systemd secrets). Setting both forms for one secret, or only one of the two secrets, is a configuration error. Nothing is stored in the database; logs never contain keys or provider payloads.
+`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` come from the environment or, as `STRIPE_SECRET_KEY_FILE` / `STRIPE_WEBHOOK_SECRET_FILE`, from a file (Docker/systemd secrets). Setting both forms for one secret, an unreadable or empty file, or only one of the two secrets is a configuration error; none of them silently switches online payment off. API and worker read them the same way (`resolveStripeSecretFiles` in the Stripe adapter). Nothing is stored in the database; logs never contain keys or provider payloads.
 
 ## Stripe Connect (Cloud, private repository)
 
@@ -74,3 +81,11 @@ Connect is **not** implemented here; the Cloud edition provides another `Payment
 - **Per-organization capabilities.** Which methods work depends on the connected account; the adapter should drop or reject methods the account cannot use. The enabled list per event stays the upper bound.
 - **No platform fee.** The request type has no fee field on purpose; adding one later is an additive change of `CheckoutSessionRequest`.
 - **Onboarding** (account creation, status, disconnect) is Cloud-only and not part of the port.
+
+## Review lifecycle guarantees
+
+Checkout creation is serialized on the invoice row in PostgreSQL, including the provider call and session persistence. Parallel HTTP requests therefore see the committed session rather than opening a second one. The existing unique provider-payment constraint independently prevents double ledger booking across different webhook IDs.
+
+`payments.checkoutLifetimeMinutes` is configurable in the organization registration configuration and overridable per event (30–1440 minutes, default **60 minutes**). Checkout sends the expiry to Stripe, which closes the checkout even if the driver never returns; its signed expiry event closes the local state. Elapsed sessions are never reused, even if the webhook is delayed; the next attempt reconciles them with the provider before replacement. This expiry governs unpaid hosted checkout, not an already submitted asynchronous SEPA debit, whose eventual outcome remains authoritative.
+
+Cancellation and webhook settlement serialize on the invoice row. If settlement wins, cancellation sees the booked funds and queues the policy intent. If cancellation wins, later money is still recorded truthfully but marked **payment_after_cancellation** as a failed refund intent, visible in the office invoice detail with a manual-refund action. This applies even when the policy is disabled or a former refund intent was completed. No normal payment confirmation is sent for this case. A cancelled invoice remains cancelled after settlement/refund.

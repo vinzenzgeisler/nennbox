@@ -38,7 +38,7 @@ function makeApp(
   const paymentProvider: PaymentProvider = {
     createCheckoutSession,
     verifyWebhook,
-    expireCheckoutSession: async () => {},
+    expireCheckoutSession: async () => 'expired' as const,
     refund: async () => ({ id: 're_1' }),
   };
   const app = createApp(
@@ -63,6 +63,8 @@ function makeApp(
                 status: 'open',
                 sessionCount: 0,
                 pendingSession: null,
+                openSessions: [],
+                allEntriesCancelled: false,
               }
             : null,
         createSession: async () => {},

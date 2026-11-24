@@ -2,7 +2,8 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { loadConfig, withStripeSecretFiles } from './config.js';
+import { resolveStripeSecretFiles } from '@nennbox/adapter-stripe';
+import { loadConfig } from './config.js';
 
 const base = {
   DEPLOYMENT_MODE: 'community',
@@ -42,7 +43,7 @@ describe('Stripe secrets from files', () => {
 
   it('rejects a secret given both ways and an unreadable file, naming the variable but not the value', () => {
     expect(() =>
-      withStripeSecretFiles({
+      resolveStripeSecretFiles({
         STRIPE_SECRET_KEY: 'sk_test_env',
         STRIPE_SECRET_KEY_FILE: secretFile('sk_test_file'),
       }),
@@ -50,6 +51,17 @@ describe('Stripe secrets from files', () => {
     expect(() =>
       loadConfig({ ...base, STRIPE_SECRET_KEY_FILE: '/nonexistent/secret' }),
     ).toThrow('STRIPE_SECRET_KEY_FILE');
+  });
+
+  it('treats an empty or whitespace-only secret file as a configuration error, not as "payments off"', () => {
+    for (const content of ['', ' \n'])
+      expect(() =>
+        loadConfig({
+          ...base,
+          STRIPE_SECRET_KEY_FILE: secretFile(content),
+          STRIPE_WEBHOOK_SECRET_FILE: secretFile('whsec_from_file'),
+        }),
+      ).toThrow('STRIPE_SECRET_KEY_FILE');
   });
 
   it('refuses a key without its webhook secret', () => {

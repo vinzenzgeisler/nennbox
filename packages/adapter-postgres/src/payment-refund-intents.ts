@@ -10,6 +10,7 @@ import { entries } from './schema/entries.js';
 import { invoices } from './schema/billing.js';
 import { paymentRefundIntents } from './schema/provider-payments.js';
 import { loadPaymentSettings } from './payment-settings.js';
+import { countActiveEntries } from './entry-group-activity.js';
 
 const rows = <T>(result: unknown) => (result as { rows: T[] }).rows;
 
@@ -33,6 +34,9 @@ export async function openRefundIntent(
     )
     .limit(1);
   if (!entry) return;
+  // Lock the invoice first: two cancellations of the last two entries run in
+  // separate transactions and each must see the other's committed status, or
+  // both count the other as still active and no refund is queued at all.
   const [invoice] = await tx
     .select({ id: invoices.id })
     .from(invoices)
@@ -42,28 +46,19 @@ export async function openRefundIntent(
         eq(invoices.registrationGroupId, entry.groupId),
       ),
     )
+    .for('update')
     .limit(1);
   if (!invoice) return;
-  const [state] = rows<{ active: number; refundable: number }>(
+  const active = await countActiveEntries(tx, organizationId, entry.groupId);
+  const [state] = rows<{ refundable: number }>(
     await tx.execute(sql`
-      select
-        (select count(*)::int from entry e
-          left join entry_workflow_revision r on r.organization_id = e.organization_id and r.id = e.workflow_revision_id
-          where e.organization_id = ${organizationId}
-            and e.registration_group_id = ${entry.groupId}
-            and e.deleted_at is null
-            and not (e.acceptance_status in ('withdrawn', 'rejected') or exists (
-              select 1 from jsonb_array_elements(coalesce(r.workflow->'statuses', '[]'::jsonb)) s
-              where (s->>'id' = e.acceptance_status or s->>'key' = e.acceptance_status)
-                and s->>'category' in ('withdrawn', 'rejected')))) as active,
-        (select coalesce(sum(refundable), 0)::int from (
+      select (select coalesce(sum(refundable), 0)::int from (
           select sum(p.amount_cents) as refundable from invoice_payment p
           where p.organization_id = ${organizationId} and p.invoice_id = ${invoice.id}
             and p.provider_payment_id is not null
           group by p.provider_payment_id having sum(p.amount_cents) > 0) x) as refundable`),
   );
-  if (!state || Number(state.active) > 0 || Number(state.refundable) <= 0)
-    return;
+  if (active > 0 || !state || Number(state.refundable) <= 0) return;
   await tx
     .insert(paymentRefundIntents)
     .values({
@@ -75,9 +70,16 @@ export async function openRefundIntent(
     .onConflictDoNothing();
 }
 
+export const DEFAULT_REFUND_RETRY_AFTER_MS = 10 * 60_000;
+
 export function createRefundIntentRepository(
   db: Database,
+  options: { retryAfterMs?: number } = {},
 ): RefundIntentRepository {
+  const retryAfterSeconds = Math.max(
+    1,
+    Math.round((options.retryAfterMs ?? DEFAULT_REFUND_RETRY_AFTER_MS) / 1000),
+  );
   return {
     openInvoiceForEntry: async (ctx, entryId) => {
       const [intent] = await db
@@ -93,19 +95,45 @@ export function createRefundIntentRepository(
         .limit(1);
       return intent?.invoiceId ?? null;
     },
+    staleInvoiceIds: async (ctx) =>
+      rows<{ invoice_id: string }>(
+        await db.execute(sql`
+          select invoice_id from payment_refund_intent
+          where organization_id = ${ctx.organizationId}
+            and ((status = 'pending' and created_at < now() - make_interval(secs => ${retryAfterSeconds}))
+              or (status = 'processing' and claimed_at < now() - make_interval(secs => ${retryAfterSeconds})))
+          order by created_at limit 50`),
+      ).map((row) => row.invoice_id),
     claim: async (ctx, invoiceId): Promise<ClaimedRefundIntent | null> => {
-      const [intent] = await db
-        .select()
-        .from(paymentRefundIntents)
-        .where(
-          and(
-            eq(paymentRefundIntents.organizationId, ctx.organizationId),
-            eq(paymentRefundIntents.invoiceId, invoiceId),
-            eq(paymentRefundIntents.status, 'pending'),
-          ),
-        )
-        .limit(1);
+      // One atomic step: only one caller gets the intent. A "processing" intent
+      // whose holder vanished (crash, timeout) becomes claimable again after the retry delay.
+      const [intent] = rows<{
+        id: string;
+        trigger: string;
+        cancelled_at: Date;
+      }>(
+        await db.execute(sql`
+          update payment_refund_intent set status = 'processing', claimed_at = now(), updated_at = now()
+          where id = (
+            select id from payment_refund_intent
+            where organization_id = ${ctx.organizationId} and invoice_id = ${invoiceId}
+              and (status = 'pending'
+                or (status = 'processing' and claimed_at < now() - make_interval(secs => ${retryAfterSeconds})))
+            order by created_at limit 1 for update skip locked)
+          returning id, trigger, cancelled_at`),
+      );
       if (!intent) return null;
+      const finishMissing = async () => {
+        await db
+          .update(paymentRefundIntents)
+          .set({
+            status: 'failed',
+            failure: 'intent_data_missing',
+            updatedAt: new Date(),
+          })
+          .where(eq(paymentRefundIntents.id, intent.id));
+        return null;
+      };
       const [invoice] = await db
         .select({ eventId: invoices.eventId, currency: invoices.currency })
         .from(invoices)
@@ -116,7 +144,7 @@ export function createRefundIntentRepository(
           ),
         )
         .limit(1);
-      if (!invoice) return null;
+      if (!invoice) return finishMissing();
       const [event] = await db
         .select({ startsOn: events.startsOn })
         .from(events)
@@ -132,26 +160,28 @@ export function createRefundIntentRepository(
         ctx.organizationId,
         invoice.eventId,
       );
-      const payments = rows<{ id: string; cents: number }>(
+      if (!event || !settings) return finishMissing();
+      const payments = rows<{ id: string; cents: number; paid: number }>(
         await db.execute(sql`
-          select p.provider_payment_id as id, sum(p.amount_cents)::int as cents
+          select p.provider_payment_id as id, sum(p.amount_cents)::int as cents,
+            coalesce(sum(p.amount_cents) filter (where p.provider_refund_id is null and p.amount_cents > 0), 0)::int as paid
           from invoice_payment p
           where p.organization_id = ${ctx.organizationId} and p.invoice_id = ${invoiceId}
             and p.provider_payment_id is not null
           group by p.provider_payment_id having sum(p.amount_cents) > 0`),
       );
-      if (!event || !settings) return null;
       return {
         id: intent.id,
         invoiceId,
         trigger: intent.trigger as RefundTrigger,
-        cancelledAt: intent.cancelledAt,
+        cancelledAt: new Date(intent.cancelled_at),
         eventStartsOn: String(event.startsOn),
         policy: settings.refundPolicy,
         payments: payments.map((payment) => ({
           invoiceId,
           providerPaymentId: payment.id,
           refundableCents: Number(payment.cents),
+          paidCents: Number(payment.paid),
           currency: invoice.currency,
         })),
       };
@@ -162,7 +192,8 @@ export function createRefundIntentRepository(
         .set({
           status: result.status,
           percent: result.percent,
-          refundedCents: result.refundedCents,
+          // Progress adds up when a stale intent is taken over after a partial run.
+          refundedCents: sql`${paymentRefundIntents.refundedCents} + ${result.refundedCents}`,
           failure: result.failure,
           updatedAt: new Date(),
         })

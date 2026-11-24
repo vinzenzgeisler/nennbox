@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { View } from './driverPortalTypes.js';
 
 export const portalUrl = '/public/driver-portal';
-class HttpError extends Error {
+export class HttpError extends Error {
   constructor(readonly status: number) {
     super('Anfrage fehlgeschlagen');
   }

@@ -15,13 +15,18 @@ function makeApp(options: {
   methods?: ('card' | 'sepa_debit')[];
   pending?: boolean;
   pendingAmountCents?: number;
+  pendingMethods?: ('card' | 'sepa_debit')[] | null;
+  cancelled?: boolean;
 }) {
   const createCheckoutSession = vi.fn(async () => ({
     id: 'cs_1',
     url: 'https://checkout.stripe.test/cs_1',
   }));
-  const expireCheckoutSession = vi.fn(async () => {});
+  const expireCheckoutSession = vi.fn(
+    async (): Promise<'expired' | 'completed'> => 'expired',
+  );
   const markSessionsExpired = vi.fn(async () => {});
+  const createSession = vi.fn(async () => {});
   const paymentProvider: PaymentProvider = {
     createCheckoutSession,
     expireCheckoutSession,
@@ -31,6 +36,20 @@ function makeApp(options: {
     refund: async () => ({ id: 're_1' }),
   };
   const paidCents = options.paidCents ?? 0;
+  const pendingSession = () =>
+    options.pending
+      ? {
+          id: 'cs_pending',
+          url: 'https://checkout.stripe.test/cs_pending',
+          amountCents: options.pendingAmountCents ?? 4200 - paidCents,
+          // Sessions from before the methods were stored have none.
+          paymentMethods:
+            options.pendingMethods === undefined
+              ? (options.methods ?? ['card', 'sepa_debit'])
+              : options.pendingMethods,
+          expiresAt: null,
+        }
+      : null;
   const driverPortal = {
     session: async (_ctx: unknown, value: string) =>
       value === token ? { groupId: 'group' } : null,
@@ -73,18 +92,12 @@ function makeApp(options: {
                 currency: 'EUR',
                 status: paidCents >= 4200 ? 'paid' : 'open',
                 sessionCount: options.pending ? 1 : 0,
-                pendingSession: options.pending
-                  ? {
-                      id: 'cs_pending',
-                      url: 'https://checkout.stripe.test/cs_pending',
-                      amountCents:
-                        options.pendingAmountCents ?? 4200 - paidCents,
-                      expiresAt: null,
-                    }
-                  : null,
+                allEntriesCancelled: options.cancelled ?? false,
+                pendingSession: pendingSession(),
+                openSessions: pendingSession() ? [pendingSession()!] : [],
               }
             : null,
-        createSession: async () => {},
+        createSession,
         pendingSessions: async () =>
           options.pending ? [{ id: 'cs_pending' }] : [],
         markSessionsExpired,
@@ -97,6 +110,7 @@ function makeApp(options: {
     createCheckoutSession,
     expireCheckoutSession,
     markSessionsExpired,
+    createSession,
   };
 }
 
@@ -243,6 +257,122 @@ describe('driver portal online payment', () => {
     );
   });
 
+  it('ends the outdated checkout at the provider before opening its replacement, so it cannot be paid twice', async () => {
+    const {
+      app,
+      createCheckoutSession,
+      expireCheckoutSession,
+      markSessionsExpired,
+    } = makeApp({ online: true, pending: true, pendingAmountCents: 9900 });
+    expect((await post(app)).status).toBe(201);
+    expect(expireCheckoutSession).toHaveBeenCalledWith({
+      organizationId: organization,
+      sessionId: 'cs_pending',
+    });
+    expect(markSessionsExpired).toHaveBeenCalledWith(
+      expect.anything(),
+      invoiceId,
+      ['cs_pending'],
+    );
+    expect(expireCheckoutSession.mock.invocationCallOrder[0]!).toBeLessThan(
+      createCheckoutSession.mock.invocationCallOrder[0]!,
+    );
+  });
+
+  it('sets an explicit default expiry on new checkout creation', async () => {
+    const { app, createCheckoutSession } = makeApp({ online: true });
+    const before = Date.now();
+    expect((await post(app)).status).toBe(201);
+    const request = createCheckoutSession.mock.calls[0]![0];
+    expect(Date.parse(request.expiresAt!)).toBeGreaterThanOrEqual(
+      before + 60 * 60_000,
+    );
+    expect(Date.parse(request.expiresAt!)).toBeLessThanOrEqual(
+      Date.now() + 60 * 60_000,
+    );
+  });
+
+  it('replaces a checkout from before the amount and methods were stored (NULL) instead of reusing it', async () => {
+    const { app, createCheckoutSession, expireCheckoutSession } = makeApp({
+      online: true,
+      pending: true,
+      pendingMethods: null,
+    });
+    expect((await post(app)).status).toBe(201);
+    expect(expireCheckoutSession).toHaveBeenCalledOnce();
+    expect(createCheckoutSession).toHaveBeenCalledOnce();
+  });
+
+  it('replaces a checkout whose methods differ from the current event setting, also after the organizer switched one off', async () => {
+    const { app, createCheckoutSession, expireCheckoutSession } = makeApp({
+      online: true,
+      pending: true,
+      methods: ['card'],
+      pendingMethods: ['card', 'sepa_debit'],
+    });
+    expect((await post(app)).status).toBe(201);
+    expect(expireCheckoutSession).toHaveBeenCalledOnce();
+    expect(createCheckoutSession).toHaveBeenCalledWith(
+      expect.objectContaining({ paymentMethods: ['card'] }),
+    );
+  });
+
+  it('resumes a checkout with the same methods in another order', async () => {
+    const { app, createCheckoutSession } = makeApp({
+      online: true,
+      pending: true,
+      methods: ['card', 'sepa_debit'],
+      pendingMethods: ['sepa_debit', 'card'],
+    });
+    expect((await post(app)).status).toBe(201);
+    expect(createCheckoutSession).not.toHaveBeenCalled();
+  });
+
+  it('opens no second checkout when the older one was already paid, and says so', async () => {
+    const {
+      app,
+      createCheckoutSession,
+      markSessionsExpired,
+      expireCheckoutSession,
+    } = makeApp({ online: true, pending: true, pendingAmountCents: 9900 });
+    expireCheckoutSession.mockResolvedValueOnce('completed');
+    const response = await post(app);
+    expect(response.status).toBe(409);
+    expect(createCheckoutSession).not.toHaveBeenCalled();
+    expect(markSessionsExpired).not.toHaveBeenCalled();
+  });
+
+  it('opens no second checkout when the older one could not be ended', async () => {
+    const {
+      app,
+      createCheckoutSession,
+      expireCheckoutSession,
+      markSessionsExpired,
+    } = makeApp({ online: true, pending: true, pendingAmountCents: 9900 });
+    expireCheckoutSession.mockRejectedValueOnce(new Error('provider down'));
+    expect((await post(app)).status).toBe(503);
+    expect(createCheckoutSession).not.toHaveBeenCalled();
+    expect(markSessionsExpired).not.toHaveBeenCalled();
+  });
+
+  it('answers a double click with the same checkout twice instead of failing the second request', async () => {
+    const { app, createSession } = makeApp({ online: true });
+    const [first, second] = await Promise.all([post(app), post(app)]);
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(201);
+    expect(await first.json()).toEqual(await second.json());
+    expect(createSession).toHaveBeenCalledTimes(2);
+  });
+
+  it('offers no checkout for a registration whose entries are all withdrawn', async () => {
+    const { app, createCheckoutSession } = makeApp({
+      online: true,
+      cancelled: true,
+    });
+    expect((await post(app)).status).toBe(404);
+    expect(createCheckoutSession).not.toHaveBeenCalled();
+  });
+
   it('cancels the unpaid checkout at the provider and locally ("Zahlung abbrechen")', async () => {
     const { app, expireCheckoutSession, markSessionsExpired } = makeApp({
       online: true,
@@ -299,5 +429,19 @@ describe('driver portal online payment', () => {
       ).status,
     ).toBe(404);
     expect(expireCheckoutSession).not.toHaveBeenCalled();
+  });
+
+  it('does not report a cancel as done when the checkout was paid in the meantime', async () => {
+    const { app, expireCheckoutSession, markSessionsExpired } = makeApp({
+      online: true,
+      pending: true,
+    });
+    expireCheckoutSession.mockResolvedValueOnce('completed');
+    const response = await app.request('/public/driver-portal/payment/cancel', {
+      method: 'POST',
+      headers: { cookie },
+    });
+    expect(response.status).toBe(409);
+    expect(markSessionsExpired).not.toHaveBeenCalled();
   });
 });

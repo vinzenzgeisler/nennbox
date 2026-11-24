@@ -76,7 +76,7 @@ export interface AdminEntryInvoice {
     refundableCents: number;
   }>;
   refundIntent?: {
-    status: 'pending' | 'done' | 'failed' | 'skipped';
+    status: 'pending' | 'processing' | 'done' | 'failed' | 'skipped';
     percent: number | null;
     refundedCents: number;
     failure: string | null;

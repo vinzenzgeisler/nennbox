@@ -12,6 +12,7 @@ export interface CheckoutSessionRequest {
   readonly successUrl: string;
   readonly cancelUrl: string;
   readonly paymentMethods: readonly OnlinePaymentMethod[];
+  readonly expiresAt?: string;
 }
 
 export interface CheckoutSession {
@@ -76,8 +77,14 @@ export interface PaymentProvider {
   createCheckoutSession(
     request: CheckoutSessionRequest,
   ): Promise<CheckoutSession>;
-  /** Ends an unpaid checkout so its link stops working ("Zahlung abbrechen"). */
-  expireCheckoutSession(request: CheckoutSessionExpiryRequest): Promise<void>;
+  /**
+   * Ends an unpaid checkout so its link stops working ("Zahlung abbrechen").
+   * Resolves `completed` when the payer already paid it: such a session must
+   * never be replaced, the payment is booked by its webhook instead.
+   */
+  expireCheckoutSession(
+    request: CheckoutSessionExpiryRequest,
+  ): Promise<'expired' | 'completed'>;
   /**
    * Verifies the signature and maps the notification to a domain event. Throws
    * when the signature or the event content is invalid. Returns null for an
@@ -94,7 +101,10 @@ export interface PaymentProvider {
 export interface PendingCheckoutSession {
   readonly id: string;
   readonly url: string;
+  /** Null for sessions created before the amount was stored. */
   readonly amountCents: number | null;
+  /** Methods the session offers; null for sessions created before they were stored. */
+  readonly paymentMethods: readonly OnlinePaymentMethod[] | null;
   readonly expiresAt: string | null;
 }
 
@@ -108,16 +118,27 @@ export interface CheckoutInvoice {
   readonly paidCents: number;
   readonly currency: string;
   readonly status: 'open' | 'partially_paid' | 'paid' | 'cancelled';
-  /** Newest unpaid checkout of this invoice, if one is still open. */
+  /** Newest unpaid checkout of this invoice that the provider still accepts. */
   readonly pendingSession: PendingCheckoutSession | null;
+  /** Every checkout of this invoice that is not finished locally, newest first. */
+  readonly openSessions: readonly PendingCheckoutSession[];
+  /** Every entry of the registration group is withdrawn or rejected: nothing left to pay. */
+  readonly allEntriesCancelled: boolean;
   /** Checkouts ever created for this invoice; keeps provider idempotency keys distinct. */
   readonly sessionCount: number;
+  readonly checkoutLifetimeMinutes?: number;
 }
 
 export type ProviderEventResult =
   'applied' | 'applied_with_mismatch' | 'duplicate' | 'not_found';
 
 export interface CheckoutRepository {
+  /** Serialize checkout creation across processes using the invoice row lock. */
+  withInvoiceLock?<T>(
+    ctx: import('./context.js').RequestContext,
+    invoiceId: string,
+    run: (repository: CheckoutRepository) => Promise<T>,
+  ): Promise<T>;
   get(
     ctx: import('./context.js').RequestContext,
     invoiceId: string,
@@ -129,6 +150,7 @@ export interface CheckoutRepository {
       readonly id: string;
       readonly url: string;
       readonly amountCents: number;
+      readonly paymentMethods: readonly OnlinePaymentMethod[];
       readonly expiresAt: string | null;
     },
   ): Promise<void>;

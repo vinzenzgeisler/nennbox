@@ -10,7 +10,7 @@ import { AdminFileDownload } from '../AdminFileDownload.js';
 import { uploadLines, type UploadLine } from '../documents/documentLines.js';
 import { uploadRows } from '../documents/uploadRows.js';
 import { formatMoney } from './entryDetailModel.js';
-import { refundIntentText } from './refundIntentText.js';
+import { overpaymentText, refundIntentText } from './refundIntentText.js';
 
 type Dimension = NonNullable<Entry['statusProjection']>['dimensions'][number];
 export type DimensionAction = {
@@ -125,6 +125,11 @@ export function EntryDocumentsSection({
           Erstattung auslösen
         </Button>
       )}
+      {invoice && overpaymentText(invoice, hasRefundablePayment(invoice)) && (
+        <DetailNote>
+          {overpaymentText(invoice, hasRefundablePayment(invoice))}
+        </DetailNote>
+      )}
       {invoice?.refundIntent && (
         <DetailNote>
           {refundIntentText(invoice.refundIntent, invoice.currency)}
@@ -140,3 +145,7 @@ export function EntryDocumentsSection({
     </DetailSection>
   );
 }
+
+const hasRefundablePayment = (
+  invoice: NonNullable<NonNullable<Entry['adminDetails']>['invoice']>,
+) => invoice.providerPayments.some((item) => item.refundableCents > 0);

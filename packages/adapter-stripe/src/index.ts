@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import Stripe from 'stripe';
 import type {
   CheckoutSessionExpiryRequest,
@@ -40,6 +41,14 @@ export function createStripePaymentProvider(
       const session = await stripe.checkout.sessions.create(
         {
           mode: 'payment',
+          ...(request.expiresAt
+            ? {
+                expires_at: Math.max(
+                  Math.ceil(Date.now() / 1000) + 1800,
+                  Math.floor(Date.parse(request.expiresAt) / 1000),
+                ),
+              }
+            : {}),
           success_url: request.successUrl,
           cancel_url: request.cancelUrl,
           client_reference_id: request.invoiceId,
@@ -75,12 +84,16 @@ export function createStripePaymentProvider(
     async expireCheckoutSession(request: CheckoutSessionExpiryRequest) {
       try {
         await stripe.checkout.sessions.expire(request.sessionId);
+        return 'expired' as const;
       } catch (error) {
-        // Expiring twice is fine; a completed checkout must stay completed.
+        // Stripe refuses to expire a session that is already expired or completed.
+        // Telling them apart decides whether a replacement may be created at all.
         const session = await stripe.checkout.sessions
           .retrieve(request.sessionId)
           .catch(() => null);
-        if (session?.status !== 'expired') throw error;
+        if (session?.status === 'expired') return 'expired' as const;
+        if (session?.status === 'complete') return 'completed' as const;
+        throw error;
       }
     },
     async verifyWebhook(
@@ -167,4 +180,34 @@ export function createStripePaymentProvider(
       return { id: refund.id };
     },
   };
+}
+
+const secretNames = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'] as const;
+
+/**
+ * Stripe secrets come from the environment or, when `<NAME>_FILE` is set, from
+ * that file (Docker/systemd secrets), so they never need to sit in a unit file
+ * or in the database. Both forms for one secret, an unreadable file and an empty
+ * file are configuration errors; none of them silently disables online payment.
+ */
+export function resolveStripeSecretFiles(
+  env: NodeJS.ProcessEnv,
+): NodeJS.ProcessEnv {
+  const resolved = { ...env };
+  for (const name of secretNames) {
+    const file = env[`${name}_FILE`];
+    if (!file) continue;
+    if (env[name])
+      throw new Error(`Invalid configuration variables: ${name}, ${name}_FILE`);
+    let value: string;
+    try {
+      value = readFileSync(file, 'utf8').trim();
+    } catch {
+      throw new Error(`Invalid configuration variables: ${name}_FILE`);
+    }
+    if (!value)
+      throw new Error(`Invalid configuration variables: ${name}_FILE`);
+    resolved[name] = value;
+  }
+  return resolved;
 }
