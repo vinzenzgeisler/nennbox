@@ -32,6 +32,7 @@ import {
   createRegistrationFormConfigRepository,
   createRegistrationSettingsRepository,
   createStartNumberService,
+  createWorkbasketRepository,
   createTimingRepository,
   type Database,
 } from '@nennbox/adapter-postgres';
@@ -175,6 +176,7 @@ export function createProductApi(options: ProductApiOptions): Hono {
     classes: createEventClassRepository(db),
     registrationSettings: createRegistrationSettingsRepository(db),
     startNumbers: createStartNumberService(db),
+    workbasket: createWorkbasketRepository(db),
     registrationFormConfigs: createRegistrationFormConfigRepository(db),
     entryWorkflows: createEntryWorkflowRepository(db),
     entryStatusDimensions: createEntryStatusDimensionRepository(db),

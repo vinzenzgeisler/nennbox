@@ -1,4 +1,5 @@
 import {
+  date,
   pgTable,
   uuid,
   text,
@@ -48,6 +49,7 @@ export const entryDocuments = pgTable(
     entryId: uuid('entry_id').notNull(),
     typeKey: text('type_key').notNull(),
     objectId: uuid('object_id').notNull(),
+    validUntil: date('valid_until'),
     fileName: text('file_name').notNull(),
     contentType: text('content_type').notNull(),
     size: integer('size').notNull(),

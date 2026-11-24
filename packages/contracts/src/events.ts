@@ -17,6 +17,23 @@ export const EventClassSchema = z
     vehicleType: z.enum(['car', 'motorcycle', 'kart', 'other']),
     sortOrder: z.number().int(),
     maxParticipants: z.number().int().positive().nullable(),
+    allowsMultipleStarts: z.boolean().optional(),
+    minDisplacementCc: z
+      .number()
+      .int()
+      .min(0)
+      .max(2147483647)
+      .nullable()
+      .optional(),
+    maxDisplacementCc: z
+      .number()
+      .int()
+      .min(0)
+      .max(2147483647)
+      .nullable()
+      .optional(),
+    minYear: z.number().int().min(1).max(2147483647).nullable().optional(),
+    maxYear: z.number().int().min(1).max(2147483647).nullable().optional(),
     closed: z.boolean(),
     passengerMode: PassengerModeSchema.default('optional'),
   })

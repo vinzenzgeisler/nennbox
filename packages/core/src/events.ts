@@ -74,6 +74,11 @@ export interface EventClass {
   vehicleType: VehicleType;
   sortOrder: number;
   maxParticipants: number | null;
+  allowsMultipleStarts?: boolean;
+  minDisplacementCc?: number | null;
+  maxDisplacementCc?: number | null;
+  minYear?: number | null;
+  maxYear?: number | null;
   closed: boolean;
   passengerMode: PassengerMode;
 }
@@ -310,6 +315,35 @@ export function validateClass(
     !['none', 'optional', 'required'].includes(input.passengerMode)
   )
     throw new Error('Invalid passenger mode');
+  if (
+    input.allowsMultipleStarts !== undefined &&
+    typeof input.allowsMultipleStarts !== 'boolean'
+  )
+    throw new Error('Invalid multiple start permission');
+  for (const key of [
+    'minDisplacementCc',
+    'maxDisplacementCc',
+    'minYear',
+    'maxYear',
+  ] as const) {
+    const value = input[key];
+    if (
+      value != null &&
+      (!Number.isInteger(value) ||
+        value < (key.endsWith('Year') ? 1 : 0) ||
+        value > 2147483647)
+    )
+      throw new Error('Invalid class plausibility limit');
+  }
+  if (
+    (input.minDisplacementCc != null &&
+      input.maxDisplacementCc != null &&
+      input.minDisplacementCc > input.maxDisplacementCc) ||
+    (input.minYear != null &&
+      input.maxYear != null &&
+      input.minYear > input.maxYear)
+  )
+    throw new Error('Invalid class plausibility bounds');
   if (
     input.maxParticipants !== undefined &&
     input.maxParticipants !== null &&
