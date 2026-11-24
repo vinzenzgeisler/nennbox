@@ -131,7 +131,11 @@ export function evaluateWorkbasket(
         'missingDocuments',
         entry,
         `Unterlagen fehlen seit mindestens ${config.missingDocuments.days} Tagen.`,
-        ['documentsComplete', 'createdAt'],
+        [
+          'documentsComplete',
+          'createdAt',
+          ...(entry.createdOn ? ['createdOn'] : []),
+        ],
       );
     // The window remains open after closing until payment is recorded.
     if (
