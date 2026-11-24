@@ -40,7 +40,7 @@ guess missing birth dates, displacement, year or expiration dates.
 
 Rule input storage adds VIN, license-valid-until, document-valid-until and class
 limits/double-start permission. Existing records retain null/open limits, so no
-MSC-specific assumptions are introduced. Editing controls for this metadata are
+MSC-specific assumptions are introduced. Class limits and double-start permission are available through the existing class API. Editing controls for this metadata are
 part of the later UI slice; the repository schema can already store these facts.
 
 ## Cache and consistency
@@ -61,6 +61,8 @@ and concurrent invalidation, preventing lost dirty signals. Generation increases
 only on recalculation. Configuration and snapshots are read in the transaction.
 Time-based rules expire the cache at the next organization-local midnight or
 next outstanding waitlist deadline, whichever comes first.
+
+Capacity follows #29: every non-withdrawn, non-waitlisted registration occupies a place (including pending applications), plus unexpired waitlist offers. Already-sent offers are not proposed again before the existing expiration worker has processed them.
 
 The pure core receives its clock/calendar values as input and has no HTTP,
 database or runtime clock dependency. Tasks carry stable ruleId, entryId (null

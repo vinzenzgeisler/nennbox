@@ -177,17 +177,65 @@ describe.skipIf(!url)(
             (t) => t.ruleId === 'minorGuardian',
           ),
         ).toBe(false);
+        const assertInvalidated = async (write: () => Promise<unknown>) => {
+          const prior = (await repo.tasks(a.ctx, a.event.id))!;
+          await write();
+          const updated = (await repo.tasks(a.ctx, a.event.id))!;
+          expect(updated.generation).toBe(prior.generation + 1);
+          expect((await repo.tasks(b.ctx, b.event.id))?.generation).toBe(
+            second?.generation,
+          );
+          return updated;
+        };
+        const paid = await assertInvalidated(() =>
+          db.execute(sql`
+          INSERT INTO invoice(organization_id,event_id,registration_group_id,total_cents,currency,payment_reference,status)
+          VALUES(${a.org.id},${a.event.id},${a.group.id},0,'EUR',${suffix},'paid')`),
+        );
+        expect(paid.tasks.some((t) => t.ruleId === 'ready')).toBe(true);
+        const required = await assertInvalidated(() =>
+          db.execute(sql`
+          INSERT INTO event_entry_document_type(organization_id,event_id,key,name,required)
+          VALUES(${a.org.id},${a.event.id},'license','Lizenz',true)`),
+        );
+        expect(required.tasks.some((t) => t.ruleId === 'ready')).toBe(false);
+        const expired = await assertInvalidated(() =>
+          db.execute(sql`
+          INSERT INTO entry_document(organization_id,event_id,entry_id,type_key,object_id,file_name,content_type,size,sha256,uploaded_by,valid_until)
+          VALUES(${a.org.id},${a.event.id},${a.entry.id},'license',${crypto.randomUUID()},'license.pdf','application/pdf',1,${'a'.repeat(64)},'test','2030-05-31')`),
+        );
+        expect(expired.tasks.some((t) => t.ruleId === 'expiredDocument')).toBe(
+          true,
+        );
+        const valid = await assertInvalidated(() =>
+          db.execute(sql`
+          UPDATE entry_document SET valid_until='2030-06-01'
+          WHERE organization_id=${a.org.id} AND entry_id=${a.entry.id}`),
+        );
+        expect(valid.tasks.some((t) => t.ruleId === 'expiredDocument')).toBe(
+          false,
+        );
+        expect(valid.tasks.some((t) => t.ruleId === 'ready')).toBe(true);
+        await assertInvalidated(() =>
+          db.execute(sql`
+          UPDATE event_class SET max_participants=1 WHERE organization_id=${a.org.id} AND id=${a.klass.id}`),
+        );
+        expect(
+          (await repo.tasks(a.ctx, a.event.id))?.tasks.some(
+            (t) => t.ruleId === 'capacityNear',
+          ),
+        ).toBe(true);
+        const before = (await repo.tasks(a.ctx, a.event.id))!;
         await db.execute(
           sql`UPDATE workbasket_cache SET valid_until=now()-interval '1 second' WHERE organization_id=${a.org.id} AND event_id=${a.event.id}`,
         );
-        const before = (await repo.tasks(a.ctx, a.event.id))!;
         const parallel = await Promise.all([
           repo.tasks(a.ctx, a.event.id),
           repo.tasks(a.ctx, a.event.id),
         ]);
         expect(parallel.map((r) => r?.generation)).toEqual([
-          before.generation,
-          before.generation,
+          before.generation + 1,
+          before.generation + 1,
         ]);
         expect((await repo.tasks(b.ctx, b.event.id))?.generation).toBe(
           second?.generation,
