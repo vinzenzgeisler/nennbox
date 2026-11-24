@@ -74,4 +74,39 @@ describe('#29 capacity integration contract', () => {
     expect(tasks.some((t) => t.ruleId === 'waitlistPromotion')).toBe(true);
     expect(tasks.some((t) => t.ruleId === 'capacityNear')).toBe(false);
   });
+  it('retains submillisecond ordering instead of falling back to UUID', () => {
+    const tasks = evaluateWorkbasket(
+      snapshot([
+        entry('a', 'waitlisted', { createdAt: '2026-06-01T10:00:00.000002Z' }),
+        entry('z', 'waitlisted', { createdAt: '2026-06-01T10:00:00.000001Z' }),
+      ]),
+    );
+    expect(
+      tasks
+        .filter((t) => t.ruleId === 'waitlistPromotion')
+        .map((t) => t.entryId),
+    ).toEqual(['z']);
+  });
+  it('uses the local registration day without changing the chronological timestamp', () => {
+    const tasks = evaluateWorkbasket(
+      snapshot([
+        entry('a', 'pending', {
+          createdAt: '2026-05-24T23:30:00.000001Z',
+          createdOn: '2026-05-25',
+          documentsComplete: false,
+        }),
+      ]),
+    );
+    expect(tasks.some((t) => t.ruleId === 'missingDocuments')).toBe(true);
+    const younger = evaluateWorkbasket(
+      snapshot([
+        entry('a', 'pending', {
+          createdAt: '2026-05-25T23:30:00.000001Z',
+          createdOn: '2026-05-26',
+          documentsComplete: false,
+        }),
+      ]),
+    );
+    expect(younger.some((t) => t.ruleId === 'missingDocuments')).toBe(false);
+  });
 });

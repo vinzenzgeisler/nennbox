@@ -121,7 +121,7 @@ export function evaluateWorkbasket(
   );
   const closing = workbasketDay(snapshot.closingDate);
   for (const entry of entries) {
-    const created = workbasketDay(entry.createdAt);
+    const created = workbasketDay(entry.createdOn ?? entry.createdAt);
     if (
       !entry.documentsComplete &&
       created !== null &&

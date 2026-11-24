@@ -25,6 +25,8 @@ export interface WorkbasketEntry {
   readonly id: string;
   readonly classId: string;
   readonly createdAt: string;
+  /** Organization-local registration day, separate from chronological ordering. */
+  readonly createdOn?: string;
   /** Workflow category, not a custom display label. Inactive categories are ignored. */
   readonly status: string;
   readonly paid: boolean;
