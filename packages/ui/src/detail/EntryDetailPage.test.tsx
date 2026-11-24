@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from 'react';
+import { act, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { AdmissionProgress, EntryDetailPage } from './EntryDetailPage.js';
@@ -52,7 +52,7 @@ it('renders named slots, selected section controls, and an accessible sidebar', 
   expect(host.querySelector('.nb-entry-page-head')?.textContent).not.toContain(
     '2 von 4 erledigt',
   );
-  const nav = host.querySelector('nav')!;
+  const nav = host.querySelector('[role=tablist]')!;
   expect(nav.getAttribute('aria-label')).toBe('Bereiche der Nennung');
   const buttons = [...nav.querySelectorAll('button')];
   expect(buttons.map((button) => button.textContent)).toEqual([
@@ -60,24 +60,24 @@ it('renders named slots, selected section controls, and an accessible sidebar', 
     'Unterlagen0',
     'Nachrichten3',
   ]);
-  expect(buttons.map((button) => button.getAttribute('aria-pressed'))).toEqual([
-    'true',
-    'false',
-    'false',
-  ]);
+  expect(buttons.map((button) => button.getAttribute('aria-selected'))).toEqual(
+    ['true', 'false', 'false'],
+  );
   const content = document.getElementById(
     buttons[0]!.getAttribute('aria-controls')!,
   );
   expect(content?.textContent).toBe('Aktiver Inhalt');
+  expect(content?.getAttribute('role')).toBe('tabpanel');
+  expect(content?.getAttribute('aria-labelledby')).toBe(buttons[0]!.id);
+  expect(buttons.map((button) => button.tabIndex)).toEqual([0, -1, -1]);
   expect(
-    buttons.every(
-      (button) => button.getAttribute('aria-controls') === content?.id,
-    ),
-  ).toBe(true);
+    new Set(buttons.map((button) => button.getAttribute('aria-controls'))).size,
+  ).toBe(3);
+  expect(host.querySelectorAll('[role=tabpanel][hidden]').length).toBe(2);
   act(() => buttons[1]!.click());
   expect(onTab).toHaveBeenCalledWith('documents');
   act(() => root!.render(render('documents')));
-  expect(nav.querySelectorAll('button')[1]?.getAttribute('aria-pressed')).toBe(
+  expect(nav.querySelectorAll('button')[1]?.getAttribute('aria-selected')).toBe(
     'true',
   );
 });
@@ -149,4 +149,51 @@ it('preserves admission order and exposes every state and its explanation', () =
       (row) => row.querySelector('i')?.getAttribute('aria-hidden') === 'true',
     ),
   ).toBe(true);
+});
+
+it('activates and focuses tabs with arrows, wraparound, Home and End', () => {
+  function Example() {
+    const [active, setActive] = useState('overview');
+    return (
+      <EntryDetailPage
+        navigation={null}
+        header={null}
+        progress={null}
+        sidebar={null}
+        tabs={['overview', 'documents', 'messages', 'history'].map((key) => ({
+          key,
+          label: key,
+        }))}
+        activeTab={active}
+        onTab={setActive}
+      >
+        {active}
+      </EntryDetailPage>
+    );
+  }
+  mount(<Example />);
+  const tabs = [...host.querySelectorAll<HTMLButtonElement>('[role=tab]')];
+  tabs[0]!.focus();
+  for (const [key, index] of [
+    ['ArrowLeft', 3],
+    ['ArrowRight', 0],
+    ['End', 3],
+    ['Home', 0],
+    ['ArrowRight', 1],
+  ] as const) {
+    act(() =>
+      document.activeElement!.dispatchEvent(
+        new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+      ),
+    );
+    expect(document.activeElement).toBe(tabs[index]);
+    expect(tabs[index]!.getAttribute('aria-selected')).toBe('true');
+    expect(tabs.filter((tab) => tab.tabIndex === 0)).toEqual([tabs[index]]);
+    const panel = document.getElementById(
+      tabs[index]!.getAttribute('aria-controls')!,
+    )!;
+    expect(panel.hidden).toBe(false);
+    expect(panel.textContent).toBe(tabs[index]!.textContent);
+    expect(panel.getAttribute('aria-labelledby')).toBe(tabs[index]!.id);
+  }
 });

@@ -47,10 +47,12 @@ export function ActionGroup({
 }
 export function RailAction({
   tone = 'default',
+  icon,
   children,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   tone?: 'default' | 'danger';
+  icon?: ReactNode;
 }) {
   return (
     <button
@@ -58,7 +60,8 @@ export function RailAction({
       {...props}
       className={`nb-rail-action nb-rail-${tone}`}
     >
-      {children}
+      {icon}
+      <span>{children}</span>
     </button>
   );
 }

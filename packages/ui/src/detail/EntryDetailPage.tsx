@@ -25,7 +25,8 @@ export function EntryDetailPage({
 }) {
   const id = useId();
   const { ref, width } = usePreviewResize();
-  const tabRow = useRef<HTMLElement>(null);
+  const tabRow = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   useRevealActiveTab(tabRow, activeTab);
   return (
     <div
@@ -36,28 +37,63 @@ export function EntryDetailPage({
       <div className="nb-entry-page-navigation">{navigation}</div>
       <div className="nb-entry-page-head">
         <div className="nb-entry-page-identity">{header}</div>
-        <nav
+        <div
+          role="tablist"
           ref={tabRow}
           aria-label="Bereiche der Nennung"
           className="nb-entry-page-tabs"
         >
-          {tabs.map((tab) => (
+          {tabs.map((tab, index) => (
             <AppButton
               key={tab.key}
               tone="ghost"
-              aria-pressed={tab.key === activeTab}
-              aria-controls={id}
+              ref={(node) => {
+                tabRefs.current[index] = node;
+              }}
+              role="tab"
+              id={`${id}-${tab.key}-tab`}
+              aria-selected={tab.key === activeTab}
+              aria-controls={`${id}-${tab.key}-panel`}
+              tabIndex={tab.key === activeTab ? 0 : -1}
+              onKeyDown={(event) => {
+                const next =
+                  event.key === 'Home'
+                    ? 0
+                    : event.key === 'End'
+                      ? tabs.length - 1
+                      : event.key === 'ArrowRight'
+                        ? (index + 1) % tabs.length
+                        : event.key === 'ArrowLeft'
+                          ? (index - 1 + tabs.length) % tabs.length
+                          : null;
+                if (next === null) return;
+                event.preventDefault();
+                onTab(tabs[next]!.key);
+                tabRefs.current[next]?.focus();
+              }}
               onClick={() => onTab(tab.key)}
             >
               {tab.label}
               {tab.count !== undefined && <span>{tab.count}</span>}
             </AppButton>
           ))}
-        </nav>
+        </div>
       </div>
       <div className="nb-entry-page-body">
-        <div id={id} className="nb-entry-page-content">
-          {children}
+        <div className="nb-entry-page-panels">
+          {tabs.map((tab) => (
+            <div
+              key={tab.key}
+              id={`${id}-${tab.key}-panel`}
+              role="tabpanel"
+              aria-labelledby={`${id}-${tab.key}-tab`}
+              tabIndex={0}
+              hidden={tab.key !== activeTab}
+              className="nb-entry-page-content"
+            >
+              {tab.key === activeTab && children}
+            </div>
+          ))}
         </div>
         <aside
           className="nb-entry-page-sidebar"

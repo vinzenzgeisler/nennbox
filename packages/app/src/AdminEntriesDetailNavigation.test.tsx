@@ -202,7 +202,7 @@ it('crosses both page edges and retains the chosen detail tab', async () => {
       ?.hasAttribute('disabled'),
   ).toBe(true);
   expect(
-    host.querySelector('.nb-entry-page-tabs [aria-pressed="true"]')
+    host.querySelector('.nb-entry-page-tabs [aria-selected="true"]')
       ?.textContent,
   ).toContain('Unterlagen');
   const pageTwo = fetchMock.mock.calls
@@ -222,13 +222,13 @@ it('crosses both page edges and retains the chosen detail tab', async () => {
   await click('[aria-label="Vorherige Nennung"]');
   expect(host.textContent).toContain('12 von 13');
   expect(
-    host.querySelector('.nb-entry-page-tabs [aria-pressed="true"]')
+    host.querySelector('.nb-entry-page-tabs [aria-selected="true"]')
       ?.textContent,
   ).toContain('Unterlagen');
   await click('[aria-label="Vorherige Nennung"]');
   expect(host.textContent).toContain('11 von 13');
   expect(
-    host.querySelector('.nb-entry-page-tabs [aria-pressed="true"]')
+    host.querySelector('.nb-entry-page-tabs [aria-selected="true"]')
       ?.textContent,
   ).toContain('Unterlagen');
 });
