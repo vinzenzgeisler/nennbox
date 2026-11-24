@@ -1,5 +1,6 @@
 import { AppCheckbox, AppSection } from '@nennbox/ui';
 import type { RegistrationFormConfig } from '@nennbox/contracts';
+import { RegistrationRefundSettings } from './RegistrationRefundSettings.js';
 
 const methods = [
   ['card', 'Karte'],
@@ -57,6 +58,7 @@ export function RegistrationPaymentSettings({
           }))
         }
       />
+      <RegistrationRefundSettings config={config} updateConfig={updateConfig} />
     </AppSection>
   );
 }

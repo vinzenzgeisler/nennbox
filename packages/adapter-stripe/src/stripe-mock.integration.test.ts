@@ -26,6 +26,12 @@ describe.skipIf(!apiBaseUrl)('Stripe mock checkout', () => {
     expect(session.id).toMatch(/^cs_/);
     expect(session.url).toMatch(/^https:\/\//);
     await expect(
+      provider.expireCheckoutSession({
+        organizationId: organizationId('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+        sessionId: session.id,
+      }),
+    ).resolves.toBeUndefined();
+    await expect(
       provider.refund({
         idempotencyKey: '00000000-0000-4000-8000-000000000001',
         organizationId: organizationId('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),

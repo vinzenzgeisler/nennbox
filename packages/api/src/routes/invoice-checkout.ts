@@ -23,10 +23,8 @@ export interface InvoiceCheckoutOptions {
   readonly referenceInvoice?: boolean;
 }
 
-const standardMethods: InvoiceCheckoutMethods = {
-  kind: 'fixed',
-  methods: ['card', 'sepa_debit'],
-};
+/** Without an explicit choice a checkout offers what the organizer enabled for the event. */
+const standardMethods: InvoiceCheckoutMethods = { kind: 'configured' };
 
 /** Whether this deployment can start an online payment at all. */
 export const onlinePaymentConfigured = (deps: ApiDeps): boolean =>
@@ -77,26 +75,74 @@ export async function createInvoiceCheckout(
         ? `&invoice=${encodeURIComponent(invoice.id)}`
         : ''
     }`;
+  const amountCents = invoice.totalCents - invoice.paidCents;
+  // "Pay later": an unpaid checkout for the same amount is resumed, not duplicated.
+  if (
+    invoice.pendingSession &&
+    invoice.pendingSession.amountCents === amountCents
+  )
+    return { status: 201, url: invoice.pendingSession.url };
   try {
     const session = await deps.paymentProvider.createCheckoutSession({
       organizationId: requestContext.organizationId,
       invoiceId: invoice.id,
-      idempotencyKey: `checkout:${invoice.id}:${invoice.totalCents - invoice.paidCents}`,
-      amountCents: invoice.totalCents - invoice.paidCents,
+      // The sequence keeps a replacement for a cancelled or expired checkout from
+      // being answered with the provider's cached, dead session.
+      idempotencyKey: `checkout:${invoice.id}:${amountCents}:${invoice.sessionCount}`,
+      amountCents,
       currency: invoice.currency,
       description: `Nennung ${invoice.eventSlug}`,
       successUrl: returnUrl('success'),
       cancelUrl: returnUrl('cancelled'),
       paymentMethods,
     });
-    await deps.checkoutRepository.createSession(
-      requestContext,
-      invoice.id,
-      session.id,
-      session.url,
-    );
+    await deps.checkoutRepository.createSession(requestContext, invoice.id, {
+      id: session.id,
+      url: session.url,
+      amountCents,
+      expiresAt: session.expiresAt ?? null,
+    });
     return { status: 201, url: session.url };
   } catch {
     return { status: 503 };
   }
+}
+
+export type CancelCheckoutResult =
+  'cancelled' | 'nothing_pending' | 'unavailable';
+
+/**
+ * "Zahlung abbrechen": ends every unpaid checkout of the invoice at the provider,
+ * then marks it locally. A checkout that was paid in the meantime stays paid;
+ * the provider refuses to expire it and the call reports 'unavailable'.
+ */
+export async function cancelInvoiceCheckout(
+  deps: ApiDeps,
+  requestContext: RequestContext,
+  invoiceId: string,
+): Promise<CancelCheckoutResult> {
+  if (!deps.paymentProvider || !deps.checkoutRepository) return 'unavailable';
+  const pending = await deps.checkoutRepository.pendingSessions(
+    requestContext,
+    invoiceId,
+  );
+  if (!pending.length) return 'nothing_pending';
+  try {
+    for (const session of pending)
+      await deps.paymentProvider.expireCheckoutSession({
+        organizationId: requestContext.organizationId,
+        sessionId: session.id,
+      });
+  } catch (error) {
+    deps.logger.warn('Stripe checkout could not be cancelled', {
+      errorName: error instanceof Error ? error.name : 'unknown',
+    });
+    return 'unavailable';
+  }
+  await deps.checkoutRepository.markSessionsExpired(
+    requestContext,
+    invoiceId,
+    pending.map((session) => session.id),
+  );
+  return 'cancelled';
 }

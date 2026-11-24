@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import { mailConfigSchema, validateMailConfig } from '@nennbox/contracts';
 import { compileTrustedProxyList } from './rate-limit.js';
@@ -72,7 +73,33 @@ const configSchema = z.object({
   STRIPE_API_BASE_URL: z.string().url().optional(),
 });
 
-export function loadConfig(env: NodeJS.ProcessEnv) {
+const stripeSecretNames = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'];
+
+/**
+ * Stripe secrets come from the environment or, when `<NAME>_FILE` is set, from
+ * that file (Docker/systemd secrets), so they never need to sit in a unit file
+ * or in the database. Setting both forms is ambiguous and rejected.
+ */
+export function withStripeSecretFiles(
+  env: NodeJS.ProcessEnv,
+): NodeJS.ProcessEnv {
+  const resolved = { ...env };
+  for (const name of stripeSecretNames) {
+    const file = env[`${name}_FILE`];
+    if (!file) continue;
+    if (env[name])
+      throw new Error(`Invalid configuration variables: ${name}, ${name}_FILE`);
+    try {
+      resolved[name] = readFileSync(file, 'utf8').trim();
+    } catch {
+      throw new Error(`Invalid configuration variables: ${name}_FILE`);
+    }
+  }
+  return resolved;
+}
+
+export function loadConfig(rawEnv: NodeJS.ProcessEnv) {
+  const env = withStripeSecretFiles(rawEnv);
   const parsed = configSchema.safeParse(env);
   if (!parsed.success) {
     const names = [

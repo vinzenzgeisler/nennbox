@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import type {
+  CheckoutSessionExpiryRequest,
   CheckoutSessionRequest,
   PaymentProvider,
   PaymentProviderEvent,
@@ -13,7 +14,11 @@ export interface StripePaymentProviderOptions {
   readonly apiBaseUrl?: string;
 }
 
-/** Community adapter. Cloud can supply an account-aware implementation of the same core port. */
+/**
+ * Community adapter: one Stripe account, configured through the deployment's own
+ * keys. Cloud supplies an account-aware implementation of the same core port
+ * (docs/architecture/payments.md); this one refuses events of connected accounts.
+ */
 export function createStripePaymentProvider(
   options: StripePaymentProviderOptions,
 ): PaymentProvider {
@@ -59,24 +64,44 @@ export function createStripePaymentProvider(
         { idempotencyKey: request.idempotencyKey },
       );
       if (!session.url) throw new Error('Stripe did not return a checkout URL');
-      return { id: session.id, url: session.url };
+      return {
+        id: session.id,
+        url: session.url,
+        expiresAt: session.expires_at
+          ? new Date(session.expires_at * 1000).toISOString()
+          : null,
+      };
+    },
+    async expireCheckoutSession(request: CheckoutSessionExpiryRequest) {
+      try {
+        await stripe.checkout.sessions.expire(request.sessionId);
+      } catch (error) {
+        // Expiring twice is fine; a completed checkout must stay completed.
+        const session = await stripe.checkout.sessions
+          .retrieve(request.sessionId)
+          .catch(() => null);
+        if (session?.status !== 'expired') throw error;
+      }
     },
     async verifyWebhook(
       rawBody: string,
       signature: string,
-    ): Promise<PaymentProviderEvent> {
+    ): Promise<PaymentProviderEvent | null> {
       const event = stripe.webhooks.constructEvent(
         rawBody,
         signature,
         options.webhookSecret,
       );
+      if (event.account)
+        throw new Error('Connected-account events are not accepted');
       if (
         event.type === 'checkout.session.completed' ||
         event.type === 'checkout.session.async_payment_succeeded'
       ) {
         const session = event.data.object;
-        if (session.payment_status !== 'paid')
-          throw new Error('Checkout is not paid');
+        // SEPA debit completes the checkout first and confirms the money later
+        // (async_payment_succeeded or _failed); nothing to apply until then.
+        if (session.payment_status !== 'paid') return null;
         const metadata = session.metadata;
         if (
           !metadata?.organizationId ||
@@ -89,6 +114,7 @@ export function createStripePaymentProvider(
           organizationId:
             metadata.organizationId as PaymentProviderEvent['organizationId'],
           invoiceId: metadata.invoiceId,
+          sessionId: session.id,
           type: 'succeeded',
           amountCents: session.amount_total ?? 0,
           currency: session.currency ?? 'eur',
@@ -108,6 +134,7 @@ export function createStripePaymentProvider(
           organizationId:
             metadata.organizationId as PaymentProviderEvent['organizationId'],
           invoiceId: metadata.invoiceId,
+          sessionId: object.id,
           type:
             event.type === 'checkout.session.expired' ? 'expired' : 'failed',
           amountCents: object.amount_total ?? 0,
@@ -119,7 +146,7 @@ export function createStripePaymentProvider(
               : object.id,
         };
       }
-      throw new Error('Unsupported Stripe event');
+      return null;
     },
     async refund(request: PaymentRefundRequest) {
       const refund = await stripe.refunds.create(

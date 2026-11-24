@@ -148,6 +148,79 @@ describe('mail outbox worker', () => {
       run('https://evil.example.test/passenger?token=abc'),
     ).rejects.toThrow(/canonical origin/);
   });
+  it.each(['de', 'en'] as const)(
+    'renders the payment confirmation and the entry confirmation with the pay-later link in %s',
+    (locale) => {
+      const payment = renderMailTemplate(
+        defaultMailTemplate('payment-received', locale),
+        'payment-received',
+        {
+          recipientName: 'Max',
+          eventName: 'Bergpreis',
+          amount: '42,00 €',
+          paymentReference: 'RF18 1234',
+          portalUrl: 'https://example.test/events/bergpreis/my-entry',
+        },
+      );
+      expect(payment.text).toContain('42,00 €');
+      expect(payment.text).toContain('RF18 1234');
+      expect(payment.html).toContain(
+        'href="https://example.test/events/bergpreis/my-entry"',
+      );
+      const confirmation = renderMailTemplate(
+        defaultMailTemplate('entry-received', locale),
+        'entry-received',
+        {
+          recipientName: 'Max',
+          eventName: 'Bergpreis',
+          paymentSummary: 'Offener Betrag: 42,00 €',
+          portalUrl: 'https://example.test/events/bergpreis/my-entry',
+        },
+      );
+      expect(confirmation.text).toContain('Offener Betrag: 42,00 €');
+      expect(confirmation.text).toContain(
+        'https://example.test/events/bergpreis/my-entry',
+      );
+    },
+  );
+
+  it('resolves the relative portal link of payment mails against the canonical origin of the organization', async () => {
+    const tenantId = '11111111-1111-4111-8111-111111111111';
+    const h = setup(tenantId, {
+      templateKey: 'payment-received',
+      variables: {
+        recipientName: 'Max',
+        eventName: 'Bergpreis',
+        amount: '42,00 €',
+        paymentReference: 'RF18 1234',
+        portalUrl: '/events/bergpreis/my-entry',
+      },
+    });
+    await createMailOutboxTask({
+      deploymentMode: 'cloud',
+      getOrganization: async () => ({ status: 'active' }),
+      repository: h.repo,
+      mail: h.mail,
+      canonicalOrigin: async () => 'https://example.test',
+    })(
+      {
+        type: 'mail.outbox',
+        schemaVersion: 1,
+        organizationId: tenantId,
+        correlationId: 'c',
+        payload: { outboxId: 'mail-1' },
+      },
+      { job: { id: 'j' } },
+    );
+    expect(h.mail.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: expect.stringContaining(
+          'https://example.test/events/bergpreis/my-entry',
+        ),
+      }),
+    );
+  });
+
   it('renders the latest driver note placeholder in status-change mail', () => {
     const rendered = renderMailTemplate(
       defaultMailTemplate('status-change', 'de'),

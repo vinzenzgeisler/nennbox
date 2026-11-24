@@ -10,6 +10,7 @@ import type { Database } from './database.js';
 import type { EntryRepository } from '@nennbox/core';
 import { attachAdminEntryDetails } from './entry-admin-details.js';
 import { offerWaitlistSeat } from './waitlist-offer.js';
+import { openRefundIntent } from './payment-refund-intents.js';
 
 export function createEntryTransitionMethod(
   db: Database,
@@ -73,6 +74,14 @@ export function createEntryTransitionMethod(
             classId: row.classId,
             automatic: true,
           });
+          await openRefundIntent(
+            tx,
+            ctx.organizationId,
+            id,
+            toStatus === 'withdrawn' || workflow?.statusCategory === 'withdrawn'
+              ? 'withdrawn'
+              : 'rejected',
+          );
         }
         if (transition === 'acceptance' && workflow?.notification) {
           const [recipient] = await tx

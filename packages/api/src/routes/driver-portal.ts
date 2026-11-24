@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { settleRefundAfterCancellation } from './refund-settlement.js';
 import { uploadEntryDocument, ENTRY_DOCUMENT_MAX_BYTES } from '@nennbox/core';
 import type { RequestContext } from '@nennbox/core';
 import { registerDriverPortalPaymentRoute } from './driver-portal-payment.js';
@@ -139,15 +140,27 @@ export function registerDriverPortalRoutes(
       ? await portal.view(current.context, current.token)
       : null;
     if (!view) return c.json({ error: 'Link unavailable' }, 404);
+    // Online payment follows the event's own setting: no enabled method, no button.
+    const checkout =
+      current &&
+      view.payment &&
+      onlinePaymentConfigured(deps) &&
+      deps.checkoutRepository
+        ? await deps.checkoutRepository.get(
+            current.context,
+            view.payment.invoiceId,
+          )
+        : null;
     return c.json({
       ...view,
       payment: view.payment && {
         ...view.payment,
         onlinePayable:
-          onlinePaymentConfigured(deps) &&
+          Boolean(checkout?.paymentMethods.length) &&
           view.payment.status !== 'paid' &&
           view.payment.status !== 'cancelled' &&
           view.payment.totalCents > view.payment.paidCents,
+        checkoutPending: Boolean(checkout?.pendingSession),
       },
     });
   });
@@ -196,6 +209,8 @@ export function registerDriverPortalRoutes(
       current.token,
       entryId.data,
     );
+    if (updated)
+      await settleRefundAfterCancellation(deps, current.context, entryId.data);
     return updated
       ? c.json({ withdrawn: true })
       : c.json({ error: 'Not found' }, 404);

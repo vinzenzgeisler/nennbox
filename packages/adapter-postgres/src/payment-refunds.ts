@@ -93,6 +93,7 @@ export function createPaymentRefundRepository(
             amountCents: -input.amountCents,
             providerPaymentId: input.providerPaymentId,
             providerRefundId: input.providerRefundId,
+            method: 'online',
             actor: input.actor,
             reason: input.reason,
           })

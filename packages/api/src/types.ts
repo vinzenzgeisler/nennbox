@@ -31,6 +31,7 @@ import type {
   CheckoutRepository,
   PaymentProvider,
   PaymentRefundRepository,
+  RefundIntentRepository,
   CanonicalOrigin,
 } from '@nennbox/core';
 import type { ModuleApiDeps } from './modules.js';
@@ -87,6 +88,7 @@ export interface CoreApiDeps {
   checkoutRepository?: CheckoutRepository;
   paymentProvider?: PaymentProvider;
   paymentRefunds?: PaymentRefundRepository;
+  refundIntents?: RefundIntentRepository;
   paymentReturnOrigin?: CanonicalOrigin;
   paymentRecipients: PaymentRecipientRepository;
   messages: MessageService;

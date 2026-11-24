@@ -17,13 +17,28 @@ export interface CheckoutSessionRequest {
 export interface CheckoutSession {
   readonly id: string;
   readonly url: string;
+  /** ISO instant after which the provider no longer accepts payment, when known. */
+  readonly expiresAt?: string | null;
 }
 
+export interface CheckoutSessionExpiryRequest {
+  readonly organizationId: OrganizationId;
+  readonly sessionId: string;
+}
+
+/**
+ * Provider-neutral outcome of one signed provider notification. `organizationId`
+ * is resolved by the adapter (Community: from the metadata it wrote itself;
+ * Cloud: from the connected account that sent the event) and must never be taken
+ * from an unsigned field. `accountId` names the provider account that emitted it.
+ */
 export type PaymentProviderEvent =
   | {
       readonly id: string;
       readonly organizationId: OrganizationId;
       readonly invoiceId: string;
+      readonly sessionId?: string;
+      readonly accountId?: string;
       readonly type: 'succeeded';
       readonly amountCents: number;
       readonly currency: string;
@@ -33,6 +48,8 @@ export type PaymentProviderEvent =
       readonly id: string;
       readonly organizationId: OrganizationId;
       readonly invoiceId: string;
+      readonly sessionId?: string;
+      readonly accountId?: string;
       readonly type: 'failed' | 'expired';
       readonly amountCents: number;
       readonly currency: string;
@@ -48,16 +65,37 @@ export interface PaymentRefundRequest {
   readonly reason: string;
 }
 
-/** Provider boundary; implementations resolve account credentials outside the domain model. */
+/**
+ * Provider boundary; implementations resolve account credentials outside the
+ * domain model. Every call that moves money carries `organizationId`, so an
+ * account-aware implementation (Stripe Connect: one connected account per
+ * organization, selected through the Stripe-Account header) resolves the account
+ * per call without any change to the port. See docs/architecture/payments.md.
+ */
 export interface PaymentProvider {
   createCheckoutSession(
     request: CheckoutSessionRequest,
   ): Promise<CheckoutSession>;
+  /** Ends an unpaid checkout so its link stops working ("Zahlung abbrechen"). */
+  expireCheckoutSession(request: CheckoutSessionExpiryRequest): Promise<void>;
+  /**
+   * Verifies the signature and maps the notification to a domain event. Throws
+   * when the signature or the event content is invalid. Returns null for an
+   * authentic notification that carries nothing to apply (unrelated event type,
+   * or an asynchronous payment that is still pending).
+   */
   verifyWebhook(
     rawBody: string,
     signature: string,
-  ): Promise<PaymentProviderEvent>;
+  ): Promise<PaymentProviderEvent | null>;
   refund(request: PaymentRefundRequest): Promise<{ readonly id: string }>;
+}
+
+export interface PendingCheckoutSession {
+  readonly id: string;
+  readonly url: string;
+  readonly amountCents: number | null;
+  readonly expiresAt: string | null;
 }
 
 export interface CheckoutInvoice {
@@ -70,7 +108,14 @@ export interface CheckoutInvoice {
   readonly paidCents: number;
   readonly currency: string;
   readonly status: 'open' | 'partially_paid' | 'paid' | 'cancelled';
+  /** Newest unpaid checkout of this invoice, if one is still open. */
+  readonly pendingSession: PendingCheckoutSession | null;
+  /** Checkouts ever created for this invoice; keeps provider idempotency keys distinct. */
+  readonly sessionCount: number;
 }
+
+export type ProviderEventResult =
+  'applied' | 'applied_with_mismatch' | 'duplicate' | 'not_found';
 
 export interface CheckoutRepository {
   get(
@@ -80,12 +125,24 @@ export interface CheckoutRepository {
   createSession(
     ctx: import('./context.js').RequestContext,
     invoiceId: string,
-    providerSessionId: string,
-    url: string,
+    session: {
+      readonly id: string;
+      readonly url: string;
+      readonly amountCents: number;
+      readonly expiresAt: string | null;
+    },
   ): Promise<void>;
-  applyProviderEvent(
-    event: PaymentProviderEvent,
-  ): Promise<'applied' | 'duplicate' | 'not_found'>;
+  /** Unpaid checkouts of the invoice, newest first. */
+  pendingSessions(
+    ctx: import('./context.js').RequestContext,
+    invoiceId: string,
+  ): Promise<readonly { readonly id: string }[]>;
+  markSessionsExpired(
+    ctx: import('./context.js').RequestContext,
+    invoiceId: string,
+    sessionIds: readonly string[],
+  ): Promise<void>;
+  applyProviderEvent(event: PaymentProviderEvent): Promise<ProviderEventResult>;
 }
 
 export interface RefundablePayment {

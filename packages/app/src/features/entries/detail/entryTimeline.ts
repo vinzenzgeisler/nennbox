@@ -160,7 +160,9 @@ function describe(
           ? 'Zahlung erstattet'
           : event.label === 'reversal'
             ? 'Zahlung zurückgenommen'
-            : 'Zahlung eingegangen',
+            : event.label === 'recorded_online'
+              ? 'Online bezahlt'
+              : 'Zahlung eingegangen',
       tone: 'accent',
       ...(detail ? { detail } : {}),
     };

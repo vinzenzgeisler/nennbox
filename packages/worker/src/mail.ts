@@ -13,7 +13,19 @@ import { createJobContext } from './index.js';
 export const mailTemplateContracts = {
   verification: ['recipientName', 'verificationUrl'],
   'registration-resume': ['recipientName', 'resumeUrl'],
-  'entry-received': ['recipientName', 'eventName'],
+  'entry-received': [
+    'recipientName',
+    'eventName',
+    'paymentSummary',
+    'portalUrl',
+  ],
+  'payment-received': [
+    'recipientName',
+    'eventName',
+    'amount',
+    'paymentReference',
+    'portalUrl',
+  ],
   accepted: ['recipientName', 'eventName'],
   rejected: ['recipientName', 'eventName'],
   'status-change': [
@@ -63,13 +75,25 @@ const defaultCopy: Record<MailTemplateKey, Record<MailLocale, MailTemplate>> = {
   'entry-received': {
     de: {
       subject: 'Nennung eingegangen: {{eventName}}',
-      text: 'Hallo {{recipientName}}, deine Nennung für {{eventName}} ist eingegangen.',
-      html: '<p>Hallo {{recipientName}}, deine Nennung für {{eventName}} ist eingegangen.</p>',
+      text: 'Hallo {{recipientName}}, deine Nennung für {{eventName}} ist eingegangen. {{paymentSummary}} Deine Nennung und die Zahlung findest du hier: {{portalUrl}}',
+      html: '<p>Hallo {{recipientName}}, deine Nennung für {{eventName}} ist eingegangen.</p><p>{{paymentSummary}}</p><p><a href="{{portalUrl}}">Meine Nennung öffnen</a></p>',
     },
     en: {
       subject: 'Entry received: {{eventName}}',
-      text: 'Hello {{recipientName}}, your entry for {{eventName}} was received.',
-      html: '<p>Hello {{recipientName}}, your entry for {{eventName}} was received.</p>',
+      text: 'Hello {{recipientName}}, your entry for {{eventName}} was received. {{paymentSummary}} You can see your entry and payment here: {{portalUrl}}',
+      html: '<p>Hello {{recipientName}}, your entry for {{eventName}} was received.</p><p>{{paymentSummary}}</p><p><a href="{{portalUrl}}">Open my entry</a></p>',
+    },
+  },
+  'payment-received': {
+    de: {
+      subject: 'Zahlung eingegangen: {{eventName}}',
+      text: 'Hallo {{recipientName}}, deine Zahlung von {{amount}} für {{eventName}} ist eingegangen (Verwendungszweck {{paymentReference}}). Vielen Dank! Deine Nennung findest du hier: {{portalUrl}}',
+      html: '<p>Hallo {{recipientName}}, deine Zahlung von {{amount}} für {{eventName}} ist eingegangen (Verwendungszweck {{paymentReference}}). Vielen Dank!</p><p><a href="{{portalUrl}}">Meine Nennung öffnen</a></p>',
+    },
+    en: {
+      subject: 'Payment received: {{eventName}}',
+      text: 'Hello {{recipientName}}, we received your payment of {{amount}} for {{eventName}} (reference {{paymentReference}}). Thank you! You can see your entry here: {{portalUrl}}',
+      html: '<p>Hello {{recipientName}}, we received your payment of {{amount}} for {{eventName}} (reference {{paymentReference}}). Thank you!</p><p><a href="{{portalUrl}}">Open my entry</a></p>',
     },
   },
   accepted: {
@@ -377,6 +401,8 @@ export function createMailOutboxTask(deps: {
       'registration-resume': 'resumeUrl',
       'passenger-link': 'linkUrl',
       'driver-portal-link': 'linkUrl',
+      'entry-received': 'portalUrl',
+      'payment-received': 'portalUrl',
     }[row.templateKey as string];
     if (linkVariable) {
       const variableName = linkVariable;

@@ -232,16 +232,39 @@ export function registerPaymentProviderRoutes(context: ApiRoutesContext): void {
         await c.req.text(),
         signature,
       );
+      // Authentic but nothing to apply (other event type, payment still pending).
+      if (!event) return c.json({ received: true, ignored: true });
       if (
         context.mode === 'community' &&
         event.organizationId !== context.communityOrganizationId
-      )
+      ) {
+        deps.logger.warn('Stripe webhook for a foreign organization rejected', {
+          eventId: event.id,
+        });
         return c.json({ error: 'Invalid event' }, 400);
+      }
       const result = await deps.checkoutRepository.applyProviderEvent(event);
-      if (result === 'not_found')
+      if (result === 'not_found') {
+        deps.logger.warn('Stripe webhook does not match any open invoice', {
+          eventId: event.id,
+          outcome: event.type,
+        });
         return c.json({ error: 'Unknown payment' }, 404);
-      return c.json({ received: true, duplicate: result === 'duplicate' });
-    } catch {
+      }
+      if (result === 'applied_with_mismatch')
+        deps.logger.warn(
+          'Stripe payment differs from the open invoice amount; recorded as received',
+          { eventId: event.id, invoiceId: event.invoiceId },
+        );
+      return c.json({
+        received: true,
+        duplicate: result === 'duplicate',
+        ...(result === 'applied_with_mismatch' ? { amountMismatch: true } : {}),
+      });
+    } catch (error) {
+      deps.logger.warn('Stripe webhook rejected', {
+        errorName: error instanceof Error ? error.name : 'unknown',
+      });
       return c.json({ error: 'Invalid webhook' }, 400);
     }
   });

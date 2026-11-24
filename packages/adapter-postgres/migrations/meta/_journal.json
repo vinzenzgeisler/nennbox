@@ -295,6 +295,13 @@
       "when": 1794422200009,
       "tag": "0041_invoice_paid_at",
       "breakpoints": false
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794422200010,
+      "tag": "0042_payment_completion",
+      "breakpoints": false
     }
   ]
 }

@@ -9,13 +9,22 @@ const invoiceId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const token = 'a'.repeat(43);
 const cookie = `driver_portal_session=${token}`;
 
-function makeApp(options: { online: boolean; paidCents?: number }) {
+function makeApp(options: {
+  online: boolean;
+  paidCents?: number;
+  methods?: ('card' | 'sepa_debit')[];
+  pending?: boolean;
+  pendingAmountCents?: number;
+}) {
   const createCheckoutSession = vi.fn(async () => ({
     id: 'cs_1',
     url: 'https://checkout.stripe.test/cs_1',
   }));
+  const expireCheckoutSession = vi.fn(async () => {});
+  const markSessionsExpired = vi.fn(async () => {});
   const paymentProvider: PaymentProvider = {
     createCheckoutSession,
+    expireCheckoutSession,
     verifyWebhook: async () => {
       throw new Error('unused');
     },
@@ -58,19 +67,37 @@ function makeApp(options: { online: boolean; paidCents?: number }) {
                 organizationId: organizationId(organization),
                 eventId: 'event-id',
                 eventSlug: 'sommer-rallye',
-                paymentMethods: ['card', 'sepa_debit'],
+                paymentMethods: options.methods ?? ['card', 'sepa_debit'],
                 totalCents: 4200,
                 paidCents,
                 currency: 'EUR',
                 status: paidCents >= 4200 ? 'paid' : 'open',
+                sessionCount: options.pending ? 1 : 0,
+                pendingSession: options.pending
+                  ? {
+                      id: 'cs_pending',
+                      url: 'https://checkout.stripe.test/cs_pending',
+                      amountCents:
+                        options.pendingAmountCents ?? 4200 - paidCents,
+                      expiresAt: null,
+                    }
+                  : null,
               }
             : null,
         createSession: async () => {},
+        pendingSessions: async () =>
+          options.pending ? [{ id: 'cs_pending' }] : [],
+        markSessionsExpired,
         applyProviderEvent: async () => 'applied',
       },
     }),
   );
-  return { app, createCheckoutSession };
+  return {
+    app,
+    createCheckoutSession,
+    expireCheckoutSession,
+    markSessionsExpired,
+  };
 }
 
 const post = (app: ReturnType<typeof makeApp>['app'], withCookie = true) =>
@@ -153,5 +180,124 @@ describe('driver portal online payment', () => {
     expect(
       (await post(makeApp({ online: true, paidCents: 4200 }).app)).status,
     ).toBe(404);
+  });
+
+  it('follows the event setting: no enabled online method means no pay button and no checkout', async () => {
+    const { app, createCheckoutSession } = makeApp({
+      online: true,
+      methods: [],
+    });
+    const view = await (
+      await app.request('/public/driver-portal', { headers: { cookie } })
+    ).json();
+    expect(view.payment.onlinePayable).toBe(false);
+    expect((await post(app)).status).toBe(503);
+    expect(createCheckoutSession).not.toHaveBeenCalled();
+  });
+
+  it('offers the event methods, not a fixed list', async () => {
+    const { app, createCheckoutSession } = makeApp({
+      online: true,
+      methods: ['sepa_debit'],
+    });
+    expect((await post(app)).status).toBe(201);
+    expect(createCheckoutSession).toHaveBeenCalledWith(
+      expect.objectContaining({ paymentMethods: ['sepa_debit'] }),
+    );
+  });
+
+  it('resumes an unpaid checkout instead of opening a second one ("später bezahlen")', async () => {
+    const { app, createCheckoutSession } = makeApp({
+      online: true,
+      pending: true,
+    });
+    const view = await (
+      await app.request('/public/driver-portal', { headers: { cookie } })
+    ).json();
+    expect(view.payment.checkoutPending).toBe(true);
+    const response = await post(app);
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({
+      url: 'https://checkout.stripe.test/cs_pending',
+    });
+    expect(createCheckoutSession).not.toHaveBeenCalled();
+  });
+
+  it('replaces a checkout created for an outdated amount with a fresh provider idempotency key', async () => {
+    const { app, createCheckoutSession } = makeApp({
+      online: true,
+      pending: true,
+      pendingAmountCents: 9900,
+    });
+    const response = await post(app);
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({
+      url: 'https://checkout.stripe.test/cs_1',
+    });
+    // The first checkout of the invoice used sequence 0; the replacement must not
+    // collide with it or the provider would hand back the old, outdated session.
+    expect(createCheckoutSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        idempotencyKey: `checkout:${invoiceId}:4200:1`,
+      }),
+    );
+  });
+
+  it('cancels the unpaid checkout at the provider and locally ("Zahlung abbrechen")', async () => {
+    const { app, expireCheckoutSession, markSessionsExpired } = makeApp({
+      online: true,
+      pending: true,
+    });
+    const response = await app.request('/public/driver-portal/payment/cancel', {
+      method: 'POST',
+      headers: { cookie },
+    });
+    expect(response.status).toBe(200);
+    expect(expireCheckoutSession).toHaveBeenCalledWith({
+      organizationId: organization,
+      sessionId: 'cs_pending',
+    });
+    expect(markSessionsExpired).toHaveBeenCalledWith(
+      expect.objectContaining({ organizationId: organization }),
+      invoiceId,
+      ['cs_pending'],
+    );
+  });
+
+  it('reports a failed cancel instead of pretending it worked, and keeps the checkout pending locally', async () => {
+    const { app, expireCheckoutSession, markSessionsExpired } = makeApp({
+      online: true,
+      pending: true,
+    });
+    expireCheckoutSession.mockRejectedValueOnce(new Error('provider down'));
+    const response = await app.request('/public/driver-portal/payment/cancel', {
+      method: 'POST',
+      headers: { cookie },
+    });
+    expect(response.status).toBe(503);
+    expect(markSessionsExpired).not.toHaveBeenCalled();
+  });
+
+  it('answers cancel with 404 when nothing is pending, without a session, or cross-origin', async () => {
+    const idle = makeApp({ online: true });
+    const url = '/public/driver-portal/payment/cancel';
+    expect(
+      (await idle.app.request(url, { method: 'POST', headers: { cookie } }))
+        .status,
+    ).toBe(404);
+    const { app, expireCheckoutSession } = makeApp({
+      online: true,
+      pending: true,
+    });
+    expect((await app.request(url, { method: 'POST' })).status).toBe(404);
+    expect(
+      (
+        await app.request(url, {
+          method: 'POST',
+          headers: { cookie, origin: 'https://attacker.example' },
+        })
+      ).status,
+    ).toBe(404);
+    expect(expireCheckoutSession).not.toHaveBeenCalled();
   });
 });

@@ -92,3 +92,21 @@
     margin-top: 8px;
   }
 }
+
+.registration-refund-settings {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.registration-refund-tier {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.registration-refund-tier > * {
+  min-width: 0;
+}

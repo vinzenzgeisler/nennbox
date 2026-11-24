@@ -139,7 +139,7 @@ export function createDriverPortalView(
           status: invoices.status,
           paidAt: invoices.paidAt,
           totalCents: invoices.totalCents,
-          paidCents: sql<number>`coalesce((select sum(p.amount_cents) from invoice_payment p where p.organization_id = ${invoices.organizationId} and p.invoice_id = ${invoices.id}), 0)::int`,
+          paidCents: sql<number>`coalesce((select sum(p.amount_cents) from invoice_payment p where p.organization_id = invoice.organization_id and p.invoice_id = invoice.id), 0)::int`,
           currency: invoices.currency,
           paymentReference: invoices.paymentReference,
         })

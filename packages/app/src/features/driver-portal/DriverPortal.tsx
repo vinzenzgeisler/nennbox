@@ -52,6 +52,23 @@ export function DriverPortal({ eventSlug }: { eventSlug: string }) {
       setWorking(false);
     }
   };
+  const cancelPayment = async () => {
+    setWorking(true);
+    setNotice('');
+    try {
+      await json(`${portalUrl}/payment/cancel`, 'POST', {});
+      await refresh();
+      setNotice(
+        'Die Online-Zahlung wurde abgebrochen. Du kannst jederzeit später bezahlen, online oder per Überweisung.',
+      );
+    } catch {
+      setNotice(
+        'Die Zahlung konnte nicht abgebrochen werden. Falls du schon bezahlt hast, wird der Zahlungsstand gleich aktualisiert.',
+      );
+    } finally {
+      setWorking(false);
+    }
+  };
   const request = async (event: FormEvent) => {
     event.preventDefault();
     setWorking(true);
@@ -220,6 +237,7 @@ export function DriverPortal({ eventSlug }: { eventSlug: string }) {
             upload={upload}
             save={save}
             pay={pay}
+            cancelPayment={cancelPayment}
             setWithdrawId={setWithdrawId}
             onLogout={() => {
               void json(`${portalUrl}/logout`, 'POST').finally(() => {

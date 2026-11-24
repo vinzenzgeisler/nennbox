@@ -97,3 +97,5 @@ export { createStartNumberService } from './start-number-service.js';
 export { advanceExpiredWaitlistOffers } from './waitlist-offer.js';
 
 export { createPaymentRefundRepository } from './payment-refunds.js';
+export { createRefundIntentRepository } from './payment-refund-intents.js';
+export { loadPaymentSettings } from './payment-settings.js';

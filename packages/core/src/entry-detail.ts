@@ -75,6 +75,12 @@ export interface AdminEntryInvoice {
     providerPaymentId: string;
     refundableCents: number;
   }>;
+  refundIntent?: {
+    status: 'pending' | 'done' | 'failed' | 'skipped';
+    percent: number | null;
+    refundedCents: number;
+    failure: string | null;
+  } | null;
 }
 
 /** Everything the admin detail shows about one entry beyond the entry record itself. */

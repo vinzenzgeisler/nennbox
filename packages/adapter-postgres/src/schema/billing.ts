@@ -125,6 +125,7 @@ export const invoicePayments = pgTable(
     reversesPaymentId: uuid('reverses_payment_id'),
     providerPaymentId: text('provider_payment_id'),
     providerRefundId: text('provider_refund_id'),
+    method: text('method').notNull().default('manual'),
     actor: text('actor').notNull(),
     reason: text('reason').notNull(),
     occurredAt: timestamp('occurred_at', { withTimezone: true })
@@ -150,6 +151,10 @@ export const invoicePayments = pgTable(
     unique('invoice_payment_org_refund_unique').on(
       t.organizationId,
       t.providerRefundId,
+    ),
+    check(
+      'invoice_payment_method_check',
+      sql`${t.method} in ('manual','online')`,
     ),
     check('invoice_payment_amount_nonzero_check', sql`${t.amountCents} <> 0`),
     check('invoice_payment_actor_check', sql`length(trim(${t.actor})) > 0`),

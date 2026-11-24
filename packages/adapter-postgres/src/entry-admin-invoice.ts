@@ -22,6 +22,9 @@ export async function loadInvoiceSummaries(
       providerPayments: sql<
         AdminEntryInvoice['providerPayments']
       >`coalesce((select jsonb_agg(jsonb_build_object('providerPaymentId', refundable.provider_payment_id, 'refundableCents', refundable.refundable_cents)) from (select p.provider_payment_id, sum(p.amount_cents)::int as refundable_cents from invoice_payment p where p.organization_id = invoice.organization_id and p.invoice_id = invoice.id and p.provider_payment_id is not null group by p.provider_payment_id having sum(p.amount_cents) > 0) refundable), '[]'::jsonb)`,
+      refundIntent: sql<
+        AdminEntryInvoice['refundIntent']
+      >`(select jsonb_build_object('status', i.status, 'percent', i.percent, 'refundedCents', i.refunded_cents, 'failure', i.failure) from payment_refund_intent i where i.organization_id = invoice.organization_id and i.invoice_id = invoice.id order by i.created_at desc limit 1)`,
     })
     .from(invoices)
     .where(
@@ -36,6 +39,7 @@ export async function loadInvoiceSummaries(
       {
         ...invoice,
         paidAt: invoice.paidAt?.toISOString() ?? null,
+        refundIntent: invoice.refundIntent ?? null,
         status: invoice.status as AdminEntryInvoice['status'],
       },
     ]),

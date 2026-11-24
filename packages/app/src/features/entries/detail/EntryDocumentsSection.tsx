@@ -10,6 +10,7 @@ import { AdminFileDownload } from '../AdminFileDownload.js';
 import { uploadLines, type UploadLine } from '../documents/documentLines.js';
 import { uploadRows } from '../documents/uploadRows.js';
 import { formatMoney } from './entryDetailModel.js';
+import { refundIntentText } from './refundIntentText.js';
 
 type Dimension = NonNullable<Entry['statusProjection']>['dimensions'][number];
 export type DimensionAction = {
@@ -123,6 +124,11 @@ export function EntryDocumentsSection({
         <Button variant="text" onClick={onRefundPayment}>
           Erstattung auslösen
         </Button>
+      )}
+      {invoice?.refundIntent && (
+        <DetailNote>
+          {refundIntentText(invoice.refundIntent, invoice.currency)}
+        </DetailNote>
       )}
       {invoice && invoice.paidCents > 0 && (
         <DetailNote>
