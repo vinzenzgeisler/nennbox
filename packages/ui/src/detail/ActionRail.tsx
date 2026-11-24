@@ -33,14 +33,19 @@ export function NextStepButton({
 }
 export function ActionGroup({
   title,
+  hideTitle = false,
   children,
 }: {
   title: string;
+  hideTitle?: boolean;
   children: ReactNode;
 }) {
   return (
-    <section className="nb-action-group">
-      <h3 className="nb-rail-label">{title}</h3>
+    <section
+      className="nb-action-group"
+      aria-label={hideTitle ? title : undefined}
+    >
+      {!hideTitle && <h3 className="nb-rail-label">{title}</h3>}
       <div>{children}</div>
     </section>
   );

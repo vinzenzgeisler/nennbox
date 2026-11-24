@@ -15,7 +15,15 @@ export type IconName =
   | 'overview'
   | 'export'
   | 'settings'
-  | 'switch';
+  | 'switch'
+  | 'person'
+  | 'amount'
+  | 'note'
+  | 'link'
+  | 'warning'
+  | 'payment'
+  | 'tag'
+  | 'trash';
 
 const paths: Record<IconName, React.ReactNode> = {
   // Navigation glyphs follow the app reference (quelle/N2Nennungen.dc.html).
@@ -61,6 +69,20 @@ const paths: Record<IconName, React.ReactNode> = {
     </>
   ),
   export: <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />,
+  person: (
+    <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM4 21v-2a8 8 0 0 1 16 0v2" />
+  ),
+  amount: (
+    <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zM16 7a6 6 0 0 0-3-1c-3 0-5 2-5 6s2 6 5 6a6 6 0 0 0 3-1M6 10h8M6 14h7" />
+  ),
+  note: <path d="M13 4H4v16h16v-9M10 14l1-4 9-9 3 3-9 9zM18 3l3 3" />,
+  link: (
+    <path d="M10 8l4-4a4 4 0 0 1 6 6l-4 4M14 16l-4 4a4 4 0 0 1-6-6l4-4M8 16l8-8" />
+  ),
+  warning: <path d="M12 3L2 21h20zM12 9v5M12 17v1" />,
+  payment: <path d="M3 6h18v12H3zM3 10h18M7 15h4" />,
+  tag: <path d="M4 4h8l8 8-8 8-8-8zM8 8h2v2H8z" />,
+  trash: <path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7" />,
   switch: <path d="M8 9l4-4 4 4M8 15l4 4 4-4" />,
   settings: (
     <>

@@ -160,7 +160,7 @@ export function EntryActionRail({
           )}
           {canPay && (
             <RailAction
-              icon={<Icon name="document" />}
+              icon={<Icon name="payment" />}
               disabled={busy}
               onClick={onPayment}
             >
@@ -173,7 +173,7 @@ export function EntryActionRail({
         <ActionGroup title="Beifahrer">
           {canAddPassenger && (
             <RailAction
-              icon={<Icon name="settings" />}
+              icon={<Icon name="person" />}
               disabled={busy}
               onClick={() => onPassenger('add')}
             >
@@ -182,7 +182,7 @@ export function EntryActionRail({
           )}
           {canLinkPassenger && (
             <RailAction
-              icon={<Icon name="settings" />}
+              icon={<Icon name="link" />}
               disabled={busy}
               onClick={() => onPassenger('link')}
             >
@@ -243,7 +243,7 @@ export function EntryActionRail({
               action.startsWith('change_class:'),
             )) && (
             <RailAction
-              icon={<Icon name="settings" />}
+              icon={<Icon name="tag" />}
               disabled={busy}
               onClick={() => onAdminAction('change_class')}
             >
@@ -252,7 +252,7 @@ export function EntryActionRail({
           )}
           {entry.availableActions?.includes('adjust_amount') && (
             <RailAction
-              icon={<Icon name="settings" />}
+              icon={<Icon name="amount" />}
               disabled={busy}
               onClick={() => onAdminAction('adjust_amount')}
             >
@@ -262,7 +262,7 @@ export function EntryActionRail({
           {(entry.availableActions?.includes('note:internal') ||
             entry.availableActions?.includes('note:driver')) && (
             <RailAction
-              icon={<Icon name="settings" />}
+              icon={<Icon name="note" />}
               disabled={busy}
               onClick={() => onAdminAction('note')}
             >
@@ -274,10 +274,10 @@ export function EntryActionRail({
       {(destructive.length > 0 ||
         entry.availableActions?.includes('delete')) && (
         <div className="nb-entry-danger-actions">
-          <ActionGroup title="Destruktive Aktionen">
+          <ActionGroup title="Ablehnen und Löschen" hideTitle>
             {destructive.map((step) => (
               <RailAction
-                icon={<Icon name="info" />}
+                icon={<Icon name="warning" />}
                 key={step.to}
                 tone="danger"
                 disabled={busy}
@@ -288,7 +288,7 @@ export function EntryActionRail({
             ))}
             {entry.availableActions?.includes('delete') && (
               <RailAction
-                icon={<Icon name="info" />}
+                icon={<Icon name="trash" />}
                 tone="danger"
                 disabled={busy}
                 onClick={() => onAdminAction('delete')}
