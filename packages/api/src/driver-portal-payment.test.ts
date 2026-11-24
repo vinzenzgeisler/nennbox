@@ -18,10 +18,12 @@ function makeApp(options: {
   pendingMethods?: ('card' | 'sepa_debit')[] | null;
   cancelled?: boolean;
 }) {
-  const createCheckoutSession = vi.fn(async () => ({
-    id: 'cs_1',
-    url: 'https://checkout.stripe.test/cs_1',
-  }));
+  const createCheckoutSession = vi.fn<PaymentProvider['createCheckoutSession']>(
+    async () => ({
+      id: 'cs_1',
+      url: 'https://checkout.stripe.test/cs_1',
+    }),
+  );
   const expireCheckoutSession = vi.fn(
     async (): Promise<'expired' | 'completed'> => 'expired',
   );

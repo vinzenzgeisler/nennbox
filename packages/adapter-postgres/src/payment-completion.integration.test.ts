@@ -1148,7 +1148,7 @@ describe.skipIf(!url)(
       }
     });
 
-    it.each(['before', 'parallel'] as const)(
+    it.each(['before', 'parallel', 'cancelled-invoice'] as const)(
       'makes payment %s cancellation visible for refund instead of silently accepting it',
       async (order) => {
         const { db, pool } = await createDatabase(url!);
@@ -1169,7 +1169,12 @@ describe.skipIf(!url)(
             });
           const pay = () =>
             createCheckoutRepository(db).applyProviderEvent(paid(s));
-          if (order === 'before') {
+          if (order !== 'parallel') {
+            if (order === 'cancelled-invoice')
+              await db
+                .update(invoices)
+                .set({ status: 'cancelled' })
+                .where(eq(invoices.id, s.invoice.id));
             await cancel();
             await pay();
           } else await Promise.all([cancel(), pay()]);
@@ -1179,7 +1184,7 @@ describe.skipIf(!url)(
             .where(eq(paymentRefundIntents.invoiceId, s.invoice.id));
           expect(intents).toHaveLength(1);
           expect(['pending', 'failed']).toContain(intents[0]!.status);
-          if (order === 'before')
+          if (order !== 'parallel')
             expect(intents[0]).toMatchObject({
               status: 'failed',
               failure: 'payment_after_cancellation',
