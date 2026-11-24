@@ -143,6 +143,30 @@ for (const width of [1440, 1024, 390]) {
           path: `${evidence}/detail-${width}.png`,
           fullPage: true,
         });
+      const detailWidth = await page.evaluate(
+        () => document.documentElement.scrollWidth,
+      );
+      expect(detailWidth).toBeLessThanOrEqual(width);
+      await expect(
+        page.getByRole('region', { name: 'Nennung im Detail', exact: true }),
+      ).toContainText('Dieselbe Person ist mehrfach genannt');
+      await page.keyboard.press('Escape');
+      await expect(
+        page.getByRole('region', { name: 'Nennung im Detail', exact: true }),
+      ).not.toBeVisible();
+      const warnings = page.getByRole('combobox', {
+        name: 'Warnungen auf dieser Seite',
+      });
+      await expect(warnings).toBeEnabled();
+      await warnings.selectOption('with');
+      await expect(page.locator('.nb-entry-list-row').first()).toBeVisible();
+      if (evidence)
+        await page.screenshot({ path: `${evidence}/list-${width}.png` });
+      await warnings.selectOption('without');
+      await warnings.selectOption('all');
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+      ).toBeLessThanOrEqual(width);
       expect(errors).toEqual([]);
       expect(responses).toEqual([]);
     } finally {

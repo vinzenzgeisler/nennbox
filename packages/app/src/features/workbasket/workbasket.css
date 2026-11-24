@@ -27,3 +27,19 @@
   min-width: 0;
   font: inherit;
 }
+
+@media (width >= 48rem) {
+  .nb-workbasket-task {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .nb-workbasket-task > :not(button) {
+    grid-column: 1;
+  }
+
+  .nb-workbasket-task > button {
+    grid-column: 2;
+    grid-row: 1 / 4;
+    align-self: center;
+  }
+}
