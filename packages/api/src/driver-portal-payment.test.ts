@@ -14,6 +14,7 @@ function makeApp(options: {
   paidCents?: number;
   methods?: ('card' | 'sepa_debit')[];
   pending?: boolean;
+  extraPending?: boolean;
   pendingAmountCents?: number;
   pendingMethods?: ('card' | 'sepa_debit')[] | null;
   cancelled?: boolean;
@@ -96,7 +97,14 @@ function makeApp(options: {
                 sessionCount: options.pending ? 1 : 0,
                 allEntriesCancelled: options.cancelled ?? false,
                 pendingSession: pendingSession(),
-                openSessions: pendingSession() ? [pendingSession()!] : [],
+                openSessions: pendingSession()
+                  ? [
+                      pendingSession()!,
+                      ...(options.extraPending
+                        ? [{ ...pendingSession()!, id: 'cs_obsolete' }]
+                        : []),
+                    ]
+                  : [],
               }
             : null,
         createSession,
@@ -317,6 +325,35 @@ describe('driver portal online payment', () => {
     expect(createCheckoutSession).toHaveBeenCalledWith(
       expect.objectContaining({ paymentMethods: ['card'] }),
     );
+  });
+
+  it('ends an extra legacy session before reusing the matching checkout', async () => {
+    const { app, createCheckoutSession, expireCheckoutSession } = makeApp({
+      online: true,
+      pending: true,
+      extraPending: true,
+    });
+    expect((await post(app)).status).toBe(201);
+    expect(expireCheckoutSession).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: 'cs_obsolete' }),
+    );
+    expect(expireCheckoutSession).toHaveBeenCalledOnce();
+    expect(createCheckoutSession).not.toHaveBeenCalled();
+  });
+
+  it('also closes the reusable session if another legacy session was already paid', async () => {
+    const { app, createCheckoutSession, expireCheckoutSession } = makeApp({
+      online: true,
+      pending: true,
+      extraPending: true,
+    });
+    expireCheckoutSession.mockResolvedValueOnce('completed');
+    expect((await post(app)).status).toBe(409);
+    expect(expireCheckoutSession).toHaveBeenCalledTimes(2);
+    expect(expireCheckoutSession).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sessionId: 'cs_pending' }),
+    );
+    expect(createCheckoutSession).not.toHaveBeenCalled();
   });
 
   it('resumes a checkout with the same methods in another order', async () => {

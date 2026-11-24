@@ -100,7 +100,27 @@ export async function createInvoiceCheckout(
       sameMethods(session.paymentMethods, paymentMethods) &&
       (!session.expiresAt || Date.parse(session.expiresAt) > now),
   );
-  if (reusable) return { status: 201, url: reusable.url };
+  if (reusable) {
+    const others = invoice.openSessions.filter(
+      (session) => session.id !== reusable.id,
+    );
+    if (others.length) {
+      const result = await expireOpenCheckouts(
+        deps,
+        requestContext,
+        invoice.id,
+        others.map((session) => session.id),
+      );
+      if (result === 'completed') {
+        await expireOpenCheckouts(deps, requestContext, invoice.id, [
+          reusable.id,
+        ]);
+        return { status: 409 };
+      }
+      if (result === 'unavailable') return { status: 503 };
+    }
+    return { status: 201, url: reusable.url };
+  }
   // Anything else open would stay payable at the provider next to the new
   // checkout and could be paid twice, so it ends first. If one of them was
   // already paid, no second checkout is opened.
