@@ -76,11 +76,11 @@ export interface EventClass {
   vehicleType: VehicleType;
   sortOrder: number;
   maxParticipants: number | null;
-  allowsMultipleStarts?: boolean;
-  minDisplacementCc?: number | null;
-  maxDisplacementCc?: number | null;
-  minYear?: number | null;
-  maxYear?: number | null;
+  allowsMultipleStarts?: boolean | undefined;
+  minDisplacementCc?: number | null | undefined;
+  maxDisplacementCc?: number | null | undefined;
+  minYear?: number | null | undefined;
+  maxYear?: number | null | undefined;
   closed: boolean;
   passengerMode: PassengerMode;
 }
