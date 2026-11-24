@@ -2,7 +2,14 @@ import { expect, test } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 test.use({
-  launchOptions: { args: ['--disable-gpu', '--renderer-process-limit=1'] },
+  launchOptions: {
+    args: [
+      '--disable-gpu',
+      '--renderer-process-limit=1',
+      '--single-process',
+      '--no-zygote',
+    ],
+  },
 });
 
 for (const width of [1440, 1024, 390]) {

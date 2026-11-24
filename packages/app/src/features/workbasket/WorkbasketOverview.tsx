@@ -100,25 +100,30 @@ export function WorkbasketOverview({
                     </option>
                   ))}
                 </AppSelect>
-                <AppActions>
-                  {['ready', 'missingDocuments', 'paymentOpen'].map((id) => (
-                    <WorkbasketBulkActions
-                      key={id}
-                      eventId={eventId}
-                      ruleId={id}
-                      entryIds={[
-                        ...new Set(
-                          data.tasks
-                            .filter(
-                              (task) => task.ruleId === id && task.entryId,
-                            )
-                            .map((task) => task.entryId!),
-                        ),
-                      ]}
-                      onDone={reload}
-                    />
-                  ))}
-                </AppActions>
+                <AppSection
+                  title="Sammelaktionen"
+                  description="Auswahl und genaue Auswirkungen vor dem Ausführen prüfen und bestätigen."
+                >
+                  <AppActions>
+                    {['ready', 'missingDocuments', 'paymentOpen'].map((id) => (
+                      <WorkbasketBulkActions
+                        key={id}
+                        eventId={eventId}
+                        ruleId={id}
+                        entryIds={[
+                          ...new Set(
+                            data.tasks
+                              .filter(
+                                (task) => task.ruleId === id && task.entryId,
+                              )
+                              .map((task) => task.entryId!),
+                          ),
+                        ]}
+                        onDone={reload}
+                      />
+                    ))}
+                  </AppActions>
+                </AppSection>
                 <p role="status">
                   {filtered.length} Aufgaben
                   {rule ? ` · ${ruleLabels[rule] ?? rule}` : ''}
