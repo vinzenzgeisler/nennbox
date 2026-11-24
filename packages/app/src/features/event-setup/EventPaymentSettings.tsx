@@ -79,7 +79,7 @@ export function EventPaymentSettings({ eventId }: { eventId: string }) {
     }
   };
   return (
-    <div className="nb-app-stack">
+    <div className="nb-app-stack nb-event-payment-settings">
       <RegistrationPaymentSettings
         key={resetCount}
         config={config}
