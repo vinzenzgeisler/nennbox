@@ -30,7 +30,7 @@ export async function loadWorkbasketSnapshot(
   ).rows;
   const entries = (
     await db.execute(sql`
-    SELECT e.id,e.class_id AS "classId",to_char(e.created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "createdAt",
+    SELECT e.id,e.class_id AS "classId",to_char(e.created_at AT TIME ZONE o.timezone,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "createdAt",
       e.acceptance_status AS status,p.first_name AS "firstName",p.last_name AS "lastName",
       p.date_of_birth::text AS "dateOfBirth",coalesce(g.contact_email,p.email) AS email,
       e.vehicle_id AS "vehicleId",v.vin,v.registration,v.displacement_cc AS "displacementCc",
@@ -54,6 +54,7 @@ export async function loadWorkbasketSnapshot(
           ORDER BY latest.uploaded_at DESC,latest.id DESC LIMIT 1)) AS "documentValidUntil",
       coalesce(i.status='paid',false) AS paid
     FROM entry e
+    JOIN organization o ON o.id=e.organization_id
     JOIN person p ON p.organization_id=e.organization_id AND p.id=e.driver_person_id
     JOIN vehicle v ON v.organization_id=e.organization_id AND v.id=e.vehicle_id
     JOIN registration_group g ON g.organization_id=e.organization_id AND g.event_id=e.event_id AND g.id=e.registration_group_id
