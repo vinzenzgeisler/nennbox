@@ -65,9 +65,11 @@ export function EntryDetailPage({
                 if (next === null) return;
                 event.preventDefault();
                 onTab(tabs[next]!.key);
-                tabRow.current
-                  ?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
-                  [next]?.focus();
+                const buttons =
+                  tabRow.current?.querySelectorAll<HTMLButtonElement>(
+                    '[role="tab"]',
+                  );
+                buttons?.[next]?.focus();
               }}
               onClick={() => onTab(tab.key)}
             >

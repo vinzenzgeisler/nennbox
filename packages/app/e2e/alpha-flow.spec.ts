@@ -557,9 +557,7 @@ test('Community registration and admin lifecycle with API setup', async ({
   if (!pdfPath) throw new Error('PDF download path is missing');
   expect(readFileSync(pdfPath).subarray(0, 4).toString()).toBe('%PDF');
   await shots('admin-entry-detail');
-  await detailTabs
-    .getByRole('button', { name: 'Verlauf', exact: true })
-    .click();
+  await detailTabs.getByRole('tab', { name: 'Verlauf', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
     /zugelassen|angenommen/i,
   );
@@ -717,9 +715,7 @@ test('admin records payment from entry detail UI', async ({
       .fill('Alpha E2E partial refund');
     await dialog.getByRole('button', { name: 'Erstattung auslösen' }).click();
     await expect(dialog).toHaveCount(0);
-    await detailTabs
-      .getByRole('button', { name: 'Verlauf', exact: true })
-      .click();
+    await detailTabs.getByRole('tab', { name: 'Verlauf', exact: true }).click();
     await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
       'Zahlung erstattet',
     );
@@ -737,9 +733,7 @@ test('admin records payment from entry detail UI', async ({
     await expect(
       entryDetail.getByRole('button', { name: 'Zahlung erfassen' }),
     ).toHaveCount(0);
-    await detailTabs
-      .getByRole('button', { name: 'Verlauf', exact: true })
-      .click();
+    await detailTabs.getByRole('tab', { name: 'Verlauf', exact: true }).click();
     await expect(page.getByRole('region', { name: 'Verlauf' })).toContainText(
       'Zahlung eingegangen',
     );
