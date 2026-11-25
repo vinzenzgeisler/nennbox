@@ -167,7 +167,6 @@ export function WorkbasketReminder({
     }
   }
   const close = () => {
-    // A status refresh is read-only; it must not trap the user in a sent campaign.
     if (busy && !campaign) return;
     setOpen(false);
     if (campaign || attempted) onDone();
