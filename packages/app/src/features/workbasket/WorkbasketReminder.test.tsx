@@ -59,7 +59,7 @@ afterEach(() => {
 });
 const click = async (label: string) => {
   const button = [...document.querySelectorAll('button')].find(
-    (item) => item.textContent === label,
+    (item) => item.textContent?.replace(/ \(\d+\)$/, '') === label,
   )!;
   expect(button).toBeDefined();
   await act(async () => button.click());
@@ -381,4 +381,27 @@ it('allows a new explicit preview after the server definitively rejects confirma
   expect(messagesApi.send).toHaveBeenCalledTimes(1);
   await click('Jetzt an 1 Empfänger senden');
   expect(vi.mocked(messagesApi.send).mock.calls[1]![2]).not.toBe(previousKey);
+});
+
+it('shows counts and explains why a new reminder cannot be prepared', async () => {
+  for (const [ruleId, reason] of [
+    ['paymentOpen', 'Keine offenen Zahlungen vor Nennschluss.'],
+    ['missingDocuments', 'Keine überfälligen Unterlagen anzufordern.'],
+  ] as const) {
+    await act(async () =>
+      root.render(
+        <WorkbasketReminder
+          eventId={eventId}
+          ruleId={ruleId}
+          entryIds={[]}
+          onDone={vi.fn()}
+        />,
+      ),
+    );
+    const button = host.querySelector('button')!;
+    expect(button.disabled).toBe(true);
+    expect(button.textContent).toContain('(0)');
+    expect(host.textContent).toContain(reason);
+    expect(messagesApi.send).not.toHaveBeenCalled();
+  }
 });

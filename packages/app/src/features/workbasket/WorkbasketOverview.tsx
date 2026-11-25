@@ -6,8 +6,6 @@ import {
   AppNotice,
   AppEmptyState,
   AppSection,
-  AppSelect,
-  AppView,
 } from '@nennbox/ui';
 import { LoadingNotice, RemoteError } from '../remote/RemoteNotice.js';
 import { useRemoteResource } from '../remote/useRemoteResource.js';
@@ -17,7 +15,7 @@ import {
   ruleLabels,
   type WorkbasketTask,
 } from './workbasketModel.js';
-import { warningEvidence } from '../entries/warnings/entryWarnings.js';
+import { WorkbasketTaskRow } from './WorkbasketTaskRow.js';
 import { WorkbasketBulkActions } from './WorkbasketBulkActions.js';
 
 export function WorkbasketOverview({
@@ -36,11 +34,11 @@ export function WorkbasketOverview({
   const { state, reload } = useRemoteResource(load);
   const [openError, setOpenError] = useState('');
   const [opening, setOpening] = useState(false);
-  async function openTask(task: WorkbasketTask) {
+  async function openTask(task: WorkbasketTask, entryId = task.entryId) {
     setOpenError('');
     setOpening(true);
     try {
-      if (task.entryId) await onOpenEntry(task.entryId);
+      if (entryId) await onOpenEntry(entryId);
       else onOpenClass(task.classId);
     } catch {
       setOpenError(
@@ -60,6 +58,12 @@ export function WorkbasketOverview({
     page,
     Math.max(1, Math.ceil(filtered.length / 10)),
   );
+  const pageTasks = filtered.slice((currentPage - 1) * 10, currentPage * 10);
+  const groups = [...new Set(pageTasks.map((task) => task.ruleId))];
+  function filterByRule(value: string) {
+    setRule(value);
+    setPage(1);
+  }
   return (
     <AppSection
       title="Heute zu tun"
@@ -85,42 +89,50 @@ export function WorkbasketOverview({
               />
             ) : (
               <>
-                <AppSelect
-                  label="Aufgaben filtern"
-                  value={rule}
-                  onChange={(event) => {
-                    setRule(event.target.value);
-                    setPage(1);
-                  }}
+                <nav
+                  className="nb-workbasket-counts"
+                  aria-label="Aufgaben nach Regel filtern"
                 >
-                  <option value="">Alle Aufgaben ({data.tasks.length})</option>
+                  <AppButton
+                    tone={rule ? 'ghost' : 'secondary'}
+                    aria-pressed={!rule}
+                    onClick={() => filterByRule('')}
+                  >
+                    Alle Aufgaben ({data.tasks.length})
+                  </AppButton>
                   {Object.entries(ruleLabels).map(([id, label]) => (
-                    <option key={id} value={id}>
+                    <AppButton
+                      key={id}
+                      tone={rule === id ? 'secondary' : 'ghost'}
+                      aria-pressed={rule === id}
+                      onClick={() => filterByRule(id)}
+                    >
                       {label} ({data.counts[id] ?? 0})
-                    </option>
+                    </AppButton>
                   ))}
-                </AppSelect>
+                </nav>
                 <AppSection
                   title="Sammelaktionen"
                   description="Auswahl und genaue Auswirkungen vor dem Ausführen prüfen und bestätigen."
                 >
                   <AppActions>
                     {['ready', 'missingDocuments', 'paymentOpen'].map((id) => (
-                      <WorkbasketBulkActions
-                        key={id}
-                        eventId={eventId}
-                        ruleId={id}
-                        entryIds={[
-                          ...new Set(
-                            data.tasks
-                              .filter(
-                                (task) => task.ruleId === id && task.entryId,
-                              )
-                              .map((task) => task.entryId!),
-                          ),
-                        ]}
-                        onDone={reload}
-                      />
+                      <div key={id} className="nb-workbasket-bulk-action">
+                        <WorkbasketBulkActions
+                          eventId={eventId}
+                          ruleId={id}
+                          entryIds={[
+                            ...new Set(
+                              data.tasks
+                                .filter(
+                                  (task) => task.ruleId === id && task.entryId,
+                                )
+                                .map((task) => task.entryId!),
+                            ),
+                          ]}
+                          onDone={reload}
+                        />
+                      </div>
                     ))}
                   </AppActions>
                 </AppSection>
@@ -134,18 +146,29 @@ export function WorkbasketOverview({
                     description="Für diese Regel stehen gerade keine Aufgaben an."
                   />
                 ) : (
-                  <AppView>
-                    {filtered
-                      .slice((currentPage - 1) * 10, currentPage * 10)
-                      .map((task, index) => (
-                        <Task
-                          key={`${task.ruleId}-${task.entryId ?? task.classId}-${index}`}
-                          task={task}
-                          disabled={opening}
-                          onOpen={() => void openTask(task)}
-                        />
-                      ))}
-                  </AppView>
+                  <div className="nb-workbasket-groups">
+                    {groups.map((id) => (
+                      <section key={id} aria-label={ruleLabels[id] ?? id}>
+                        <h3 className="nb-workbasket-group-heading">
+                          {ruleLabels[id] ?? id} ({data.counts[id] ?? 0})
+                        </h3>
+                        <ul className="nb-workbasket-list">
+                          {pageTasks
+                            .filter((task) => task.ruleId === id)
+                            .map((task, index) => (
+                              <WorkbasketTaskRow
+                                key={`${task.ruleId}-${task.entryId ?? task.classId}-${index}`}
+                                task={task}
+                                disabled={opening}
+                                onOpen={(entryId) =>
+                                  void openTask(task, entryId)
+                                }
+                              />
+                            ))}
+                        </ul>
+                      </section>
+                    ))}
+                  </div>
                 )}
                 {filtered.length > 10 && (
                   <AppActions>
@@ -179,33 +202,5 @@ export function WorkbasketOverview({
         )
       )}
     </AppSection>
-  );
-}
-function Task({
-  task,
-  onOpen,
-  disabled,
-}: {
-  task: WorkbasketTask;
-  onOpen: () => void;
-  disabled: boolean;
-}) {
-  return (
-    <section
-      className="nb-workbasket-task"
-      aria-label={ruleLabels[task.ruleId] ?? task.ruleId}
-    >
-      <strong>
-        {task.severity === 'warning' ? 'Prüfen: ' : ''}
-        {ruleLabels[task.ruleId] ?? task.ruleId}
-      </strong>
-      <p>{task.reason}</p>
-      <p className="nb-workbasket-fields">
-        Betroffene Datenfelder: {warningEvidence(task)}
-      </p>
-      <AppButton tone="secondary" disabled={disabled} onClick={onOpen}>
-        {task.entryId ? 'Nennung öffnen' : 'Nennungen der Klasse öffnen'}
-      </AppButton>
-    </section>
   );
 }

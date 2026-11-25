@@ -49,17 +49,33 @@ for (const width of [1440, 1024, 390]) {
         exact: true,
       });
       await expect(basket).toBeVisible();
-      await expect(
-        basket.getByRole('combobox', { name: 'Aufgaben filtern' }),
-      ).toBeVisible({ timeout: 60_000 });
-      const filter = basket.getByRole('combobox', { name: 'Aufgaben filtern' });
-      await filter.selectOption('missingDocuments');
-      await expect(filter).toHaveValue('missingDocuments');
-      await filter.selectOption('');
+      const filters = basket.getByRole('navigation', {
+        name: 'Aufgaben nach Regel filtern',
+      });
+      await expect(filters).toBeVisible({ timeout: 60_000 });
+      const documentsFilter = filters.getByRole('button', {
+        name: /^Fehlende Unterlagen/,
+      });
+      await documentsFilter.click();
+      await expect(documentsFilter).toHaveAttribute('aria-pressed', 'true');
+      await filters.getByRole('button', { name: /^Alle Aufgaben/ }).click();
       await expect(basket.locator('.nb-workbasket-task').first()).toBeVisible();
-      await expect(basket.locator('.nb-workbasket-task').first()).toContainText(
-        'Betroffene Datenfelder:',
+      const firstTask = basket.locator('.nb-workbasket-task').first();
+      await expect(
+        firstTask.locator('.nb-workbasket-identity strong'),
+      ).not.toBeEmpty();
+      await expect(
+        firstTask.locator('.nb-workbasket-meta').first(),
+      ).not.toBeEmpty();
+      await expect(firstTask.locator('.nb-workbasket-detail')).toContainText(
+        'Doppelt mit Nennung',
       );
+      await expect(
+        firstTask.getByRole('button', { name: /Nennung .* öffnen/ }),
+      ).toHaveCount(2);
+      await expect(
+        basket.getByRole('navigation', { name: 'Aufgaben nach Regel filtern' }),
+      ).toBeVisible();
       const measurements = await page.evaluate(() => ({
         innerWidth,
         documentWidth: document.documentElement.scrollWidth,
@@ -86,7 +102,7 @@ for (const width of [1440, 1024, 390]) {
           campaigns.push(request.url());
       });
       await basket
-        .getByRole('button', { name: 'Unterlagen anfordern', exact: true })
+        .getByRole('button', { name: /^Unterlagen anfordern \(\d+\)$/ })
         .click();
       const dialog = page.getByRole('dialog');
       await expect(dialog).toBeVisible();
@@ -111,7 +127,7 @@ for (const width of [1440, 1024, 390]) {
       await page.keyboard.press('Escape');
       await expect(dialog).not.toBeVisible();
       const open = basket
-        .getByRole('button', { name: 'Nennung öffnen', exact: true })
+        .getByRole('button', { name: /^Nennung .+ öffnen$/ })
         .first();
       await open.focus();
       await page.keyboard.press('Enter');

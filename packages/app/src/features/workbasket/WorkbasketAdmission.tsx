@@ -82,8 +82,13 @@ export function WorkbasketAdmission({
         onClick={() => void prepare()}
       >
         <Icon name="approval" />
-        {busy ? 'Wird geprüft…' : 'Alle zulassen'}
+        {busy ? 'Wird geprüft…' : `${entryIds.length} Nennungen zulassen …`}
       </AppButton>
+      {!entryIds.length && (
+        <p className="nb-workbasket-meta">
+          Keine Nennungen bereit zum Zulassen.
+        </p>
+      )}
       {error && <AppNotice tone="error">{error}</AppNotice>}
       <ReasonDialog
         open={open}

@@ -182,9 +182,18 @@ export function WorkbasketReminder({
       >
         <Icon name={ruleId === 'paymentOpen' ? 'payment' : 'document'} />
         {ruleId === 'paymentOpen'
-          ? 'Zahlungserinnerung vorbereiten'
-          : 'Unterlagen anfordern'}
+          ? `Zahlungserinnerung vorbereiten (${entryIds.length})`
+          : `Unterlagen anfordern (${entryIds.length})`}
       </AppButton>
+      {!attempted && (!entryIds.length || entryIds.length > 500) && (
+        <p className="nb-workbasket-meta">
+          {entryIds.length > 500
+            ? 'Höchstens 500 Nennungen je Erinnerung. Bitte Auswahl verkleinern.'
+            : ruleId === 'paymentOpen'
+              ? 'Keine offenen Zahlungen vor Nennschluss.'
+              : 'Keine überfälligen Unterlagen anzufordern.'}
+        </p>
+      )}
       <AppDialog
         open={open}
         title={campaign ? 'Versandergebnis' : 'Erinnerung vorbereiten'}

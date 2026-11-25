@@ -16,6 +16,14 @@ export const ruleLabels: Record<string, string> = {
   capacityNear: 'Klasse fast voll',
   waitlistPromotion: 'Warteliste nachrücken',
 };
+const EntryDisplaySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  startNumber: z.string().nullable(),
+  organizationCode: z.string().nullable(),
+  className: z.string(),
+  createdAt: z.string(),
+});
 const TaskSchema = z.object({
   ruleId: z.string(),
   entryId: z.string().nullable(),
@@ -23,6 +31,13 @@ const TaskSchema = z.object({
   reason: z.string(),
   fields: z.array(z.string()),
   severity: z.enum(['warning', 'task']),
+  entry: EntryDisplaySchema.nullable().optional(),
+  className: z.string().optional(),
+  ageDays: z.number().nullable().optional(),
+  detail: z.object({ de: z.string(), en: z.string() }).optional(),
+  relatedEntries: z
+    .array(EntryDisplaySchema.extend({ fields: z.array(z.string()) }))
+    .optional(),
 });
 export const WorkbasketSchema = z.object({
   tasks: z.array(TaskSchema),

@@ -51,17 +51,24 @@ for (const width of [1440]) {
         exact: true,
       });
       await expect(basket).toBeVisible();
-      await expect(
-        basket.getByRole('combobox', { name: 'Aufgaben filtern' }),
-      ).toBeVisible({ timeout: 60_000 });
+      const filters = basket.getByRole('navigation', {
+        name: 'Aufgaben nach Regel filtern',
+      });
+      await expect(filters).toBeVisible({ timeout: 60_000 });
       const evidence = process.env.WORKBASKET_EVIDENCE;
-      const filter = basket.getByRole('combobox', { name: 'Aufgaben filtern' });
-      await filter.selectOption('missingDocuments');
-      await expect(filter).toHaveValue('missingDocuments');
-      await filter.selectOption('');
-      await expect(basket.locator('.nb-workbasket-task').first()).toBeVisible();
-      await expect(basket.locator('.nb-workbasket-task').first()).toContainText(
-        'Betroffene Datenfelder:',
+      const documentsFilter = filters.getByRole('button', {
+        name: /^Fehlende Unterlagen/,
+      });
+      await documentsFilter.click();
+      await expect(documentsFilter).toHaveAttribute('aria-pressed', 'true');
+      await filters.getByRole('button', { name: /^Alle Aufgaben/ }).click();
+      const firstTask = basket.locator('.nb-workbasket-task').first();
+      await expect(firstTask).toBeVisible();
+      await expect(
+        firstTask.locator('.nb-workbasket-identity strong'),
+      ).not.toBeEmpty();
+      await expect(firstTask.locator('.nb-workbasket-detail')).toContainText(
+        'Doppelt mit Nennung',
       );
       const campaigns: string[] = [];
       page.on('request', (request) => {
@@ -69,7 +76,7 @@ for (const width of [1440]) {
           campaigns.push(request.url());
       });
       await basket
-        .getByRole('button', { name: 'Unterlagen anfordern', exact: true })
+        .getByRole('button', { name: /^Unterlagen anfordern \(\d+\)$/ })
         .click();
       const dialog = page.getByRole('dialog');
       await expect(dialog).toBeVisible();
@@ -95,7 +102,7 @@ for (const width of [1440]) {
       await expect(dialog).not.toBeVisible();
       if (width === 1440) {
         await basket
-          .getByRole('button', { name: 'Unterlagen anfordern', exact: true })
+          .getByRole('button', { name: /^Unterlagen anfordern \(\d+\)$/ })
           .click();
         await dialog.getByRole('button', { name: /^Jetzt an/ }).click();
         await expect(
