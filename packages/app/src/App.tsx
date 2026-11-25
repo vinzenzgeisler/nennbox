@@ -27,6 +27,13 @@ const OnboardingPreview =
     ? lazy(() => import('./features/onboarding/OnboardingPreview.js'))
     : null;
 
+const RegistrationPreview =
+  import.meta.env.DEV || import.meta.env.VITE_REGISTRATION_PREVIEW === 'true'
+    ? lazy(
+        () => import('./features/registration-preview/RegistrationPreview.js'),
+      )
+    : null;
+
 export interface AppProps {
   renderContribution?: (config: RuntimeConfig) => ReactNode;
 }
@@ -36,14 +43,24 @@ export function App({ renderContribution }: AppProps = {}) {
   const isOnboardingPreview =
     OnboardingPreview !== null &&
     window.location.pathname === '/app/onboarding-preview';
+  const isRegistrationPreview =
+    RegistrationPreview !== null &&
+    window.location.pathname === '/app/registration-preview';
   const isAdmin =
+    !isRegistrationPreview &&
     !isOnboardingPreview &&
     (window.location.pathname.startsWith('/admin') ||
       window.location.pathname.startsWith('/app') ||
       window.location.pathname === '/auth/callback');
   const isComponentGallery = window.location.pathname === '/components';
   useEffect(() => {
-    if (isAdmin || isComponentGallery || isOnboardingPreview) return;
+    if (
+      isAdmin ||
+      isComponentGallery ||
+      isOnboardingPreview ||
+      isRegistrationPreview
+    )
+      return;
     let current = true;
     fetch('/runtime/bootstrap', {
       credentials: 'same-origin',
@@ -63,7 +80,7 @@ export function App({ renderContribution }: AppProps = {}) {
     return () => {
       current = false;
     };
-  }, [isAdmin, isComponentGallery, isOnboardingPreview]);
+  }, [isAdmin, isComponentGallery, isOnboardingPreview, isRegistrationPreview]);
 
   if (isComponentGallery) return <ComponentGallery />;
 
@@ -71,6 +88,13 @@ export function App({ renderContribution }: AppProps = {}) {
     return (
       <Suspense fallback={<p role="status">NENNBOX lädt…</p>}>
         <OnboardingPreview />
+      </Suspense>
+    );
+
+  if (isRegistrationPreview && RegistrationPreview)
+    return (
+      <Suspense fallback={<p role="status">NENNBOX lädt…</p>}>
+        <RegistrationPreview />
       </Suspense>
     );
 

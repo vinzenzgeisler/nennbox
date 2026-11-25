@@ -1,0 +1,270 @@
+/* Nennformular building blocks that only exist in the public form (design folder: formular-bausteine.css, P9).
+   Measures are binding: field 40 px, main action 44 px, column 680 px, field gap 14 px, group gap 28 px,
+   corners 8 px field · 10 px card · 12 px box. The admin app's 32 px buttons are never used here. */
+
+/* Buttons */
+.nb-reg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--ak, #1f4e79);
+  color: var(--ak-fg, #fff);
+  font-size: 14.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 120ms;
+}
+.nb-reg-btn:hover {
+  background: var(--ak-h, #17406a);
+}
+.nb-reg-btn:active {
+  background: var(--ak-a, #0f3050);
+}
+.nb-reg-btn svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.nb-reg-btn.is-ghost {
+  background: #fff;
+  color: #18201c;
+  box-shadow: inset 0 0 0 1px #dcdeda;
+}
+.nb-reg-btn.is-ghost:hover {
+  background: #f7f7f5;
+}
+.nb-reg-btn.is-text {
+  padding: 0 10px;
+  background: transparent;
+  color: var(--ak-link, #3e6c9a);
+  font-size: 14px;
+}
+.nb-reg-btn.is-text:hover {
+  background: transparent;
+  text-decoration: underline;
+}
+.nb-reg-btn.is-danger {
+  padding: 0 10px;
+  background: transparent;
+  color: #b42318;
+  font-size: 14px;
+}
+.nb-reg-btn.is-danger:hover {
+  background: #fdf0ec;
+}
+.nb-reg-btn:disabled {
+  background: #edeeeb;
+  color: #9aa19c;
+  box-shadow: none;
+  cursor: default;
+}
+
+/* Step head: position, title, lead */
+.nb-reg-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nb-reg-head > * {
+  margin: 0;
+}
+.nb-reg-head + .nb-reg-lead {
+  margin-top: -16px;
+}
+.nb-reg-lead {
+  max-width: 600px;
+  color: #565e59;
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+/* Groups */
+.nb-preview legend {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.nb-reg-legend-hint {
+  color: #8a918c;
+  font-family: Inter, sans-serif;
+  font-size: 12.5px;
+  font-weight: 400;
+  margin-left: 10px;
+}
+.nb-reg-grid-2,
+.nb-reg-grid-3,
+.nb-reg-grid-plz {
+  display: grid;
+  gap: 14px;
+  align-items: start;
+}
+.nb-reg-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.nb-reg-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.nb-reg-grid-plz {
+  grid-template-columns: 112px minmax(0, 1fr);
+}
+.nb-reg-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.nb-reg-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Select: same 40 px as the inputs, chevron drawn here because the native one differs per system */
+.nb-reg-field select {
+  appearance: none;
+  padding-right: 34px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236E7570' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+    right 11px center / 15px no-repeat #fff;
+}
+
+/* Radio cards */
+.nb-reg-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  min-height: 44px;
+  padding: 12px 14px;
+  border-radius: var(--preview-card-radius, 10px);
+  box-shadow: inset 0 0 0 1px #e3e5e1;
+  background: #fff;
+  cursor: pointer;
+  transition: box-shadow 120ms;
+}
+.nb-reg-option:hover {
+  box-shadow: inset 0 0 0 1px #c3c8c4;
+}
+.nb-reg-option:has(input:checked) {
+  box-shadow: inset 0 0 0 1.5px var(--ak, #1f4e79);
+  background: var(--ak-fl, #edf6ff);
+}
+.nb-reg-option:has(input:focus-visible) {
+  outline: 2px solid var(--ak-ring, #5b8ab9);
+  outline-offset: 2px;
+}
+.nb-reg-option input {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  margin: 1px 0 0;
+  accent-color: var(--ak, #1f4e79);
+}
+.nb-reg-option-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.nb-reg-option-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.nb-reg-option-head strong {
+  flex: 0 1 auto;
+  font-size: 14px;
+  font-weight: 500;
+}
+.nb-reg-option-text small {
+  color: #6e7570;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.nb-reg-option:not(.is-unavailable) .nb-reg-option-text small.is-free {
+  color: #156339;
+}
+.nb-reg-option.is-unavailable .nb-reg-option-text small {
+  color: #b45309;
+}
+.nb-reg-option-price {
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (width <= 760px) {
+  .nb-reg-grid-2,
+  .nb-reg-grid-3,
+  .nb-reg-grid-plz,
+  .nb-reg-options {
+    grid-template-columns: 1fr;
+  }
+
+  /* Year and displacement are short and numeric: the only pair that stays side by side (P9). */
+  .nb-reg-grid-2.is-keep-pair,
+  .nb-reg-grid-3.is-keep-pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nb-reg-grid-3.is-keep-pair > .is-plate {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+  .nb-reg-btn.is-icon-mobile {
+    width: 44px;
+    padding: 0;
+  }
+  .nb-reg-btn.is-icon-mobile .nb-reg-btn-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* Language switch: small segmented control in the header, not a 44 px action */
+.nb-reg-btn.is-seg {
+  min-width: 40px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 7px;
+  background: transparent;
+  color: #565e59;
+  font-size: 13px;
+}
+.nb-reg-btn.is-seg:hover {
+  background: #f2f3f1;
+}
+.nb-reg-btn.is-seg[aria-pressed='true'] {
+  background: #fff;
+  box-shadow:
+    inset 0 0 0 1px #e3e5e1,
+    0 1px 2px rgb(16 24 20 / 5%);
+  color: #18201c;
+}
+.nb-reg-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9px;
+  background: #f2f3f1;
+}
+.nb-reg-option-meta {
+  color: #6e7570;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11.5px;
+}
