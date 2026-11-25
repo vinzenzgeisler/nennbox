@@ -115,6 +115,6 @@ export async function transitionEntry(
           ...(notification ? { notification } : {}),
         }
       : undefined,
-    readiness,
+    ...(readiness ? ([readiness] as const) : ([] as const)),
   );
 }
