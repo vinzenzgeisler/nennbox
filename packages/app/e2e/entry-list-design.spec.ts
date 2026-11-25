@@ -22,6 +22,8 @@ test('reference entry list, embedded preview and selection interactions', async 
     .selectOption({ label: 'Historischer Bergpreis 2027' });
   const rows = page.locator('.nb-entry-list-row');
   await expect(rows.first()).toBeVisible();
+  // Switching events deliberately clears the old preview; select this fixture's first entry.
+  await rows.first().locator('[data-entry-action]').click();
   const preview = page.locator('.nb-preview-panel');
   await expect(
     preview.getByRole('heading', { name: 'Bis zur Zulassung' }),
