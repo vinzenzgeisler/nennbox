@@ -6,7 +6,10 @@ import {
   MessageTemplateSchema,
 } from '@nennbox/contracts';
 import { z } from 'zod';
-import type { ObjectStorageProvider } from '@nennbox/core';
+import {
+  WorkbasketConcurrencyError,
+  type ObjectStorageProvider,
+} from '@nennbox/core';
 
 function messageCampaignResponse(
   data: import('@nennbox/core').MessageCampaignData,
@@ -176,17 +179,20 @@ export function registerMessageRoutes(context: ApiRoutesContext): void {
     const actor = member.subject
       ? `${member.subject.issuer}|${member.subject.subject}`
       : member.correlationId;
-    const campaign = await messages.send(
-      member,
-      eventId.data,
-      key.data,
-      body.data,
-      actor,
-    );
+    const campaign = await messages
+      .send(member, eventId.data, key.data, body.data, actor)
+      .catch((error: unknown) => {
+        if (!(error instanceof WorkbasketConcurrencyError)) throw error;
+        return {
+          ok: false as const,
+          error: { code: 'concurrent-change', message: error.message },
+        };
+      });
     if (campaign.ok)
       return c.json(messageCampaignResponse(campaign.campaign), 202);
     const status =
-      campaign.error.code === 'idempotency-conflict'
+      campaign.error.code === 'idempotency-conflict' ||
+      campaign.error.code === 'concurrent-change'
         ? 409
         : campaign.error.code === 'event-not-found'
           ? 404
@@ -195,7 +201,9 @@ export function registerMessageRoutes(context: ApiRoutesContext): void {
       {
         error: campaign.error.message,
         code: campaign.error.code,
-        ...(campaign.error.details ? { details: campaign.error.details } : {}),
+        ...('details' in campaign.error && campaign.error.details
+          ? { details: campaign.error.details }
+          : {}),
       },
       status,
     );

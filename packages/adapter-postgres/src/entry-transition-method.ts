@@ -10,6 +10,7 @@ import type { Database } from './database.js';
 import type { EntryRepository } from '@nennbox/core';
 import { attachAdminEntryDetails } from './entry-admin-details.js';
 import { assertReadyAdmission } from './workbasket-admission.js';
+import { workbasketTransaction } from './workbasket-transaction.js';
 import { offerWaitlistSeat } from './waitlist-offer.js';
 
 export function createEntryTransitionMethod(
@@ -27,7 +28,7 @@ export function createEntryTransitionMethod(
       workflow,
       readiness,
     ) =>
-      db.transaction(async (tx) => {
+      workbasketTransaction(db, !!readiness, async (tx) => {
         if (readiness)
           await assertReadyAdmission(tx, ctx, id, readiness.eventId, workflow);
         const statusColumn =

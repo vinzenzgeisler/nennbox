@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type {
   MessageCampaignCreate,
   MessageCampaignSendPorts,
@@ -16,6 +16,10 @@ import {
   messageCampaignDelivery,
 } from '@nennbox/core';
 import { validateMessageAttachmentMetadata } from './messaging-attachments.js';
+import {
+  workbasketTransaction,
+  lockCampaignGroups,
+} from './workbasket-transaction.js';
 import type { Database } from './database.js';
 import { organizations } from './schema/organization.js';
 import {
@@ -67,226 +71,233 @@ export function createMessageSender(
           attachments,
         ),
       transaction: (context, work) =>
-        db.transaction(async (tx) => {
-          // Exclude even predicate-changing inserts and direct SQL writes until enqueue
-          // commits. Match the admission barrier's mode/order to avoid lock upgrades.
-          if (input.workbasketConfirmation)
-            await tx.execute(sql`LOCK TABLE organization, event, event_class, entry,
-              registration_group, person, vehicle, invoice, invoice_payment,
-              entry_document, event_entry_document_type, workbasket_configuration,
-              entry_workflow_revision IN SHARE ROW EXCLUSIVE MODE`);
-          const transaction: MessageCampaignTransaction<
-            Campaign,
-            CampaignRecipient
-          > = {
-            eligibleWorkbasketEntries: async (requestedEventId, ruleId) => {
-              const database = tx as unknown as Database;
-              const config = await createWorkbasketRepository(
-                database,
-              ).getConfiguration(context, requestedEventId);
-              if (!config) return [];
-              const snapshot = await loadWorkbasketSnapshot(
-                database,
-                context,
-                requestedEventId,
-              );
-              return evaluateWorkbasket(snapshot, config.effective)
-                .filter(
-                  (task) => task.ruleId === ruleId && task.entryId !== null,
-                )
-                .map((task) => task.entryId!);
-            },
-            resolveRecipients: async (requestedEventId, filter) => {
-              const resolved = await resolveMessageRecipients(
-                tx,
-                context,
-                requestedEventId,
-                filter,
-              );
-              return resolved?.recipients ?? null;
-            },
-            findByIdempotencyKey: async (key) => {
-              const [campaign] = await tx
-                .select()
-                .from(messageCampaigns)
-                .where(
-                  and(
-                    eq(messageCampaigns.organizationId, context.organizationId),
-                    eq(messageCampaigns.idempotencyKey, key),
-                  ),
-                )
-                .limit(1);
-              if (!campaign) return null;
-              const recipients = await tx
-                .select()
-                .from(messageCampaignRecipients)
-                .where(
-                  and(
-                    eq(
-                      messageCampaignRecipients.organizationId,
-                      context.organizationId,
-                    ),
-                    eq(messageCampaignRecipients.campaignId, campaign.id),
-                  ),
+        workbasketTransaction(
+          db,
+          !!input.workbasketConfirmation,
+          async (tx) => {
+            // Existing recipient groups remain stable through enqueue; SSI covers
+            // predicate-changing inserts without a database-wide writer barrier.
+            if (input.workbasketConfirmation)
+              await lockCampaignGroups(tx, context.organizationId, eventId);
+            const transaction: MessageCampaignTransaction<
+              Campaign,
+              CampaignRecipient
+            > = {
+              eligibleWorkbasketEntries: async (requestedEventId, ruleId) => {
+                const database = tx as unknown as Database;
+                const config = await createWorkbasketRepository(
+                  database,
+                ).getConfiguration(context, requestedEventId);
+                if (!config) return [];
+                const snapshot = await loadWorkbasketSnapshot(
+                  database,
+                  context,
+                  requestedEventId,
                 );
-              return {
-                requestHash: campaign.requestHash,
-                campaign,
-                recipients,
-              };
-            },
-            createCampaign: async (value) => {
-              const [campaign] = await tx
-                .insert(messageCampaigns)
-                .values({
-                  organizationId: context.organizationId,
-                  eventId: value.eventId,
-                  idempotencyKey: value.idempotencyKey,
-                  requestHash: value.requestHash,
-                  subject: value.subject,
-                  textBody: value.text,
-                  status: 'planned',
-                  actor: value.actor,
-                })
-                .onConflictDoNothing()
-                .returning();
-              return campaign ?? null;
-            },
-            recordAudit: async (campaign, auditActor, action) => {
-              await tx.insert(messageCampaignAudits).values({
-                organizationId: context.organizationId,
-                campaignId: campaign.id,
-                actor: auditActor,
-                action,
-              });
-            },
-            getLocale: async () => {
-              const [organization] = await tx
-                .select({ locale: organizations.locale })
-                .from(organizations)
-                .where(eq(organizations.id, context.organizationId))
-                .limit(1);
-              return organization?.locale ?? 'de';
-            },
-            enqueueVerificationRecipient: async (value) => {
-              if (!origin || !value.recipient.registrationGroupId)
-                throw new Error('Verification strategy precondition failed');
-              const now = new Date();
-              const token = createRegistrationVerificationToken(now);
-              await persistRegistrationVerificationToken(tx, {
-                organizationId: context.organizationId,
-                eventId: value.eventId,
-                registrationGroupId: value.recipient.registrationGroupId,
-                tokenHash: token.tokenHash,
-                expiresAt: token.expiresAt,
-                replaceExisting: true,
-              });
-              const verificationUrl = new URL(
-                `/registration/verify?token=${encodeURIComponent(token.token)}`,
-                origin,
-              ).href;
-              const outboxId = await enqueueMailOutbox(
-                db,
-                context.organizationId,
-                {
-                  eventId: value.eventId,
-                  registrationGroupId: value.recipient.registrationGroupId,
-                  templateKey: 'verification',
-                  templateVersion: 1,
-                  locale: messageLocale(value.locale),
-                  recipient: value.recipient.email,
-                  idempotencyKey: `message-campaign:${value.campaign.id}:${value.recipient.registrationGroupId}`,
-                  variables: {
-                    recipientName: value.recipient.fullName,
-                    verificationUrl,
-                  },
-                  correlationId: value.correlationId,
-                },
-                tx,
-              );
-              const [row] = await tx
-                .insert(messageCampaignRecipients)
-                .values({
-                  organizationId: context.organizationId,
-                  campaignId: value.campaign.id,
-                  eventId: value.eventId,
-                  entryId: value.recipient.entryId,
-                  outboxId,
-                  email: value.recipient.email,
-                  subject: value.campaign.subject,
-                  status: 'planned',
-                })
-                .returning();
-              if (!row) throw new Error('Message recipient insert failed');
-              return row;
-            },
-            enqueueRecipient: async (value) => {
-              const outboxId = await enqueueMailOutbox(
-                db,
-                context.organizationId,
-                {
-                  eventId: value.eventId,
-                  registrationGroupId: value.recipient.registrationGroupId,
-                  templateKey: 'message-campaign',
-                  templateVersion: 1,
-                  locale: messageLocale(value.locale),
-                  recipient: value.recipient.email,
-                  idempotencyKey: `message-campaign:${value.campaign.id}:${digestMessage(value.recipient.email)}`,
-                  variables: {
-                    subject: value.subject,
-                    body: value.text,
-                  },
-                  correlationId: value.correlationId,
-                  attachmentRefs: value.attachmentRefs,
-                },
-                tx,
-              );
-              const [row] = await tx
-                .insert(messageCampaignRecipients)
-                .values({
-                  organizationId: context.organizationId,
-                  campaignId: value.campaign.id,
-                  eventId: value.eventId,
-                  entryId: value.recipient.entryId,
-                  outboxId,
-                  email: value.recipient.email,
-                  subject: value.subject,
-                  status: 'planned',
-                })
-                .returning();
-              if (!row) throw new Error('Message recipient insert failed');
-              return row;
-            },
-            markSending: async (campaign) => {
-              const [updated] = await tx
-                .update(messageCampaigns)
-                .set({ status: 'sending' })
-                .where(
-                  and(
-                    eq(messageCampaigns.organizationId, context.organizationId),
-                    eq(messageCampaigns.id, campaign.id),
-                  ),
-                )
-                .returning();
-              if (!updated) throw new Error('Message campaign update failed');
-              return updated;
-            },
-            listRecipients: (campaign) =>
-              tx
-                .select()
-                .from(messageCampaignRecipients)
-                .where(
-                  and(
-                    eq(
-                      messageCampaignRecipients.organizationId,
-                      context.organizationId,
+                return evaluateWorkbasket(snapshot, config.effective)
+                  .filter(
+                    (task) => task.ruleId === ruleId && task.entryId !== null,
+                  )
+                  .map((task) => task.entryId!);
+              },
+              resolveRecipients: async (requestedEventId, filter) => {
+                const resolved = await resolveMessageRecipients(
+                  tx,
+                  context,
+                  requestedEventId,
+                  filter,
+                );
+                return resolved?.recipients ?? null;
+              },
+              findByIdempotencyKey: async (key) => {
+                const [campaign] = await tx
+                  .select()
+                  .from(messageCampaigns)
+                  .where(
+                    and(
+                      eq(
+                        messageCampaigns.organizationId,
+                        context.organizationId,
+                      ),
+                      eq(messageCampaigns.idempotencyKey, key),
                     ),
-                    eq(messageCampaignRecipients.campaignId, campaign.id),
+                  )
+                  .limit(1);
+                if (!campaign) return null;
+                const recipients = await tx
+                  .select()
+                  .from(messageCampaignRecipients)
+                  .where(
+                    and(
+                      eq(
+                        messageCampaignRecipients.organizationId,
+                        context.organizationId,
+                      ),
+                      eq(messageCampaignRecipients.campaignId, campaign.id),
+                    ),
+                  );
+                return {
+                  requestHash: campaign.requestHash,
+                  campaign,
+                  recipients,
+                };
+              },
+              createCampaign: async (value) => {
+                const [campaign] = await tx
+                  .insert(messageCampaigns)
+                  .values({
+                    organizationId: context.organizationId,
+                    eventId: value.eventId,
+                    idempotencyKey: value.idempotencyKey,
+                    requestHash: value.requestHash,
+                    subject: value.subject,
+                    textBody: value.text,
+                    status: 'planned',
+                    actor: value.actor,
+                  })
+                  .onConflictDoNothing()
+                  .returning();
+                return campaign ?? null;
+              },
+              recordAudit: async (campaign, auditActor, action) => {
+                await tx.insert(messageCampaignAudits).values({
+                  organizationId: context.organizationId,
+                  campaignId: campaign.id,
+                  actor: auditActor,
+                  action,
+                });
+              },
+              getLocale: async () => {
+                const [organization] = await tx
+                  .select({ locale: organizations.locale })
+                  .from(organizations)
+                  .where(eq(organizations.id, context.organizationId))
+                  .limit(1);
+                return organization?.locale ?? 'de';
+              },
+              enqueueVerificationRecipient: async (value) => {
+                if (!origin || !value.recipient.registrationGroupId)
+                  throw new Error('Verification strategy precondition failed');
+                const now = new Date();
+                const token = createRegistrationVerificationToken(now);
+                await persistRegistrationVerificationToken(tx, {
+                  organizationId: context.organizationId,
+                  eventId: value.eventId,
+                  registrationGroupId: value.recipient.registrationGroupId,
+                  tokenHash: token.tokenHash,
+                  expiresAt: token.expiresAt,
+                  replaceExisting: true,
+                });
+                const verificationUrl = new URL(
+                  `/registration/verify?token=${encodeURIComponent(token.token)}`,
+                  origin,
+                ).href;
+                const outboxId = await enqueueMailOutbox(
+                  db,
+                  context.organizationId,
+                  {
+                    eventId: value.eventId,
+                    registrationGroupId: value.recipient.registrationGroupId,
+                    templateKey: 'verification',
+                    templateVersion: 1,
+                    locale: messageLocale(value.locale),
+                    recipient: value.recipient.email,
+                    idempotencyKey: `message-campaign:${value.campaign.id}:${value.recipient.registrationGroupId}`,
+                    variables: {
+                      recipientName: value.recipient.fullName,
+                      verificationUrl,
+                    },
+                    correlationId: value.correlationId,
+                  },
+                  tx,
+                );
+                const [row] = await tx
+                  .insert(messageCampaignRecipients)
+                  .values({
+                    organizationId: context.organizationId,
+                    campaignId: value.campaign.id,
+                    eventId: value.eventId,
+                    entryId: value.recipient.entryId,
+                    outboxId,
+                    email: value.recipient.email,
+                    subject: value.campaign.subject,
+                    status: 'planned',
+                  })
+                  .returning();
+                if (!row) throw new Error('Message recipient insert failed');
+                return row;
+              },
+              enqueueRecipient: async (value) => {
+                const outboxId = await enqueueMailOutbox(
+                  db,
+                  context.organizationId,
+                  {
+                    eventId: value.eventId,
+                    registrationGroupId: value.recipient.registrationGroupId,
+                    templateKey: 'message-campaign',
+                    templateVersion: 1,
+                    locale: messageLocale(value.locale),
+                    recipient: value.recipient.email,
+                    idempotencyKey: `message-campaign:${value.campaign.id}:${digestMessage(value.recipient.email)}`,
+                    variables: {
+                      subject: value.subject,
+                      body: value.text,
+                    },
+                    correlationId: value.correlationId,
+                    attachmentRefs: value.attachmentRefs,
+                  },
+                  tx,
+                );
+                const [row] = await tx
+                  .insert(messageCampaignRecipients)
+                  .values({
+                    organizationId: context.organizationId,
+                    campaignId: value.campaign.id,
+                    eventId: value.eventId,
+                    entryId: value.recipient.entryId,
+                    outboxId,
+                    email: value.recipient.email,
+                    subject: value.subject,
+                    status: 'planned',
+                  })
+                  .returning();
+                if (!row) throw new Error('Message recipient insert failed');
+                return row;
+              },
+              markSending: async (campaign) => {
+                const [updated] = await tx
+                  .update(messageCampaigns)
+                  .set({ status: 'sending' })
+                  .where(
+                    and(
+                      eq(
+                        messageCampaigns.organizationId,
+                        context.organizationId,
+                      ),
+                      eq(messageCampaigns.id, campaign.id),
+                    ),
+                  )
+                  .returning();
+                if (!updated) throw new Error('Message campaign update failed');
+                return updated;
+              },
+              listRecipients: (campaign) =>
+                tx
+                  .select()
+                  .from(messageCampaignRecipients)
+                  .where(
+                    and(
+                      eq(
+                        messageCampaignRecipients.organizationId,
+                        context.organizationId,
+                      ),
+                      eq(messageCampaignRecipients.campaignId, campaign.id),
+                    ),
                   ),
-                ),
-          };
-          return work(transaction);
-        }),
+            };
+            return work(transaction);
+          },
+        ),
     };
     return sendMessageCampaign<Campaign, CampaignRecipient>(
       ctx,

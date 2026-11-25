@@ -10,6 +10,7 @@ import {
 } from '@nennbox/contracts';
 import {
   transitionEntry,
+  WorkbasketConcurrencyError,
   type EntryListQuery,
   type EntryStatusHintKey,
 } from '@nennbox/core';
@@ -143,7 +144,8 @@ export function registerEntriesRoutes(context: ApiRoutesContext): void {
     } catch (error) {
       if (
         error instanceof Error &&
-        error.message.startsWith('Nicht mehr bereit')
+        (error instanceof WorkbasketConcurrencyError ||
+          error.message.startsWith('Nicht mehr bereit'))
       )
         return c.json({ error: error.message }, 409);
       return c.json({ error: 'Forbidden or invalid transition' }, 403);

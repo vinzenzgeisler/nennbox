@@ -126,13 +126,33 @@ An admission must target an authorized accepted-category status in the pinned
 workflow; a pinned-revision/status CAS rejects concurrent workflow/status drift.
 Changed readiness is reported per entry as skipped with its current reason.
 
-Authoritative workbasket actions use a short PostgreSQL `SHARE ROW EXCLUSIVE`
-write barrier over the source relations (including configuration and pinned
-workflows), then read live sources rather than the advisory cache. This also
-excludes phantom inserts and direct SQL changes to dependencies until commit.
-The conservative barrier is database-wide, so these explicit actions serialize
-and briefly delay unrelated source writes; advisory reads remain lock-free.
-Both admission and reminder enqueue acquire the same relations in the same order.
+Authoritative admission and confirmed reminder enqueue run in PostgreSQL
+`SERIALIZABLE` transactions. All live source/configuration/pinned-workflow reads
+and the status/audit or campaign/outbox/job writes share one snapshot and commit.
+SSI tracks predicate dependencies, including absent documents/invoices, without
+blocking unrelated source writers. A concurrent change may be ordered after the
+action; a serialization failure rolls back and re-evaluates the entire action
+against a new snapshot. Advisory cached reads remain outside this boundary.
+
+Retry SQLSTATE `40001` (serialization failure) and `40P01` (deadlock), including
+wrapped driver causes, at most three attempts with short bounded backoff. On
+exhaustion return an actionable concurrent-change error (HTTP 409). The reminder
+client retains the immutable request/key for retry, not a new confirmation.
+Ordinary transitions
+and unconfirmed campaigns keep their existing transaction behavior.
+
+Reminder enqueue additionally locks existing registration groups `FOR UPDATE`
+in ID order, with organization and event predicates. This preserves the
+address/payment race guarantee (including new invoice FK inserts) without a
+relation-wide lock or locks in another event. These row locks do not replace
+SSI's phantom protection. No action takes a table-level writer barrier.
+
+Retry callbacks perform database work only: mail delivery happens later via
+transactional outbox/jobs. Rollback removes tentative campaign, recipients,
+audit, outbox and jobs together. The immutable request and tenant-scoped
+idempotency key survive retries and response loss; committed replays return the
+original campaign before new eligibility/recipient resolution. Never send mail
+or perform other irreversible external effects inside the retry callback.
 Results distinguish successful entries from skipped/failed ones.
 
 Document/payment reminders use editable templates, the existing rendered
