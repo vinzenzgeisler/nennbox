@@ -3,26 +3,8 @@ import { EntryDocumentProjectionSchema } from './documents.js';
 import { PassengerModeSchema } from './passenger-mode.js';
 import { AdminEntryInvoiceSchema } from './entry-invoice.js';
 
-export const PriceSnapshotSchema = z
-  .object({
-    version: z.literal('1'),
-    currency: z.string().regex(/^[A-Z]{3}$/),
-    calculatedAt: z.string().datetime({ offset: true }),
-    totalCents: z.number().int().nonnegative(),
-    lines: z.array(
-      z
-        .object({
-          classId: z.string().uuid(),
-          quantity: z.number().int().positive(),
-          baseCents: z.number().int().nonnegative(),
-          additionalEntryAdjustmentCents: z.number().int(),
-          earlyBirdDiscountCents: z.number().int().nonnegative(),
-          totalCents: z.number().int().nonnegative(),
-        })
-        .strict(),
-    ),
-  })
-  .strict();
+import { PriceSnapshotSchema } from './entry-price.js';
+export { PriceSnapshotSchema } from './entry-price.js';
 export const PublicationPreferenceSchema = z.enum([
   'name_visible',
   'initials',
@@ -57,6 +39,11 @@ export const EntryResponse = z
     createdAt: z.string().datetime({ offset: true }),
     revision: z.number().int().min(1).optional(),
     availableActions: z.array(z.string()).optional(),
+    acceptanceTransitions: z
+      .array(
+        z.object({ to: z.string(), label: z.string(), category: z.string() }),
+      )
+      .optional(),
     deletedAt: z.string().datetime({ offset: true }).nullable(),
     deletionReason: z.string().nullable(),
     adminHistory: z

@@ -1,3 +1,5 @@
+import { EntryWarnings } from '../warnings/EntryWarnings.js';
+import type { EntryWarning } from '../warnings/entryWarnings.js';
 import { useState } from 'react';
 import {
   AppStatusPill,
@@ -35,10 +37,12 @@ const Value = ({ children }: { children: string | null | undefined }) => (
 
 export function EntryDriverSection({
   driver,
+  warnings,
   passenger,
   busy,
   onSave,
 }: {
+  warnings?: EntryWarning[] | undefined;
   driver: Driver;
   passenger: { firstName: string; lastName: string } | null;
   busy: boolean;
@@ -91,23 +95,9 @@ export function EntryDriverSection({
         null,
     };
     // Only fields the admin changed are sent, so untouched values are never rewritten.
-    const current: Record<string, unknown> = {
-      firstName: driver.firstName,
-      lastName: driver.lastName,
-      dateOfBirth: driver.dateOfBirth ?? null,
-      country: driver.country ?? null,
-      phone: driver.phone ?? null,
-      bloodGroup: driver.bloodGroup ?? null,
-      licenseNumber: driver.licenseNumber ?? null,
-      street: driver.street ?? null,
-      postalCode: driver.postalCode ?? null,
-      city: driver.city ?? null,
-      emergencyContactName: driver.emergencyContactName ?? null,
-      emergencyContactPhone: driver.emergencyContactPhone ?? null,
-      publicationPreference: driver.publicationPreference ?? null,
-    };
+    const current = (key: string) => driver[key as keyof Driver] ?? null;
     const patch = Object.fromEntries(
-      Object.entries(next).filter(([key, value]) => current[key] !== value),
+      Object.entries(next).filter(([key, value]) => current(key) !== value),
     ) as EntryDriverUpdateRequest;
     if (!Object.keys(patch).length) return setEditing(false);
     const result = await onSave(patch);
@@ -239,15 +229,24 @@ export function EntryDriverSection({
         <FieldGrid>
           <FieldItem label="Name">
             <Value>{driver.name}</Value>
+            <EntryWarnings
+              warnings={warnings}
+              fields={['firstName', 'lastName']}
+            />
           </FieldItem>
           <FieldItem label="Geburtsdatum">
             <Value>{formatBirthDate(driver.dateOfBirth)}</Value>
+            <EntryWarnings
+              warnings={warnings}
+              fields={['dateOfBirth', 'guardianName']}
+            />
           </FieldItem>
           <FieldItem label="Land">
             <Value>{countryName(driver.country)}</Value>
           </FieldItem>
           <FieldItem label="E-Mail">
-            <Value>{driver.email}</Value>{' '}
+            <Value>{driver.email}</Value>
+            <EntryWarnings warnings={warnings} fields={['email']} />{' '}
             {driver.emailVerified && (
               <AppStatusPill status="zu">bestätigt</AppStatusPill>
             )}
@@ -257,6 +256,7 @@ export function EntryDriverSection({
           </FieldItem>
           <FieldItem label="Lizenznummer">
             <Value>{driver.licenseNumber}</Value>
+            <EntryWarnings warnings={warnings} fields={['licenseValidUntil']} />
           </FieldItem>
           <FieldItem label="Telefon">
             <Value>{driver.phone}</Value>

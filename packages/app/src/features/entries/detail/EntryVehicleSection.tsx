@@ -1,3 +1,5 @@
+import { EntryWarnings } from '../warnings/EntryWarnings.js';
+import type { EntryWarning } from '../warnings/entryWarnings.js';
 import { useState } from 'react';
 import {
   Banner,
@@ -29,10 +31,12 @@ const Value = ({
 
 export function EntryVehicleSection({
   vehicle,
+  warnings,
   eventClass,
   busy,
   onSave,
 }: {
+  warnings?: EntryWarning[] | undefined;
   vehicle: Vehicle;
   eventClass?: EventClass | undefined;
   busy: boolean;
@@ -185,12 +189,17 @@ export function EntryVehicleSection({
           <FieldGrid>
             <FieldItem label="Hersteller · Modell">
               <Value>{`${vehicle.make} ${vehicle.model}`.trim()}</Value>
+              <EntryWarnings
+                warnings={warnings}
+                fields={['vehicleId', 'vin']}
+              />
             </FieldItem>
             <FieldItem label="Klasse">
               <Value>{eventClass?.name}</Value>
             </FieldItem>
             <FieldItem label="Baujahr">
               <Value>{vehicle.year}</Value>
+              <EntryWarnings warnings={warnings} fields={['year']} />
             </FieldItem>
             <FieldItem label="Fahrzeugtyp">
               <Value>
@@ -205,6 +214,7 @@ export function EntryVehicleSection({
                   ? `${vehicle.displacementCc} cm³`
                   : null}
               </Value>
+              <EntryWarnings warnings={warnings} fields={['displacementCc']} />
             </FieldItem>
             <FieldItem label="Zylinder">
               <Value>{vehicle.cylinders}</Value>
@@ -220,6 +230,7 @@ export function EntryVehicleSection({
             </FieldItem>
             <FieldItem label="Kennzeichen">
               <Value>{vehicle.registration}</Value>
+              <EntryWarnings warnings={warnings} fields={['registration']} />
             </FieldItem>
             <FieldItem label="Fahrzeughistorie" wide>
               <Value>{vehicle.history}</Value>

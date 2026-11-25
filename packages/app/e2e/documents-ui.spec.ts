@@ -144,6 +144,16 @@ test('Bergpreis documents match the A7/A4 reference at three widths', async ({
 test('Admin configures document activation persistently', async ({ page }) => {
   test.setTimeout(180_000);
   await signIn(page);
+  // Retain a real selection across settings so a stale preview cannot mask fresh list data.
+  await page.getByRole('searchbox', { name: 'Suche' }).fill('Thomas Berger');
+  await page
+    .getByRole('row')
+    .filter({ hasText: 'Thomas Berger' })
+    .locator('button[data-entry-action]')
+    .click();
+  await expect(
+    page.getByRole('complementary', { name: 'Nennungsvorschau' }),
+  ).toContainText('Fahrzeugschein');
   await page
     .getByRole('button', { name: 'Einstellungen', exact: true })
     .click();

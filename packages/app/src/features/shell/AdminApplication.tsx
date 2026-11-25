@@ -10,7 +10,7 @@ import { usePreviewStatusChange } from './usePreviewStatusChange.js';
 import { EntryStatusToast } from '../entries/EntryStatusToast.js';
 import { useWorkspacePreview } from '@nennbox/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { EntryResponse as Entry } from '@nennbox/contracts';
+import { EntryResponse, type EntryResponse as Entry } from '@nennbox/contracts';
 import type { WorkflowView } from '../entries/AdminEntriesModel.js';
 import { AdminEntries } from '../entries/AdminEntries.js';
 import { AdminModules } from '../modules/AdminModules.js';
@@ -201,6 +201,22 @@ export function AdminApplication() {
           <AdminOverview
             eventId={selectedEvent}
             onTotalChange={setEntryCount}
+            onOpenEntry={async (id) => {
+              const requestedEvent = activeEvent.current;
+              const response = await adminFetch(
+                `/admin/entries/${encodeURIComponent(id)}`,
+                { credentials: 'same-origin', cache: 'no-store' },
+              );
+              if (!response.ok) throw new Error('entry unavailable');
+              const entry = EntryResponse.parse(await response.json());
+              if (
+                activeEvent.current !== requestedEvent ||
+                entry.eventId !== requestedEvent
+              )
+                return;
+              selectPaletteEntry(entry);
+              setDetailOpen(true);
+            }}
             onOpenEntries={(filters) => {
               setSelectedEntry(null);
               setDetailOpen(false);
@@ -273,7 +289,14 @@ export function AdminApplication() {
           <AdminModules />
         ) : view === 'account' ? (
           <>
-            <EventDocumentSettings eventId={selectedEvent} />
+            <EventDocumentSettings
+              eventId={selectedEvent}
+              onSaved={() => {
+                // Configuration changes invalidate the selected entry's document projection too.
+                setSelectedEntry(null);
+                entriesChanged();
+              }}
+            />
             <RegistrationFormSettings eventId={selectedEvent} />
           </>
         ) : null

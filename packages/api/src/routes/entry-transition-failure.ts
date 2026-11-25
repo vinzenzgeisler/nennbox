@@ -1,3 +1,5 @@
+import { WorkbasketConcurrencyError } from '@nennbox/core';
+
 /**
  * What a failed acceptance transition answers. Refund conflicts and a change
  * the database aborted after retries say what is wrong and that nothing was
@@ -8,6 +10,11 @@ export function transitionFailure(error: unknown): {
   body: { error: string; reason?: string };
 } {
   const reason = error instanceof Error ? error.message : '';
+  if (
+    error instanceof WorkbasketConcurrencyError ||
+    reason.startsWith('Nicht mehr bereit')
+  )
+    return { status: 409, body: { error: reason } };
   if (reason === 'refund_in_progress')
     return {
       status: 409,

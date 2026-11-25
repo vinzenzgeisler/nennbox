@@ -16,6 +16,10 @@ import {
   messageCampaignDelivery,
 } from '@nennbox/core';
 import { validateMessageAttachmentMetadata } from './messaging-attachments.js';
+import {
+  workbasketTransaction,
+  lockCampaignGroups,
+} from './workbasket-transaction.js';
 import type { Database } from './database.js';
 import { organizations } from './schema/organization.js';
 import {
@@ -28,6 +32,9 @@ import {
   messageCampaignRecipients,
   messageCampaigns,
 } from './messaging-schema.js';
+import { evaluateWorkbasket } from '@nennbox/core';
+import { createWorkbasketRepository } from './workbasket.js';
+import { loadWorkbasketSnapshot } from './workbasket-snapshot.js';
 import { resolveMessageRecipients } from './messaging-recipients.js';
 import { digestMessage, messageLocale } from './messaging-utils.js';
 
@@ -54,6 +61,7 @@ export function createMessageSender(
     const origin = canonicalOrigin
       ? await resolveCanonicalOrigin(canonicalOrigin, ctx)
       : null;
+    const confirmed = !!input.workbasketConfirmation;
     const ports: MessageCampaignSendPorts<Campaign, CampaignRecipient> = {
       maxAttachments: MESSAGE_ATTACHMENT_LIMITS.maxCount,
       hashRequest: digestMessage,
@@ -64,11 +72,32 @@ export function createMessageSender(
           attachments,
         ),
       transaction: (context, work) =>
-        db.transaction(async (tx) => {
+        workbasketTransaction(db, confirmed, async (tx) => {
+          // Existing recipient groups remain stable through enqueue; SSI covers
+          // predicate-changing inserts without a database-wide writer barrier.
+          if (input.workbasketConfirmation)
+            await lockCampaignGroups(tx, context.organizationId, eventId);
           const transaction: MessageCampaignTransaction<
             Campaign,
             CampaignRecipient
           > = {
+            eligibleWorkbasketEntries: async (requestedEventId, ruleId) => {
+              const database = tx as unknown as Database;
+              const config = await createWorkbasketRepository(
+                database,
+              ).getConfiguration(context, requestedEventId);
+              if (!config) return [];
+              const snapshot = await loadWorkbasketSnapshot(
+                database,
+                context,
+                requestedEventId,
+              );
+              return evaluateWorkbasket(snapshot, config.effective)
+                .filter(
+                  (task) => task.ruleId === ruleId && task.entryId !== null,
+                )
+                .map((task) => task.entryId!);
+            },
             resolveRecipients: async (requestedEventId, filter) => {
               const resolved = await resolveMessageRecipients(
                 tx,

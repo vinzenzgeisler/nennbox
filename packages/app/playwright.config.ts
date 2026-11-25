@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 
-// Specs share one seeded stack and run in parallel workers. Specs that delete shared rows are
+// Specs share one seeded stack and run in parallel workers. Specs that mutate shared rows are
 // named `*.destructive.spec.ts` and run in a second project that starts after all others finish.
 const destructive = /.*\.destructive\.spec\.ts$/;
 
@@ -20,6 +20,7 @@ export default defineConfig({
     { name: 'shared-data', testIgnore: destructive },
     {
       name: 'destructive',
+      workers: 1,
       testMatch: destructive,
       dependencies: ['shared-data'],
     },

@@ -1,3 +1,5 @@
+import { useEntryWarnings } from './warnings/useEntryWarnings.js';
+import { EntryWarningsStatus } from './warnings/EntryWarnings.js';
 import { useEntryQuickAction } from './useEntryQuickAction.js';
 import type { EntryQuickActionRequest } from './entryQuickActions.js';
 import { EntryDetailDialogs } from './detail/EntryDetailDialogs.js';
@@ -8,7 +10,7 @@ import { AppButton, EntryDetailPage } from '@nennbox/ui';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { Outcome, WorkflowView } from './AdminEntriesModel.js';
 import type { Pending } from './detail/EntryDetailPending.js';
-import { EntryActionRail } from './detail/EntryActionRail.js';
+import { EntryActionRail, type StatusStep } from './detail/EntryActionRail.js';
 import { uploadLines, type UploadLine } from './documents/documentLines.js';
 import { requestMessageSeed } from './documents/requestMessage.js';
 import { useEntryDocumentActions } from './documents/useEntryDocumentActions.js';
@@ -66,6 +68,7 @@ export function AdminEntryDetail({
   onUpdated: (entry: Entry | null, refresh?: boolean) => void;
   onMessage?: ((seed: MessageSeed) => void) | undefined;
 }) {
+  const warnings = useEntryWarnings(selected.eventId, selected.id, selected);
   const [localTab, setLocalTab] = useState('overview');
   const tab = activeTab ?? localTab;
   const setTab = onTab ?? setLocalTab;
@@ -157,9 +160,7 @@ export function AdminEntryDetail({
     } else close();
   }
   const dialog = entryStatusDialog(pending, workflow);
-  const changeDetailStatus = (
-    step: import('./detail/EntryActionRail.js').StatusStep,
-  ) => {
+  const changeDetailStatus = (step: StatusStep) => {
     const edge = workflow?.transitions.find(
       (item) => item.from === selected.acceptanceStatus && item.to === step.to,
     );
@@ -230,6 +231,7 @@ export function AdminEntryDetail({
               />
             </section>
             <EntryProperties
+              warnings={warnings.warnings}
               recent={timeline}
               entry={selected}
               onOpenRelated={onOpenRelated}
@@ -249,20 +251,20 @@ export function AdminEntryDetail({
           <EntryDetailHeader
             entry={selected}
             actions={
-              <>
-                <EntryDetailActions
-                  selected={selected}
-                  workflow={workflow}
-                  busy={busy || api.busy}
-                  onStatus={changeDetailStatus}
-                />
-              </>
+              <EntryDetailActions
+                selected={selected}
+                workflow={workflow}
+                busy={busy || api.busy}
+                onStatus={changeDetailStatus}
+              />
             }
           />
         }
       >
+        <EntryWarningsStatus {...warnings} />
         <EntryDetailContent
           entry={selected}
+          warnings={warnings.warnings}
           tab={tab}
           numberOpen={numberOpen}
           error={error}

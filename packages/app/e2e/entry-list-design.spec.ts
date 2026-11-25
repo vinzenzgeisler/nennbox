@@ -16,8 +16,14 @@ test('reference entry list, embedded preview and selection interactions', async 
   await expect(
     page.getByRole('heading', { level: 1, name: 'Nennungen' }),
   ).toBeVisible();
+  // Other specs create one-entry events; the visual fixture needs the seeded multi-entry event.
+  await page
+    .getByRole('combobox', { name: 'Veranstaltung' })
+    .selectOption({ label: 'Historischer Bergpreis 2027' });
   const rows = page.locator('.nb-entry-list-row');
   await expect(rows.first()).toBeVisible();
+  // Switching events deliberately clears the old preview; select this fixture's first entry.
+  await rows.first().locator('[data-entry-action]').click();
   const preview = page.locator('.nb-preview-panel');
   await expect(
     preview.getByRole('heading', { name: 'Bis zur Zulassung' }),

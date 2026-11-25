@@ -8,3 +8,5 @@ product-artifacts/
 .community-local-*/
 playwright-report/
 test-results/
+
+.workbasket-evidence/

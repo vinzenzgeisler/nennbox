@@ -186,6 +186,7 @@ export interface EntryRepository {
         statusLabelEn: string;
       };
     },
+    readiness?: { eventId: string },
   ): Promise<Entry | null>;
   softDelete(
     ctx: RequestContext,

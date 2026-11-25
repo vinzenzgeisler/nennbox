@@ -45,6 +45,7 @@ export async function transitionEntry(
   actor: string,
   reason: string,
   deps: { entries: EntryRepository; workflows?: EntryWorkflowRepository },
+  readiness?: { eventId: string },
 ): Promise<Entry | null> {
   // Workflow role claims may further restrict entry writers, but must never
   // grant tenant-wide write access to entries.
@@ -97,6 +98,8 @@ export async function transitionEntry(
   } else {
     assertEntryTransition(kind, from, to);
   }
+  if (readiness && (kind !== 'acceptance' || statusCategory !== 'accepted'))
+    throw new Error('Invalid admission target');
   return deps.entries.transition(
     ctx,
     id,
@@ -112,5 +115,6 @@ export async function transitionEntry(
           ...(notification ? { notification } : {}),
         }
       : undefined,
+    ...(readiness ? ([readiness] as const) : ([] as const)),
   );
 }

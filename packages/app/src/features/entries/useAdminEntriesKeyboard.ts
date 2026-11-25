@@ -25,7 +25,6 @@ export function useAdminEntriesKeyboard({
       if (
         event.defaultPrevented ||
         document.querySelector('dialog[open], [role=dialog], details[open]') ||
-        !items.length ||
         (event.target instanceof HTMLElement &&
           (event.target.isContentEditable ||
             ['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)))
@@ -54,6 +53,7 @@ export function useAdminEntriesKeyboard({
       }
       const index = items.findIndex((item) => item.id === selected?.id);
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        if (!items.length) return;
         event.preventDefault();
         const next = Math.min(
           items.length - 1,

@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createRequestContext, organizationId } from '@nennbox/core';
+import {
+  createRequestContext,
+  organizationId,
+  WorkbasketConcurrencyError,
+} from '@nennbox/core';
 import type { ObjectStorageProvider } from '@nennbox/core';
 import type { ApiDeps } from './types.js';
 import { createApp } from './index.js';
@@ -163,6 +167,35 @@ describe('message campaign routes', () => {
       },
     );
     expect(invalid.status).toBe(400);
+  });
+
+  it('returns actionable conflict feedback after bounded serialization retries', async () => {
+    const { app, send } = appFor();
+    send.mockRejectedValueOnce(
+      new WorkbasketConcurrencyError({ code: '40001' }),
+    );
+    const response = await app.request(
+      `/admin/events/${eventId}/messages/campaigns`,
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'Idempotency-Key': 'retry-key-001',
+        },
+        body: JSON.stringify({
+          eventId,
+          recipients: {},
+          subject: 'Reminder',
+          text: 'Body',
+          attachments: [],
+        }),
+      },
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      code: 'concurrent-change',
+      error: expect.stringContaining('denselben Auftrag'),
+    });
   });
 
   it('validates and forwards idempotent campaign submission', async () => {

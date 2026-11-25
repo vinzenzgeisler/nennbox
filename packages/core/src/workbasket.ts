@@ -1,3 +1,4 @@
+import { describeWorkbasketTasks } from './workbasket-description.js';
 import { duplicateTasks } from './workbasket-duplicates.js';
 import { resolveWorkbasketConfig } from './workbasket-config.js';
 import type {
@@ -51,6 +52,7 @@ export function evaluateWorkbasket(
     reason: string,
     fields: readonly string[],
     severity: WorkbasketTask['severity'] = 'task',
+    values?: WorkbasketTask['values'],
   ) => {
     if (config[ruleId].enabled)
       tasks.push({
@@ -60,6 +62,7 @@ export function evaluateWorkbasket(
         reason,
         fields,
         severity,
+        ...(values ? { values } : {}),
       });
   };
   for (const entry of entries)
@@ -97,6 +100,8 @@ export function evaluateWorkbasket(
           'createdAt',
           ...(entry.createdOn ? ['createdOn'] : []),
         ],
+        'task',
+        { days: today - created, documents: entry.missingDocumentNames ?? [] },
       );
     // The window remains open after closing until payment is recorded.
     if (
@@ -110,6 +115,8 @@ export function evaluateWorkbasket(
         entry,
         `Zahlung offen; Nennschluss ist am ${snapshot.closingDate?.slice(0, 10)}.`,
         ['paid', 'closingDate'],
+        'task',
+        { closingDate: snapshot.closingDate!.slice(0, 10) },
       );
     if (
       config.ready.enabled &&
@@ -156,6 +163,7 @@ export function evaluateWorkbasket(
         severity: 'warning',
         reason: `Klasse fast voll: ${occupied} von ${maximum} Plätzen belegt.`,
         fields: ['maxParticipants', 'status', 'waitlistOfferedUntil'],
+        values: { occupied, maximum },
       });
     if (!config.waitlistPromotion.enabled) continue;
     const queue = members
@@ -183,6 +191,11 @@ export function evaluateWorkbasket(
           'waitlistPosition',
           'waitlistOfferedUntil',
         ],
+        'task',
+        {
+          available: Math.max(0, Math.floor(maximum - occupied)),
+          position: entry.waitlistPosition ?? null,
+        },
       );
   }
   // One task per rule/entry/class, including malformed repeated input IDs.
@@ -200,7 +213,7 @@ export function evaluateWorkbasket(
         : task,
     );
   }
-  return [...unique.values()].sort(
+  return describeWorkbasketTasks([...unique.values()], snapshot).sort(
     (a, b) =>
       compare(a.ruleId, b.ruleId) ||
       compare(a.classId, b.classId) ||

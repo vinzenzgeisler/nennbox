@@ -113,6 +113,7 @@ export function registerEntriesRoutes(context: ApiRoutesContext): void {
     const body = await c.req.json().catch(() => null);
     const parsed = z
       .object({
+        requireReadyForEvent: z.string().uuid().optional(),
         transition: z.enum(['verification', 'acceptance']),
         status: z.string().min(1),
         reason: z.string().trim().max(1000).optional().default(''),
@@ -136,6 +137,9 @@ export function registerEntriesRoutes(context: ApiRoutesContext): void {
           entries: deps.entries,
           workflows: deps.entryWorkflows,
         },
+        parsed.data.requireReadyForEvent
+          ? { eventId: parsed.data.requireReadyForEvent }
+          : undefined,
       );
       if (!result) return c.json({ error: 'Not found' }, 404);
       const refund =

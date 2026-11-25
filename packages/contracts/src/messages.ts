@@ -39,6 +39,23 @@ export const MessageCampaignCreateSchema = z
   .object({
     eventId: z.string().uuid(),
     recipients: MessageRecipientFilterSchema,
+    workbasketConfirmation: z
+      .object({
+        ruleId: z.enum(['missingDocuments', 'paymentOpen']),
+        recipients: z
+          .array(
+            z
+              .object({
+                entryId: z.string().uuid().nullable(),
+                email: z.string().email(),
+              })
+              .strict(),
+          )
+          .min(1)
+          .max(500),
+      })
+      .strict()
+      .optional(),
     subject: z.string().min(1).max(998),
     text: z.string().min(1).max(50000),
     attachments: z

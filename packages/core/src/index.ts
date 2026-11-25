@@ -46,6 +46,7 @@ export * from './start-number-service.js';
 export * from './onboarding.js';
 
 export * from './workbasket.js';
+export * from './workbasket-concurrency.js';
 
 export type {
   WorkbasketRepository,

@@ -15,6 +15,8 @@ import {
   invalidateReactivatedRefunds,
 } from './refund-transition.js';
 import { openRefundIntent } from './payment-refund-intents.js';
+import { assertReadyAdmission } from './workbasket-admission.js';
+import { workbasketTransaction } from './workbasket-transaction.js';
 import { retryOnConflict } from './transaction-retry.js';
 
 export function createEntryTransitionMethod(
@@ -30,9 +32,18 @@ export function createEntryTransitionMethod(
       actor,
       reason,
       workflow,
+      readiness,
     ) =>
       retryOnConflict(() =>
-        db.transaction(async (tx) => {
+        workbasketTransaction(db, !!readiness, async (tx) => {
+          if (readiness)
+            await assertReadyAdmission(
+              tx,
+              ctx,
+              id,
+              readiness.eventId,
+              workflow,
+            );
           if (transition === 'acceptance')
             await guardRefundTransition(
               tx,
@@ -57,6 +68,14 @@ export function createEntryTransitionMethod(
                 eq(entries.organizationId, ctx.organizationId),
                 eq(entries.id, id),
                 eq(statusColumn, fromStatus),
+                ...(readiness && workflow
+                  ? [
+                      eq(
+                        entries.workflowRevisionId,
+                        workflow.workflowRevisionId,
+                      ),
+                    ]
+                  : []),
                 sql`${entries.deletedAt} is null`,
               ),
             )

@@ -20,7 +20,7 @@ export async function loadWorkbasketSnapshot(
   ).rows[0]!;
   const classes = (
     await db.execute(sql`
-    SELECT id, max_participants AS "maxParticipants",
+    SELECT id, name, max_participants AS "maxParticipants",
       allows_multiple_starts AS "allowsMultipleStarts",
       min_displacement_cc AS "minDisplacementCc", max_displacement_cc AS "maxDisplacementCc",
       min_year AS "minYear", max_year AS "maxYear"
@@ -30,7 +30,7 @@ export async function loadWorkbasketSnapshot(
   ).rows;
   const entries = (
     await db.execute(sql`
-    SELECT e.id,e.class_id AS "classId",to_char(e.created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "createdAt",
+    SELECT e.id,e.orga_code AS "organizationCode",e.class_id AS "classId",to_char(e.created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "createdAt",
       (e.created_at AT TIME ZONE o.timezone)::date::text AS "createdOn",
       (SELECT s->>'category' FROM jsonb_array_elements(w.workflow->'statuses') s
        WHERE coalesce(s->>'id',s->>'key')=e.acceptance_status) AS status,
@@ -42,6 +42,20 @@ export async function loadWorkbasketSnapshot(
       e.waitlist_position AS "waitlistPosition",
       e.waitlist_offer_sent_at::text AS "waitlistOfferSentAt",
       e.waitlist_confirmation_deadline::text AS "waitlistOfferedUntil",
+      ARRAY(SELECT t.name FROM event_entry_document_type t
+        WHERE t.organization_id=e.organization_id AND t.event_id=e.event_id AND t.enabled AND t.required
+        AND coalesce((SELECT d.status FROM entry_document d WHERE d.organization_id=e.organization_id
+          AND d.event_id=e.event_id AND d.entry_id=e.id AND d.type_key=t.key
+          ORDER BY d.uploaded_at DESC,d.id DESC LIMIT 1),'missing') NOT IN ('uploaded','reviewed')
+        ORDER BY t.key) AS "missingDocumentNames",
+      coalesce((SELECT jsonb_agg(jsonb_build_object('name',t.name,'validUntil',d.valid_until::text) ORDER BY t.key)
+        FROM entry_document d JOIN event_entry_document_type t ON t.organization_id=d.organization_id
+          AND t.event_id=d.event_id AND t.key=d.type_key
+        WHERE d.organization_id=e.organization_id AND d.event_id=e.event_id AND d.entry_id=e.id
+          AND d.valid_until IS NOT NULL AND d.status<>'rejected'
+          AND d.id=(SELECT latest.id FROM entry_document latest WHERE latest.organization_id=d.organization_id
+            AND latest.entry_id=d.entry_id AND latest.type_key=d.type_key
+            ORDER BY latest.uploaded_at DESC,latest.id DESC LIMIT 1)), '[]'::jsonb) AS "expiringDocuments",
       NOT EXISTS (
         SELECT 1 FROM event_entry_document_type t
         WHERE t.organization_id=e.organization_id AND t.event_id=e.event_id AND t.enabled AND t.required

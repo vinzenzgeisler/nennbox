@@ -23,6 +23,11 @@ export function registerEntryAdminActionRoutes(
           )) ?? []),
         ]
       : [];
+    const acceptanceTransitions: Array<{
+      to: string;
+      label: string;
+      category: string;
+    }> = [];
     if (context.permissions.has('entry:write')) {
       const pinned = await deps.entryWorkflows.getPinnedForEntry(
         context,
@@ -39,6 +44,15 @@ export function registerEntryAdminActionRoutes(
         if (edge.permission && !context.permissions.has(edge.permission))
           continue;
         availableActions.push(`acceptance:${edge.to}`);
+        const target = pinned?.workflow.statuses.find(
+          (status) => (status.id ?? status.key) === edge.to,
+        );
+        if (target)
+          acceptanceTransitions.push({
+            to: edge.to,
+            label: target.labels.de,
+            category: target.category,
+          });
       }
     }
     if (context.permissions.has('event:write'))
@@ -49,7 +63,7 @@ export function registerEntryAdminActionRoutes(
       availableActions.push(
         ...availablePassengerActions(entry.adminDetails ?? {}),
       );
-    return c.json({ ...entry, availableActions });
+    return c.json({ ...entry, availableActions, acceptanceTransitions });
   });
   app.post('/admin/entries/:entryId/actions', async (c) => {
     const guard = await requireMember(c.req.raw, 'entry:write');

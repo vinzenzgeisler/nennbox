@@ -27,6 +27,7 @@ export function entryWarnings(
     ruleId: WorkbasketTask['ruleId'],
     reason: string,
     fields: string[],
+    values?: WorkbasketTask['values'],
   ) => {
     if (config[ruleId].enabled)
       tasks.push({
@@ -34,6 +35,7 @@ export function entryWarnings(
         entryId: entry.id,
         classId: entry.classId,
         reason,
+        ...(values ? { values } : {}),
         fields,
         severity: 'warning',
       });
@@ -61,16 +63,19 @@ export function entryWarnings(
           rule === 'year' ? 'minYear' : 'minDisplacementCc',
           rule === 'year' ? 'maxYear' : 'maxDisplacementCc',
         ],
+        { value, lower: lower ?? null, upper: upper ?? null },
       );
   }
   const eventDay = workbasketDay(eventDate);
   if (eventDay === null) return tasks;
   const licenseDay = workbasketDay(entry.licenseValidUntil);
   if (licenseDay !== null && licenseDay < eventDay)
-    add('expiredLicense', 'Die Lizenz ist am Veranstaltungstag abgelaufen.', [
-      'licenseValidUntil',
-      'eventDate',
-    ]);
+    add(
+      'expiredLicense',
+      'Die Lizenz ist am Veranstaltungstag abgelaufen.',
+      ['licenseValidUntil', 'eventDate'],
+      { validUntil: entry.licenseValidUntil!, eventDate: eventDate! },
+    );
   if (
     entry.documentValidUntil?.some((date) => {
       const day = workbasketDay(date);
@@ -81,6 +86,19 @@ export function entryWarnings(
       'expiredDocument',
       'Mindestens ein Dokument ist am Veranstaltungstag abgelaufen.',
       ['documentValidUntil', 'eventDate'],
+      {
+        dates: entry.documentValidUntil!.filter((date) => {
+          const day = workbasketDay(date);
+          return day !== null && day < eventDay;
+        }),
+        documents: (entry.expiringDocuments ?? [])
+          .filter((doc) => {
+            const day = workbasketDay(doc.validUntil);
+            return day !== null && day < eventDay;
+          })
+          .map((doc) => `${doc.name}: ${doc.validUntil}`),
+        eventDate: eventDate!,
+      },
     );
   const birthDay = workbasketDay(entry.dateOfBirth);
   if (birthDay !== null && birthDay <= eventDay) {
@@ -99,6 +117,7 @@ export function entryWarnings(
         'minorGuardian',
         'Am Veranstaltungstag minderjährig; Erziehungsberechtigte fehlen.',
         ['dateOfBirth', 'guardianName', 'eventDate'],
+        { age, dateOfBirth: entry.dateOfBirth!, eventDate: eventDate! },
       );
   }
   return tasks;

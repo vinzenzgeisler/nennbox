@@ -1,3 +1,5 @@
+import { EntryWarnings } from './warnings/EntryWarnings.js';
+import type { EntryWarning } from './warnings/entryWarnings.js';
 import { useEffect, useRef, useState } from 'react';
 import { EntryQuickMenu } from './EntryQuickMenu.js';
 import { type OnEntryQuickAction } from './entryQuickActions.js';
@@ -12,6 +14,7 @@ import type { WorkflowView } from './AdminEntriesModel.js';
 type Selection = { eventId: string; ids: Set<string> };
 export function AdminEntryRow({
   entry,
+  warnings,
   eventId,
   selected,
   selectedIds,
@@ -27,6 +30,7 @@ export function AdminEntryRow({
   onQuickAction?: OnEntryQuickAction | undefined;
   canMessage?: boolean | undefined;
   entry: Entry;
+  warnings?: EntryWarning[] | undefined;
   eventId: string;
   selected: Entry | null;
   selectedIds: Set<string>;
@@ -82,7 +86,12 @@ export function AdminEntryRow({
       vehicle={vehicle}
       imageUrl={details?.vehicle.imageUrl ?? null}
       imageAlt="Fahrzeugbild"
-      hints={<EntryDataHints entry={entry} compact />}
+      hints={
+        <>
+          <EntryDataHints entry={entry} compact />
+          <EntryWarnings warnings={warnings} compact />
+        </>
+      }
       className={
         details?.eventClass.name ??
         classes.find((item) => item.id === entry.classId)?.name ??

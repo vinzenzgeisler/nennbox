@@ -1,7 +1,6 @@
 # Smarter Arbeitskorb: engine and data layer
 
-This is the first implementation slice of #194 (wave 2 of #196). No new UI or
-bulk mutation is part of this slice. All findings are advisory. Admission,
+This documents the engine/data layer and administrative UI of #194 (wave 2 of #196). All findings are advisory. Admission,
 document reminders, payment reminders and promotion still require explicit
 confirmation through the existing action services. In particular, a
 `waitlistPromotion` task does not reserve a seat: the existing #29
@@ -85,7 +84,18 @@ do not receive reminders, duplicate warnings or admission tasks.
 The pure core receives its clock/calendar values as input and has no HTTP,
 database or runtime clock dependency. Tasks carry stable ruleId, entryId (null
 for class findings), classId, German reason, evidence field names and severity.
-API consumers must display the reason/evidence without inferring their own rules.
+Tasks additionally carry an office projection: \`entry\` (name, effective start number,
+organization code, class name, creation time), \`className\`, \`ageDays\`, bilingual
+\`detail\` (de/en), raw rule \`values\`, and \`relatedEntries\` with per-neighbour
+matching evidence. Required document names and latest valid-until document names
+are loaded tenant/event-scoped. Missing-document age is actual calendar days,
+not the configured threshold. Class findings have a null entry and age.
+API consumers display these facts without inferring their own rules.
+Duplicate projections link one real, non-exempt counterpart per matching identity
+dimension (at most five for vehicles, two for people); this bounds output even
+for fully colliding input. Evidence on each link belongs to that particular
+counterpart, not the union across all matches. The legacy reason/fields remain
+compatible for other warning consumers. Deployment migration invalidates old caches.
 
 ## HTTP API
 
@@ -104,8 +114,73 @@ composite foreign keys prevent cache/configuration crossing tenant boundaries.
 The PostgreSQL integration test proves cache reuse, invalidation, concurrent
 read reuse, time expiry, configuration inheritance and cross-tenant denial.
 
+## Administrative UI
+
+The overview starts with “Heute zu tun”. Findings are ordered by warning,
+reminder/capacity task, then admission. Rule counts, reasons and evidence come
+from the server projection; filtering and paging only change presentation.
+Entry tasks open their exact entry; class tasks open the class-filtered list.
+The entry list shows compact findings with a filter explicitly scoped to the
+current page. Detail findings sit beside the implicated driver, vehicle,
+start-number or document fields. Failed warning reads are not treated as clean
+entries.
+
+Bulk admission prepares a named target list and asks for an audit reason.
+The detail response now includes `acceptanceTransitions` with category and
+German label, resolved against the entry's pinned workflow and filtered by the
+same permissions/roles as `availableActions`. The browser never infers an
+accepted category from a status key or the event's latest workflow. Before each
+sequential transition call it refreshes both advisory eligibility and
+permissions. The explicit `requireReadyForEvent` request intent additionally
+requires a fresh server evaluation in the same transaction as the transition.
+An admission must target an authorized accepted-category status in the pinned
+workflow; a pinned-revision/status CAS rejects concurrent workflow/status drift.
+Changed readiness is reported per entry as skipped with its current reason.
+
+Authoritative admission and confirmed reminder enqueue run in PostgreSQL
+`SERIALIZABLE` transactions. All live source/configuration/pinned-workflow reads
+and the status/audit or campaign/outbox/job writes share one snapshot and commit.
+SSI tracks predicate dependencies, including absent documents/invoices, without
+blocking unrelated source writers. A concurrent change may be ordered after the
+action; a serialization failure rolls back and re-evaluates the entire action
+against a new snapshot. Advisory cached reads remain outside this boundary.
+
+Retry SQLSTATE `40001` (serialization failure) and `40P01` (deadlock), including
+wrapped driver causes, at most three attempts with short bounded backoff. On
+exhaustion return an actionable concurrent-change error (HTTP 409). The reminder
+client retains the immutable request/key for retry, not a new confirmation.
+Ordinary transitions
+and unconfirmed campaigns keep their existing transaction behavior.
+
+Reminder enqueue additionally locks existing registration groups `FOR UPDATE`
+in ID order, with organization and event predicates. This preserves the
+address/payment race guarantee (including new invoice FK inserts) without a
+relation-wide lock or locks in another event. These row locks do not replace
+SSI's phantom protection. No action takes a table-level writer barrier.
+
+Retry callbacks perform database work only: mail delivery happens later via
+transactional outbox/jobs. Rollback removes tentative campaign, recipients,
+audit, outbox and jobs together. The immutable request and tenant-scoped
+idempotency key survive retries and response loss; committed replays return the
+original campaign before new eligibility/recipient resolution. Never send mail
+or perform other irreversible external effects inside the retry callback.
+Results distinguish successful entries from skipped/failed ones.
+
+Document/payment reminders use editable templates, the existing rendered
+recipient preview, explicit recipient counts and confirmed campaign creation.
+The preview includes exclusions; eligibility and recipient identity are checked
+again before sending. The send request includes the confirmed rule and exact
+recipient identities; inside the enqueue transaction the server rejects any
+change in eligibility or recipient identity/count, never extending the confirmed
+set. An uncertain campaign response keeps the same immutable request body and
+idempotency key in session storage scoped to event/rule, surviving changed task
+sets, remounts and same-tab navigation/reload. Storage errors block new sends.
+Idempotent replays return the original campaign before re-resolving changed
+recipients or rule eligibility. Queued recipients are not labelled as sent; the result
+supports status refresh and lists per-recipient failures.
+
 ## Follow-up
 
-“Today to do” overview, inline list/detail warnings, editable metadata controls,
-bulk admission/reminders and explicitly confirmed promotion interactions are not
-implemented here. This PR must not close #194 as a whole.
+Editable engine configuration/metadata controls and explicitly confirmed
+waitlist promotion interactions remain separate work. This UI does not claim
+that a capacity suggestion authorizes a promotion. The issue remains open.

@@ -17,8 +17,14 @@ import {
 } from './documentTypeModel.js';
 import { useEventDocumentSettings } from './useEventDocumentSettings.js';
 
-export function EventDocumentSettings({ eventId }: { eventId: string }) {
-  const settings = useEventDocumentSettings(eventId);
+export function EventDocumentSettings({
+  eventId,
+  onSaved,
+}: {
+  eventId: string;
+  onSaved?: () => void;
+}) {
+  const settings = useEventDocumentSettings(eventId, onSaved);
   if (!eventId) return null;
   if (settings.state === 'loading')
     return <p role="status">Unterlagen werden geladen …</p>;

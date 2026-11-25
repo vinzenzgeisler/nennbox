@@ -23,6 +23,12 @@ export interface MessageCampaignCreate {
   subject: string;
   text: string;
   attachments: Array<{ objectId: string; filename: string }>;
+  workbasketConfirmation?:
+    | {
+        ruleId: 'missingDocuments' | 'paymentOpen';
+        recipients: Array<{ entryId: string | null; email: string }>;
+      }
+    | undefined;
 }
 
 export const messagePlaceholderNames = [

@@ -1,3 +1,8 @@
+import { useState } from 'react';
+import { useEntryWarnings } from './warnings/useEntryWarnings.js';
+import { warningsForEntry } from './warnings/entryWarnings.js';
+import { EntryWarningsStatus } from './warnings/EntryWarnings.js';
+import { EntryWarningFilter } from './warnings/EntryWarningFilter.js';
 import type { OnEntryQuickAction } from './entryQuickActions.js';
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
@@ -79,6 +84,21 @@ export function AdminEntryList(props: Props) {
     totalPages,
     setPage,
   } = props;
+  const warningState = useEntryWarnings(eventId, undefined, items);
+  const [warningFilter, setWarningFilter] = useState('all');
+  const warnedIds = new Set(
+    warningState.warnings.map((warning) => warning.entryId),
+  );
+  const visibleItems =
+    warningState.status !== 'ready'
+      ? items
+      : items.filter(
+          (entry) =>
+            warningFilter === 'all' ||
+            (warningFilter === 'with'
+              ? warnedIds.has(entry.id)
+              : !warnedIds.has(entry.id)),
+        );
   if (!eventId) return null;
   const countAll = Object.values(counts).reduce((sum, value) => sum + value, 0);
   const content = (
@@ -89,6 +109,16 @@ export function AdminEntryList(props: Props) {
         workflowError={props.workflowError}
         onRetry={props.onRetry}
         onRetryWorkflow={props.onRetryWorkflow}
+      />
+      <EntryWarningsStatus
+        status={warningState.status}
+        retry={warningState.retry}
+      />
+      <EntryWarningFilter
+        value={warningFilter}
+        onChange={setWarningFilter}
+        disabled={warningState.status !== 'ready'}
+        count={items.filter((entry) => warnedIds.has(entry.id)).length}
       />
       <DataTable
         headerCellClassNames={[
@@ -109,10 +139,11 @@ export function AdminEntryList(props: Props) {
         ]}
       >
         {apiState === 'ready' &&
-          items.map((entry) => (
+          visibleItems.map((entry) => (
             <AdminEntryRow
               key={entry.id}
               entry={entry}
+              warnings={warningsForEntry(warningState.warnings, entry.id)}
               eventId={eventId}
               selected={selected}
               selectedIds={selectedIds}
@@ -126,9 +157,13 @@ export function AdminEntryList(props: Props) {
               canMessage={props.canMessage}
             />
           ))}
-        {apiState === 'ready' && !items.length && (
+        {apiState === 'ready' && !visibleItems.length && (
           <tr>
-            <td colSpan={6}>Keine Nennungen für diese Filter.</td>
+            <td colSpan={6}>
+              {warningFilter === 'all' || !items.length
+                ? 'Keine Nennungen für diese Filter.'
+                : 'Keine Nennungen für diese Filter auf dieser Seite.'}
+            </td>
           </tr>
         )}
       </DataTable>
