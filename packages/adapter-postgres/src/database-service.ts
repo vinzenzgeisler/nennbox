@@ -5,14 +5,35 @@ import type { RequestContext } from '@nennbox/core';
 import type { Pool } from 'pg';
 import type { Database } from './database.js';
 
-export async function migrate(databaseUrl: string): Promise<void> {
+/** Fixed key of the session lock that serializes schema migrations of one database. */
+const MIGRATION_LOCK_KEY = '4208150042';
+
+/**
+ * Applies pending migrations. A session advisory lock makes parallel callers
+ * (several service processes at start-up, parallel test runs) take turns: the
+ * second one finds nothing left to apply instead of racing the first.
+ */
+export async function migrate(
+  databaseUrl: string,
+  options: { migrationsFolder?: string } = {},
+): Promise<void> {
   const { Pool } = await import('pg');
   const pool = new Pool({ connectionString: databaseUrl });
+  const lock = await pool.connect();
   try {
+    await lock.query('select pg_advisory_lock($1::bigint)', [
+      MIGRATION_LOCK_KEY,
+    ]);
     await drizzleMigrate(drizzle(pool), {
-      migrationsFolder: new URL('../migrations', import.meta.url).pathname,
+      migrationsFolder:
+        options.migrationsFolder ??
+        new URL('../migrations', import.meta.url).pathname,
     });
   } finally {
+    await lock
+      .query('select pg_advisory_unlock($1::bigint)', [MIGRATION_LOCK_KEY])
+      .catch(() => undefined);
+    lock.release();
     await pool.end();
   }
 }

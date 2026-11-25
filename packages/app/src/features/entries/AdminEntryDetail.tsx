@@ -11,7 +11,7 @@ import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { Outcome, WorkflowView } from './AdminEntriesModel.js';
 import type { Pending } from './detail/EntryDetailPending.js';
 import { EntryActionRail, type StatusStep } from './detail/EntryActionRail.js';
-import type { UploadLine } from './documents/documentLines.js';
+import { uploadLines, type UploadLine } from './documents/documentLines.js';
 import { requestMessageSeed } from './documents/requestMessage.js';
 import { useEntryDocumentActions } from './documents/useEntryDocumentActions.js';
 import type { MessageSeed } from '../messages/messageSeed.js';
@@ -19,7 +19,6 @@ import { timelineFor } from './detail/entryDetailModel.js';
 import { EntryAdmissionProgress } from './detail/EntryAdmissionProgress.js';
 import { EntryProperties } from './detail/EntryProperties.js';
 import { EntryStatusToast } from './EntryStatusToast.js';
-import { uploadLines } from './documents/documentLines.js';
 import { EntryDetailActions } from './detail/EntryDetailActions.js';
 import { EntryDetailHeader } from './detail/EntryDetailHeader.js';
 import { useEntryDetailApi } from './detail/useEntryDetailApi.js';
@@ -69,11 +68,7 @@ export function AdminEntryDetail({
   onUpdated: (entry: Entry | null, refresh?: boolean) => void;
   onMessage?: ((seed: MessageSeed) => void) | undefined;
 }) {
-  const warningState = useEntryWarnings(
-    selected.eventId,
-    selected.id,
-    selected,
-  );
+  const warnings = useEntryWarnings(selected.eventId, selected.id, selected);
   const [localTab, setLocalTab] = useState('overview');
   const tab = activeTab ?? localTab;
   const setTab = onTab ?? setLocalTab;
@@ -129,14 +124,19 @@ export function AdminEntryDetail({
       );
       return result.ok ? close() : setDialogError(result.message);
     }
-    if (pending.kind === 'dimension') {
-      const result = await api.transitionDimension(
-        pending.action.dimension,
-        pending.action.status,
-        reason,
-      );
-      return result.ok ? close() : setDialogError(result.message);
-    }
+    const direct =
+      pending.kind === 'reconcile_refund' && details?.invoice
+        ? await api.reconcileRefund(details.invoice.id, pending.key, reason)
+        : pending.kind === 'abandon_refund' && details?.invoice
+          ? await api.abandonRefund(details.invoice.id, pending.key, reason)
+          : pending.kind === 'dimension'
+            ? await api.transitionDimension(
+                pending.action.dimension,
+                pending.action.status,
+                reason,
+              )
+            : null;
+    if (direct) return direct.ok ? close() : setDialogError(direct.message);
     const result =
       pending.kind === 'verify'
         ? await transition('verification', 'verified', reason)
@@ -231,7 +231,7 @@ export function AdminEntryDetail({
               />
             </section>
             <EntryProperties
-              warnings={warningState.warnings}
+              warnings={warnings.warnings}
               recent={timeline}
               entry={selected}
               onOpenRelated={onOpenRelated}
@@ -261,10 +261,10 @@ export function AdminEntryDetail({
           />
         }
       >
-        <EntryWarningsStatus {...warningState} />
+        <EntryWarningsStatus {...warnings} />
         <EntryDetailContent
           entry={selected}
-          warnings={warningState.warnings}
+          warnings={warnings.warnings}
           tab={tab}
           numberOpen={numberOpen}
           error={error}

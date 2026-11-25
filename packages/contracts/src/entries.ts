@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { EntryDocumentProjectionSchema } from './documents.js';
 import { PassengerModeSchema } from './passenger-mode.js';
+import { AdminEntryInvoiceSchema } from './entry-invoice.js';
 
 import { PriceSnapshotSchema } from './entry-price.js';
 export { PriceSnapshotSchema } from './entry-price.js';
@@ -159,29 +160,7 @@ export const EntryResponse = z
           .strict()
           .nullable()
           .optional(),
-        invoice: z
-          .object({
-            id: z.string().uuid(),
-            paymentReference: z.string(),
-            currency: z.string(),
-            totalCents: z.number().int().nonnegative(),
-            paidCents: z.number().int(),
-            paidAt: z.string().datetime({ offset: true }).nullable().optional(),
-            status: z.enum(['open', 'partially_paid', 'paid', 'cancelled']),
-            providerPayments: z
-              .array(
-                z
-                  .object({
-                    providerPaymentId: z.string(),
-                    refundableCents: z.number().int().nonnegative(),
-                  })
-                  .strict(),
-              )
-              .default([]),
-          })
-          .strict()
-          .nullable()
-          .optional(),
+        invoice: AdminEntryInvoiceSchema.nullable().optional(),
         eventClass: z
           .object({
             code: z.string(),

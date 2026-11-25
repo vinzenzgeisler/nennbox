@@ -152,6 +152,29 @@ const fieldsWithDefaults = z.preprocess(
   },
   z.record(z.enum(registrationFieldKeys), RegistrationFieldConfigSchema),
 );
+/** "Up to `daysBefore` days before the event, give back `percent` %" per tier. */
+export const RefundPolicySchema = z
+  .object({
+    enabled: z.boolean(),
+    tiers: z
+      .array(
+        z
+          .object({
+            daysBefore: z.number().int().min(0).max(730),
+            percent: z.number().int().min(0).max(100),
+          })
+          .strict(),
+      )
+      .max(6),
+    rejectedPercent: z.number().int().min(0).max(100),
+  })
+  .strict()
+  .refine(
+    (policy) =>
+      new Set(policy.tiers.map((tier) => tier.daysBefore)).size ===
+      policy.tiers.length,
+    { message: 'Duplicate refund tier' },
+  );
 const registrationFormConfigObject = z
   .object({
     branding: RegistrationBrandingSchema,
@@ -165,6 +188,8 @@ const registrationFormConfigObject = z
           .array(z.enum(['card', 'sepa_debit', 'paypal', 'klarna']))
           .max(4),
         bankTransfer: z.boolean(),
+        refundPolicy: RefundPolicySchema.optional(),
+        checkoutLifetimeMinutes: z.number().int().min(30).max(1440).optional(),
       })
       .strict()
       .default({ onlineMethods: [], bankTransfer: true }),

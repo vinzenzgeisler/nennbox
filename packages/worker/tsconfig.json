@@ -22,6 +22,9 @@
     },
     {
       "path": "../adapter-s3"
+    },
+    {
+      "path": "../adapter-stripe"
     }
   ],
   "compilerOptions": {

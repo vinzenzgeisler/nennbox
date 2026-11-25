@@ -12,3 +12,12 @@
   min-width: 0;
   margin: 0;
 }
+
+/* Payment inheritance has a descriptive label that must fit on narrow screens. */
+.nb-event-payment-settings .nb-app-actions .nb-app-btn {
+  max-width: 100%;
+  height: auto;
+  padding-block: var(--nb-space-2);
+  white-space: normal;
+  text-align: center;
+}

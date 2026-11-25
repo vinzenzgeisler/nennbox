@@ -7,6 +7,8 @@ import { entryAuditEvents } from './schema/entry-audit.js';
 import { assertEntryTransition } from '@nennbox/core';
 import type { PublicRegistrationDependencies } from './registration-public-types.js';
 import { issueRegistrationPassengerLinks } from './passenger-registration-links.js';
+import { invoices } from './schema/billing.js';
+import { queueEntryReceivedMail } from './payment-mail.js';
 
 export function createRegistrationVerificationMethods(
   dependencies: PublicRegistrationDependencies,
@@ -95,6 +97,26 @@ export function createRegistrationVerificationMethods(
           canonicalOrigin,
           registrationGroupId: verification.registrationGroupId,
         });
+        // Confirmation with the payment state and the link to pay later. One per group.
+        const [invoice] = await tx
+          .select({ id: invoices.id })
+          .from(invoices)
+          .where(
+            and(
+              eq(invoices.organizationId, ctx.organizationId),
+              eq(
+                invoices.registrationGroupId,
+                verification.registrationGroupId,
+              ),
+            ),
+          )
+          .limit(1);
+        if (invoice && groupEntries.length > 0)
+          await queueEntryReceivedMail(db, tx, {
+            organizationId: ctx.organizationId,
+            invoiceId: invoice.id,
+            correlationKey: verification.registrationGroupId,
+          });
         return groupEntries.length > 0;
       }),
   };

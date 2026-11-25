@@ -48,6 +48,7 @@ describe('Stripe payment provider', () => {
       id: 'evt_test_paid_01',
       organizationId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       invoiceId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      sessionId: 'cs_test_01',
       type: 'succeeded',
       amountCents: 4200,
       currency: 'eur',
@@ -70,5 +71,104 @@ describe('Stripe payment provider', () => {
     await expect(provider.verifyWebhook(rawBody, signature)).rejects.toThrow(
       /metadata/,
     );
+  });
+
+  it('ignores a checkout that completed but is not paid yet (SEPA debit confirms later)', async () => {
+    const { rawBody, signature } = signed({
+      ...paymentIntentFixture,
+      id: 'evt_test_pending_sepa',
+      data: {
+        object: {
+          ...paymentIntentFixture.data.object,
+          payment_status: 'unpaid',
+          payment_intent: 'pi_sepa_01',
+        },
+      },
+    });
+    await expect(
+      provider.verifyWebhook(rawBody, signature),
+    ).resolves.toBeNull();
+  });
+
+  it('applies the later asynchronous confirmation of a SEPA payment', async () => {
+    const { rawBody, signature } = signed({
+      ...paymentIntentFixture,
+      id: 'evt_test_sepa_paid',
+      type: 'checkout.session.async_payment_succeeded',
+    });
+    await expect(
+      provider.verifyWebhook(rawBody, signature),
+    ).resolves.toMatchObject({
+      id: 'evt_test_sepa_paid',
+      type: 'succeeded',
+      sessionId: 'cs_test_01',
+      paymentId: 'pi_test_01',
+    });
+  });
+
+  it.each([
+    ['checkout.session.expired', 'expired'],
+    ['checkout.session.async_payment_failed', 'failed'],
+  ])(
+    'maps %s to a %s event of the same checkout session',
+    async (type, outcome) => {
+      const { rawBody, signature } = signed({
+        ...paymentIntentFixture,
+        id: `evt_${outcome}`,
+        type,
+        data: {
+          object: {
+            ...paymentIntentFixture.data.object,
+            payment_status: 'unpaid',
+            payment_intent: null,
+          },
+        },
+      });
+      await expect(
+        provider.verifyWebhook(rawBody, signature),
+      ).resolves.toMatchObject({
+        id: `evt_${outcome}`,
+        type: outcome,
+        sessionId: 'cs_test_01',
+        invoiceId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      });
+    },
+  );
+
+  it('acknowledges authentic events of other types without applying them', async () => {
+    const { rawBody, signature } = signed({
+      ...paymentIntentFixture,
+      id: 'evt_test_other',
+      type: 'customer.created',
+    });
+    await expect(
+      provider.verifyWebhook(rawBody, signature),
+    ).resolves.toBeNull();
+  });
+
+  it('refuses events of connected accounts on the single-account adapter', async () => {
+    const { rawBody, signature } = signed({
+      ...paymentIntentFixture,
+      account: 'acct_other_club',
+    });
+    await expect(provider.verifyWebhook(rawBody, signature)).rejects.toThrow(
+      /Connected-account/,
+    );
+  });
+
+  it('rejects a payload signed with another secret', async () => {
+    const rawBody = JSON.stringify(paymentIntentFixture);
+    const signature = Stripe.webhooks.generateTestHeaderString({
+      payload: rawBody,
+      secret: 'whsec_someone_else',
+    });
+    await expect(provider.verifyWebhook(rawBody, signature)).rejects.toThrow();
+  });
+
+  it('rejects a tampered body even with a valid signature header of the original', async () => {
+    const { rawBody, signature } = signed(paymentIntentFixture);
+    await expect(
+      provider.verifyWebhook(rawBody.replace('4200', '1'), signature),
+    ).rejects.toThrow();
   });
 });

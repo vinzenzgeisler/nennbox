@@ -110,13 +110,20 @@ export function registerEntryAdminActionRoutes(
     const actor = context.subject
       ? `${context.subject.issuer}#${context.subject.subject}`
       : context.correlationId;
-    const result = await performEntryAdminAction(
-      context,
-      entryId.data,
-      parsed.data,
-      actor,
-      deps.entryAdminActions,
-    );
+    let result;
+    try {
+      result = await performEntryAdminAction(
+        context,
+        entryId.data,
+        parsed.data,
+        actor,
+        deps.entryAdminActions,
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message === 'concurrent_update')
+        return c.json({ error: 'concurrent_update' }, 409);
+      throw error;
+    }
     if (result.status === 'forbidden')
       return c.json({ error: 'Forbidden' }, 403);
     if (result.status === 'not_found')

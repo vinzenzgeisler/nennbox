@@ -143,7 +143,7 @@ it('keeps custom field type conversions and payment controls functional', async 
   const wasChecked = card.checked;
   await act(async () => card.click());
   await select(control('Geltungsbereich') as HTMLSelectElement, 'organization');
-  await act(async () => card.click());
+  await act(async () => (control('Karte') as HTMLInputElement).click());
   await act(async () => button('Änderungen speichern').click());
   const call = fetch.mock.calls.find(([, init]) => init?.method === 'PUT')!;
   expect(call[0]).toBe('/admin/organization/registration-form-config');
@@ -219,4 +219,64 @@ it('does not copy event overrides when saving organization changes', async () =>
   expect(JSON.parse(String(writes[1]![1]?.body))).toEqual({
     fields: { bloodGroup: { state: 'required' } },
   });
+});
+it('keeps payment methods and the refund rule out of the embedded form-field view', async () => {
+  await mount(true);
+  expect(container.textContent).not.toContain(
+    'Zahlungsarten für diese Veranstaltung',
+  );
+  expect(container.textContent).not.toContain('automatisch erstatten');
+  expect(container.textContent).not.toContain('Zahlungsarten');
+  act(() => root.unmount());
+  container.remove();
+  await mount(false);
+  expect(container.textContent).toContain(
+    'Zahlungsarten für diese Veranstaltung',
+  );
+});
+
+it('reloads refund drafts when switching scope or inheriting organization payments', async () => {
+  await mount(false, false, {
+    payments: {
+      ...defaultRegistrationFormConfig.payments,
+      refundPolicy: {
+        enabled: true,
+        tiers: [{ daysBefore: 28, percent: 75 }],
+        rejectedPercent: 80,
+      },
+    },
+  });
+  const refund = () =>
+    [...container.querySelectorAll<HTMLInputElement>('input')].find((input) =>
+      input.closest('label')?.textContent?.startsWith('Erstattung in %'),
+    )!;
+  expect(refund().value).toBe('75');
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value',
+    )!.set!.call(refund(), '');
+    refund().dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await select(control('Geltungsbereich') as HTMLSelectElement, 'organization');
+  await act(async () => button('Änderungen speichern').click());
+  expect(container.textContent).toContain('Einstellungen gespeichert.');
+  await select(control('Geltungsbereich') as HTMLSelectElement, 'event');
+  expect(refund().value).toBe('75');
+  await act(async () =>
+    container
+      .querySelector<HTMLButtonElement>(
+        '[aria-label="Zahlungsarten: Von Organisation übernehmen"]',
+      )!
+      .click(),
+  );
+  expect(container.textContent).not.toContain('Stufe hinzufügen');
+  await act(async () =>
+    (
+      control(
+        'Online-Zahlungen bei Absage automatisch erstatten',
+      ) as HTMLInputElement
+    ).click(),
+  );
+  expect(container.textContent).not.toContain('Stufe entfernen');
 });

@@ -50,6 +50,9 @@ export function RegistrationFormSettings({
     eventId ? 'event' : 'organization',
   );
   const [busy, setBusy] = useState(false);
+  const [refundProblem, setRefundProblem] = useState<string | null>(null);
+  const [showProblems, setShowProblems] = useState(false);
+  const [paymentReset, setPaymentReset] = useState(0);
   const [notice, setNotice] = useState<Notice | null>(null);
   const fail = (text: string) => setNotice({ text, tone: 'error' });
   const activeConfig = scope === 'organization' ? organizationConfig : config;
@@ -77,6 +80,11 @@ export function RegistrationFormSettings({
     }));
   const save = async () => {
     if (!loaded || error || busy) return;
+    if (refundProblem) {
+      setShowProblems(true);
+      fail(refundProblem);
+      return;
+    }
     setBusy(true);
     setNotice(null);
     try {
@@ -202,13 +210,14 @@ export function RegistrationFormSettings({
                 overrides={overrides}
                 busy={busy}
                 embedded={embedded}
-                reset={(key) =>
+                reset={(key) => {
                   setOverrides((current) => {
                     const next = { ...current };
                     delete next[key];
                     return next;
-                  })
-                }
+                  });
+                  if (key === 'payments') setPaymentReset((value) => value + 1);
+                }}
               />
             )}
             <RegistrationFormOptions
@@ -216,10 +225,15 @@ export function RegistrationFormSettings({
               updateConfig={updateConfig}
               fieldLabels={registrationFieldLabels}
             />
-            <RegistrationPaymentSettings
-              config={activeConfig}
-              updateConfig={updateConfig}
-            />
+            {!embedded && (
+              <RegistrationPaymentSettings
+                key={`${scope}:${paymentReset}`}
+                config={activeConfig}
+                updateConfig={updateConfig}
+                onRefundProblem={setRefundProblem}
+                showProblems={showProblems}
+              />
+            )}
             {embedded && saveBar}
           </div>
           <RegistrationFieldsPreview config={activeConfig} />

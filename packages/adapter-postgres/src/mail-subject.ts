@@ -12,6 +12,10 @@ const defaultSubjects: Record<string, Record<'de' | 'en', string>> = {
     de: 'Nennung eingegangen: {{eventName}}',
     en: 'Entry received: {{eventName}}',
   },
+  'payment-received': {
+    de: 'Zahlung eingegangen: {{eventName}}',
+    en: 'Payment received: {{eventName}}',
+  },
   accepted: {
     de: 'Nennung angenommen: {{eventName}}',
     en: 'Entry accepted: {{eventName}}',

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { resolveStripeSecretFiles } from '@nennbox/adapter-stripe';
 import { mailConfigSchema, validateMailConfig } from '@nennbox/contracts';
 import { compileTrustedProxyList } from './rate-limit.js';
 import { parseDeploymentMode } from '@nennbox/core';
@@ -72,7 +73,8 @@ const configSchema = z.object({
   STRIPE_API_BASE_URL: z.string().url().optional(),
 });
 
-export function loadConfig(env: NodeJS.ProcessEnv) {
+export function loadConfig(rawEnv: NodeJS.ProcessEnv) {
+  const env = resolveStripeSecretFiles(rawEnv);
   const parsed = configSchema.safeParse(env);
   if (!parsed.success) {
     const names = [

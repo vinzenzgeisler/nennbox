@@ -14,6 +14,7 @@ import {
   createModuleRegistry,
   type CanonicalOrigin,
   type MailProvider,
+  type PaymentProvider,
   type ModuleEntitlements,
   type ObjectStorageProvider,
 } from '@nennbox/core';
@@ -22,6 +23,7 @@ import { composeWorkerTasks, type WorkerTaskHandler } from './index.js';
 import { createMailOutboxTask } from './mail.js';
 import { createModuleTasks } from './modules.js';
 import { createRegistrationUploadCleanupTask } from './registration-upload-cleanup.js';
+import { createRefundRetryTask } from './refund-retry.js';
 import { createWaitlistDeadlineTask } from './waitlist-deadlines.js';
 
 /** Jobs of the single server-configured organization only. */
@@ -50,6 +52,12 @@ export interface ProductWorkerOptions {
     /** Verified origin per organization; verification and resume links are bound to it. */
     readonly canonicalOrigin: CanonicalOrigin;
     readonly leaseMs: number;
+  };
+  /** Online payment provider; without it no refund retry job is registered. */
+  readonly payments?: {
+    readonly provider: PaymentProvider;
+    /** How long an unfinished automatic refund waits before it is taken up again. */
+    readonly refundRetryAfterMs?: number;
   };
   readonly entitlements?: ModuleEntitlements;
   /** Called when a module job is dropped because its module is not active. */
@@ -126,6 +134,21 @@ export function createProductWorker(
         : {}),
     }),
   };
+  const paymentTasks = options.payments
+    ? {
+        payment_refund_retry: createRefundRetryTask({
+          db,
+          provider: options.payments.provider,
+          deploymentMode: edition.deploymentMode,
+          ...(edition.deploymentMode === 'community'
+            ? { communityOrganizationId: edition.organizationId }
+            : {}),
+          ...(options.payments.refundRetryAfterMs
+            ? { retryAfterMs: options.payments.refundRetryAfterMs }
+            : {}),
+        }),
+      }
+    : {};
   const mailTasks = mail
     ? {
         mail_outbox: createMailOutboxTask({
@@ -145,6 +168,7 @@ export function createProductWorker(
       artifactTasks,
       registrationUploadCleanupTasks,
       waitlistTasks,
+      paymentTasks,
       mailTasks,
     ),
   };

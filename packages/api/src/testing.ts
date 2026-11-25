@@ -31,6 +31,7 @@ type Wireable = Exclude<
   | 'paymentProvider'
   | 'paymentReturnOrigin'
   | 'paymentRefunds'
+  | 'refundIntents'
 >;
 type WiredForTest = Pick<CoreApiDeps, 'config' | 'organizations' | 'events'> &
   Partial<Omit<ApiDeps, Wireable>> & {
