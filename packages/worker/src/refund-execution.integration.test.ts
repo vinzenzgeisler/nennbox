@@ -1,8 +1,12 @@
 import { retryManualRefundReservations } from './refund-reservation-retry.js';
-import { inArray, sql } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { runMigrations } from 'graphile-worker';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createRequestContext, organizationId } from '@nennbox/core';
+import {
+  createRequestContext,
+  organizationId,
+  settleCancellationRefund,
+} from '@nennbox/core';
 import type { PaymentProvider, PaymentProviderEvent } from '@nennbox/core';
 import { createDatabase, migrate } from '@nennbox/adapter-postgres';
 import { createCheckoutRepository } from '@nennbox/adapter-postgres';
@@ -16,6 +20,10 @@ import {
   people,
   registrationGroups,
   vehicles,
+} from '@nennbox/adapter-postgres';
+import {
+  createRefundIntentRepository,
+  paymentRefundIntents,
 } from '@nennbox/adapter-postgres';
 import { emailOutbox } from '@nennbox/adapter-postgres';
 type Db = Awaited<ReturnType<typeof createDatabase>>['db'];
@@ -210,6 +218,138 @@ const ledgerSum = async (db: Db, s: Seed, providerPaymentId?: string) =>
   );
 
 describe.skipIf(!url)('refund execution claim', () => {
+  it('a lost claim connection cannot make an in-flight provider operation abandonable', async () => {
+    const { db, pool } = await createDatabase(url!);
+    const s = await seed(db, 'lost-claim');
+    const refunds = createPaymentRefundRepository(db);
+    let release!: () => void, entered!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const ready = new Promise<void>((resolve) => {
+      entered = resolve;
+    });
+    let running: Promise<unknown> | undefined;
+    try {
+      await createCheckoutRepository(db).applyProviderEvent(paid(s));
+      const key = crypto.randomUUID();
+      await refunds.reserve(s.ctx, manual(s, piOf(s), 1000, key));
+      running = refunds.withExecution(s.ctx, key, async () => {
+        entered();
+        await gate;
+        return true;
+      });
+      running.catch(() => undefined);
+      await ready;
+      const claims = await pool.query(
+        "select pid from pg_stat_activity where datname=current_database() and application_name='nennbox-refund-claim' and state='idle in transaction'",
+      );
+      expect(claims.rows).toHaveLength(1);
+      await pool.query('select pg_terminate_backend($1)', [claims.rows[0].pid]);
+      // The original provider remains blocked. Same-key recovery encounters an
+      // uncertain predecessor, then fails ambiguously five times.
+      for (let i = 0; i < 5; i++)
+        await refunds.withExecution(s.ctx, key, async () => {
+          await refunds.recordFailedAttempt!(s.ctx, key, 'ambiguous');
+          return true;
+        });
+      expect(
+        await refunds.abandonReservation!(s.ctx, {
+          invoiceId: s.invoice.id,
+          key,
+          actor: 'office',
+          reason: 'not visible yet',
+        }),
+      ).toBe('not_reviewable');
+      expect(
+        await refunds.reserve(s.ctx, manual(s, piOf(s), 3201)),
+      ).toMatchObject({ status: 'unavailable', availableCents: 3200 });
+      release();
+      await expect(running).rejects.toThrow();
+      const total = await pool.query(
+        "select coalesce(sum(amount_cents),0)::int n from payment_refund_reservation where invoice_id=$1 and status='reserved'",
+        [s.invoice.id],
+      );
+      expect(
+        4200 - (await ledgerSum(db, s)) + total.rows[0].n,
+      ).toBeLessThanOrEqual(4200);
+    } finally {
+      release();
+      await running?.catch(() => undefined);
+      await cleanup(db, s.org.id);
+      await pool.end();
+    }
+  });
+  it('a stale automatic takeover cannot finish the live executor intent as failed', async () => {
+    const { db, pool } = await createDatabase(url!);
+    const s = await seed(db, 'auto-takeover', {
+      orgConfig: {
+        payments: {
+          refundPolicy: {
+            enabled: true,
+            tiers: [{ daysBefore: 0, percent: 50 }],
+            rejectedPercent: 50,
+          },
+        },
+      },
+    });
+    let release!: () => void, entered!: () => void;
+    const gate = new Promise<void>((r) => {
+        release = r;
+      }),
+      ready = new Promise<void>((r) => {
+        entered = r;
+      });
+    let running: Promise<unknown> | undefined;
+    try {
+      await createCheckoutRepository(db).applyProviderEvent(paid(s));
+      await db
+        .update(entries)
+        .set({ acceptanceStatus: 'withdrawn' })
+        .where(eq(entries.id, s.entries[0]!.id));
+      const [intent] = await db
+        .insert(paymentRefundIntents)
+        .values({
+          organizationId: s.org.id,
+          invoiceId: s.invoice.id,
+          entryId: s.entries[0]!.id,
+          trigger: 'withdrawn',
+        })
+        .returning();
+      const calls: ProviderCall[] = [];
+      const deps = {
+        intents: createRefundIntentRepository(db),
+        refunds: createPaymentRefundRepository(db),
+        provider: provider(calls, async () => {
+          entered();
+          await gate;
+          return { id: 're-takeover-' + s.suffix };
+        }),
+      };
+      running = settleCancellationRefund(s.ctx, s.invoice.id, deps);
+      await ready;
+      await db.execute(
+        sql`update payment_refund_intent set claimed_at=to_timestamp(0) where id=${intent!.id}`,
+      );
+      expect(
+        await settleCancellationRefund(s.ctx, s.invoice.id, deps),
+      ).toBeNull();
+      release();
+      await running;
+      expect(calls).toHaveLength(1);
+      const [state] = await db
+        .select()
+        .from(paymentRefundIntents)
+        .where(eq(paymentRefundIntents.id, intent!.id));
+      expect(state).toMatchObject({ status: 'done', refundedCents: 2100 });
+      expect(await ledgerSum(db, s)).toBe(2100);
+    } finally {
+      release();
+      await running;
+      await cleanup(db, s.org.id);
+      await pool.end();
+    }
+  });
   it('a running executor excludes abandonment and same-key execution until booking', async () => {
     const { db, pool } = await createDatabase(url!);
     const s = await seed(db, 'execution-wins');

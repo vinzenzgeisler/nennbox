@@ -1,5 +1,6 @@
 import {
   pgTable,
+  boolean,
   uuid,
   text,
   integer,
@@ -158,6 +159,8 @@ export const paymentRefundReservations = pgTable(
     attempts: integer('attempts').notNull().default(0),
     lastError: text('last_error'),
     needsReviewAt: timestamp('needs_review_at', { withTimezone: true }),
+    executionToken: uuid('execution_token'),
+    executionUncertain: boolean('execution_uncertain').notNull().default(false),
     resolvedBy: text('resolved_by'),
     resolvedReason: text('resolved_reason'),
     resolvedAt: timestamp('resolved_at', { withTimezone: true }),

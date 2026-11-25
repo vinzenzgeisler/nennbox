@@ -178,6 +178,7 @@ describe('settling a cancellation refund', () => {
     await settleCancellationRefund(ctx, 'invoice-1', s);
     expect(s.refund).not.toHaveBeenCalled();
     expect(s.recordRefund).not.toHaveBeenCalled();
+    expect(s.finish).not.toHaveBeenCalled();
   });
 
   it('refunds the share of every online payment with keys derived from the intent and records them as the system', async () => {

@@ -141,9 +141,14 @@ Every provider invocation (manual HTTP, manual recovery batch, automatic settlem
 and automatic retry) first takes the same tenant/operation PostgreSQL advisory
 transaction lock. This connection-bound lock is the execution claim; it covers
 provider I/O, ledger booking and failure recording. It has no expiry that could
-release funds while a slow provider request is still running. Connection loss
-releases the claim, but never the monetary reservation; recovery uses the same
-provider idempotency key. Claim connections use a separate bounded pool so slow
+release funds while a slow provider request is still running. The invoice-locked
+compare-and-set also writes a durable execution token. A live claim clears only
+its own token after provider, booking and failure handling have returned.
+Connection loss releases the advisory lock, but leaves that token and the monetary
+reservation in place. Same-key recovery marks such a predecessor as uncertain:
+only provider-confirmed success/definitive rejection can settle it; an ambiguous
+recovery never makes it abandonable. Ordinary completed ambiguous attempts still
+clear their live token and retain the existing five-attempt audited office path. Claim connections use a separate bounded pool so slow
 provider requests cannot exhaust the application connections needed for booking.
 
 After claiming, the executor locks the invoice and compare-and-sets only a current

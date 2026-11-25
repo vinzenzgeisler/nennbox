@@ -277,7 +277,9 @@ export async function settleCancellationRefund(
           },
         );
         operationKey = null;
-        if (!executed) throw new Error('ledger_rejected');
+        // Another executor or a state transition owns this operation now.
+        // Do not finish its intent from our stale claim snapshot.
+        if (!executed) return null;
         refundedCents += reservation.amountCents;
       }
       result = stopped ?? {

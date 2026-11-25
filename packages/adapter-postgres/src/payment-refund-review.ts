@@ -79,7 +79,12 @@ export async function abandonRefundReservation(
         ),
       );
     if (!operation) return 'not_found';
-    if (operation.status !== 'reserved' || !operation.needsReviewAt)
+    if (
+      operation.status !== 'reserved' ||
+      !operation.needsReviewAt ||
+      operation.executionToken ||
+      operation.executionUncertain
+    )
       return 'not_reviewable';
     await tx
       .update(paymentRefundReservations)

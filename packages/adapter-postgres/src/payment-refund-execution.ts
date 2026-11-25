@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { and, eq, isNull, sql } from 'drizzle-orm';
@@ -22,7 +23,11 @@ function claimDatabase(db: Database): Database {
       max: 4,
       idleTimeoutMillis: 1000,
       allowExitOnIdle: true,
+      application_name: 'nennbox-refund-claim',
     });
+    // A lost checked-out claim connection must leave durable ownership behind,
+    // not crash the process through an unhandled client error. Queries still fail.
+    pool.on('connect', (client) => client.on('error', () => {}));
     claimPools.set(db, pool);
   }
   return drizzle(pool);
@@ -56,6 +61,7 @@ export async function withRefundExecution<T>(
       return null;
     // Do not hold the invoice lock across network I/O: other operations may
     // legitimately reserve the remainder while this refund is executing.
+    const token = randomUUID();
     const executable = await db.transaction(async (tx) => {
       const [operation] = await tx
         .select()
@@ -101,7 +107,13 @@ export async function withRefundExecution<T>(
       // Compare-and-set current state, never the earlier batch/reserve snapshot.
       const updated = await tx
         .update(paymentRefundReservations)
-        .set({ updatedAt: new Date() })
+        .set({
+          updatedAt: new Date(),
+          executionToken: token,
+          // A previous owner lost its connection/process. Retry only the same
+          // provider key; ambiguous outcomes must never make this abandonable.
+          executionUncertain: sql`${paymentRefundReservations.executionUncertain} or ${paymentRefundReservations.executionToken} is not null`,
+        })
         .where(
           and(
             eq(paymentRefundReservations.organizationId, ctx.organizationId),
@@ -113,6 +125,24 @@ export async function withRefundExecution<T>(
         .returning({ id: paymentRefundReservations.id });
       return updated.length === 1;
     });
-    return executable ? run() : null;
+    if (!executable) return null;
+    try {
+      return await run();
+    } finally {
+      // Only a live claim, after its provider/booking/error handling finished,
+      // may clear its own ownership. Connection loss leaves a durable fence.
+      await claim.execute(sql`select 1`);
+      await db
+        .update(paymentRefundReservations)
+        .set({ executionToken: null })
+        .where(
+          and(
+            eq(paymentRefundReservations.organizationId, ctx.organizationId),
+            eq(paymentRefundReservations.idempotencyKey, key),
+            eq(paymentRefundReservations.executionToken, token),
+            eq(paymentRefundReservations.executionUncertain, false),
+          ),
+        );
+    }
   });
 }
