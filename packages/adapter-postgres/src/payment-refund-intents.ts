@@ -163,7 +163,8 @@ export function createRefundIntentRepository(
           where organization_id = ${ctx.organizationId}
             and ((status = 'pending' and created_at < now() - make_interval(secs => ${retryAfterSeconds}))
               or (status = 'processing' and claimed_at < now() - make_interval(secs => ${retryAfterSeconds}))
-              or (status = 'failed' and updated_at < now() - make_interval(secs => ${retryAfterSeconds}) and exists (select 1 from payment_refund_reservation r where r.organization_id = payment_refund_intent.organization_id and r.intent_id = payment_refund_intent.id and r.status = 'reserved')))
+              or (status = 'failed' and updated_at < now() - make_interval(secs => ${retryAfterSeconds}) and exists (select 1 from payment_refund_reservation r where r.organization_id = payment_refund_intent.organization_id and r.intent_id = payment_refund_intent.id and r.status = 'reserved' and r.needs_review_at is null)))
+          and trigger <> 'late_payment'
           order by created_at limit 50`),
       ).map((row) => row.invoice_id),
     claim: async (ctx, invoiceId): Promise<ClaimedRefundIntent | null> => {
@@ -179,9 +180,10 @@ export function createRefundIntentRepository(
           where id = (
             select id from payment_refund_intent
             where organization_id = ${ctx.organizationId} and invoice_id = ${invoiceId}
+              and trigger <> 'late_payment'
               and (status = 'pending'
                 or (status = 'processing' and claimed_at < now() - make_interval(secs => ${retryAfterSeconds}))
-              or (status = 'failed' and updated_at < now() - make_interval(secs => ${retryAfterSeconds}) and exists (select 1 from payment_refund_reservation r where r.organization_id = payment_refund_intent.organization_id and r.intent_id = payment_refund_intent.id and r.status = 'reserved')))
+              or (status = 'failed' and updated_at < now() - make_interval(secs => ${retryAfterSeconds}) and exists (select 1 from payment_refund_reservation r where r.organization_id = payment_refund_intent.organization_id and r.intent_id = payment_refund_intent.id and r.status = 'reserved' and r.needs_review_at is null)))
             order by created_at limit 1 for update skip locked)
           returning id, trigger, cancelled_at`),
       );

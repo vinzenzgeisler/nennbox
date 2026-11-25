@@ -1,13 +1,11 @@
 import { and, eq, sql } from 'drizzle-orm';
-import { refundPercent, refundDueCents } from '@nennbox/core';
+import { refundDueCents } from '@nennbox/core';
 import type {
   RefundReservation,
   RefundReservationRequest,
   RequestContext,
 } from '@nennbox/core';
 import type { Database, TransactionDatabase } from './database.js';
-import { loadPaymentSettings } from './payment-settings.js';
-import { events } from './schema/organization.js';
 import { invoices } from './schema/billing.js';
 import {
   paymentRefundIntents,
@@ -44,7 +42,7 @@ export async function reserveRefund(
         ),
       )
       .for('update');
-    if (!invoice) return { status: 'unavailable' };
+    if (!invoice) return { status: 'unavailable', reason: 'invoice_not_found' };
     const automatic = request.source.kind === 'automatic';
     const active = automatic
       ? await countActiveEntries(tx, ctx.organizationId, invoice.groupId)
@@ -60,7 +58,8 @@ export async function reserveRefund(
       )
       .limit(1);
     if (existing) {
-      if (existing.status === 'rejected') return { status: 'unavailable' };
+      if (existing.status === 'rejected' || existing.status === 'abandoned')
+        return { status: 'unavailable', reason: 'closed' };
       if (
         existing.invoiceId !== request.invoiceId ||
         existing.providerPaymentId !== request.providerPaymentId ||
@@ -68,7 +67,7 @@ export async function reserveRefund(
         (request.source.kind === 'manual' &&
           existing.amountCents !== request.source.amountCents)
       )
-        return { status: 'unavailable' };
+        return { status: 'unavailable', reason: 'key_conflict' };
       if (existing.status === 'completed')
         return {
           status: 'completed',
@@ -77,7 +76,8 @@ export async function reserveRefund(
         };
       // Resuming: the provider may already have executed it, so it is never
       // restarted for a registration that takes part again.
-      if (automatic && active > 0) return { status: 'needs_review' };
+      if (existing.needsReviewAt || (automatic && active > 0))
+        return { status: 'needs_review' };
       return reserved(existing, invoice.currency);
     }
     if (request.source.kind === 'automatic') {
@@ -113,53 +113,17 @@ export async function reserveRefund(
         ? request.source.amountCents
         : refundDueCents(paid, refundable, request.source.percent);
     if (request.source.kind === 'manual') {
-      // Once a cancellation policy applies, manual and automatic operations share
-      // its gross target, including operations still unresolved at the provider.
-      let available = refundable;
-      if (
-        (await countActiveEntries(tx, ctx.organizationId, invoice.groupId)) ===
-        0
-      ) {
-        const [intent] = await tx
-          .select()
-          .from(paymentRefundIntents)
-          .where(
-            and(
-              eq(paymentRefundIntents.organizationId, ctx.organizationId),
-              eq(paymentRefundIntents.invoiceId, request.invoiceId),
-            ),
-          )
-          .orderBy(sql`${paymentRefundIntents.createdAt} desc`)
-          .limit(1);
-        const [event] = await tx
-          .select({ startsOn: events.startsOn })
-          .from(events)
-          .where(
-            and(
-              eq(events.organizationId, ctx.organizationId),
-              eq(events.id, invoice.eventId),
-            ),
-          );
-        const settings = await loadPaymentSettings(
-          tx,
-          ctx.organizationId,
-          invoice.eventId,
-        );
-        if (intent && event && settings?.refundPolicy.enabled) {
-          available = refundDueCents(
-            paid,
-            refundable,
-            refundPercent(
-              settings.refundPolicy,
-              intent.trigger as 'withdrawn' | 'rejected',
-              intent.cancelledAt,
-              String(event.startsOn),
-            ),
-          );
-        }
-      }
-      if (amountCents <= 0 || amountCents > available)
-        return { status: 'unavailable' };
+      // The refund rule drives only the automatic refund. The office may give
+      // back anything that was actually collected and is neither refunded nor
+      // reserved, including goodwill under a 0 % rule and late payments.
+      if (amountCents <= 0)
+        return { status: 'unavailable', reason: 'invalid_amount' };
+      if (amountCents > refundable)
+        return {
+          status: 'unavailable',
+          reason: 'exceeds_available',
+          availableCents: Math.max(0, refundable),
+        };
     } else if (amountCents <= 0) return { status: 'nothing_due' };
     const [created] = await tx
       .insert(paymentRefundReservations)

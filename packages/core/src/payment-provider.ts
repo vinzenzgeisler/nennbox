@@ -179,6 +179,13 @@ export interface RefundablePayment {
  * the amount and the provider idempotency key: a retry resumes the same
  * operation instead of computing a new amount from a stale snapshot.
  */
+export type RefundUnavailableReason =
+  | 'exceeds_available'
+  | 'invalid_amount'
+  | 'invoice_not_found'
+  | 'key_conflict'
+  | 'closed';
+
 export type RefundReservation =
   | {
       readonly status: 'reserved';
@@ -196,8 +203,18 @@ export type RefundReservation =
     }
   /** Automatic: the rule's share is already given back or reserved. */
   | { readonly status: 'nothing_due' }
-  /** Manual: amount exceeds what is left, or the key belongs to another operation. */
-  | { readonly status: 'unavailable' }
+  /**
+   * The refund cannot be reserved. `reason` tells the organizer why:
+   * `exceeds_available` (more than collected minus refunded minus reserved,
+   * with `availableCents` left), `invalid_amount`, `invoice_not_found`,
+   * `key_conflict` (the key belongs to another operation) or `closed`
+   * (the operation was rejected by the provider or abandoned by the office).
+   */
+  | {
+      readonly status: 'unavailable';
+      readonly reason: RefundUnavailableReason;
+      readonly availableCents?: number;
+    }
   /** Automatic: the group takes part again (or the intent was withdrawn); no money moved. */
   | { readonly status: 'reactivated' }
   /**
@@ -225,12 +242,33 @@ export interface RefundReservationRequest {
       };
 }
 
+/** A reserved refund the provider could not settle repeatedly; the office has to resolve it. */
+export const MAX_REFUND_ATTEMPTS = 5;
+
 export interface PaymentRefundRepository {
   /** Release only a provider-confirmed rejected operation, never an ambiguous failure. */
   rejectReservation?(
     ctx: import('./context.js').RequestContext,
     key: string,
   ): Promise<void>;
+  /**
+   * Counts a failed attempt that is not a definitive rejection. After
+   * `MAX_REFUND_ATTEMPTS` the reservation is flagged for review and no longer
+   * retried automatically; it keeps blocking its amount and a reactivation.
+   */
+  recordFailedAttempt?(
+    ctx: import('./context.js').RequestContext,
+    key: string,
+    errorCode: string,
+  ): Promise<'retry' | 'needs_review'>;
+  /**
+   * Office decision for a reservation flagged for review: the refund did not
+   * happen at the provider, so the amount is released. Audited with actor and reason.
+   */
+  abandonReservation?(
+    ctx: import('./context.js').RequestContext,
+    request: { invoiceId: string; key: string; actor: string; reason: string },
+  ): Promise<'abandoned' | 'not_found' | 'not_reviewable'>;
   getRefundable(
     ctx: import('./context.js').RequestContext,
     invoiceId: string,
@@ -261,8 +299,11 @@ export interface PaymentRefundRepository {
 
 /** Only throw after the provider authoritatively confirms that no refund succeeded. */
 export class RefundRejectedError extends Error {
-  constructor() {
+  /** Short provider error code (never a payload), when the provider named one. */
+  readonly code: string | undefined;
+  constructor(code?: string) {
     super('Refund definitively rejected');
     this.name = 'RefundRejectedError';
+    this.code = code;
   }
 }

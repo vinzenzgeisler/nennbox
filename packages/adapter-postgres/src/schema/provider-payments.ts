@@ -124,11 +124,11 @@ export const paymentRefundIntents = pgTable(
       .where(sql`${t.status} in ('pending','processing','done')`),
     check(
       'payment_refund_intent_trigger_check',
-      sql`${t.trigger} in ('withdrawn','rejected')`,
+      sql`${t.trigger} in ('withdrawn','rejected','late_payment')`,
     ),
     check(
       'payment_refund_intent_status_check',
-      sql`${t.status} in ('pending','processing','done','failed','skipped')`,
+      sql`${t.status} in ('pending','processing','done','failed','skipped','superseded')`,
     ),
   ],
 );
@@ -155,6 +155,12 @@ export const paymentRefundReservations = pgTable(
     amountCents: integer('amount_cents').notNull(),
     status: text('status').notNull().default('reserved'),
     providerRefundId: text('provider_refund_id'),
+    attempts: integer('attempts').notNull().default(0),
+    lastError: text('last_error'),
+    needsReviewAt: timestamp('needs_review_at', { withTimezone: true }),
+    resolvedBy: text('resolved_by'),
+    resolvedReason: text('resolved_reason'),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -178,7 +184,7 @@ export const paymentRefundReservations = pgTable(
     ),
     check(
       'payment_refund_reservation_status_check',
-      sql`${t.status} in ('reserved','completed','rejected')`,
+      sql`${t.status} in ('reserved','completed','rejected','abandoned')`,
     ),
   ],
 );

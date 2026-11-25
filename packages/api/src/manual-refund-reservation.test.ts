@@ -58,12 +58,32 @@ function setup(reservation: RefundReservation) {
 }
 
 describe('manual refund reservation boundary', () => {
-  it('never transfers when another refund reserved the policy target', async () => {
-    const s = setup({ status: 'unavailable' });
-    expect((await s.request()).status).toBe(409);
+  it('never transfers when the amount exceeds what is left, and says why', async () => {
+    const s = setup({
+      status: 'unavailable',
+      reason: 'exceeds_available',
+      availableCents: 1000,
+    });
+    const response = await s.request();
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: 'Refund amount unavailable',
+      reason: 'exceeds_available',
+      availableCents: 1000,
+    });
     expect(s.reserve).toHaveBeenCalledOnce();
     expect(s.refund).not.toHaveBeenCalled();
     expect(s.recordRefund).not.toHaveBeenCalled();
+  });
+  it('explains a flagged retry without calling the provider again', async () => {
+    const s = setup({ status: 'needs_review' });
+    const response = await s.request();
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: 'Refund needs review',
+      reason: 'needs_review',
+    });
+    expect(s.refund).not.toHaveBeenCalled();
   });
   it('uses the persisted operation and carries its key into atomic ledger completion', async () => {
     const s = setup({

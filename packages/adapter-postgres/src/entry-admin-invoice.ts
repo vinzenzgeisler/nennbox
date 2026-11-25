@@ -25,6 +25,9 @@ export async function loadInvoiceSummaries(
       refundIntent: sql<
         AdminEntryInvoice['refundIntent']
       >`(select jsonb_build_object('status', i.status, 'percent', i.percent, 'refundedCents', i.refunded_cents, 'failure', i.failure) from payment_refund_intent i where i.organization_id = invoice.organization_id and i.invoice_id = invoice.id order by i.created_at desc limit 1)`,
+      stuckRefunds: sql<
+        NonNullable<AdminEntryInvoice['stuckRefunds']>
+      >`coalesce((select jsonb_agg(jsonb_build_object('key', r.idempotency_key, 'providerPaymentId', r.provider_payment_id, 'amountCents', r.amount_cents) order by r.created_at) from payment_refund_reservation r where r.organization_id = invoice.organization_id and r.invoice_id = invoice.id and r.status = 'reserved' and r.needs_review_at is not null), '[]'::jsonb)`,
     })
     .from(invoices)
     .where(

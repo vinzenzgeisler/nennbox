@@ -3,10 +3,12 @@ import {
   AUTOMATIC_REFUND_ACTOR,
   refundDueCents,
   daysBeforeEvent,
+  errorCodeOf,
   disabledRefundPolicy,
   organizationId,
   refundPercent,
   refundShareCents,
+  RefundRejectedError,
   settleCancellationRefund,
 } from './index.js';
 import type {
@@ -220,6 +222,52 @@ describe('settling a cancellation refund', () => {
       failure: 'provider_unavailable',
     });
     expect(s.finish).toHaveBeenCalledOnce();
+  });
+
+  it('counts an unclassified provider failure and reports needs_review once the limit is reached', async () => {
+    const s = setup({ refundFails: true });
+    const recordFailedAttempt = vi
+      .fn()
+      .mockResolvedValueOnce('retry')
+      .mockResolvedValueOnce('needs_review');
+    const refunds = { ...s.refunds, recordFailedAttempt };
+    expect(
+      await settleCancellationRefund(ctx, 'invoice-1', { ...s, refunds }),
+    ).toMatchObject({ failure: 'provider_unavailable' });
+    expect(
+      await settleCancellationRefund(ctx, 'invoice-1', { ...s, refunds }),
+    ).toMatchObject({ status: 'failed', failure: 'needs_review' });
+    expect(recordFailedAttempt).toHaveBeenCalledWith(
+      ctx,
+      'auto-refund:intent-1:pi_1',
+      'Error',
+    );
+  });
+
+  it('releases a definitively rejected refund instead of counting an attempt', async () => {
+    const s = setup();
+    s.refund.mockRejectedValueOnce(
+      new RefundRejectedError('charge_already_refunded'),
+    );
+    const rejectReservation = vi.fn(async () => {});
+    const recordFailedAttempt = vi.fn();
+    const refunds = { ...s.refunds, rejectReservation, recordFailedAttempt };
+    expect(
+      await settleCancellationRefund(ctx, 'invoice-1', { ...s, refunds }),
+    ).toMatchObject({ failure: 'provider_rejected' });
+    expect(rejectReservation).toHaveBeenCalledWith(
+      ctx,
+      'auto-refund:intent-1:pi_1',
+    );
+    expect(recordFailedAttempt).not.toHaveBeenCalled();
+  });
+
+  it('names a provider error by its short code, never by its message', () => {
+    expect(
+      errorCodeOf(Object.assign(new Error('secret detail'), { code: 'weird' })),
+    ).toBe('weird');
+    expect(errorCodeOf(new TypeError('secret detail'))).toBe('TypeError');
+    expect(errorCodeOf('x')).toBe('unknown');
   });
 
   it('marks a refund the ledger rejected as failed so the organizer sees it', async () => {

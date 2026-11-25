@@ -1,11 +1,11 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import {
   paymentRefundReservations,
   invoices,
   createPaymentRefundRepository,
   type Database,
 } from '@nennbox/adapter-postgres';
-import { RefundRejectedError } from '@nennbox/core';
+import { RefundRejectedError, errorCodeOf } from '@nennbox/core';
 import type { PaymentProvider, RequestContext } from '@nennbox/core';
 
 /** Resume manual operations even when their originating browser no longer exists. */
@@ -33,6 +33,8 @@ export async function retryManualRefundReservations(
         eq(paymentRefundReservations.organizationId, ctx.organizationId),
         eq(paymentRefundReservations.source, 'manual'),
         eq(paymentRefundReservations.status, 'reserved'),
+        // Flagged for review: the office decides, the worker no longer retries.
+        isNull(paymentRefundReservations.needsReviewAt),
         sql`${paymentRefundReservations.updatedAt} < now() - make_interval(secs => ${Math.max(1, Math.round(retryAfterMs / 1000))})`,
       ),
     )
@@ -64,16 +66,13 @@ export async function retryManualRefundReservations(
         await refunds.rejectReservation?.(ctx, operation.idempotencyKey);
         continue;
       }
-      // Never release an ambiguous transfer: the same operation remains retryable.
-      await db
-        .update(paymentRefundReservations)
-        .set({ updatedAt: new Date() })
-        .where(
-          and(
-            eq(paymentRefundReservations.organizationId, ctx.organizationId),
-            eq(paymentRefundReservations.id, operation.id),
-          ),
-        );
+      // Never release an ambiguous transfer: the same operation stays retryable
+      // until it has failed too often, then it is left to the office.
+      await refunds.recordFailedAttempt?.(
+        ctx,
+        operation.idempotencyKey,
+        errorCodeOf(error),
+      );
     }
   }
 }

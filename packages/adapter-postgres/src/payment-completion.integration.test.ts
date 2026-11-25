@@ -1331,13 +1331,19 @@ describe.skipIf(!url)('refund reservation concurrency regressions', () => {
               invoiceId: s.invoice.id,
               providerPaymentId: request.paymentId,
               idempotencyKey: crypto.randomUUID(),
-              source: { kind: 'manual', amountCents: 2100 },
+              // Everything collected (4200) minus what the automatic refund has
+              // reserved (2100) is left; asking for all of it must fail.
+              source: { kind: 'manual', amountCents: 4200 },
             });
             return { id: 're-' + s.suffix };
           },
         } as PaymentProvider,
       });
-      expect(manualReservation).toEqual({ status: 'unavailable' });
+      expect(manualReservation).toEqual({
+        status: 'unavailable',
+        reason: 'exceeds_available',
+        availableCents: 2100,
+      });
       expect(autoAmount).toBe(2100);
       await db
         .update(paymentRefundIntents)

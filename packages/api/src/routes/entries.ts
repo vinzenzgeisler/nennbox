@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { settleRefundAfterCancellation } from './refund-settlement.js';
 import { registerEntryDocumentRoutes } from './documents.js';
 import { registerEntryAdminActionRoutes } from './entry-admin-actions.js';
+import { transitionFailure } from './entry-transition-failure.js';
 import {
   EntryDriverUpdateRequest,
   EntryVehicleUpdateRequest,
@@ -166,12 +167,8 @@ export function registerEntriesRoutes(context: ApiRoutesContext): void {
           : result,
       );
     } catch (error) {
-      if (error instanceof Error && error.message === 'refund_in_progress')
-        return c.json(
-          { error: 'Refund in progress; reconcile before reactivation' },
-          409,
-        );
-      return c.json({ error: 'Forbidden or invalid transition' }, 403);
+      const failure = transitionFailure(error);
+      return c.json(failure.body, failure.status);
     }
   });
   app.post(

@@ -122,14 +122,17 @@ export function AdminEntryDetail({
       );
       return result.ok ? close() : setDialogError(result.message);
     }
-    if (pending.kind === 'dimension') {
-      const result = await api.transitionDimension(
-        pending.action.dimension,
-        pending.action.status,
-        reason,
-      );
-      return result.ok ? close() : setDialogError(result.message);
-    }
+    const direct =
+      pending.kind === 'abandon_refund' && details?.invoice
+        ? await api.abandonRefund(details.invoice.id, pending.key, reason)
+        : pending.kind === 'dimension'
+          ? await api.transitionDimension(
+              pending.action.dimension,
+              pending.action.status,
+              reason,
+            )
+          : null;
+    if (direct) return direct.ok ? close() : setDialogError(direct.message);
     const result =
       pending.kind === 'verify'
         ? await transition('verification', 'verified', reason)

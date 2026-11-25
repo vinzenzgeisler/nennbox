@@ -181,6 +181,68 @@ describe.skipIf(!url)('migrations (PostgreSQL)', () => {
       }
     });
   });
+  it('upgrades from 0047 keeping reservations and opening the review states', async () => {
+    await withDatabase(async (databaseUrl) => {
+      await migrate(databaseUrl, {
+        migrationsFolder: migrationsUpTo('0047_refund_recovery'),
+      });
+      const client = new pg.Client({ connectionString: databaseUrl });
+      await client.connect();
+      try {
+        const one = async (text: string, values: unknown[] = []) =>
+          (await client.query(text, values)).rows[0];
+        const org = await one(
+          `insert into organization (slug, name, timezone, locale, currency) values ('review', 'Review', 'UTC', 'de', 'EUR') returning id`,
+        );
+        const event = await one(
+          `insert into event (organization_id, slug, name, starts_on, ends_on, status) values ($1, 'e', 'E', '2030-01-01', '2030-01-01', 'open') returning id`,
+          [org.id],
+        );
+        const person = await one(
+          `insert into person (organization_id, first_name, last_name) values ($1, 'A', 'B') returning id`,
+          [org.id],
+        );
+        const group = await one(
+          `insert into registration_group (organization_id, event_id, person_id) values ($1, $2, $3) returning id`,
+          [org.id, event.id, person.id],
+        );
+        const invoice = await one(
+          `insert into invoice (organization_id, event_id, registration_group_id, total_cents, currency, payment_reference) values ($1, $2, $3, 4200, 'EUR', 'RF-REVIEW') returning id`,
+          [org.id, event.id, group.id],
+        );
+        const reserve = (status: string) =>
+          client.query(
+            `insert into payment_refund_reservation (organization_id, invoice_id, provider_payment_id, idempotency_key, source, amount_cents, status) values ($1, $2, 'pi_1', $3, 'manual', 2100, $4)`,
+            [org.id, invoice.id, crypto.randomUUID(), status],
+          );
+        await reserve('reserved');
+        await expect(reserve('abandoned')).rejects.toThrow();
+        await migrate(databaseUrl);
+        const kept = await one(
+          `select status, attempts, needs_review_at, resolved_by from payment_refund_reservation`,
+        );
+        expect(kept).toEqual({
+          status: 'reserved',
+          attempts: 0,
+          needs_review_at: null,
+          resolved_by: null,
+        });
+        await reserve('abandoned');
+        await expect(reserve('unknown')).rejects.toThrow();
+        const definitions = (
+          await client.query(
+            `select conname, pg_get_constraintdef(oid) as definition from pg_constraint where conname in ('payment_refund_intent_trigger_check', 'payment_refund_intent_status_check')`,
+          )
+        ).rows;
+        expect(definitions).toHaveLength(2);
+        const text = definitions.map((row) => row.definition).join(' ');
+        expect(text).toContain('late_payment');
+        expect(text).toContain('superseded');
+      } finally {
+        await client.end();
+      }
+    });
+  });
   it.each([
     'main',
     'payments-preview-42',

@@ -2,7 +2,6 @@ import type { ApiRoutesContext } from './context.js';
 import { z } from 'zod';
 import { createInvoiceCheckout } from './invoice-checkout.js';
 import {
-  RefundRejectedError,
   recordInvoicePayment,
   correctInvoicePayment,
   updatePaymentRecipient,
@@ -161,100 +160,6 @@ export function registerPaymentProviderRoutes(context: ApiRoutesContext): void {
         : c.json({ error: 'Unavailable' }, 503);
     },
   );
-
-  app.post('/admin/invoices/:invoiceId/refunds', async (c) => {
-    if (!deps.paymentProvider || !deps.paymentRefunds)
-      return c.json({ error: 'Unavailable' }, 503);
-    const guard = await context.requireMember(c.req.raw, 'payment:write');
-    if (!guard.ok) return c.json({ error: guard.error }, guard.status);
-    const parsed = z
-      .object({
-        providerPaymentId: z.string().min(1).max(255),
-        amountCents: z.number().int().positive(),
-        reason: z.string().trim().min(1).max(1000),
-        idempotencyKey: z.string().uuid(),
-      })
-      .strict()
-      .safeParse(await c.req.json().catch(() => null));
-    if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
-    const invoiceId = c.req.param('invoiceId');
-    const actor = guard.context.subject
-      ? `${guard.context.subject.issuer}#${guard.context.subject.subject}`
-      : guard.context.correlationId;
-    // Reserve first: the amount is checked against the ledger and against refunds
-    // reserved by others (automatic ones included) under the invoice lock.
-    let reservation;
-    try {
-      reservation = await deps.paymentRefunds.reserve(guard.context, {
-        invoiceId,
-        providerPaymentId: parsed.data.providerPaymentId,
-        idempotencyKey: parsed.data.idempotencyKey,
-        source: {
-          kind: 'manual',
-          amountCents: parsed.data.amountCents,
-          actor,
-          reason: parsed.data.reason,
-        },
-      });
-    } catch (error) {
-      deps.logger.warn('Stripe refund could not be reserved', {
-        errorName: error instanceof Error ? error.name : 'unknown',
-      });
-      return c.json({ error: 'Refund unavailable' }, 503);
-    }
-    if (reservation.status === 'completed')
-      return c.json(
-        { refundId: reservation.providerRefundId, duplicate: true },
-        201,
-      );
-    if (reservation.status !== 'reserved')
-      return c.json({ error: 'Refund amount unavailable' }, 409);
-    let refund: { readonly id: string };
-    try {
-      refund = await deps.paymentProvider.refund({
-        idempotencyKey: reservation.idempotencyKey,
-        organizationId: guard.context.organizationId,
-        invoiceId: reservation.invoiceId,
-        paymentId: reservation.providerPaymentId,
-        amountCents: reservation.amountCents,
-        reason: parsed.data.reason,
-      });
-    } catch (error) {
-      if (error instanceof RefundRejectedError)
-        await deps.paymentRefunds.rejectReservation?.(
-          guard.context,
-          reservation.idempotencyKey,
-        );
-      deps.logger.warn('Stripe provider refund failed', {
-        errorName: error instanceof Error ? error.name : 'unknown',
-      });
-      return c.json({ error: 'Refund unavailable' }, 503);
-    }
-    try {
-      const result = await deps.paymentRefunds.recordRefund(guard.context, {
-        invoiceId: reservation.invoiceId,
-        providerPaymentId: reservation.providerPaymentId,
-        refundableCents: reservation.amountCents,
-        currency: reservation.currency,
-        amountCents: reservation.amountCents,
-        providerRefundId: refund.id,
-        actor,
-        reason: parsed.data.reason,
-        reservationKey: reservation.idempotencyKey,
-      });
-      return result
-        ? c.json(
-            { refundId: refund.id, duplicate: result === 'duplicate' },
-            201,
-          )
-        : c.json({ error: 'Refund could not be recorded' }, 409);
-    } catch (error) {
-      deps.logger.warn('Stripe refund ledger write failed', {
-        errorName: error instanceof Error ? error.name : 'unknown',
-      });
-      return c.json({ error: 'Refund unavailable' }, 503);
-    }
-  });
 
   app.post('/webhooks/stripe', async (c) => {
     if (!deps.paymentProvider || !deps.checkoutRepository)

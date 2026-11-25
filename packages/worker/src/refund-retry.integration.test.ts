@@ -23,6 +23,7 @@ import {
 import {
   settleCancellationRefund,
   RefundRejectedError,
+  MAX_REFUND_ATTEMPTS,
   type PaymentProvider,
   type RequestContext,
 } from '@nennbox/core';
@@ -527,4 +528,70 @@ describe.skipIf(!url)('automatic refund retry job (PostgreSQL)', () => {
       ).toMatchObject({ status: 'reserved', amountCents: 2100 });
     },
   );
+  it('stops retrying an operation that keeps failing and leaves it to the office', async () => {
+    const s = await seed('review-limit', { status: 'pending', ageMinutes: 30 });
+    const ctx = { organizationId: s.orgId } as RequestContext;
+    const refunds = createPaymentRefundRepository(db);
+    await db
+      .delete(paymentRefundIntents)
+      .where(eq(paymentRefundIntents.id, s.intentId));
+    const [payment] = await db
+      .select()
+      .from(invoicePayments)
+      .where(eq(invoicePayments.invoiceId, s.invoiceId));
+    const reserved = await refunds.reserve(ctx, {
+      invoiceId: s.invoiceId,
+      providerPaymentId: payment!.providerPaymentId!,
+      idempotencyKey: crypto.randomUUID(),
+      source: { kind: 'manual', amountCents: 2100 },
+    });
+    if (reserved.status !== 'reserved') throw new Error('Reservation failed');
+    const keys: string[] = [];
+    const provider = {
+      refund: async (request: { idempotencyKey: string }) => {
+        keys.push(request.idempotencyKey);
+        throw Object.assign(new Error('Stripe is confused'), {
+          code: 'weird_state',
+        });
+      },
+    } as unknown as PaymentProvider;
+    const task = createRefundRetryTask({
+      db,
+      provider,
+      deploymentMode: 'community',
+      communityOrganizationId: s.orgId,
+    });
+    const age = () =>
+      db
+        .update(paymentRefundReservations)
+        .set({ updatedAt: new Date(0) })
+        .where(eq(paymentRefundReservations.invoiceId, s.invoiceId));
+    for (let attempt = 1; attempt <= MAX_REFUND_ATTEMPTS; attempt += 1) {
+      await age();
+      await task();
+    }
+    expect(keys).toHaveLength(MAX_REFUND_ATTEMPTS);
+    const [flagged] = await db
+      .select()
+      .from(paymentRefundReservations)
+      .where(eq(paymentRefundReservations.invoiceId, s.invoiceId));
+    expect(flagged).toMatchObject({
+      status: 'reserved',
+      attempts: MAX_REFUND_ATTEMPTS,
+      lastError: 'weird_state',
+    });
+    expect(flagged?.needsReviewAt).not.toBeNull();
+    // Flagged: no further provider call, however old it is, and the amount stays blocked.
+    await age();
+    await task();
+    expect(keys).toHaveLength(MAX_REFUND_ATTEMPTS);
+    expect(
+      await refunds.reserve(ctx, {
+        invoiceId: s.invoiceId,
+        providerPaymentId: payment!.providerPaymentId!,
+        idempotencyKey: crypto.randomUUID(),
+        source: { kind: 'manual', amountCents: 4200 },
+      }),
+    ).toMatchObject({ status: 'unavailable', availableCents: 2100 });
+  });
 });

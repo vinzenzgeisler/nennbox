@@ -1,7 +1,8 @@
 import { formatMoney } from '../../../format.js';
 
 type RefundIntent = {
-  status: 'pending' | 'processing' | 'done' | 'failed' | 'skipped';
+  status:
+    'pending' | 'processing' | 'done' | 'failed' | 'skipped' | 'superseded';
   percent: number | null;
   refundedCents: number;
   failure: string | null;
@@ -10,6 +11,10 @@ type RefundIntent = {
 const failureText: Record<string, string> = {
   payment_after_cancellation:
     'Zahlung nach Absage eingegangen; manuelle Erstattung erforderlich',
+  needs_review:
+    'Stripe konnte die Erstattung mehrfach nicht ausführen. Sie wird nicht mehr automatisch wiederholt und wartet auf deine Entscheidung',
+  reservation_abandoned:
+    'Die hängende Erstattung wurde vom Nennbüro abgebrochen',
   intent_data_missing:
     'Rechnung oder Veranstaltung der Erstattung wurde nicht gefunden',
   provider_rejected:
@@ -26,6 +31,10 @@ export function refundIntentText(
   intent: RefundIntent,
   currency: string,
 ): string {
+  if (intent.failure === 'payment_after_cancellation')
+    return 'Zahlung nach der Absage eingegangen. Sie ist in voller Höhe erstattbar, die Erstattungsregel gilt dafür nicht. Bitte zahle sie über „Erstattung auslösen“ zurück.';
+  if (intent.status === 'superseded')
+    return `Die frühere automatische Erstattung (${formatMoney(intent.refundedCents, currency)}) wurde ausgeführt. Danach wurde die Nennung wieder aufgenommen.`;
   if (intent.status === 'pending' || intent.status === 'processing')
     return 'Die automatische Erstattung nach der Absage steht noch aus. Bleibt sie länger offen, wird sie automatisch erneut versucht.';
   if (intent.status === 'done')
@@ -42,7 +51,14 @@ export function refundIntentText(
     intent.refundedCents > 0
       ? ` Bereits erstattet: ${formatMoney(intent.refundedCents, currency)}.`
       : '';
+  if (intent.failure === 'needs_review')
+    return `Die automatische Erstattung ist fehlgeschlagen (${reason}).${partial}`;
   return `Die automatische Erstattung ist fehlgeschlagen (${reason}).${partial} Bitte erstatte den Rest über „Erstattung auslösen“.`;
+}
+
+/** A refund Stripe could not execute repeatedly; it still blocks its amount until the office decides. */
+export function stuckRefundText(amountCents: number, currency: string): string {
+  return `Eine Erstattung von ${formatMoney(amountCents, currency)} hängt: Stripe konnte sie mehrfach nicht ausführen, sie wird nicht mehr automatisch wiederholt. Der Betrag bleibt gesperrt, und die Nennung kann nicht wieder aufgenommen werden. Prüfe im Stripe-Dashboard, ob sie ausgeführt wurde; falls nicht, brich sie hier ab.`;
 }
 
 /** Paid more than the invoice asks for (for example a transfer and a checkout both went through). */

@@ -9,9 +9,16 @@ import {
 } from '@nennbox/contracts';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
 import { request, type Outcome } from '../AdminEntriesModel.js';
+import { refundConflictText } from './refundConflictText.js';
 
-const failure = (status: number, action: string, code?: string) =>
-  status === 401
+const failure = (
+  status: number,
+  action: string,
+  code?: string,
+  reason?: string,
+) =>
+  (status === 409 ? refundConflictText(code, reason) : undefined) ??
+  (status === 401
     ? 'Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.'
     : status === 403
       ? `Du darfst ${action} nicht.`
@@ -21,40 +28,37 @@ const failure = (status: number, action: string, code?: string) =>
           ? 'Die Erstattung konnte nicht abgeschlossen werden. Versuche es mit derselben Eingabe erneut; eine schon ausgelöste Erstattung wird dabei nicht doppelt ausgeführt.'
           : status === 503 && code === 'Unavailable'
             ? 'Die Online-Zahlung ist auf diesem Server nicht eingerichtet.'
-            : status === 409 && code === 'Refund amount unavailable'
-              ? 'Dieser Betrag ist nicht (mehr) erstattbar. Bitte lade die Detailansicht neu.'
-              : status === 409 && code === 'Refund could not be recorded'
-                ? 'Die Erstattung wurde bei Stripe ausgelöst, aber nicht im Zahlungsprotokoll verbucht. Bitte versuche es erneut.'
-                : status === 409
-                  ? code === 'Passenger exists'
-                    ? 'Für diese Nennung ist bereits ein Beifahrer eingetragen. Bitte lade die Detailansicht neu.'
-                    : code === 'Passenger completed'
-                      ? 'Der Beifahrer hat seine Daten bereits abgeschlossen.'
-                      : code === 'stale'
-                        ? 'Die Nennung wurde inzwischen geändert. Bitte lade die Detailansicht neu.'
-                        : code === 'document_not_uploaded'
-                          ? 'Dieses Dokument wurde inzwischen entschieden. Bitte lade die Detailansicht neu.'
-                          : code === 'capacity'
-                            ? 'Die Zielklasse ist inzwischen voll.'
-                            : code === 'class'
-                              ? 'Die Zielklasse ist geschlossen oder gehört nicht zu dieser Veranstaltung.'
-                              : 'Name, Geburtsdatum und Land gehören zur Person und gelten auch für ihre Nennungen in anderen Veranstaltungen. Sie lassen sich hier nicht ändern.'
-                  : status === 422
-                    ? code === 'no_passenger'
-                      ? 'Bitte gib Vor- und Nachname des Beifahrers an.'
-                      : code === 'unavailable' ||
-                          code === 'Passenger unavailable'
-                        ? 'Für diese Nennung ist kein Beifahrer vorgesehen.'
-                        : code === 'reason'
-                          ? 'Bitte gib eine Begründung ein.'
-                          : code === 'amount'
-                            ? 'Bitte gib einen gültigen Betrag ein.'
-                            : code === 'note'
-                              ? 'Bitte gib einen Notiztext ein.'
-                              : 'Die Eingaben wurden vom Server abgelehnt. Bitte prüfe sie.'
-                    : status === 400
-                      ? 'Die Eingaben wurden vom Server abgelehnt. Bitte prüfe sie.'
-                      : 'Der Server konnte die Anfrage nicht ausführen.';
+            : status === 409 && code === 'Refund could not be recorded'
+              ? 'Die Erstattung wurde bei Stripe ausgelöst, aber nicht im Zahlungsprotokoll verbucht. Bitte versuche es erneut.'
+              : status === 409
+                ? code === 'Passenger exists'
+                  ? 'Für diese Nennung ist bereits ein Beifahrer eingetragen. Bitte lade die Detailansicht neu.'
+                  : code === 'Passenger completed'
+                    ? 'Der Beifahrer hat seine Daten bereits abgeschlossen.'
+                    : code === 'stale'
+                      ? 'Die Nennung wurde inzwischen geändert. Bitte lade die Detailansicht neu.'
+                      : code === 'document_not_uploaded'
+                        ? 'Dieses Dokument wurde inzwischen entschieden. Bitte lade die Detailansicht neu.'
+                        : code === 'capacity'
+                          ? 'Die Zielklasse ist inzwischen voll.'
+                          : code === 'class'
+                            ? 'Die Zielklasse ist geschlossen oder gehört nicht zu dieser Veranstaltung.'
+                            : 'Name, Geburtsdatum und Land gehören zur Person und gelten auch für ihre Nennungen in anderen Veranstaltungen. Sie lassen sich hier nicht ändern.'
+                : status === 422
+                  ? code === 'no_passenger'
+                    ? 'Bitte gib Vor- und Nachname des Beifahrers an.'
+                    : code === 'unavailable' || code === 'Passenger unavailable'
+                      ? 'Für diese Nennung ist kein Beifahrer vorgesehen.'
+                      : code === 'reason'
+                        ? 'Bitte gib eine Begründung ein.'
+                        : code === 'amount'
+                          ? 'Bitte gib einen gültigen Betrag ein.'
+                          : code === 'note'
+                            ? 'Bitte gib einen Notiztext ein.'
+                            : 'Die Eingaben wurden vom Server abgelehnt. Bitte prüfe sie.'
+                  : status === 400
+                    ? 'Die Eingaben wurden vom Server abgelehnt. Bitte prüfe sie.'
+                    : 'Der Server konnte die Anfrage nicht ausführen.');
 
 export type { Outcome };
 
@@ -143,7 +147,17 @@ export function useEntryDetailApi(
             typeof body.error === 'string'
               ? body.error
               : undefined;
-          return { ok: false, message: failure(response.status, action, code) };
+          const reason =
+            typeof body === 'object' &&
+            body !== null &&
+            'reason' in body &&
+            typeof body.reason === 'string'
+              ? body.reason
+              : undefined;
+          return {
+            ok: false,
+            message: failure(response.status, action, code, reason),
+          };
         }
         if (readEntry === 'none') return { ok: true, body };
         const fresh = EntryResponse.safeParse(
@@ -239,6 +253,13 @@ export function useEntryDetailApi(
           }),
         },
         'Erstattungen auslösen',
+        false,
+      ),
+    abandonRefund: (invoiceId: string, key: string, reason: string) =>
+      run(
+        `/admin/invoices/${encodeURIComponent(invoiceId)}/refund-reservations/${encodeURIComponent(key)}/abandon`,
+        { method: 'POST', body: JSON.stringify({ reason }) },
+        'Erstattungen abbrechen',
         false,
       ),
     recordPayment: (invoiceId: string, amountCents: number, reason: string) =>

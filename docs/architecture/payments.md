@@ -64,7 +64,7 @@ Configured per organization and overridable per event in the registration settin
 - The cancelling transaction locks the invoice, counts the entries that are still active and writes a `payment_refund_intent`. The lock matters: two cancellations of the last two entries run in separate transactions and would otherwise each see the other as still active, so no refund would be queued at all.
 - After the commit the API ends all open checkouts of the invoice (nobody can pay afterwards), then takes the intent (`UPDATE … RETURNING`, status `processing`) and calls the provider with keys derived from the intent (`auto-refund:<intent>:<payment>`). The refund is recorded in the ledger as actor `system:refund-policy`.
 - **The share is taken from what was paid**, not from what is left: `min(paid × percent − already refunded, still refundable)`, rounded down to whole cents. 100,00 paid, 50,00 refunded by hand and a rule of 50 % therefore refunds nothing more.
-- A failure never undoes the cancellation. The intent becomes `failed` with a short reason (`provider_unavailable`, `ledger_rejected`, `intent_data_missing`) and the admin entry detail shows it with a pointer to the manual refund.
+- A failure never undoes the cancellation. The intent becomes `failed` with a short reason (`provider_unavailable`, `provider_rejected`, `needs_review`, `ledger_rejected`, `intent_data_missing`) and the admin entry detail shows it with a pointer to the manual refund.
 - **Retry:** an intent that stays `pending` or `processing` for longer than the retry delay (default 10 minutes, `PAYMENT_REFUND_RETRY_AFTER_MS` in the worker) is taken up again by the `payment_refund_retry` worker job (every five minutes, per organization, Community worker only for its own organization). The provider keys stay the same and the share is computed from what was already refunded, so a half-finished run cannot refund twice. `failed` intents with an unresolved reservation are retried with the same stored operation; other failed intents require office action.
 - Recording a refund checks for an already recorded provider refund id only after it holds the invoice lock, so a parallel duplicate answers `duplicate` instead of failing on the unique key and turning a successful refund into `failed`.
 
@@ -88,7 +88,7 @@ Checkout creation is serialized on the invoice row in PostgreSQL, including the 
 
 `payments.checkoutLifetimeMinutes` is configurable in the organization registration configuration and overridable per event (30–1440 minutes, default **60 minutes**). Checkout sends the expiry to Stripe, which closes the checkout even if the driver never returns; its signed expiry event closes the local state. Elapsed sessions are never reused, even if the webhook is delayed; the next attempt reconciles them with the provider before replacement. This expiry governs unpaid hosted checkout, not an already submitted asynchronous SEPA debit, whose eventual outcome remains authoritative.
 
-Cancellation and webhook settlement serialize on the invoice row. If settlement wins, cancellation sees the booked funds and queues the policy intent. If cancellation wins, later money is still recorded truthfully but marked **payment_after_cancellation** as a failed refund intent, visible in the office invoice detail with a manual-refund action. This applies even when the policy is disabled or a former refund intent was completed. No normal payment confirmation is sent for this case. A cancelled invoice remains cancelled after settlement/refund.
+Cancellation and webhook settlement serialize on the invoice row. If settlement wins, cancellation sees the booked funds and queues the policy intent. If cancellation wins, later money is still recorded truthfully but marked **payment_after_cancellation** as a failed refund intent, visible in the office invoice detail with a manual-refund action. This applies even when the policy is disabled or a former refund intent was completed. The money is refundable in full; the refund rule does not apply to it (see "Who limits what"). No normal payment confirmation is sent for this case. A cancelled invoice remains cancelled after settlement/refund.
 
 
 ### Atomic refund operations and reactivation
@@ -96,16 +96,78 @@ Cancellation and webhook settlement serialize on the invoice row. If settlement 
 Manual and automatic refunds reserve an operation in `payment_refund_reservation`
 under the invoice row lock **before** calling the provider. The stored key and
 amount remain unchanged on retry. Ledger booking completes the reservation in
-the same transaction. Unresolved reservations count against the remaining funds;
-when a cancellation rule applies, manual operations also share its gross target.
+the same transaction. Unresolved reservations count against the remaining funds.
 The claim snapshot is only a list of payments, never authority for an amount.
 
+**Who limits what.** The refund rule of the event (for example 50 % or 0 % on a
+cancellation) controls **only the automatic refund**. It is not a ceiling for
+the office:
+
+- **Manual refund:** at most what was actually collected for the payment, minus
+  what was already refunded, minus what is reserved by running operations
+  (automatic ones included). Goodwill under a 0 % rule is therefore possible.
+- **Payment after a cancellation** (`payment_after_cancellation`): the driver
+  paid for an entry that was already cancelled, so it is refundable in full and
+  the rule does not apply to it. Its intent carries its own trigger
+  `late_payment` (not a borrowed `withdrawn`) and is never taken by the
+  automatic refund; the office refunds it manually.
+- **Automatic refund:** deducts manual refunds and reservations and never
+  exceeds the rule's share (`min(paid × percent − already refunded, still
+  refundable)`).
+- **Total limit, unconditional:** never more than was collected, neither
+  automatically nor manually nor in sum. The reservation is made under the
+  invoice row lock, so two parallel operations cannot claim the same remainder.
+
+A manual refund that cannot be reserved answers 409 with a `reason`
+(`exceeds_available` with `availableCents`, `invalid_amount`, `closed`,
+`key_conflict`), which the office dialog explains.
+
+### Lock order
+
+Every path that touches money and participation locks in the same order:
+**invoice row first, then the entry rows of the group (ordered by id), then
+anything else.** Refund reservation and recording, settlement, acceptance
+transitions, the driver's withdrawal and the admin actions that change amount or
+class (`lockInvoiceOfGroup`) all follow it, so they can wait for each other but
+never deadlock. A path that locked entry rows before the invoice would bring
+back the inversion that PostgreSQL aborts with `40P01`. If it happens anyway,
+`retryOnConflict` repeats the transaction (it was rolled back completely); a
+persistent clash surfaces as `concurrent_update` and the API answers **409** with
+`reason: concurrent_update` and nothing changed, never a misleading 403.
+
+### Provider errors without a way out
+
+Only an authoritative provider answer releases a reservation:
+
+- Stripe errors that say the request can never succeed (`charge_already_refunded`,
+  `charge_disputed`, `amount_too_large`, `resource_missing`,
+  `payment_intent_unexpected_state`) are definitive rejections
+  (`RefundRejectedError` with the error code). The operation becomes `rejected`
+  and releases its amount. The refund of this operation was looked up by its
+  metadata first, so such an answer means that someone else already refunded in
+  the Stripe dashboard. That refund is not mirrored into the ledger (webhooks
+  for refunds are not processed), so the office books it by hand if needed.
+- Every other failure stays ambiguous. It is counted (`attempts`, `last_error`
+  as a short code). After `MAX_REFUND_ATTEMPTS` (5) the reservation is flagged
+  (`needs_review_at`): no automatic retry any more (neither worker nor intent
+  retry), but its amount stays blocked and a reactivation answers 409
+  `refund_needs_review`. The entry detail shows it ("Eine Erstattung hängt")
+  with the action **Erstattung abbrechen**: after the office checked in Stripe
+  that nothing was refunded, the reservation becomes `abandoned` with actor,
+  reason and time, and the amount is free again. Only a flagged reservation of
+  the invoice can be abandoned, never one a request may still be executing.
+
 Acceptance changes lock the invoice before changing entry rows. Reactivation
-invalidates old intents in that transaction. If a provider operation is still
+invalidates waiting intents (`pending`, `processing`) in that transaction as
+`skipped`; a finished intent (`done`) is history and becomes `superseded` with
+its refunded amount unchanged, so a later cancellation may open a new intent. If a provider operation is still
 reserved (including an uncertain response), reactivation answers HTTP 409
 `Refund in progress; reconcile before reactivation` instead of silently resuming
-participation. Do not delete an unresolved reservation to retry with a new key:
-first reconcile its persisted operation with the provider and book the result.
+participation (`reason: refund_in_progress`, or `refund_needs_review` once it is
+flagged). Do not delete an unresolved reservation to retry with a new key: first
+reconcile its persisted operation with the provider and book the result. If
+nothing was refunded, abandon a flagged reservation in the entry detail (see
+"Provider errors without a way out").
 The defensive automatic reservation check also refuses stale intents for active
 groups, even when legacy data bypassed the normal transition.
 

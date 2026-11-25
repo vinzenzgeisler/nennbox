@@ -12,6 +12,10 @@ import {
   rejectReservation,
   reserveRefund,
 } from './payment-refund-reservations.js';
+import {
+  abandonRefundReservation,
+  recordFailedRefundAttempt,
+} from './payment-refund-review.js';
 
 export function createPaymentRefundRepository(
   db: Database,
@@ -50,6 +54,10 @@ export function createPaymentRefundRepository(
       };
     },
     rejectReservation: (ctx, key) => rejectReservation(db, ctx, key),
+    recordFailedAttempt: (ctx, key, errorCode) =>
+      recordFailedRefundAttempt(db, ctx, key, errorCode),
+    abandonReservation: (ctx, request) =>
+      abandonRefundReservation(db, ctx, request),
     reserve: (ctx, request) => reserveRefund(db, ctx, request),
     recordRefund: async (ctx, input) =>
       db.transaction(async (tx) => {

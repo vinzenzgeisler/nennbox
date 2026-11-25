@@ -16,6 +16,7 @@ import {
   registerPaymentsRoutes,
   registerPaymentProviderRoutes,
 } from './routes/payments.js';
+import { registerPaymentRefundRoutes } from './routes/payment-refunds.js';
 import { registerPublicRegistrationRoutes } from './routes/public-registration.js';
 import {
   registerPublicEventFormRoute,
@@ -96,6 +97,7 @@ export function createApp(deps: ApiDeps) {
   registerMessageRoutes(routes);
   registerPaymentsRoutes(routes);
   registerPaymentProviderRoutes(routes);
+  registerPaymentRefundRoutes(routes);
   registerRegistrationRoutes(routes);
   if (registration) {
     registerPublicRegistrationRoutes(routes, registration);

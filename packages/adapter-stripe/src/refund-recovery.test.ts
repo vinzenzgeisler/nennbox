@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { once } from 'node:events';
-import { expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { RefundRejectedError, organizationId } from '@nennbox/core';
 import { createStripePaymentProvider } from './index.js';
 
@@ -79,4 +79,83 @@ it('finds the persisted refund operation across pages after the provider idempot
       server.close((error) => (error ? reject(error) : resolve())),
     );
   }
+});
+
+describe('permanent Stripe refund errors', () => {
+  async function refundAgainst(status: number, error: Record<string, unknown>) {
+    const server = createServer((request, response) => {
+      response.setHeader('content-type', 'application/json');
+      if (request.method === 'POST') {
+        response.statusCode = status;
+        response.end(JSON.stringify({ error }));
+      } else
+        response.end(
+          JSON.stringify({
+            object: 'list',
+            url: '/v1/refunds',
+            data: [],
+            has_more: false,
+          }),
+        );
+    });
+    server.listen(0, '127.0.0.1');
+    await once(server, 'listening');
+    try {
+      const { port } = server.address() as { port: number };
+      return await createStripePaymentProvider({
+        secretKey: 'sk_test_fixture',
+        webhookSecret: 'whsec_fixture',
+        apiBaseUrl: 'http://127.0.0.1:' + port,
+      })
+        .refund({
+          idempotencyKey: 'op',
+          organizationId: organizationId(
+            'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          ),
+          invoiceId: 'invoice-1',
+          paymentId: 'pi_1',
+          amountCents: 2100,
+          reason: 'Refund',
+        })
+        .then(
+          () => null,
+          (caught: unknown) => caught,
+        );
+    } finally {
+      await new Promise<void>((resolve, reject) =>
+        server.close((closeError) =>
+          closeError ? reject(closeError) : resolve(),
+        ),
+      );
+    }
+  }
+
+  it.each([
+    'charge_already_refunded',
+    'charge_disputed',
+    'amount_too_large',
+    'resource_missing',
+  ])('treats %s as a definitive rejection', async (code) => {
+    const caught = await refundAgainst(400, {
+      type: 'invalid_request_error',
+      code,
+      message: 'detail that must not travel',
+    });
+    expect(caught).toBeInstanceOf(RefundRejectedError);
+    expect((caught as RefundRejectedError).code).toBe(code);
+  });
+
+  it.each([
+    [400, { type: 'invalid_request_error', code: 'lock_timeout' }],
+    [400, { type: 'invalid_request_error', code: 'idempotency_key_in_use' }],
+    [429, { type: 'invalid_request_error', code: 'rate_limit' }],
+    [500, { type: 'api_error' }],
+  ])(
+    'keeps %s %j ambiguous, so the reservation is never released by mistake',
+    async (status, error) => {
+      const caught = await refundAgainst(status, error);
+      expect(caught).toBeInstanceOf(Error);
+      expect(caught).not.toBeInstanceOf(RefundRejectedError);
+    },
+  );
 });

@@ -185,28 +185,52 @@ export function createStripePaymentProvider(
           throw new RefundRejectedError();
         return { id: existing.id };
       }
-      const refund = await stripe.refunds.create(
-        {
-          payment_intent: request.paymentId,
-          amount: request.amountCents,
-          reason: 'requested_by_customer',
-          metadata: {
-            organizationId: request.organizationId,
-            invoiceId: request.invoiceId,
-            reason: request.reason,
-            operation,
+      let refund;
+      try {
+        refund = await stripe.refunds.create(
+          {
+            payment_intent: request.paymentId,
+            amount: request.amountCents,
+            reason: 'requested_by_customer',
+            metadata: {
+              organizationId: request.organizationId,
+              invoiceId: request.invoiceId,
+              reason: request.reason,
+              operation,
+            },
           },
-        },
-        {
-          idempotencyKey: request.idempotencyKey,
-        },
-      );
+          {
+            idempotencyKey: request.idempotencyKey,
+          },
+        );
+      } catch (error) {
+        // The matching refund of this operation was looked up above, so these
+        // answers say the request itself can never succeed (for example the
+        // charge was already refunded in the Stripe dashboard): nothing moved
+        // and repeating it changes nothing. Everything else stays ambiguous.
+        if (
+          error instanceof Stripe.errors.StripeInvalidRequestError &&
+          error.code &&
+          permanentRefundErrors.has(error.code)
+        )
+          throw new RefundRejectedError(error.code);
+        throw error;
+      }
       if (refund.status === 'failed' || refund.status === 'canceled')
         throw new RefundRejectedError();
       return { id: refund.id };
     },
   };
 }
+
+/** Stripe error codes of a refund request that is refused for good, not by a passing condition. */
+const permanentRefundErrors: ReadonlySet<string> = new Set([
+  'charge_already_refunded',
+  'charge_disputed',
+  'amount_too_large',
+  'resource_missing',
+  'payment_intent_unexpected_state',
+]);
 
 const secretNames = ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'] as const;
 

@@ -144,13 +144,16 @@ export async function applyProviderEventInTransaction(
     if (cancelled) {
       // Received funds must remain in the ledger, but never disappear on a withdrawn entry.
       // Reopen even a completed policy intent: late money needs an explicit office decision.
+      // The intent only makes the case visible. The money was paid for a registration
+      // that was already cancelled, so it is refundable in full: the refund rule does not
+      // apply to it and the automatic refund never takes this intent.
       await tx.execute(sql`
         insert into payment_refund_intent (organization_id, invoice_id, entry_id, trigger, status, failure)
-        select ${event.organizationId}, ${invoice.id}, e.id, 'withdrawn', 'failed', 'payment_after_cancellation'
+        select ${event.organizationId}, ${invoice.id}, e.id, 'late_payment', 'failed', 'payment_after_cancellation'
         from entry e where e.organization_id = ${event.organizationId} and e.registration_group_id = ${invoice.registrationGroupId}
         order by e.created_at limit 1
         on conflict (organization_id, invoice_id) where status in ('pending', 'processing', 'done')
-        do update set status = 'failed', failure = 'payment_after_cancellation', updated_at = now()`);
+        do update set trigger = 'late_payment', status = 'failed', failure = 'payment_after_cancellation', updated_at = now()`);
     } else await queuePaymentReceivedMail(db, tx, event);
   }
   // A terminal session state is never left again (database trigger), so a late

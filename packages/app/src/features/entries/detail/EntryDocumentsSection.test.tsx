@@ -83,3 +83,55 @@ it('shows a failed automatic refund with the pointer to the manual refund', asyn
   );
   expect(text()).toContain('Die automatische Erstattung ist fehlgeschlagen');
 });
+
+it('shows a refund that needs review with the way out, and nothing the office cannot use', async () => {
+  const stuck = [{ key: 'op-1', providerPaymentId: 'pi_1', amountCents: 2100 }];
+  const onAbandonRefund = vi.fn();
+  const renderWith = (handler?: typeof onAbandonRefund) =>
+    act(async () =>
+      root.render(
+        <EntryDocumentsSection
+          entry={entryWith({ stuckRefunds: stuck })}
+          busy={false}
+          onDimensionAction={() => {}}
+          onRecordPayment={() => {}}
+          onRefundPayment={() => {}}
+          onAbandonRefund={handler}
+          onReviewDocument={() => {}}
+          onRejectDocument={() => {}}
+        />,
+      ),
+    );
+  await renderWith(onAbandonRefund);
+  expect(text()).toContain('Eine Erstattung von 21,00 € hängt');
+  const button = [...host.querySelectorAll('button')].find(
+    (item) => item.textContent === 'Erstattung abbrechen',
+  );
+  expect(button).toBeDefined();
+  act(() => button!.click());
+  expect(onAbandonRefund).toHaveBeenCalledWith('op-1', 2100, 'EUR');
+  await renderWith(undefined);
+  expect(
+    [...host.querySelectorAll('button')].some(
+      (item) => item.textContent === 'Erstattung abbrechen',
+    ),
+  ).toBe(false);
+});
+
+it('explains a payment after the cancellation as fully refundable', async () => {
+  await render(
+    entryWith({
+      providerPayments: [
+        { providerPaymentId: 'pi_late', refundableCents: 4200 },
+      ],
+      refundIntent: {
+        status: 'failed',
+        percent: null,
+        refundedCents: 0,
+        failure: 'payment_after_cancellation',
+      },
+    }),
+  );
+  expect(text()).toContain('in voller Höhe erstattbar');
+  expect(text()).toContain('Erstattungsregel gilt dafür nicht');
+});

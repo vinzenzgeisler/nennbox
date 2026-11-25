@@ -1,5 +1,6 @@
 import type { Pending } from './EntryDetailPending.js';
 import type { WorkflowView } from '../AdminEntriesModel.js';
+import { formatMoney } from '../../../format.js';
 export function entryStatusDialog(
   pending: Pending | null,
   workflow: WorkflowView | null,
@@ -23,5 +24,12 @@ export function entryStatusDialog(
             message: 'Die Änderung wird im Verlauf protokolliert.',
             confirm: 'Speichern',
           }
-        : null;
+        : pending?.kind === 'abandon_refund'
+          ? {
+              title: 'Hängende Erstattung abbrechen',
+              message: `Die Erstattung von ${formatMoney(pending.amountCents, pending.currency)} ist bei Stripe nicht ausgeführt worden und wird nicht mehr automatisch wiederholt. Prüfe im Stripe-Dashboard, dass sie dort nicht doch erstattet wurde. Danach ist der Betrag wieder frei, und die Entscheidung wird protokolliert.`,
+              confirm: 'Erstattung abbrechen',
+              danger: true,
+            }
+          : null;
 }

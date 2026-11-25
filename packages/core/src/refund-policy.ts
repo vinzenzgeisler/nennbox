@@ -150,6 +150,21 @@ const failed = (
   failure,
 });
 
+/** A short, payload-free code for the failure log of a reserved refund. */
+export function errorCodeOf(error: unknown): string {
+  const code =
+    error && typeof error === 'object' && 'code' in error
+      ? (error as { code?: unknown }).code
+      : undefined;
+  const text =
+    typeof code === 'string' && code
+      ? code
+      : error instanceof Error
+        ? error.name
+        : 'unknown';
+  return text.slice(0, 80);
+}
+
 export const AUTOMATIC_REFUND_ACTOR = 'system:refund-policy';
 
 /**
@@ -246,16 +261,28 @@ export async function settleCancellationRefund(
         failure: null,
       };
     } catch (error) {
-      if (error instanceof RefundRejectedError && operationKey)
-        await deps.refunds.rejectReservation?.(ctx, operationKey);
+      let needsReview = false;
+      if (operationKey) {
+        if (error instanceof RefundRejectedError)
+          await deps.refunds.rejectReservation?.(ctx, operationKey);
+        else
+          needsReview =
+            (await deps.refunds.recordFailedAttempt?.(
+              ctx,
+              operationKey,
+              errorCodeOf(error),
+            )) === 'needs_review';
+      }
       result = failed(
         percent,
         refundedCents,
-        error instanceof Error && error.message === 'ledger_rejected'
-          ? 'ledger_rejected'
-          : error instanceof RefundRejectedError
-            ? 'provider_rejected'
-            : 'provider_unavailable',
+        needsReview
+          ? 'needs_review'
+          : error instanceof Error && error.message === 'ledger_rejected'
+            ? 'ledger_rejected'
+            : error instanceof RefundRejectedError
+              ? 'provider_rejected'
+              : 'provider_unavailable',
       );
     }
   }
