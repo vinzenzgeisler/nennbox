@@ -212,7 +212,12 @@ export function VehicleFields({
             <div className="nb-reg-spare-box">
               <header>
                 <strong>{w.spareVehicle}</strong>
-                <span className="nb-reg-tag">0 €</span>
+                <span className="nb-reg-tag">
+                  {t(
+                    'zählt nicht als Startmeldung · 0 €',
+                    'not a separate entry · €0',
+                  )}
+                </span>
                 <RegistrationButton
                   tone="danger"
                   onClick={() => patch(index, { replacement: null })}
@@ -220,12 +225,6 @@ export function VehicleFields({
                   {w.remove}
                 </RegistrationButton>
               </header>
-              <p className="nb-reg-hint">
-                {t(
-                  'zählt nicht als Startmeldung · 0 €',
-                  'not a separate entry · €0',
-                )}
-              </p>
               {fields(entry, index, true)}
               <p className="nb-reg-hint">
                 {t(
