@@ -78,8 +78,8 @@ export function createRefundRetryTask(deps: {
       }
       for (const invoiceId of invoiceIds) {
         try {
-          // Cancellation intents also exist for unpaid invoices. Do not finish
-          // one until every copied checkout link is closed at the provider.
+          // Unpaid cancellations are discovered from pending checkout rows,
+          // independently of whether a refund intent exists.
           const invoice = await checkouts.get(ctx, invoiceId);
           if (invoice?.allEntriesCancelled) {
             for (const session of await checkouts.pendingSessions(

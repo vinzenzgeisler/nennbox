@@ -297,6 +297,31 @@ describe('automatic refund after an admin cancellation', () => {
     });
   });
 
+  it('preserves the unpaid cancellation and pending checkout for durable retry when expiry fails', async () => {
+    const s = makeApp({ intent: false, unpaid: true });
+    s.expire.mockRejectedValueOnce(new Error('stripe unavailable'));
+
+    const response = await s.withdraw();
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).adminDetails.invoice).toMatchObject({
+      paidCents: 0,
+      status: 'cancelled',
+      refundIntent: null,
+    });
+    expect(s.expire).toHaveBeenCalledWith({
+      organizationId: org,
+      sessionId: 'cs_open',
+    });
+    expect(s.markSessionsExpired).not.toHaveBeenCalled();
+    expect(s.claim).not.toHaveBeenCalled();
+    expect(s.refund).not.toHaveBeenCalled();
+    expect(s.warn).toHaveBeenCalledWith(
+      'Open checkout of a cancelled registration',
+      { outcome: 'unavailable' },
+    );
+  });
+
   it('keeps going and logs when a checkout was paid meanwhile, leaving that session untouched', async () => {
     const { withdraw, refund, warn, markSessionsExpired } = makeApp({
       sessionPaid: true,

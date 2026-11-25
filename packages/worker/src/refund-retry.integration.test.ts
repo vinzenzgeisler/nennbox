@@ -169,7 +169,12 @@ describe.skipIf(!url)('automatic refund retry job (PostgreSQL)', () => {
         ? sql`update payment_refund_intent set claimed_at = ${ago} where id = ${row!.id}`
         : sql`update payment_refund_intent set created_at = ${ago} where id = ${row!.id}`,
     );
-    return { orgId: org!.id, intentId: row!.id, invoiceId: invoice!.id };
+    return {
+      orgId: org!.id,
+      intentId: row!.id,
+      invoiceId: invoice!.id,
+      entryId: entry!.id,
+    };
   }
 
   const statusOf = async (intentId: string) =>
@@ -285,6 +290,16 @@ describe.skipIf(!url)('automatic refund retry job (PostgreSQL)', () => {
       ReturnType<typeof createCheckoutRepository>['createSession']
     >[0];
     const repo = createCheckoutRepository(db);
+    expect(
+      await createRefundIntentRepository(db).cancelledInvoiceForEntry(
+        ctx,
+        s.entryId,
+      ),
+    ).toBe(s.invoiceId);
+    expect(await repo.get(ctx, s.invoiceId)).toMatchObject({
+      paidCents: 0,
+      allEntriesCancelled: true,
+    });
     await repo.createSession(ctx, s.invoiceId, {
       id: 'cs-' + s.invoiceId,
       url: 'https://checkout.test/unpaid',
@@ -293,25 +308,52 @@ describe.skipIf(!url)('automatic refund retry job (PostgreSQL)', () => {
       expiresAt: null,
     });
     let calls = 0;
-    const task = createRefundRetryTask({
+    let refundCalls = 0;
+    const provider = {
+      expireCheckoutSession: async (request: { sessionId: string }) => {
+        expect(request.sessionId).toBe('cs-' + s.invoiceId);
+        if (++calls === 1) throw new Error('offline');
+        return 'expired';
+      },
+      refund: async () => {
+        refundCalls++;
+        throw new Error('unpaid: no refund');
+      },
+    } as unknown as PaymentProvider;
+    await createRefundRetryTask({
       db,
       deploymentMode: 'community',
       communityOrganizationId: s.orgId,
-      provider: {
-        expireCheckoutSession: async () => {
-          if (++calls === 1) throw new Error('offline');
-          return 'expired';
-        },
-        refund: async () => {
-          throw new Error('unpaid: no refund');
-        },
-      } as unknown as PaymentProvider,
-    });
-    await task();
+      provider,
+    })();
+    expect(calls).toBe(1);
     expect(await repo.pendingSessions(ctx, s.invoiceId)).toHaveLength(1);
-    await task();
-    expect(calls).toBe(2);
-    expect(await repo.pendingSessions(ctx, s.invoiceId)).toHaveLength(0);
+
+    // Reconstruct both the worker and its connection pool. Recovery must depend
+    // only on committed pending-session rows, not a retained task/intent in memory.
+    const restarted = await createDatabase(url!);
+    try {
+      const task = createRefundRetryTask({
+        db: restarted.db,
+        deploymentMode: 'community',
+        communityOrganizationId: s.orgId,
+        provider,
+      });
+      await task();
+      expect(calls).toBe(2);
+      expect(await repo.pendingSessions(ctx, s.invoiceId)).toHaveLength(0);
+      expect(
+        await db
+          .select()
+          .from(paymentRefundIntents)
+          .where(eq(paymentRefundIntents.invoiceId, s.invoiceId)),
+      ).toHaveLength(0);
+      await task();
+      expect(calls).toBe(2);
+      expect(refundCalls).toBe(0);
+    } finally {
+      await restarted.pool.end();
+    }
   });
   it.each(['automatic', 'manual'] as const)(
     'recovers an unresolved %s operation with the persisted key and amount, without a second transfer',
