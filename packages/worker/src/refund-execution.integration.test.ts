@@ -3,6 +3,7 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import { runMigrations } from 'graphile-worker';
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
+  RefundRejectedError,
   createRequestContext,
   organizationId,
   settleCancellationRefund,
@@ -264,6 +265,34 @@ describe.skipIf(!url)('refund execution claim', () => {
       expect(
         await refunds.reserve(s.ctx, manual(s, piOf(s), 3201)),
       ).toMatchObject({ status: 'unavailable', availableCents: 3200 });
+      expect(
+        await refunds.requestReconciliation!(s.ctx, {
+          invoiceId: s.invoice.id,
+          key,
+          actor: 'office-auditor',
+          reason: 'Stripe support cannot confirm yet',
+        }),
+      ).toBe('scheduled');
+      const audit = await pool.query(
+        'select * from payment_refund_reservation where idempotency_key=$1',
+        [key],
+      );
+      expect(audit.rows[0]).toMatchObject({
+        status: 'reserved',
+        execution_uncertain: true,
+        resolved_by: 'office-auditor',
+        resolved_reason:
+          'Reconciliation requested: Stripe support cannot confirm yet',
+      });
+      expect(audit.rows[0].execution_token).toBeTruthy();
+      expect(
+        await refunds.abandonReservation!(s.ctx, {
+          invoiceId: s.invoice.id,
+          key,
+          actor: 'office',
+          reason: 'still unclear',
+        }),
+      ).toBe('not_reviewable');
       release();
       await expect(running).rejects.toThrow();
       const total = await pool.query(
@@ -573,4 +602,178 @@ describe.skipIf(!url)('refund execution claim', () => {
       }
     },
   );
+});
+
+describe.skipIf(!url)('review4 connection-loss recovery liveness', () => {
+  it.each(['succeeded', 'rejected'] as const)(
+    'allows provider-confirmed %s recovery after a lost claim and five temporary outages',
+    async (outcome) => {
+      const { db, pool } = await createDatabase(url!);
+      const s = await seed(db, 'review4-stuck');
+      const refunds = createPaymentRefundRepository(db);
+      const key = crypto.randomUUID();
+      let entered!: () => void, release!: () => void;
+      const ready = new Promise<void>((r) => (entered = r)),
+        gate = new Promise<void>((r) => (release = r));
+      let original: Promise<unknown> | undefined;
+      try {
+        await createCheckoutRepository(db).applyProviderEvent(paid(s));
+        await refunds.reserve(s.ctx, manual(s, piOf(s), 1000, key));
+        original = refunds.withExecution(s.ctx, key, async () => {
+          entered();
+          await gate;
+          throw new Error('transport lost');
+        });
+        original.catch(() => undefined);
+        await ready;
+        const claims = await pool.query(
+          "select pid from pg_stat_activity where application_name='nennbox-refund-claim' and state='idle in transaction'",
+        );
+        expect(claims.rows).toHaveLength(1);
+        await pool.query('select pg_terminate_backend($1)', [
+          claims.rows[0].pid,
+        ]);
+        release();
+        await original.catch(() => undefined);
+        const failedCalls: ProviderCall[] = [];
+        for (let i = 0; i < 5; i++) {
+          await db.execute(
+            sql`update payment_refund_reservation set updated_at=to_timestamp(0) where invoice_id=${s.invoice.id}`,
+          );
+          await retryManualRefundReservations(
+            db,
+            s.ctx,
+            provider(failedCalls, async () => {
+              throw Error('temporary Stripe outage');
+            }),
+            1000,
+          );
+        }
+        expect(failedCalls).toHaveLength(5);
+        expect(
+          await refunds.reserve(s.ctx, manual(s, piOf(s), 3201)),
+        ).toMatchObject({ status: 'unavailable', availableCents: 3200 });
+        const reserve = await refunds.reserve(
+          s.ctx,
+          manual(s, piOf(s), 1000, key),
+        );
+        expect(reserve.status).toBe('reserved');
+        const abandon = await refunds.abandonReservation!(s.ctx, {
+          invoiceId: s.invoice.id,
+          key,
+          actor: 'office',
+          reason: 'provider checked, no transfer',
+        });
+        await db.execute(
+          sql`update payment_refund_reservation set updated_at=to_timestamp(0) where invoice_id=${s.invoice.id}`,
+        );
+        const healthyCalls: ProviderCall[] = [];
+        await retryManualRefundReservations(
+          db,
+          s.ctx,
+          provider(healthyCalls, async () => {
+            if (outcome === 'rejected') throw new RefundRejectedError();
+            return { id: 're-recovered-' + s.suffix };
+          }),
+          1000,
+        );
+        let gated = false;
+        const gateResult = await refunds.withExecution(s.ctx, key, async () => {
+          gated = true;
+          return true;
+        });
+        const state = await pool.query(
+          'select status, attempts, needs_review_at is not null as review, execution_token is not null as token, execution_uncertain from payment_refund_reservation where idempotency_key=$1',
+          [key],
+        );
+        expect(abandon).toBe('not_reviewable');
+        expect(gateResult).toBeNull();
+        expect(gated).toBe(false);
+        expect(state.rows[0].status).toBe(
+          outcome === 'succeeded' ? 'completed' : 'rejected',
+        );
+        expect(await ledgerSum(db, s)).toBe(
+          outcome === 'succeeded' ? 3200 : 4200,
+        );
+        expect(healthyCalls[0]?.idempotencyKey).toBe(key);
+        expect(
+          healthyCalls,
+          'Provider is healthy again, but every recovery and office path is blocked',
+        ).toHaveLength(1);
+      } finally {
+        release();
+        await original?.catch(() => undefined);
+        await cleanup(db, s.org.id);
+        await pool.end();
+      }
+    },
+  );
+});
+
+// Exercise both automatic discovery predicates, reserve and execution gate after
+// review, not only the manual batch selector above.
+describe.skipIf(!url)('uncertain automatic review recovery', () => {
+  it('discovers and settles an uncertain automatic operation beyond the retry budget', async () => {
+    const { db, pool } = await createDatabase(url!);
+    const s = await seed(db, 'automatic-review', {
+      orgConfig: {
+        payments: {
+          refundPolicy: {
+            enabled: true,
+            tiers: [{ daysBefore: 0, percent: 50 }],
+            rejectedPercent: 50,
+          },
+        },
+      },
+    });
+    try {
+      await createCheckoutRepository(db).applyProviderEvent(paid(s));
+      await db
+        .update(entries)
+        .set({ acceptanceStatus: 'withdrawn' })
+        .where(eq(entries.id, s.entries[0]!.id));
+      const [intent] = await db
+        .insert(paymentRefundIntents)
+        .values({
+          organizationId: s.org.id,
+          invoiceId: s.invoice.id,
+          entryId: s.entries[0]!.id,
+          trigger: 'withdrawn',
+          status: 'processing',
+        })
+        .returning();
+      const key = `auto-refund:${intent!.id}:${piOf(s)}`;
+      const refunds = createPaymentRefundRepository(db);
+      expect(
+        await refunds.reserve(s.ctx, {
+          invoiceId: s.invoice.id,
+          providerPaymentId: piOf(s),
+          idempotencyKey: key,
+          source: { kind: 'automatic', intentId: intent!.id, percent: 50 },
+        }),
+      ).toMatchObject({ status: 'reserved', amountCents: 2100 });
+      await db.execute(
+        sql`update payment_refund_reservation set execution_token=${crypto.randomUUID()}, execution_uncertain=true, attempts=5, needs_review_at=now() where idempotency_key=${key}`,
+      );
+      await db.execute(
+        sql`update payment_refund_intent set status='failed', updated_at=to_timestamp(0) where id=${intent!.id}`,
+      );
+      const intents = createRefundIntentRepository(db, { retryAfterMs: 1000 });
+      expect(await intents.staleInvoiceIds(s.ctx)).toContain(s.invoice.id);
+      const calls: ProviderCall[] = [];
+      expect(
+        await settleCancellationRefund(s.ctx, s.invoice.id, {
+          intents,
+          refunds,
+          provider: provider(calls),
+        }),
+      ).toMatchObject({ status: 'done', refundedCents: 2100 });
+      expect(calls).toHaveLength(1);
+      expect(calls[0]?.idempotencyKey).toBe(key);
+      expect(await ledgerSum(db, s)).toBe(2100);
+    } finally {
+      await cleanup(db, s.org.id);
+      await pool.end();
+    }
+  });
 });

@@ -11,9 +11,10 @@ export const refundConflictText = (code?: string, reason?: string) =>
             ? 'Dieser Erstattungsvorgang gehört zu einer anderen Eingabe. Bitte öffne den Dialog neu.'
             : 'Dieser Betrag ist nicht (mehr) erstattbar. Bitte lade die Detailansicht neu.'
     : code === 'Refund needs review'
-      ? 'Stripe konnte die Erstattung mehrfach nicht ausführen. Sie wird nicht mehr automatisch wiederholt. Prüfe sie im Stripe-Dashboard und entscheide in der Detailansicht der Nennung.'
-      : code === 'Refund is not waiting for review'
-        ? 'Diese Erstattung wartet nicht mehr auf eine Entscheidung. Bitte lade die Detailansicht neu.'
+      ? 'Stripe konnte den Ausgang mehrfach nicht bestätigen. Unklare Vorgänge werden mit demselben Schlüssel weiter abgeglichen; der Betrag bleibt reserviert. Prüfe im Stripe-Dashboard und fordere bei Bedarf eine Klärung an. Nur sicher nicht ausgeführte Vorgänge dürfen freigegeben werden.'
+      : code ===
+          'Refund cannot be released: not waiting for review or provider outcome still uncertain; request reconciliation'
+        ? 'Die Erstattung kann nicht freigegeben werden: Sie wartet nicht auf Prüfung oder ihr Stripe-Ausgang ist noch unklar. Bitte fordere eine Klärung an; bis zur Bestätigung bleibt der Betrag reserviert.'
         : code === 'concurrent_update'
           ? 'Die Nennung wurde gerade gleichzeitig geändert. Bitte versuche es noch einmal.'
           : undefined;

@@ -9,7 +9,7 @@ export type Pending =
   | { kind: 'payment' }
   | { kind: 'refund' }
   | {
-      kind: 'abandon_refund';
+      kind: 'abandon_refund' | 'reconcile_refund';
       key: string;
       amountCents: number;
       currency: string;

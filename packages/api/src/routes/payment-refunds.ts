@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import { RefundRejectedError, errorCodeOf } from '@nennbox/core';
+import { registerRefundReconciliationRoute } from './refund-reconciliation.js';
 import type { ApiRoutesContext } from './context.js';
 
 /** Manual refunds of online payments and the office decision for a stuck one. */
 export function registerPaymentRefundRoutes(context: ApiRoutesContext): void {
   const { app, deps } = context;
+  registerRefundReconciliationRoute(context);
   app.post('/admin/invoices/:invoiceId/refunds', async (c) => {
     if (!deps.paymentProvider || !deps.paymentRefunds)
       return c.json({ error: 'Unavailable' }, 503);
@@ -177,7 +179,8 @@ export function registerPaymentRefundRoutes(context: ApiRoutesContext): void {
       if (result === 'not_reviewable')
         return c.json(
           {
-            error: 'Refund is not waiting for review',
+            error:
+              'Refund cannot be released: not waiting for review or provider outcome still uncertain; request reconciliation',
             reason: 'not_reviewable',
           },
           409,

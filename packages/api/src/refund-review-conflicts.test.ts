@@ -25,6 +25,7 @@ function setup(
   } = {},
 ) {
   const abandonReservation = vi.fn(async () => options.abandon ?? 'abandoned');
+  const requestReconciliation = vi.fn(async () => 'scheduled' as const);
   const recordFailedAttempt = vi.fn(async () => options.attempt ?? 'retry');
   const app = createApp(
     testDeps({
@@ -69,6 +70,7 @@ function setup(
       paymentRefunds: {
         withExecution: async (_ctx, _key, run) => run(),
         abandonReservation,
+        requestReconciliation,
         recordFailedAttempt,
         getRefundable: async () => null,
         reserve: async (_ctx, request) => ({
@@ -92,6 +94,12 @@ function setup(
   const json = { 'content-type': 'application/json' };
   return {
     abandonReservation,
+    requestReconciliation,
+    reconcile: (body: unknown = { reason: 'Stripe support contacted' }) =>
+      app.request(
+        `/admin/invoices/invoice-1/refund-reservations/${key}/reconcile`,
+        { method: 'POST', headers: json, body: JSON.stringify(body) },
+      ),
     recordFailedAttempt,
     reactivate: () =>
       app.request(`/admin/entries/${entryId}/transitions`, {
@@ -180,7 +188,8 @@ describe('abandoning a refund that needs review', () => {
     const response = await setup({ abandon: 'not_reviewable' }).abandon();
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({
-      error: 'Refund is not waiting for review',
+      error:
+        'Refund cannot be released: not waiting for review or provider outcome still uncertain; request reconciliation',
       reason: 'not_reviewable',
     });
   });
@@ -208,4 +217,22 @@ describe('manual refund attempts that fail at the provider', () => {
       reason: 'needs_review',
     });
   });
+});
+
+it('audits an authorized reconciliation request without claiming funds are released', async () => {
+  const s = setup();
+  const response = await s.reconcile();
+  expect(response.status).toBe(202);
+  expect(await response.json()).toMatchObject({ scheduled: true });
+  expect(s.requestReconciliation).toHaveBeenCalledWith(expect.anything(), {
+    invoiceId: 'invoice-1',
+    key,
+    actor: 'https://id.example#office',
+    reason: 'Stripe support contacted',
+  });
+  expect(s.abandonReservation).not.toHaveBeenCalled();
+  const denied = setup({ permissions: ['entry:read'] });
+  expect((await denied.reconcile()).status).toBe(403);
+  expect(denied.requestReconciliation).not.toHaveBeenCalled();
+  expect((await s.reconcile({ reason: ' ' })).status).toBe(400);
 });

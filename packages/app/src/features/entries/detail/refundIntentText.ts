@@ -12,7 +12,7 @@ const failureText: Record<string, string> = {
   payment_after_cancellation:
     'Zahlung nach Absage eingegangen; manuelle Erstattung erforderlich',
   needs_review:
-    'Stripe konnte die Erstattung mehrfach nicht ausführen. Sie wird nicht mehr automatisch wiederholt und wartet auf deine Entscheidung',
+    'Stripe konnte den Ausgang mehrfach nicht bestätigen. Unklare Vorgänge werden weiter abgeglichen; der Betrag bleibt bis zur Bestätigung reserviert. Die weitere Klärung wartet auf deine Entscheidung',
   reservation_abandoned:
     'Die hängende Erstattung wurde vom Nennbüro abgebrochen',
   intent_data_missing:
@@ -58,7 +58,7 @@ export function refundIntentText(
 
 /** A refund Stripe could not execute repeatedly; it still blocks its amount until the office decides. */
 export function stuckRefundText(amountCents: number, currency: string): string {
-  return `Eine Erstattung von ${formatMoney(amountCents, currency)} hängt: Stripe konnte sie mehrfach nicht ausführen, sie wird nicht mehr automatisch wiederholt. Der Betrag bleibt gesperrt, und die Nennung kann nicht wieder aufgenommen werden. Prüfe im Stripe-Dashboard, ob sie ausgeführt wurde; falls nicht, brich sie hier ab.`;
+  return `Eine Erstattung von ${formatMoney(amountCents, currency)} hängt: Stripe konnte ihren Ausgang mehrfach nicht bestätigen. Unklare Vorgänge werden weiter abgeglichen. Der Betrag bleibt gesperrt, und die Nennung kann nicht wieder aufgenommen werden. Fordere eine Klärung an. Ein Abbruch ist nur bei sicher bestätigter Nichtausführung erlaubt, nicht allein weil im Dashboard noch keine Erstattung sichtbar ist.`;
 }
 
 /** Paid more than the invoice asks for (for example a transfer and a checkout both went through). */

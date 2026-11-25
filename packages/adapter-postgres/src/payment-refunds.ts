@@ -16,6 +16,7 @@ import {
 } from './payment-refund-reservations.js';
 import {
   abandonRefundReservation,
+  requestRefundReconciliation,
   recordFailedRefundAttempt,
 } from './payment-refund-review.js';
 
@@ -23,6 +24,8 @@ export function createPaymentRefundRepository(
   db: Database,
 ): PaymentRefundRepository {
   return {
+    requestReconciliation: (ctx, request) =>
+      requestRefundReconciliation(db, ctx, request),
     withExecution: (ctx, key, run) => withRefundExecution(db, ctx, key, run),
     getRefundable: async (ctx, invoiceId, providerPaymentId) => {
       const [row] = await db

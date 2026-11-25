@@ -132,3 +132,44 @@ async function lockInvoiceRow(
     .for('update');
   return !!invoice;
 }
+
+/** Audit an office request to re-check the SAME provider operation, never release
+ * an uncertain amount. The worker can replay the original key even past review. */
+export async function requestRefundReconciliation(
+  db: Database,
+  ctx: RequestContext,
+  request: { invoiceId: string; key: string; actor: string; reason: string },
+): Promise<'scheduled' | 'not_found' | 'not_reviewable'> {
+  return db.transaction(async (tx) => {
+    if (!(await claimRefundExecution(tx, ctx.organizationId, request.key)))
+      return 'not_reviewable';
+    if (!(await lockInvoiceRow(tx, ctx.organizationId, request.invoiceId)))
+      return 'not_found';
+    const [operation] = await tx
+      .select()
+      .from(paymentRefundReservations)
+      .where(
+        and(
+          eq(paymentRefundReservations.organizationId, ctx.organizationId),
+          eq(paymentRefundReservations.invoiceId, request.invoiceId),
+          eq(paymentRefundReservations.idempotencyKey, request.key),
+        ),
+      );
+    if (!operation) return 'not_found';
+    if (operation.status !== 'reserved' || !operation.needsReviewAt)
+      return 'not_reviewable';
+    await tx
+      .update(paymentRefundReservations)
+      .set({
+        // This is a review request, not a financial resolution. Keep every fence.
+        needsReviewAt: null,
+        attempts: 0,
+        resolvedBy: request.actor,
+        resolvedReason: 'Reconciliation requested: ' + request.reason,
+        resolvedAt: new Date(),
+        updatedAt: new Date(0),
+      })
+      .where(eq(paymentRefundReservations.id, operation.id));
+    return 'scheduled';
+  });
+}

@@ -255,6 +255,13 @@ export function useEntryDetailApi(
         'Erstattungen auslösen',
         false,
       ),
+    reconcileRefund: (invoiceId: string, key: string, reason: string) =>
+      run(
+        `/admin/invoices/${encodeURIComponent(invoiceId)}/refund-reservations/${encodeURIComponent(key)}/reconcile`,
+        { method: 'POST', body: JSON.stringify({ reason }) },
+        'Erstattung klären',
+        false,
+      ),
     abandonRefund: (invoiceId: string, key: string, reason: string) =>
       run(
         `/admin/invoices/${encodeURIComponent(invoiceId)}/refund-reservations/${encodeURIComponent(key)}/abandon`,

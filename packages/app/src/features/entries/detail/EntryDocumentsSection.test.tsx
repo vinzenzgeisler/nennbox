@@ -87,6 +87,7 @@ it('shows a failed automatic refund with the pointer to the manual refund', asyn
 it('shows a refund that needs review with the way out, and nothing the office cannot use', async () => {
   const stuck = [{ key: 'op-1', providerPaymentId: 'pi_1', amountCents: 2100 }];
   const onAbandonRefund = vi.fn();
+  const onReconcileRefund = vi.fn();
   const renderWith = (handler?: typeof onAbandonRefund) =>
     act(async () =>
       root.render(
@@ -97,6 +98,7 @@ it('shows a refund that needs review with the way out, and nothing the office ca
           onRecordPayment={() => {}}
           onRefundPayment={() => {}}
           onAbandonRefund={handler}
+          onReconcileRefund={handler ? onReconcileRefund : undefined}
           onReviewDocument={() => {}}
           onRejectDocument={() => {}}
         />,
@@ -110,6 +112,13 @@ it('shows a refund that needs review with the way out, and nothing the office ca
   expect(button).toBeDefined();
   act(() => button!.click());
   expect(onAbandonRefund).toHaveBeenCalledWith('op-1', 2100, 'EUR');
+  const reconcile = [...host.querySelectorAll('button')].find(
+    (item) => item.textContent === 'Klärung anfordern',
+  );
+  expect(reconcile).toBeDefined();
+  act(() => reconcile!.click());
+  expect(onReconcileRefund).toHaveBeenCalledWith('op-1', 2100, 'EUR');
+  expect(text()).toContain('nicht allein weil im Dashboard');
   await renderWith(undefined);
   expect(
     [...host.querySelectorAll('button')].some(

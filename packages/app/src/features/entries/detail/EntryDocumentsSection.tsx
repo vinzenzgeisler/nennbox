@@ -39,6 +39,7 @@ export function EntryDocumentsSection({
   onRecordPayment,
   onRefundPayment,
   onAbandonRefund,
+  onReconcileRefund,
   onReviewDocument,
   onRejectDocument,
   onRequestDocument,
@@ -48,6 +49,8 @@ export function EntryDocumentsSection({
   onDimensionAction: (action: DimensionAction) => void;
   onRecordPayment: () => void;
   onRefundPayment: () => void;
+  onReconcileRefund?:
+    ((key: string, amountCents: number, currency: string) => void) | undefined;
   onAbandonRefund?:
     ((key: string, amountCents: number, currency: string) => void) | undefined;
   onReviewDocument: (line: UploadLine) => void;
@@ -145,6 +148,21 @@ export function EntryDocumentsSection({
       {invoice?.stuckRefunds?.map((stuck) => (
         <DetailNote key={stuck.key}>
           {stuckRefundText(stuck.amountCents, invoice.currency)}{' '}
+          {onReconcileRefund && (
+            <Button
+              variant="text"
+              size={32}
+              onClick={() =>
+                onReconcileRefund(
+                  stuck.key,
+                  stuck.amountCents,
+                  invoice.currency,
+                )
+              }
+            >
+              Klärung anfordern
+            </Button>
+          )}
           {onAbandonRefund && (
             <Button
               variant="text"

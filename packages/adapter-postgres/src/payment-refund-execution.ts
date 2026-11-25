@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull, or, isNotNull, sql } from 'drizzle-orm';
 import type { RequestContext } from '@nennbox/core';
 import type { Database, TransactionDatabase } from './database.js';
 import { invoices } from './schema/billing.js';
@@ -119,7 +119,12 @@ export async function withRefundExecution<T>(
             eq(paymentRefundReservations.organizationId, ctx.organizationId),
             eq(paymentRefundReservations.id, operation.id),
             eq(paymentRefundReservations.status, 'reserved'),
-            isNull(paymentRefundReservations.needsReviewAt),
+            // Lost claims must retain a same-key confirmation path past review.
+            or(
+              isNull(paymentRefundReservations.needsReviewAt),
+              eq(paymentRefundReservations.executionUncertain, true),
+              isNotNull(paymentRefundReservations.executionToken),
+            ),
           ),
         )
         .returning({ id: paymentRefundReservations.id });

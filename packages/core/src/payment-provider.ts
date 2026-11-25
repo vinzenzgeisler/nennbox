@@ -263,7 +263,8 @@ export interface PaymentRefundRepository {
   /**
    * Counts a failed attempt that is not a definitive rejection. After
    * `MAX_REFUND_ATTEMPTS` the reservation is flagged for review and no longer
-   * retried automatically; it keeps blocking its amount and a reactivation.
+   * retried automatically unless its lost claim requires same-key provider confirmation;
+   * it keeps blocking its amount and a reactivation.
    */
   recordFailedAttempt?(
     ctx: import('./context.js').RequestContext,
@@ -278,6 +279,11 @@ export interface PaymentRefundRepository {
     ctx: import('./context.js').RequestContext,
     request: { invoiceId: string; key: string; actor: string; reason: string },
   ): Promise<'abandoned' | 'not_found' | 'not_reviewable'>;
+  /** Audited office re-check of the original operation; never releases funds. */
+  requestReconciliation?(
+    ctx: import('./context.js').RequestContext,
+    request: { invoiceId: string; key: string; actor: string; reason: string },
+  ): Promise<'scheduled' | 'not_found' | 'not_reviewable'>;
   getRefundable(
     ctx: import('./context.js').RequestContext,
     invoiceId: string,

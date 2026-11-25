@@ -76,7 +76,12 @@ export async function reserveRefund(
         };
       // Resuming: the provider may already have executed it, so it is never
       // restarted for a registration that takes part again.
-      if (existing.needsReviewAt || (automatic && active > 0))
+      if (
+        (existing.needsReviewAt &&
+          !existing.executionUncertain &&
+          !existing.executionToken) ||
+        (automatic && active > 0)
+      )
         return { status: 'needs_review' };
       return reserved(existing, invoice.currency);
     }

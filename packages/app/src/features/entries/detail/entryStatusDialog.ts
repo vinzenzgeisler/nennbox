@@ -24,12 +24,19 @@ export function entryStatusDialog(
             message: 'Die Änderung wird im Verlauf protokolliert.',
             confirm: 'Speichern',
           }
-        : pending?.kind === 'abandon_refund'
+        : pending?.kind === 'reconcile_refund'
           ? {
-              title: 'Hängende Erstattung abbrechen',
-              message: `Die Erstattung von ${formatMoney(pending.amountCents, pending.currency)} ist bei Stripe nicht ausgeführt worden und wird nicht mehr automatisch wiederholt. Prüfe im Stripe-Dashboard, dass sie dort nicht doch erstattet wurde. Danach ist der Betrag wieder frei, und die Entscheidung wird protokolliert.`,
-              confirm: 'Erstattung abbrechen',
-              danger: true,
+              title: 'Erstattung klären',
+              message:
+                'Der ursprüngliche Vorgang wird erneut bei Stripe abgeglichen. Der Betrag bleibt bis zur Bestätigung reserviert. Bitte gib den Anlass und das Ergebnis deiner bisherigen Prüfung an; die Anfrage wird protokolliert.',
+              confirm: 'Klärung anfordern',
             }
-          : null;
+          : pending?.kind === 'abandon_refund'
+            ? {
+                title: 'Hängende Erstattung abbrechen',
+                message: `Die Erstattung von ${formatMoney(pending.amountCents, pending.currency)} darf nur nach sicherer Bestätigung abgebrochen werden, dass Stripe nichts erstattet hat und kein Auftrag mehr läuft. Ist der Ausgang unklar, fordere stattdessen eine Klärung an. Unklare Vorgänge bleiben gesperrt; ein Abbruch wird protokolliert.`,
+                confirm: 'Erstattung abbrechen',
+                danger: true,
+              }
+            : null;
 }

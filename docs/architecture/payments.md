@@ -220,3 +220,24 @@ releasing its reservation without creating a fictitious negative ledger entry.
 Transport failures and unknown responses never release funds. Definitive rejection
 therefore permits a new office operation or reactivation; ambiguous operations
 continue to block reactivation until recovery settles their original key.
+
+
+### Lost refund claims and office reconciliation
+
+A lost claim connection is not proof that the transfer stopped. Its durable token
+and uncertainty fence continue reserving the money. Unlike ordinary review after
+five errors, uncertain operations remain discoverable and executable with exactly
+their original provider key and amount, including automatic intent recovery.
+Stripe first lists all refund pages for the PaymentIntent and matches the persisted
+operation metadata (tenant, invoice and operation hash), then replays the same
+idempotency key only when no match exists. A confirmed refund is booked once;
+a definitive rejection releases the reservation. Transport errors, listing errors
+and an absent dashboard entry are not confirmation of non-execution.
+
+The office can request another check with `payment:write` and a nonempty reason via
+`POST /admin/invoices/:invoiceId/refund-reservations/:key/reconcile` (also available
+as “Klärung anfordern” in the entry detail). The reservation records actor, reason
+and request time, resets the review retry budget, and schedules the original
+operation. This never clears the execution fence or releases money. If Stripe or
+support still cannot confirm the outcome, the UI honestly reports that money stays
+reserved. There is deliberately no unchecked “force release” of an unknown transfer.

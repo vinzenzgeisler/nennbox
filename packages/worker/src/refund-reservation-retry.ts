@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull, or, isNotNull, sql } from 'drizzle-orm';
 import {
   paymentRefundReservations,
   invoices,
@@ -33,8 +33,12 @@ export async function retryManualRefundReservations(
         eq(paymentRefundReservations.organizationId, ctx.organizationId),
         eq(paymentRefundReservations.source, 'manual'),
         eq(paymentRefundReservations.status, 'reserved'),
-        // Flagged for review: the office decides, the worker no longer retries.
-        isNull(paymentRefundReservations.needsReviewAt),
+        // Ordinary review stops retries. Lost claims still need provider confirmation.
+        or(
+          isNull(paymentRefundReservations.needsReviewAt),
+          eq(paymentRefundReservations.executionUncertain, true),
+          isNotNull(paymentRefundReservations.executionToken),
+        ),
         sql`${paymentRefundReservations.updatedAt} < now() - make_interval(secs => ${Math.max(1, Math.round(retryAfterMs / 1000))})`,
       ),
     )
