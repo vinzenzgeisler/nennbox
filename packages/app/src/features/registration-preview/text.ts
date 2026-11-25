@@ -33,3 +33,24 @@ export function stepTitles(locale: Locale): Record<Step, string> {
     payment: t('Zahlung', 'Payment'),
   };
 }
+
+export function accentHint(
+  notice: 'darkened' | 'lightened' | 'nearSuccess',
+  locale: Locale,
+) {
+  const t = (de: string, en: string) => (locale === 'de' ? de : en);
+  return {
+    darkened: t(
+      'Euer Ton wird für Flächen abgedunkelt, damit Text darauf lesbar bleibt. Das Logo bleibt unverändert.',
+      'Your colour is darkened for surfaces so that text on it stays readable. The logo remains unchanged.',
+    ),
+    lightened: t(
+      'Euer Ton wird für Flächen aufgehellt, damit er sich von Text unterscheidet. Das Logo bleibt unverändert.',
+      'Your colour is lightened for surfaces so that it stays distinct from text. The logo remains unchanged.',
+    ),
+    nearSuccess: t(
+      'Hinweis: Euer Ton liegt nah am Erfolgsgrün. Er bleibt wie gewählt; Statusmeldungen tragen zusätzlich Zeichen und Text.',
+      'Note: your colour is close to the success green. It stays as chosen; status messages also carry a symbol and text.',
+    ),
+  }[notice];
+}

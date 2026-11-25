@@ -130,4 +130,22 @@ describe('component review gallery', () => {
     expect(details.open).toBe(false);
     expect(document.activeElement).toBe(summary);
   });
+  it('shows the registration blocks: option cards and club palettes', () => {
+    container = document.createElement('div');
+    document.body.append(container);
+    root = createRoot(container);
+    act(() => root!.render(<ComponentGallery />));
+    const section = [...container.querySelectorAll('section')].find(
+      (item) =>
+        item.querySelector('h2')?.textContent === 'Nennformular (Prototyp)',
+    )!;
+    expect(section).toBeDefined();
+    const radios = section.querySelectorAll<HTMLInputElement>(
+      'label.nb-reg-option input[type=radio]',
+    );
+    expect(radios.length).toBeGreaterThanOrEqual(8);
+    expect(section.textContent).toContain('ausgebucht · 3 auf der Warteliste');
+    expect(section.textContent).toContain('#FFD400 → #846D00 · abgedunkelt');
+    expect(section.textContent).toContain('nah am Erfolgsgrün');
+  });
 });

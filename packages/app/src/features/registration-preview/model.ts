@@ -256,3 +256,13 @@ export function validateStep(step: Step, draft: Draft, locale: Locale = 'de', co
     errors.paymentMethod = message('Bitte wähle eine Zahlungsart.', 'Please select a payment method.');
   return errors;
 }
+
+/** Step that owns a validation path, so the error summary can jump to it. */
+export function stepForPath(path: string): Step | undefined {
+  if (path.startsWith('person.')) return 'person';
+  if (path.includes('.passenger.')) return 'passenger';
+  if (path.startsWith('entries')) return 'vehicle';
+  if (path.startsWith('answers') || path.startsWith('uploads'))
+    return 'documents';
+  return undefined;
+}

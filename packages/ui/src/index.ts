@@ -17,3 +17,5 @@ export * from './app-primitives/AppSettings.js';
 export * from './registration/RegistrationComponents.js';
 export * from './registration/registrationPalette.js';
 export * from './registration/registrationThemes.js';
+export * from './registration/registrationClubs.js';
+export * from './registration/RegistrationOptionCard.js';

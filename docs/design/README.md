@@ -180,9 +180,9 @@ Bausteine stehen in `packages/ui/src/registration/` und in `/components`.
 | P4 Nachweise | Beifahrer mit eigenem späteren Link; konfigurierbare Vereinsfragen zuletzt; Nachweise mit Kamera-/Dateiauswahl, leer/bereit/lädt/Formatfehler/zu groß. |
 | P5 Prüfen | Gruppen mit Rücksprung, hervorgehobene E-Mail, vollständige Kosten und drei einzelne, nicht vorausgewählte Zustimmungen; Texte im Dialog. |
 | P6 Bestätigung | Eingang und Warteliste, Zulassung/Überweisung, optionale Sofortzahlung; vier Zahlungsrückkehrzustände, vier E-Mail-Zustände, Entwurf laden/Link ungültig, Frist vorbei/abgesagt/gesperrt, Laden/Senden. |
-| P7 Verein | Logo/Initialen und Akzent umschaltbar. Typisierte reine OKLCH-Ableitung mit Gamut-Mapping und WCAG-Messung; externe JavaScript-Datei ausschließlich gelesen, nie eingebunden oder ausgeführt. |
+| P7 Verein | Neun Beispielvereine (sechs aus P7, drei Themenvereine) mit Logo/Initialen und Akzent umschaltbar, dazu die Probe „Akzent entfernt“ (Neutralgrau). Hinweis nur, wenn NENNBOX eingreift: abgedunkelt, aufgehellt oder nah am Erfolgsgrün – nie eine Sperre. Typisierte reine OKLCH-Ableitung mit Gamut-Mapping und WCAG-Messung; externe JavaScript-Datei ausschließlich gelesen, nie eingebunden oder ausgeführt. |
 | P8 Themen | Vier Beispielthemen mit Kopf, lokaler Schriftpaarung, Ecken, Grund, Dichte und Sponsorenstreifen. Bildband ist eine lokale Illustration, kein Veranstaltungsfoto. |
-| P9 Bausteine | Gemeinsame Felder, Karten, Hinweise, Uploads; echte Labels, Gruppen und Fokus. Fehler erst bei Blur, beim Absenden Sammelmeldung mit Sprung und Fokus aufs erste Fehlerfeld. |
+| P9 Bausteine | Gemeinsame Felder, Karten, Radio-Karten mit Preis (`RegistrationOptionCard`), Hinweise, Uploads; echte Labels, Gruppen und Fokus. Fehler erst bei Blur, beim Absenden Sammelmeldung mit Sprung und Fokus aufs erste Fehlerfeld. |
 
 Deutsch/Englisch ist umschaltbar. Bestehende Formularübersetzungen werden
 wiederverwendet; zusätzliche Designtexte sind lokal übersetzt. Beispiel-Klassen
@@ -213,6 +213,12 @@ echten Teilnehmerdaten.
 - Vereinsfotos benötigen Mindestauflösung und Hinweise zu erkennbaren Personen.
 - Der Themen-Editor im Einrichten und freie Begrüßungs-/Schritthinweistexte werden
   hier nicht integriert; diese Vorschau zeigt die vier vorgegebenen Beispielthemen.
+
+Der CSS-Vertragstest (`registrationStyles.test.ts`) nagelt „Was der Ton nie färbt“
+und `unveraenderlich` aus `themen.json` am Stylesheet fest: Akzentvariablen
+erscheinen nur in den sieben erlaubten Rollen, nie in Status-, Text-, Feld- oder
+Rahmenregeln; Trefferflächen bleiben mindestens 44 px, die Dichte ändert nur
+Abstände, der Fokusring wird nie entfernt.
 
 Unit-/Routentests prüfen Verzweigungen, Validierung/Fokus, Einzelzustimmungen,
 Preise sowie Ableitungs-Notbremsen/Kontrastgrenzen und unveränderliche Farben.

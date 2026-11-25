@@ -3,7 +3,7 @@ import {
   RegistrationCard,
   RegistrationField,
   RegistrationNotice,
-  Radio,
+  RegistrationOptionCard,
   Checkbox,
 } from '@nennbox/ui';
 import {
@@ -116,19 +116,28 @@ export function VehicleFields({
               {w.class} · {w.required}
             </legend>
             {sampleEvent.classes.map((cls) => (
-              <div
+              <RegistrationOptionCard
                 key={cls.id}
-                className={`nb-reg-class${entry.classId === cls.id ? ' is-selected' : ''}`}
-              >
-                <Radio
-                  name={`class-${entry.id}`}
-                  checked={entry.classId === cls.id}
-                  label={`${cls.name} · ${money(cls.price, locale)} · ${cls.available ? t(`${cls.available} von ${cls.capacity} Plätzen frei`, `${cls.available} of ${cls.capacity} places available`) : t('ausgebucht · 3 auf der Warteliste', 'full · 3 on the waiting list')}`}
-                  onChange={() =>
-                    patch(index, { classId: cls.id, waitlist: false })
-                  }
-                />
-              </div>
+                name={`class-${entry.id}`}
+                checked={entry.classId === cls.id}
+                label={cls.name}
+                price={money(cls.price, locale)}
+                unavailable={cls.available === 0}
+                detail={
+                  cls.available
+                    ? t(
+                        `${cls.available} von ${cls.capacity} Plätzen frei`,
+                        `${cls.available} of ${cls.capacity} places available`,
+                      )
+                    : t(
+                        `ausgebucht · ${cls.waitlistCount} auf der Warteliste`,
+                        `full · ${cls.waitlistCount} on the waiting list`,
+                      )
+                }
+                onChange={() =>
+                  patch(index, { classId: cls.id, waitlist: false })
+                }
+              />
             ))}
             {errors[`entries.${index}.classId`] && (
               <p role="alert">{errors[`entries.${index}.classId`]}</p>

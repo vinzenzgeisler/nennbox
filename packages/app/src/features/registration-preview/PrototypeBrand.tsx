@@ -1,30 +1,26 @@
 import sampleLogo from './logo.svg';
-import { type Locale } from './text.js';
+import {
+  type RegistrationAccentNotice,
+  type RegistrationClub,
+} from '@nennbox/ui';
+import { accentHint, type Locale } from './text.js';
 export function PrototypeBrand({
   logo,
-  themeId,
+  club,
 }: {
   logo: boolean;
-  themeId: string;
+  club: RegistrationClub;
 }) {
   return (
     <>
       <span className="nb-preview-logo">
         {logo ? (
-          <img alt="MSC Hohenstein · Beispiellogo" src={sampleLogo} />
+          <img alt={`${club.name} · Beispiellogo`} src={sampleLogo} />
         ) : (
-          'MSC'
+          club.initials
         )}
       </span>
-      <strong>
-        {themeId === 'kart'
-          ? 'Kart Club Sonne'
-          : themeId === 'tradition'
-            ? 'Oldtimer Freunde Taunus'
-            : themeId === 'modern'
-              ? 'Rennsport Nord e. V.'
-              : 'MSC Hohenstein e. V.'}
-      </strong>
+      <strong>{club.name}</strong>
     </>
   );
 }
@@ -79,5 +75,28 @@ export function PrototypeBanner({
           : '26–27 April 2027 · Entry deadline 12 April'}
       </span>
     </div>
+  );
+}
+
+// Club identity belonging to each example theme (P8); the accent comes from the theme.
+export const themeClubs: Record<string, string> = {
+  standard: 'msc',
+  tradition: 'oft',
+  modern: 'rn',
+  kart: 'kcs',
+};
+
+export function AccentHint({
+  notice,
+  locale,
+}: {
+  notice: RegistrationAccentNotice | null;
+  locale: Locale;
+}) {
+  if (!notice) return null;
+  return (
+    <p className="nb-preview-palette-hint" data-notice={notice}>
+      {accentHint(notice, locale)}
+    </p>
   );
 }

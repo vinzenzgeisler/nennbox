@@ -1,8 +1,10 @@
 import { prototypeStyle } from './prototypeStyle.js';
 import {
+  AccentHint,
   PrototypeBrand,
   PrototypeFooter,
   PrototypeBanner,
+  themeClubs,
 } from './PrototypeBrand.js';
 import { RegistrationSummary } from './RegistrationSummary.js';
 import { useRef, useState } from 'react';
@@ -11,11 +13,14 @@ import {
   RegistrationShell,
   RegistrationNotice,
   deriveRegistrationPalette,
+  registrationAccentNotice,
+  registrationClubs,
   registrationThemes,
 } from '@nennbox/ui';
 import {
   defaultConfig,
   stepsFor,
+  stepForPath,
   validateStep,
   isWaitlisted,
   totalPrice,
@@ -42,6 +47,7 @@ export default function RegistrationPreview() {
   const [completed, setCompleted] = useState<Step[]>([]);
   const [surface, setSurface] = useState<Surface | null>(null);
   const [themeId, setTheme] = useState('standard');
+  const [clubId, setClubId] = useState('msc');
   const [accent, setAccent] = useState('#1F4E79');
   const [logo, setLogo] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
@@ -58,6 +64,8 @@ export default function RegistrationPreview() {
     /^#[0-9a-f]{6}$/i.test(accent) ? accent : theme.accent,
   );
   const style = prototypeStyle(theme, palette);
+  const club = registrationClubs.find((item) => item.id === clubId)!;
+  const accentNotice = registrationAccentNotice(palette);
   const go = (next: Step) => {
     setStep(next);
     setSubmitted(false);
@@ -87,16 +95,7 @@ export default function RegistrationPreview() {
   const focusError = (validation: ValidationErrors) => {
     const path = Object.keys(validation)[0];
     if (!path) return;
-    const targetStep = path.startsWith('person.')
-      ? 'person'
-      : path.includes('.passenger.')
-        ? 'passenger'
-        : path.startsWith('entries')
-          ? 'vehicle'
-          : path.startsWith('answers') || path.startsWith('uploads')
-            ? 'documents'
-            : step;
-    setStep(targetStep);
+    setStep(stepForPath(path) ?? step);
     requestAnimationFrame(() => {
       const target = document.getElementById(path);
       target?.focus();
@@ -138,7 +137,7 @@ export default function RegistrationPreview() {
     <RegistrationShell
       className={`nb-preview nb-preview-${theme.header === 'grossesLogo' ? 'grosses-logo' : theme.header}`}
       style={style}
-      brand={<PrototypeBrand logo={logo} themeId={themeId} />}
+      brand={<PrototypeBrand logo={logo} club={club} />}
       banner={<PrototypeBanner header={theme.header} locale={locale} />}
       title={t('Nennformular', 'Registration')}
       headerEnd={
@@ -223,6 +222,12 @@ export default function RegistrationPreview() {
           setAccent(
             registrationThemes.find((theme) => theme.id === id)!.accent,
           );
+          setClubId(themeClubs[id] ?? 'msc');
+        }}
+        club={clubId}
+        onClub={(id) => {
+          setClubId(id);
+          setAccent(registrationClubs.find((item) => item.id === id)!.accent);
         }}
         accent={accent}
         onAccent={setAccent}
@@ -232,14 +237,7 @@ export default function RegistrationPreview() {
         surface={surface}
         onSurface={setSurface}
       />
-      {palette.adjusted && (
-        <p className="nb-preview-palette-hint">
-          {t(
-            'Euer Ton wird für Flächen angepasst, damit Text darauf lesbar bleibt. Das Logo bleibt unverändert.',
-            'Your colour is adjusted for readable surfaces. The logo remains unchanged.',
-          )}
-        </p>
-      )}
+      <AccentHint notice={accentNotice} locale={locale} />
       {surface ? (
         <SideSurfaces
           surface={surface}

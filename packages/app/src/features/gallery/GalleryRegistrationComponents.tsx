@@ -4,8 +4,11 @@ import {
   RegistrationCard,
   RegistrationField,
   RegistrationNotice,
+  RegistrationOptionCard,
   RegistrationUpload,
   deriveRegistrationPalette,
+  registrationAccentNotice,
+  registrationClubs,
   registrationPaletteVariables,
 } from '@nennbox/ui';
 import type { CSSProperties } from 'react';
@@ -59,6 +62,50 @@ export function GalleryRegistrationComponents() {
           <p>zählt nicht als Startmeldung · 0 €</p>
         </RegistrationCard>
       </RegistrationCard>
+      <fieldset>
+        <legend>Radio-Karten</legend>
+        <RegistrationOptionCard
+          name="gallery-class"
+          label="Serienwagen bis 1600 cm³"
+          price="90 €"
+          detail="22 von 50 Plätzen frei"
+          defaultChecked
+        />
+        <RegistrationOptionCard
+          name="gallery-class"
+          label="Rennwagen"
+          price="130 €"
+          detail="ausgebucht · 3 auf der Warteliste"
+          unavailable
+        />
+      </fieldset>
+      <h3>Vereinsfarben aus einem Ton</h3>
+      <div className="nb-gallery-grid">
+        {registrationClubs.slice(0, 6).map((club) => {
+          const palette = deriveRegistrationPalette(club.accent);
+          const notice = registrationAccentNotice(palette);
+          return (
+            <div
+              key={club.id}
+              style={registrationPaletteVariables(palette) as CSSProperties}
+            >
+              <strong>{club.name}</strong>
+              <RegistrationOptionCard
+                name={`gallery-${club.id}`}
+                label="Serienwagen über 1600 cm³"
+                price="110 €"
+                detail="8 von 50 Plätzen frei"
+                defaultChecked
+              />
+              <p>
+                {club.accent} → {palette.base}
+                {notice &&
+                  ` · ${{ darkened: 'abgedunkelt', lightened: 'aufgehellt', nearSuccess: 'nah am Erfolgsgrün' }[notice]}`}
+              </p>
+            </div>
+          );
+        })}
+      </div>
       <RegistrationNotice>
         Dein Beifahrer ergänzt seine Daten selbst.
       </RegistrationNotice>

@@ -3,6 +3,8 @@ import {
   Checkbox,
   RegistrationField,
   SelectField,
+  registrationClubs,
+  registrationNeutralAccent,
   registrationThemes,
 } from '@nennbox/ui';
 import {
@@ -24,6 +26,8 @@ export type ControlsProps = {
   onConfig: (config: PreviewConfig) => void;
   theme: string;
   onTheme: (theme: string) => void;
+  club: string;
+  onClub: (club: string) => void;
   accent: string;
   onAccent: (accent: string) => void;
   logo: boolean;
@@ -92,6 +96,14 @@ export function PrototypeControls(p: ControlsProps) {
         type: 'image/tiff',
         status: 'error',
       };
+    if (kind === 'passenger') {
+      d.entries[0]!.passenger = {
+        firstName: 'Lena',
+        lastName: 'Muster',
+        email: 'lena.muster@beispiel.de',
+        pending: false,
+      };
+    }
     if (kind === 'review') {
       d.entries[0]!.passenger = {
         firstName: 'Lena',
@@ -115,9 +127,11 @@ export function PrototypeControls(p: ControlsProps) {
         ? 'person'
         : ['uploads', 'large'].includes(kind)
           ? 'documents'
-          : kind === 'review'
-            ? 'review'
-            : 'vehicle',
+          : kind === 'passenger'
+            ? 'passenger'
+            : kind === 'review'
+              ? 'review'
+              : 'vehicle',
     );
   };
   return (
@@ -140,6 +154,17 @@ export function PrototypeControls(p: ControlsProps) {
             </option>
           ))}
         </SelectField>
+        <SelectField
+          label={t('Beispielverein', 'Example club')}
+          value={p.club}
+          onChange={(e) => p.onClub(e.target.value)}
+        >
+          {registrationClubs.map((club) => (
+            <option key={club.id} value={club.id}>
+              {club.name} · {club.accent}
+            </option>
+          ))}
+        </SelectField>
         <RegistrationField
           label={t('Akzentton (#RRGGBB)', 'Accent (#RRGGBB)')}
           value={p.accent}
@@ -152,6 +177,20 @@ export function PrototypeControls(p: ControlsProps) {
           )}
           checked={p.logo}
           onChange={(e) => p.onLogo(e.target.checked)}
+        />
+        <Checkbox
+          label={t(
+            'Akzent entfernen (Probe, Neutralgrau)',
+            'Remove accent (check, neutral grey)',
+          )}
+          checked={p.accent.toUpperCase() === registrationNeutralAccent}
+          onChange={(e) =>
+            p.onAccent(
+              e.target.checked
+                ? registrationNeutralAccent
+                : registrationClubs.find((club) => club.id === p.club)!.accent,
+            )
+          }
         />
         {(['questions', 'uploads', 'instantPayment'] as const).map((key, i) => (
           <Checkbox
@@ -190,6 +229,7 @@ export function PrototypeControls(p: ControlsProps) {
           ['waitlist', 'Ausgebucht', 'Full class'],
           ['two', 'Zwei Startmeldungen', 'Two entries'],
           ['spare', 'Ersatzfahrzeug', 'Spare vehicle'],
+          ['passenger', 'Beifahrer', 'Passenger'],
           ['uploads', 'Upload-Zustände', 'Upload states'],
           ['large', 'Datei zu groß', 'File too large'],
           ['review', 'Prüfen', 'Review'],

@@ -14,6 +14,7 @@ import {
   totalPrice,
   uploadError,
   validateStep,
+  stepForPath,
   type Draft,
   type PreviewConfig,
   type Upload,
@@ -247,5 +248,17 @@ describe('documents, review and payment', () => {
     );
     draft.paymentMethod = 'transfer';
     expect(validateStep('payment', draft, 'en', instant)).toEqual({});
+  });
+});
+
+describe('error summary routing', () => {
+  it('maps every validation path to the step that owns it', () => {
+    expect(stepForPath('person.email')).toBe('person');
+    expect(stepForPath('entries.0.vehicle.model')).toBe('vehicle');
+    expect(stepForPath('entries.0.replacement.year')).toBe('vehicle');
+    expect(stepForPath('entries.0.passenger.email')).toBe('passenger');
+    expect(stepForPath('answers.electricity')).toBe('documents');
+    expect(stepForPath('uploads.license')).toBe('documents');
+    expect(stepForPath('consents.terms')).toBeUndefined();
   });
 });
