@@ -84,7 +84,18 @@ do not receive reminders, duplicate warnings or admission tasks.
 The pure core receives its clock/calendar values as input and has no HTTP,
 database or runtime clock dependency. Tasks carry stable ruleId, entryId (null
 for class findings), classId, German reason, evidence field names and severity.
-API consumers must display the reason/evidence without inferring their own rules.
+Tasks additionally carry an office projection: \`entry\` (name, effective start number,
+organization code, class name, creation time), \`className\`, \`ageDays\`, bilingual
+\`detail\` (de/en), raw rule \`values\`, and \`relatedEntries\` with per-neighbour
+matching evidence. Required document names and latest valid-until document names
+are loaded tenant/event-scoped. Missing-document age is actual calendar days,
+not the configured threshold. Class findings have a null entry and age.
+API consumers display these facts without inferring their own rules.
+Duplicate projections link one real, non-exempt counterpart per matching identity
+dimension (at most five for vehicles, two for people); this bounds output even
+for fully colliding input. Evidence on each link belongs to that particular
+counterpart, not the union across all matches. The legacy reason/fields remain
+compatible for other warning consumers. Deployment migration invalidates old caches.
 
 ## HTTP API
 

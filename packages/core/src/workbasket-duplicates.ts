@@ -75,6 +75,7 @@ export function duplicateTasks(
   ] as const;
   for (const { ruleId, dimensions, reason } of rules) {
     if (!config[ruleId].enabled) continue;
+    const related = new Map<WorkbasketEntry, Map<string, Set<string>>>();
     const evidence = new Map<WorkbasketEntry, Set<string>>();
     for (const dimension of dimensions) {
       const buckets = new Map<string, WorkbasketEntry[]>();
@@ -98,6 +99,15 @@ export function duplicateTasks(
             if (!allows(entry.classId)) restricted++;
           }
         }
+        const firstByClass = new Map<string, WorkbasketEntry[]>();
+        const restrictedEntries = bucket
+          .filter((entry) => !allows(entry.classId))
+          .slice(0, 2);
+        for (const entry of bucket) {
+          const group = firstByClass.get(entry.classId) ?? [];
+          if (group.length < 2) group.push(entry);
+          firstByClass.set(entry.classId, group);
+        }
         for (const entry of bucket) {
           if (
             ruleId !== 'duplicateStartNumber' &&
@@ -109,6 +119,28 @@ export function duplicateTasks(
           let fields = evidence.get(entry);
           if (!fields) evidence.set(entry, (fields = new Set()));
           for (const field of dimension.fields) fields.add(field);
+          // One actual conflicting neighbour per dimension bounds dense projections.
+          const neighbour = [
+            ...(firstByClass.get(entry.classId) ?? []),
+            ...restrictedEntries,
+            ...bucket.slice(0, 2),
+          ].find(
+            (other) =>
+              other.id !== entry.id &&
+              (ruleId === 'duplicateStartNumber' ||
+                other.classId === entry.classId ||
+                !allows(entry.classId) ||
+                !allows(other.classId)),
+          );
+          if (neighbour) {
+            const matches =
+              related.get(entry) ?? new Map<string, Set<string>>();
+            const matchedFields =
+              matches.get(neighbour.id) ?? new Set<string>();
+            for (const field of dimension.fields) matchedFields.add(field);
+            matches.set(neighbour.id, matchedFields);
+            related.set(entry, matches);
+          }
         }
       }
     }
@@ -118,6 +150,10 @@ export function duplicateTasks(
         entryId: entry.id,
         classId: entry.classId,
         reason,
+        related: [...(related.get(entry) ?? [])].map(([id, fields]) => ({
+          id,
+          fields: [...fields],
+        })),
         fields: [...fields],
         severity: 'warning',
       });

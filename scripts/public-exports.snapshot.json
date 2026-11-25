@@ -625,6 +625,7 @@
     "WorkbasketConfigOverrides",
     "WorkbasketConfiguration",
     "WorkbasketEntry",
+    "WorkbasketEntryReference",
     "WorkbasketRepository",
     "WorkbasketResult",
     "WorkbasketRuleId",
