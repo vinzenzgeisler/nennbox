@@ -289,7 +289,14 @@ export function AdminApplication() {
           <AdminModules />
         ) : view === 'account' ? (
           <>
-            <EventDocumentSettings eventId={selectedEvent} />
+            <EventDocumentSettings
+              eventId={selectedEvent}
+              onSaved={() => {
+                // Configuration changes invalidate the selected entry's document projection too.
+                setSelectedEntry(null);
+                entriesChanged();
+              }}
+            />
             <RegistrationFormSettings eventId={selectedEvent} />
           </>
         ) : null

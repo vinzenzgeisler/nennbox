@@ -25,7 +25,10 @@ const loading = (eventId: string): Loaded => ({
 });
 
 /** Loads document types; the request ends when the event changes. */
-export function useEventDocumentSettings(eventId: string) {
+export function useEventDocumentSettings(
+  eventId: string,
+  onSaved?: () => void,
+) {
   const [data, setData] = useState<Loaded>(() => loading(eventId));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -88,6 +91,7 @@ export function useEventDocumentSettings(eventId: string) {
         message: '',
       }));
       setSaved(true);
+      onSaved?.();
     } catch (error) {
       if (controller.signal.aborted) return;
       setData((value) => ({
@@ -101,7 +105,7 @@ export function useEventDocumentSettings(eventId: string) {
       if (saveScope.current === controller) saveScope.current = null;
       if (!controller.signal.aborted) setSaving(false);
     }
-  }, [valid, saving, current, eventId]);
+  }, [valid, saving, current, eventId, onSaved]);
   return {
     ...current,
     errors,
