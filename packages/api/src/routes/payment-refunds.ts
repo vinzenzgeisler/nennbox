@@ -70,66 +70,81 @@ export function registerPaymentRefundRoutes(context: ApiRoutesContext): void {
         },
         409,
       );
-    let refund: { readonly id: string };
-    try {
-      refund = await deps.paymentProvider.refund({
-        idempotencyKey: reservation.idempotencyKey,
-        organizationId: guard.context.organizationId,
-        invoiceId: reservation.invoiceId,
-        paymentId: reservation.providerPaymentId,
-        amountCents: reservation.amountCents,
-        reason: parsed.data.reason,
-      });
-    } catch (error) {
-      let needsReview = false;
-      if (error instanceof RefundRejectedError)
-        await deps.paymentRefunds.rejectReservation?.(
-          guard.context,
-          reservation.idempotencyKey,
-        );
-      else
-        needsReview =
-          (await deps.paymentRefunds.recordFailedAttempt?.(
-            guard.context,
-            reservation.idempotencyKey,
-            errorCodeOf(error),
-          )) === 'needs_review';
-      deps.logger.warn('Stripe provider refund failed', {
-        errorName: error instanceof Error ? error.name : 'unknown',
-      });
-      // A reservation flagged for review stays but is no longer retried, so the
-      // office has to decide; the dialog then points to the entry detail.
-      if (needsReview)
-        return c.json(
-          { error: 'Refund needs review', reason: 'needs_review' },
-          409,
-        );
-      return c.json({ error: 'Refund unavailable' }, 503);
-    }
-    try {
-      const result = await deps.paymentRefunds.recordRefund(guard.context, {
-        invoiceId: reservation.invoiceId,
-        providerPaymentId: reservation.providerPaymentId,
-        refundableCents: reservation.amountCents,
-        currency: reservation.currency,
-        amountCents: reservation.amountCents,
-        providerRefundId: refund.id,
-        actor,
-        reason: parsed.data.reason,
-        reservationKey: reservation.idempotencyKey,
-      });
-      return result
-        ? c.json(
-            { refundId: refund.id, duplicate: result === 'duplicate' },
-            201,
-          )
-        : c.json({ error: 'Refund could not be recorded' }, 409);
-    } catch (error) {
-      deps.logger.warn('Stripe refund ledger write failed', {
-        errorName: error instanceof Error ? error.name : 'unknown',
-      });
-      return c.json({ error: 'Refund unavailable' }, 503);
-    }
+    return (
+      (await deps.paymentRefunds.withExecution(
+        guard.context,
+        reservation.idempotencyKey,
+        async () => {
+          let refund: { readonly id: string };
+          try {
+            refund = await deps.paymentProvider!.refund({
+              idempotencyKey: reservation.idempotencyKey,
+              organizationId: guard.context.organizationId,
+              invoiceId: reservation.invoiceId,
+              paymentId: reservation.providerPaymentId,
+              amountCents: reservation.amountCents,
+              reason: parsed.data.reason,
+            });
+          } catch (error) {
+            let needsReview = false;
+            if (error instanceof RefundRejectedError)
+              await deps.paymentRefunds!.rejectReservation?.(
+                guard.context,
+                reservation.idempotencyKey,
+              );
+            else
+              needsReview =
+                (await deps.paymentRefunds!.recordFailedAttempt?.(
+                  guard.context,
+                  reservation.idempotencyKey,
+                  errorCodeOf(error),
+                )) === 'needs_review';
+            deps.logger.warn('Stripe provider refund failed', {
+              errorName: error instanceof Error ? error.name : 'unknown',
+            });
+            // A reservation flagged for review stays but is no longer retried, so the
+            // office has to decide; the dialog then points to the entry detail.
+            if (needsReview)
+              return c.json(
+                { error: 'Refund needs review', reason: 'needs_review' },
+                409,
+              );
+            return c.json({ error: 'Refund unavailable' }, 503);
+          }
+          try {
+            const result = await deps.paymentRefunds!.recordRefund(
+              guard.context,
+              {
+                invoiceId: reservation.invoiceId,
+                providerPaymentId: reservation.providerPaymentId,
+                refundableCents: reservation.amountCents,
+                currency: reservation.currency,
+                amountCents: reservation.amountCents,
+                providerRefundId: refund.id,
+                actor,
+                reason: parsed.data.reason,
+                reservationKey: reservation.idempotencyKey,
+              },
+            );
+            return result
+              ? c.json(
+                  { refundId: refund.id, duplicate: result === 'duplicate' },
+                  201,
+                )
+              : c.json({ error: 'Refund could not be recorded' }, 409);
+          } catch (error) {
+            deps.logger.warn('Stripe refund ledger write failed', {
+              errorName: error instanceof Error ? error.name : 'unknown',
+            });
+            return c.json({ error: 'Refund unavailable' }, 503);
+          }
+        },
+      )) ??
+      c.json(
+        { error: 'Refund no longer executable', reason: 'not_executable' },
+        409,
+      )
+    );
   });
 
   // Office decision for a refund the provider could not settle repeatedly: the

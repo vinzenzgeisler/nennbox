@@ -67,6 +67,7 @@ function setup(
         setEvent: async () => revision,
       },
       paymentRefunds: {
+        withExecution: async (_ctx, _key, run) => run(),
         abandonReservation,
         recordFailedAttempt,
         getRefundable: async () => null,

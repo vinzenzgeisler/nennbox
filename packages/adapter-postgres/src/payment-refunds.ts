@@ -1,5 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import type { PaymentRefundRepository } from '@nennbox/core';
+import { paymentRefundReservations } from './schema/provider-payments.js';
+import { withRefundExecution } from './payment-refund-execution.js';
 import type { Database } from './database.js';
 import {
   invoices,
@@ -21,6 +23,7 @@ export function createPaymentRefundRepository(
   db: Database,
 ): PaymentRefundRepository {
   return {
+    withExecution: (ctx, key, run) => withRefundExecution(db, ctx, key, run),
     getRefundable: async (ctx, invoiceId, providerPaymentId) => {
       const [row] = await db
         .select({
@@ -94,6 +97,49 @@ export function createPaymentRefundRepository(
             );
           return 'duplicate';
         }
+        // A stale caller must not book against a released/foreign reservation.
+        if (input.reservationKey) {
+          const [operation] = await tx
+            .select()
+            .from(paymentRefundReservations)
+            .where(
+              and(
+                eq(
+                  paymentRefundReservations.organizationId,
+                  ctx.organizationId,
+                ),
+                eq(
+                  paymentRefundReservations.idempotencyKey,
+                  input.reservationKey,
+                ),
+              ),
+            );
+          if (
+            !operation ||
+            operation.status !== 'reserved' ||
+            operation.invoiceId !== input.invoiceId ||
+            operation.providerPaymentId !== input.providerPaymentId ||
+            operation.amountCents !== input.amountCents
+          )
+            return null;
+        }
+        const [outstanding] = await tx
+          .select({
+            amount: sql<number>`coalesce(sum(${paymentRefundReservations.amountCents}), 0)::int`,
+          })
+          .from(paymentRefundReservations)
+          .where(
+            and(
+              eq(paymentRefundReservations.organizationId, ctx.organizationId),
+              eq(paymentRefundReservations.invoiceId, input.invoiceId),
+              eq(
+                paymentRefundReservations.providerPaymentId,
+                input.providerPaymentId,
+              ),
+              eq(paymentRefundReservations.status, 'reserved'),
+              sql`${paymentRefundReservations.idempotencyKey} <> ${input.reservationKey ?? ''}`,
+            ),
+          );
         const [refundable] = await tx
           .select({
             amount: sql<number>`coalesce(sum(${invoicePayments.amountCents}) filter (where ${invoicePayments.providerRefundId} is null and ${invoicePayments.amountCents} > 0), 0)::int + coalesce(sum(${invoicePayments.amountCents}) filter (where ${invoicePayments.providerRefundId} is not null), 0)::int`,
@@ -108,7 +154,8 @@ export function createPaymentRefundRepository(
           );
         if (
           input.amountCents <= 0 ||
-          input.amountCents > Number(refundable?.amount ?? 0)
+          input.amountCents >
+            Number(refundable?.amount ?? 0) - Number(outstanding?.amount ?? 0)
         )
           return null;
         const [payment] = await tx

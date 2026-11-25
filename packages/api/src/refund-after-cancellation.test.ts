@@ -85,6 +85,7 @@ function makeApp(
     }),
   );
   const paymentRefunds: PaymentRefundRepository = {
+    withExecution: async (_ctx, _key, run) => run(),
     getRefundable: async () => null,
     reserve,
     recordRefund: async () => 'recorded' as const,

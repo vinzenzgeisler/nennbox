@@ -137,6 +137,25 @@ persistent clash surfaces as `concurrent_update` and the API answers **409** wit
 
 ### Provider errors without a way out
 
+Every provider invocation (manual HTTP, manual recovery batch, automatic settlement
+and automatic retry) first takes the same tenant/operation PostgreSQL advisory
+transaction lock. This connection-bound lock is the execution claim; it covers
+provider I/O, ledger booking and failure recording. It has no expiry that could
+release funds while a slow provider request is still running. Connection loss
+releases the claim, but never the monetary reservation; recovery uses the same
+provider idempotency key. Claim connections use a separate bounded pool so slow
+provider requests cannot exhaust the application connections needed for booking.
+
+After claiming, the executor locks the invoice and compare-and-sets only a current
+`reserved`, unflagged operation. Automatic execution also rechecks intent state
+and participation. The invoice lock is released before network I/O so unrelated
+refunds may reserve the remaining balance. Office abandonment must obtain the
+same execution claim before locking the invoice: if execution won it returns
+`not_reviewable`; if abandonment won the stale executor cannot start. Batch and
+reserve snapshots alone never authorize a provider call. Ledger booking also
+refuses closed/mismatched reservations and deducts every other outstanding
+reservation, including when called without a reservation key.
+
 Only an authoritative provider answer releases a reservation:
 
 - Stripe errors that say the request can never succeed (`charge_already_refunded`,

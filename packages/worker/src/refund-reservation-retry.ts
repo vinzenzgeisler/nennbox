@@ -41,38 +41,40 @@ export async function retryManualRefundReservations(
     .limit(50);
   const refunds = createPaymentRefundRepository(db);
   for (const { operation, currency } of pending) {
-    try {
-      const result = await provider.refund({
-        organizationId: ctx.organizationId,
-        invoiceId: operation.invoiceId,
-        paymentId: operation.providerPaymentId,
-        idempotencyKey: operation.idempotencyKey,
-        amountCents: operation.amountCents,
-        reason: operation.reason,
-      });
-      await refunds.recordRefund(ctx, {
-        invoiceId: operation.invoiceId,
-        providerPaymentId: operation.providerPaymentId,
-        currency,
-        refundableCents: operation.amountCents,
-        amountCents: operation.amountCents,
-        providerRefundId: result.id,
-        actor: operation.actor,
-        reason: operation.reason,
-        reservationKey: operation.idempotencyKey,
-      });
-    } catch (error) {
-      if (error instanceof RefundRejectedError) {
-        await refunds.rejectReservation?.(ctx, operation.idempotencyKey);
-        continue;
+    await refunds.withExecution(ctx, operation.idempotencyKey, async () => {
+      try {
+        const result = await provider.refund({
+          organizationId: ctx.organizationId,
+          invoiceId: operation.invoiceId,
+          paymentId: operation.providerPaymentId,
+          idempotencyKey: operation.idempotencyKey,
+          amountCents: operation.amountCents,
+          reason: operation.reason,
+        });
+        await refunds.recordRefund(ctx, {
+          invoiceId: operation.invoiceId,
+          providerPaymentId: operation.providerPaymentId,
+          currency,
+          refundableCents: operation.amountCents,
+          amountCents: operation.amountCents,
+          providerRefundId: result.id,
+          actor: operation.actor,
+          reason: operation.reason,
+          reservationKey: operation.idempotencyKey,
+        });
+      } catch (error) {
+        if (error instanceof RefundRejectedError) {
+          await refunds.rejectReservation?.(ctx, operation.idempotencyKey);
+          return;
+        }
+        // Never release an ambiguous transfer: the same operation stays retryable
+        // until it has failed too often, then it is left to the office.
+        await refunds.recordFailedAttempt?.(
+          ctx,
+          operation.idempotencyKey,
+          errorCodeOf(error),
+        );
       }
-      // Never release an ambiguous transfer: the same operation stays retryable
-      // until it has failed too often, then it is left to the office.
-      await refunds.recordFailedAttempt?.(
-        ctx,
-        operation.idempotencyKey,
-        errorCodeOf(error),
-      );
-    }
+    });
   }
 }

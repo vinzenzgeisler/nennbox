@@ -151,6 +151,7 @@ describe('settling a cancellation refund', () => {
       }),
     );
     const refunds: PaymentRefundRepository = {
+      withExecution: async (_ctx, _key, run) => run(),
       getRefundable: async () => null,
       reserve,
       recordRefund,
@@ -170,6 +171,14 @@ describe('settling a cancellation refund', () => {
       refund,
     };
   }
+
+  it('does not send a reserved snapshot after its execution claim is refused', async () => {
+    const s = setup();
+    s.refunds.withExecution = async () => null;
+    await settleCancellationRefund(ctx, 'invoice-1', s);
+    expect(s.refund).not.toHaveBeenCalled();
+    expect(s.recordRefund).not.toHaveBeenCalled();
+  });
 
   it('refunds the share of every online payment with keys derived from the intent and records them as the system', async () => {
     const s = setup();

@@ -232,26 +232,52 @@ export async function settleCancellationRefund(
             : 'Ablehnung'
         }`;
         operationKey = reservation.idempotencyKey;
-        const refund = await deps.provider.refund({
-          idempotencyKey: reservation.idempotencyKey,
-          organizationId: ctx.organizationId,
-          invoiceId: intent.invoiceId,
-          paymentId: reservation.providerPaymentId,
-          amountCents: reservation.amountCents,
-          reason,
-        });
-        const recorded = await deps.refunds.recordRefund(ctx, {
-          invoiceId: reservation.invoiceId,
-          providerPaymentId: reservation.providerPaymentId,
-          refundableCents: payment.refundableCents,
-          currency: reservation.currency,
-          amountCents: reservation.amountCents,
-          providerRefundId: refund.id,
-          actor: AUTOMATIC_REFUND_ACTOR,
-          reason,
-          reservationKey: reservation.idempotencyKey,
-        });
-        if (!recorded) throw new Error('ledger_rejected');
+        const executed = await deps.refunds.withExecution(
+          ctx,
+          operationKey,
+          async () => {
+            try {
+              const refund = await deps.provider.refund({
+                idempotencyKey: reservation.idempotencyKey,
+                organizationId: ctx.organizationId,
+                invoiceId: intent.invoiceId,
+                paymentId: reservation.providerPaymentId,
+                amountCents: reservation.amountCents,
+                reason,
+              });
+              const recorded = await deps.refunds.recordRefund(ctx, {
+                invoiceId: reservation.invoiceId,
+                providerPaymentId: reservation.providerPaymentId,
+                refundableCents: payment.refundableCents,
+                currency: reservation.currency,
+                amountCents: reservation.amountCents,
+                providerRefundId: refund.id,
+                actor: AUTOMATIC_REFUND_ACTOR,
+                reason,
+                reservationKey: reservation.idempotencyKey,
+              });
+              if (!recorded) throw new Error('ledger_rejected');
+            } catch (error) {
+              if (error instanceof RefundRejectedError)
+                await deps.refunds.rejectReservation?.(
+                  ctx,
+                  reservation.idempotencyKey,
+                );
+              else if (
+                (await deps.refunds.recordFailedAttempt?.(
+                  ctx,
+                  reservation.idempotencyKey,
+                  errorCodeOf(error),
+                )) === 'needs_review'
+              )
+                throw new Error('needs_review');
+              throw error;
+            }
+            return true;
+          },
+        );
+        operationKey = null;
+        if (!executed) throw new Error('ledger_rejected');
         refundedCents += reservation.amountCents;
       }
       result = stopped ?? {
@@ -261,22 +287,10 @@ export async function settleCancellationRefund(
         failure: null,
       };
     } catch (error) {
-      let needsReview = false;
-      if (operationKey) {
-        if (error instanceof RefundRejectedError)
-          await deps.refunds.rejectReservation?.(ctx, operationKey);
-        else
-          needsReview =
-            (await deps.refunds.recordFailedAttempt?.(
-              ctx,
-              operationKey,
-              errorCodeOf(error),
-            )) === 'needs_review';
-      }
       result = failed(
         percent,
         refundedCents,
-        needsReview
+        error instanceof Error && error.message === 'needs_review'
           ? 'needs_review'
           : error instanceof Error && error.message === 'ledger_rejected'
             ? 'ledger_rejected'

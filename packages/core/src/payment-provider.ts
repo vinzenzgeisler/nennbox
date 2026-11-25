@@ -246,6 +246,15 @@ export interface RefundReservationRequest {
 export const MAX_REFUND_ATTEMPTS = 5;
 
 export interface PaymentRefundRepository {
+  /** Atomically claim current executable state; exclude abandonment and other
+   * executors until provider, booking and error handling have all finished.
+   * The connection-bound claim is released on crash, never by a timeout.
+   */
+  withExecution<T>(
+    ctx: import('./context.js').RequestContext,
+    key: string,
+    run: () => Promise<T>,
+  ): Promise<T | null>;
   /** Release only a provider-confirmed rejected operation, never an ambiguous failure. */
   rejectReservation?(
     ctx: import('./context.js').RequestContext,

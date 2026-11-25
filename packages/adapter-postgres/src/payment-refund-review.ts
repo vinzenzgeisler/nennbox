@@ -1,4 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
+import { claimRefundExecution } from './payment-refund-execution.js';
 import { MAX_REFUND_ATTEMPTS } from '@nennbox/core';
 import type { RequestContext } from '@nennbox/core';
 import type { Database, TransactionDatabase } from './database.js';
@@ -63,6 +64,8 @@ export async function abandonRefundReservation(
   request: { invoiceId: string; key: string; actor: string; reason: string },
 ): Promise<'abandoned' | 'not_found' | 'not_reviewable'> {
   return db.transaction(async (tx) => {
+    if (!(await claimRefundExecution(tx, ctx.organizationId, request.key)))
+      return 'not_reviewable';
     if (!(await lockInvoiceRow(tx, ctx.organizationId, request.invoiceId)))
       return 'not_found';
     const [operation] = await tx

@@ -13,6 +13,9 @@ const key = '22222222-2222-4222-8222-222222222222';
 function setup(reservation: RefundReservation) {
   const reserve = vi.fn(async () => reservation);
   const refund = vi.fn(async () => ({ id: 're_1' }));
+  const withExecution = vi.fn<PaymentRefundRepository['withExecution']>(
+    async (_ctx, _key, run) => run(),
+  );
   const rejectReservation = vi.fn(async () => {});
   const recordRefund = vi.fn(async () => 'recorded' as const);
   const app = createApp(
@@ -30,6 +33,7 @@ function setup(reservation: RefundReservation) {
         resolvePermissions: async () => new Set(['payment:write']),
       },
       paymentRefunds: {
+        withExecution,
         rejectReservation,
         reserve,
         recordRefund,
@@ -54,10 +58,32 @@ function setup(reservation: RefundReservation) {
         reason: 'Office refund',
       }),
     });
-  return { request, reserve, refund, recordRefund, rejectReservation };
+  return {
+    request,
+    reserve,
+    refund,
+    recordRefund,
+    rejectReservation,
+    withExecution,
+  };
 }
 
 describe('manual refund reservation boundary', () => {
+  it('refuses a stale reserved snapshot when the execution claim is lost', async () => {
+    const s = setup({
+      status: 'reserved',
+      invoiceId: 'invoice-1',
+      providerPaymentId: 'pi_1',
+      idempotencyKey: key,
+      amountCents: 2100,
+      currency: 'EUR',
+    });
+    s.withExecution.mockImplementation(async () => null);
+    expect((await s.request()).status).toBe(409);
+    expect(s.refund).not.toHaveBeenCalled();
+    expect(s.recordRefund).not.toHaveBeenCalled();
+  });
+
   it('never transfers when the amount exceeds what is left, and says why', async () => {
     const s = setup({
       status: 'unavailable',
