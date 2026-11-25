@@ -12,6 +12,7 @@ export function WorkbasketBulkActions(props: WorkbasketBulkActionsProps) {
   const key = `${props.eventId}:${props.ruleId}:${[...new Set(props.entryIds)].sort().join(',')}`;
   if (props.ruleId === 'ready')
     return <WorkbasketAdmission key={key} {...props} />;
+  // Task changes reset drafts; attempted sends are restored by event/rule from session storage.
   if (props.ruleId === 'missingDocuments' || props.ruleId === 'paymentOpen')
     return <WorkbasketReminder key={key} {...props} ruleId={props.ruleId} />;
   return null;

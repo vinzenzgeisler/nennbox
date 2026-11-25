@@ -119,14 +119,33 @@ The detail response now includes `acceptanceTransitions` with category and
 German label, resolved against the entry's pinned workflow and filtered by the
 same permissions/roles as `availableActions`. The browser never infers an
 accepted category from a status key or the event's latest workflow. Before each
-sequential existing transition call it refreshes both advisory eligibility and
-permissions. Results distinguish successful entries from skipped/failed ones.
+sequential transition call it refreshes both advisory eligibility and
+permissions. The explicit `requireReadyForEvent` request intent additionally
+requires a fresh server evaluation in the same transaction as the transition.
+An admission must target an authorized accepted-category status in the pinned
+workflow; a pinned-revision/status CAS rejects concurrent workflow/status drift.
+Changed readiness is reported per entry as skipped with its current reason.
+
+Authoritative workbasket actions use a short PostgreSQL `SHARE ROW EXCLUSIVE`
+write barrier over the source relations (including configuration and pinned
+workflows), then read live sources rather than the advisory cache. This also
+excludes phantom inserts and direct SQL changes to dependencies until commit.
+The conservative barrier is database-wide, so these explicit actions serialize
+and briefly delay unrelated source writes; advisory reads remain lock-free.
+Both admission and reminder enqueue acquire the same relations in the same order.
+Results distinguish successful entries from skipped/failed ones.
 
 Document/payment reminders use editable templates, the existing rendered
 recipient preview, explicit recipient counts and confirmed campaign creation.
 The preview includes exclusions; eligibility and recipient identity are checked
-again before sending. An uncertain campaign response keeps the same request
-body and idempotency key. Queued recipients are not labelled as sent; the result
+again before sending. The send request includes the confirmed rule and exact
+recipient identities; inside the enqueue transaction the server rejects any
+change in eligibility or recipient identity/count, never extending the confirmed
+set. An uncertain campaign response keeps the same immutable request body and
+idempotency key in session storage scoped to event/rule, surviving changed task
+sets, remounts and same-tab navigation/reload. Storage errors block new sends.
+Idempotent replays return the original campaign before re-resolving changed
+recipients or rule eligibility. Queued recipients are not labelled as sent; the result
 supports status refresh and lists per-recipient failures.
 
 ## Follow-up

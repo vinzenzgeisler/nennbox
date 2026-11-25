@@ -16,6 +16,7 @@ export class MessageApiError extends Error {
   constructor(
     message: string,
     readonly details: string[] = [],
+    readonly code?: string,
   ) {
     super(message);
   }
@@ -37,6 +38,7 @@ async function call<T extends z.ZodType>(
     throw new MessageApiError(
       error.success ? error.data.error : 'Die Anfrage ist fehlgeschlagen.',
       error.success ? (error.data.details ?? []) : [],
+      error.success ? error.data.code : undefined,
     );
   }
   return schema.parse(payload);

@@ -1,10 +1,8 @@
 import {
-  templates,
-  fingerprint,
-  makeFilter,
-  type Rule,
-  type Preview,
-} from './workbasketReminderModel.js';
+  useReminderRecovery,
+  validateReminderConfirmation,
+} from './workbasketReminderRecovery.js';
+import { templates, makeFilter, type Rule } from './workbasketReminderModel.js';
 import { WorkbasketCampaignResult } from './WorkbasketCampaignResult.js';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -16,8 +14,7 @@ import {
   AppTextInput,
   AppTextarea,
 } from '@nennbox/ui';
-import type { MessageCampaignRecord } from '@nennbox/contracts';
-import { messagesApi } from '../messages/messagesApi.js';
+import { MessageApiError, messagesApi } from '../messages/messagesApi.js';
 import { errorText, freshRuleEntries } from './workbasketBulkApi.js';
 
 export function WorkbasketReminder({
@@ -31,13 +28,25 @@ export function WorkbasketReminder({
   entryIds: string[];
   onDone: () => void;
 }) {
+  const {
+    recovery,
+    storageError,
+    recordAttempt,
+    recordCampaign,
+    dismissCampaign,
+    discardRejectedAttempt,
+  } = useReminderRecovery(eventId, ruleId);
   const [open, setOpen] = useState(false);
-  const [subject, setSubject] = useState(templates[ruleId].subject);
-  const [text, setText] = useState(templates[ruleId].text);
-  const [preview, setPreview] = useState<Preview | null>(null);
-  const [campaign, setCampaign] = useState<MessageCampaignRecord | null>(null);
+  const [subject, setSubject] = useState(
+    recovery?.body.subject ?? templates[ruleId].subject,
+  );
+  const [text, setText] = useState(
+    recovery?.body.text ?? templates[ruleId].text,
+  );
+  const [preview, setPreview] = useState(recovery?.preview ?? null);
+  const campaign = recovery?.campaign ?? null;
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(storageError);
   const lock = useRef(false);
   const controller = useRef(new AbortController());
   useEffect(() => {
@@ -45,10 +54,10 @@ export function WorkbasketReminder({
     controller.current = active;
     return () => active.abort();
   }, []);
-  const key = useRef<string | null>(null);
-  const [attempted, setAttempted] = useState(false);
+  const key = useRef<string | null>(recovery?.key ?? null);
+  const attempted = Boolean(recovery);
   async function buildPreview() {
-    if (lock.current) return;
+    if (lock.current || attempted || storageError) return;
     lock.current = true;
     setBusy(true);
     setError('');
@@ -94,49 +103,34 @@ export function WorkbasketReminder({
     }
   }
   async function send() {
-    if (lock.current || !preview || !key.current) return;
+    if (lock.current || storageError || !preview || !key.current) return;
     lock.current = true;
     setBusy(true);
     setError('');
     try {
       // On an uncertain response retain the same immutable body and idempotency key.
       // A retry then recovers the existing campaign rather than creating another one.
-      if (!attempted) {
-        const eligible = await freshRuleEntries(
+      if (!attempted)
+        await validateReminderConfirmation(
           eventId,
           ruleId,
+          preview,
           controller.current.signal,
         );
-        if (preview.filter.entryIds.some((id) => !eligible.has(id)))
-          throw new Error(
-            'Die Auswahl hat sich geändert. Bitte Vorschau neu erstellen.',
-          );
-        const latest = await messagesApi.recipients(
-          eventId,
-          preview.filter,
-          controller.current.signal,
-        );
-        if (fingerprint(latest) !== fingerprint(preview.recipients))
-          throw new Error(
-            'Die Empfänger haben sich geändert. Bitte Vorschau neu erstellen.',
-          );
-      }
       controller.current.signal.throwIfAborted();
-      setAttempted(true);
-      setCampaign(
-        await messagesApi.send(
-          eventId,
-          {
-            eventId,
-            recipients: preview.filter,
-            subject,
-            text,
-            attachments: [],
-          },
-          key.current,
-        ),
-      );
+      const request = recordAttempt(preview, subject, text, key.current);
+      const result = await messagesApi.send(eventId, request.body, request.key);
+      recordCampaign(result, request);
     } catch (cause) {
+      if (
+        cause instanceof MessageApiError &&
+        cause.code === 'confirmation-changed'
+      ) {
+        // This response proves enqueue was rejected, unlike a lost/uncertain response.
+        discardRejectedAttempt();
+        setPreview(null);
+        key.current = null;
+      }
       setError(errorText(cause));
     } finally {
       lock.current = false;
@@ -158,7 +152,7 @@ export function WorkbasketReminder({
         throw new Error(
           'Versandstatus noch nicht verfügbar. Bitte im Nachrichtenausgang prüfen.',
         );
-      setCampaign(updated);
+      recordCampaign(updated);
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -169,13 +163,21 @@ export function WorkbasketReminder({
   const canClose = !busy || Boolean(campaign);
   const close = () => {
     if (!canClose) return;
+    if (campaign) {
+      try {
+        dismissCampaign();
+      } catch (cause) {
+        setError(errorText(cause));
+        return;
+      }
+    }
     setOpen(false);
     if (campaign || attempted) onDone();
   };
   return (
     <>
       <AppButton
-        disabled={!entryIds.length || entryIds.length > 500}
+        disabled={!attempted && (!entryIds.length || entryIds.length > 500)}
         onClick={() => setOpen(true)}
       >
         <Icon name={ruleId === 'paymentOpen' ? 'payment' : 'document'} />
@@ -195,7 +197,12 @@ export function WorkbasketReminder({
             </AppButton>
             {!campaign && !attempted && (
               <AppButton
-                disabled={busy || !subject.trim() || !text.trim()}
+                disabled={
+                  busy ||
+                  Boolean(storageError) ||
+                  !subject.trim() ||
+                  !text.trim()
+                }
                 onClick={() => void buildPreview()}
               >
                 Vorschau erstellen
@@ -225,15 +232,18 @@ export function WorkbasketReminder({
         {!campaign && (
           <>
             <p>
-              {entryIds.length} ausgewählte Nennungen. Vor dem Versand werden
-              aktuelle Aufgaben und erreichbare Empfänger geprüft. Noch wurde
-              nichts gesendet.
+              {recovery?.body.recipients.entryIds.length ?? entryIds.length}{' '}
+              ausgewählte Nennungen. Vor dem Versand werden aktuelle Aufgaben
+              und erreichbare Empfänger geprüft.
+              {attempted
+                ? 'Ergebnis des bisherigen Versandauftrags siehe unten.'
+                : 'Noch wurde nichts gesendet.'}
             </p>
             <AppTextInput
               label="Betreff"
               value={subject}
               maxLength={998}
-              disabled={busy || attempted}
+              disabled={busy || attempted || Boolean(storageError)}
               onChange={(event) => {
                 setSubject(event.target.value);
                 setPreview(null);
@@ -244,7 +254,7 @@ export function WorkbasketReminder({
               value={text}
               maxLength={50000}
               rows={8}
-              disabled={busy || attempted}
+              disabled={busy || attempted || Boolean(storageError)}
               onChange={(event) => {
                 setText(event.target.value);
                 setPreview(null);
