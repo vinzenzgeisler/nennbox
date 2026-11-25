@@ -137,7 +137,7 @@ describe('club customisation (P7/P8)', () => {
     );
     act(() => checkbox!.click());
     expect(style()).toBe('#5A605C');
-    expect(container.querySelector('.nb-app-btn-primary')).not.toBeNull();
+    expect(container.querySelector('.nb-reg-btn.is-primary')).not.toBeNull();
     act(() => checkbox!.click());
     expect(style()).toBe('#1F4E79');
   });

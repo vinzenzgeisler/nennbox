@@ -22,6 +22,8 @@ export type RegistrationShellProps = {
   summaryCount?: string;
   actions?: React.ReactNode;
   footer?: React.ReactNode;
+  /** Side surface (confirmation, payment return …): no steps, no summary, one centred column. */
+  surface?: boolean;
   className?: string;
   style?: React.CSSProperties;
   children: React.ReactNode;
@@ -30,12 +32,12 @@ export type RegistrationShellProps = {
 /** Public form frame. Only completed steps navigate; the mobile dock never shows a price. */
 // prettier-ignore
 export function RegistrationShell({ brand, title = 'Nennformular', headerEnd, steps, currentStep, onStepChange, stepLabel,
-  stepsLabel = 'Schritte', sidebarNote, summary, summaryTitle = 'Deine Nennung', summaryCount, actions, footer, className = '', style,
+  stepsLabel = 'Schritte', sidebarNote, summary, summaryTitle = 'Deine Nennung', summaryCount, actions, footer, surface = false, className = '', style,
   children, }: RegistrationShellProps) { const [summaryOpen, setSummaryOpen] = useState(false);
   const [stepsOpen, setStepsOpen] = useState(false); const id = useId(); const active = Math.max( 0,
   steps.findIndex((step) => step.id === currentStep), ); const position = stepLabel ??
   `Schritt ${active + 1} von ${steps.length} · ${steps[active]?.label ?? ''}`; return ( <div
-  className={`nb-reg${summary ? ' has-summary' : ''} ${className}`} style={style} > <header className="nb-reg-top">
+  className={`nb-reg${summary ? ' has-summary' : ''}${surface ? ' is-surface' : ''} ${className}`} style={style} > <header className="nb-reg-top">
   <div className="nb-reg-brand">{brand}</div> <span className="nb-reg-flow-title">{title}</span>
   <div className="nb-reg-header-end">{headerEnd}</div> </header> <div className="nb-reg-mobile-progress"> <div role="progressbar"
   aria-label={position} aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={active + 1} > <span style={{

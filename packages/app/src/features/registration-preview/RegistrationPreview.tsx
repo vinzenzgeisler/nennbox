@@ -1,4 +1,5 @@
 import { prototypeStyle } from './prototypeStyle.js';
+import { LanguageSwitch, PrototypeActions } from './PrototypeActions.js';
 import {
   AccentHint,
   PrototypeBrand,
@@ -9,7 +10,7 @@ import {
 import { RegistrationSummary } from './RegistrationSummary.js';
 import { useRef, useState } from 'react';
 import {
-  AppButton,
+  RegistrationButton,
   RegistrationShell,
   RegistrationNotice,
   deriveRegistrationPalette,
@@ -140,22 +141,7 @@ export default function RegistrationPreview() {
       brand={<PrototypeBrand logo={logo} club={club} />}
       banner={<PrototypeBanner header={theme.header} locale={locale} />}
       title={t('Nennformular', 'Registration')}
-      headerEnd={
-        <>
-          <AppButton
-            aria-pressed={locale === 'de'}
-            onClick={() => setLocale('de')}
-          >
-            DE
-          </AppButton>
-          <AppButton
-            aria-pressed={locale === 'en'}
-            onClick={() => setLocale('en')}
-          >
-            EN
-          </AppButton>
-        </>
-      }
+      headerEnd={<LanguageSwitch locale={locale} onLocale={setLocale} />}
       steps={
         surface
           ? []
@@ -188,27 +174,24 @@ export default function RegistrationPreview() {
       }
       actions={
         surface ? undefined : (
-          <>
-            <AppButton
-              disabled={index === 0}
-              onClick={() => go(steps[index - 1]!)}
-            >
-              {w.previous}
-            </AppButton>
-            <AppButton tone="primary" onClick={advance}>
-              {step === 'review' && !config.instantPayment
-                ? w.submit
-                : step === 'payment'
-                  ? t(
-                      'Nennung absenden und bezahlen (Simulation)',
-                      'Submit and pay (simulation)',
-                    )
-                  : w.next}
-            </AppButton>
-          </>
+          <PrototypeActions
+            locale={locale}
+            step={step}
+            first={index === 0}
+            submitStep={step === 'review' && !config.instantPayment}
+            onBack={() => go(steps[index - 1]!)}
+            onNext={advance}
+          />
         )
       }
-      footer={<PrototypeFooter locale={locale} sponsors={theme.sponsors} />}
+      surface={Boolean(surface)}
+      footer={
+        <PrototypeFooter
+          locale={locale}
+          club={club}
+          sponsors={theme.sponsors}
+        />
+      }
     >
       <PrototypeControls
         locale={locale}
@@ -253,10 +236,12 @@ export default function RegistrationPreview() {
         />
       ) : (
         <>
-          <p className="nb-preview-position">
-            {t('Schritt', 'Step')} {index + 1} {t('von', 'of')} {steps.length}
-          </p>
-          <h1>{titles[step]}</h1>
+          <div className="nb-reg-head">
+            <p className="nb-preview-position">
+              {t('Schritt', 'Step')} {index + 1} {t('von', 'of')} {steps.length}
+            </p>
+            <h1>{titles[step]}</h1>
+          </div>
           {step === 'person' && <PersonFields {...props} />}
           {step === 'vehicle' && <VehicleFields {...props} />}
           {step === 'passenger' && <PassengerFields {...props} />}
@@ -279,12 +264,15 @@ export default function RegistrationPreview() {
                     'details need attention.',
                   )}
                 </p>
-                <AppButton onClick={() => focusError(errors)}>
+                <RegistrationButton
+                  tone="ghost"
+                  onClick={() => focusError(errors)}
+                >
                   {t(
                     'Zum ersten fehlenden Feld springen',
                     'Jump to the first missing field',
                   )}
-                </AppButton>
+                </RegistrationButton>
               </RegistrationNotice>
             </div>
           )}

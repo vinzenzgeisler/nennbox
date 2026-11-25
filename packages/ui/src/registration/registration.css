@@ -39,7 +39,7 @@
 /* prettier-ignore */
 .nb-reg-frame { display: grid; grid-template-columns: 228px minmax(0, 1fr); min-height: calc(100dvh - 60px); }
 /* prettier-ignore */
-.nb-reg.has-summary .nb-reg-frame { grid-template-columns: 228px minmax(0, 1fr) 324px; }
+.nb-reg.has-summary .nb-reg-frame { grid-template-columns: 228px minmax(0, 1fr) 364px; }
 /* prettier-ignore */
 .nb-reg-sidebar { display: flex; flex-direction: column; padding: 20px 12px; background: #f7f7f5; border-right: 1px solid #eaebe8; }
 /* prettier-ignore */
@@ -69,9 +69,9 @@
 /* prettier-ignore */
 .nb-reg-content :where(p) { margin: 0; }
 /* prettier-ignore */
-.nb-reg-dock { position: sticky; bottom: 0; z-index: 3; margin-top: auto; background: #fff; }
+.nb-reg-dock { width: 100%; max-width: 760px; margin-top: auto; padding: 0 40px 40px; background: #fff; }
 /* prettier-ignore */
-.nb-reg-actions { display: flex; align-items: center; gap: 14px; padding: 18px 40px; border-top: 1px solid #f0f1ee; }
+.nb-reg-actions { display: flex; align-items: center; gap: 14px; padding: 22px 0 0; border-top: 1px solid #f0f1ee; }
 /* prettier-ignore */
 .nb-reg-summary { display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 20px; border-left: 1px solid #eaebe8; background: #f7f7f5; font-size: 13px; }
 /* prettier-ignore */
@@ -90,6 +90,8 @@
 .nb-reg-summary-toggle, .nb-reg-summary-close, .nb-reg-mobile-progress { display: none; }
 /* prettier-ignore */
 .nb-reg-footer { padding: 20px 24px; border-top: 1px solid #eaebe8; color: #6e7570; font-size: 12px; }
+/* prettier-ignore */
+.nb-reg-footer p { margin: 0; }
 /* prettier-ignore */
 .nb-reg-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 /* prettier-ignore */
@@ -218,7 +220,9 @@
   /* prettier-ignore */
   .nb-reg-summary-close { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 8px; background: transparent; color: #454d48; font-size: 24px; }
   /* prettier-ignore */
-  .nb-reg-actions { padding: 12px 20px max(12px, env(safe-area-inset-bottom)); }
+  .nb-reg-dock { position: sticky; bottom: 0; z-index: 3; max-width: none; padding: 0; box-shadow: 0 -1px 0 #eaebe8; }
+  /* prettier-ignore */
+  .nb-reg-actions { padding: 12px 20px max(12px, env(safe-area-inset-bottom)); border-top: 0; }
   /* prettier-ignore */
   .nb-reg-upload { flex-wrap: wrap; }
   /* prettier-ignore */

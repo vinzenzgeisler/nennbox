@@ -1,10 +1,10 @@
 import {
-  AppButton,
   Checkbox,
-  Radio,
+  RegistrationButton,
   RegistrationCard,
   RegistrationField,
   RegistrationNotice,
+  RegistrationOptionCard,
   RegistrationUpload,
 } from '@nennbox/ui';
 import {
@@ -56,33 +56,36 @@ export function PassengerFields({
                 })
               }
             />
-            <p>
+            <p className="nb-reg-hint">
               {t(
                 'Du kannst ihn bis zum Nennungsschluss nachtragen. Ohne Beifahrer wird die Nennung nicht zugelassen.',
                 'You can add them before the deadline. Admission requires a co-driver.',
               )}
             </p>
-            {!entry.passenger.pending &&
-              (['firstName', 'lastName', 'email'] as const).map((key) => (
-                <RegistrationField
-                  key={key}
-                  id={`entries.${i}.passenger.${key}`}
-                  label={w[key]}
-                  required={classFor(entry)?.passenger === 'required'}
-                  requiredLabel={w.required}
-                  optionalLabel={w.optional}
-                  type={key === 'email' ? 'email' : 'text'}
-                  value={entry.passenger[key]}
-                  error={errors[`entries.${i}.passenger.${key}`]}
-                  onChange={(e) =>
-                    patch(entry.id, {
-                      ...entry.passenger,
-                      [key]: e.target.value,
-                    })
-                  }
-                  onBlur={() => onBlur(`entries.${i}.passenger.${key}`)}
-                />
-              ))}
+            {!entry.passenger.pending && (
+              <div className="nb-reg-grid-2">
+                {(['firstName', 'lastName', 'email'] as const).map((key) => (
+                  <RegistrationField
+                    key={key}
+                    id={`entries.${i}.passenger.${key}`}
+                    label={w[key]}
+                    required={classFor(entry)?.passenger === 'required'}
+                    requiredLabel={w.required}
+                    optionalLabel={w.optional}
+                    type={key === 'email' ? 'email' : 'text'}
+                    value={entry.passenger[key]}
+                    error={errors[`entries.${i}.passenger.${key}`]}
+                    onChange={(e) =>
+                      patch(entry.id, {
+                        ...entry.passenger,
+                        [key]: e.target.value,
+                      })
+                    }
+                    onBlur={() => onBlur(`entries.${i}.passenger.${key}`)}
+                  />
+                ))}
+              </div>
+            )}
           </RegistrationCard>
         ),
       )}
@@ -102,7 +105,7 @@ export function DocumentFields({
     t = (de: string, en: string) => (locale === 'de' ? de : en);
   return (
     <>
-      <p>
+      <p className="nb-reg-lead">
         {t(
           'Diese Fragen stellt der MSC Hohenstein, nicht NENNBOX. Die Nachweise kannst du mit dem Handy abfotografieren, das reicht völlig.',
           'These questions come from MSC Hohenstein, not NENNBOX. A photo from your phone is enough for documents.',
@@ -134,15 +137,17 @@ export function DocumentFields({
                   <legend>
                     {q.label[locale]} · {w.required}
                   </legend>
-                  {q.options?.map((option) => (
-                    <Radio
-                      key={option}
-                      name={q.id}
-                      label={option === 'Nein' ? t('Nein', 'No') : option}
-                      checked={draft.answers[q.id] === option}
-                      onChange={() => set(option)}
-                    />
-                  ))}
+                  <div className="nb-reg-options">
+                    {q.options?.map((option) => (
+                      <RegistrationOptionCard
+                        key={option}
+                        name={q.id}
+                        label={option === 'Nein' ? t('Nein', 'No') : option}
+                        checked={draft.answers[q.id] === option}
+                        onChange={() => set(option)}
+                      />
+                    ))}
+                  </div>
                   {errors[`answers.${q.id}`] && (
                     <p role="alert">{errors[`answers.${q.id}`]}</p>
                   )}
@@ -242,7 +247,8 @@ export function DocumentFields({
                   }
                 />
                 {upload?.status === 'uploading' && (
-                  <AppButton
+                  <RegistrationButton
+                    tone="ghost"
                     onClick={() =>
                       onDraft({
                         ...draft,
@@ -254,7 +260,7 @@ export function DocumentFields({
                     }
                   >
                     {t('Simulation abschließen', 'Finish simulation')}
-                  </AppButton>
+                  </RegistrationButton>
                 )}
               </div>
             );

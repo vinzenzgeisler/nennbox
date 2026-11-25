@@ -8,6 +8,10 @@ export type RegistrationOptionCardProps = Omit<
   /** Price sits in the card because it changes the decision (P9). */
   price?: ReactNode;
   detail?: ReactNode;
+  /** Short example in mono type next to the label, e.g. how the name would appear. */
+  meta?: ReactNode;
+  /** Green detail line for “places free”; sold out stays orange via `unavailable`. */
+  detailTone?: 'free' | undefined;
   /** Sold out: still selectable, but marked in words rather than colour alone. */
   unavailable?: boolean;
 };
@@ -17,6 +21,8 @@ export function RegistrationOptionCard({
   label,
   price,
   detail,
+  meta,
+  detailTone,
   unavailable = false,
   ...inputProps
 }: RegistrationOptionCardProps) {
@@ -24,10 +30,17 @@ export function RegistrationOptionCard({
     <label className={`nb-reg-option${unavailable ? ' is-unavailable' : ''}`}>
       <input {...inputProps} type="radio" />
       <span className="nb-reg-option-text">
-        <strong>{label}</strong>
-        {detail && <small>{detail}</small>}
+        <span className="nb-reg-option-head">
+          <strong>{label}</strong>
+          {meta && <span className="nb-reg-option-meta">{meta}</span>}
+          {price && <span className="nb-reg-option-price">{price}</span>}
+        </span>
+        {detail && (
+          <small className={detailTone === 'free' ? 'is-free' : undefined}>
+            {detail}
+          </small>
+        )}
       </span>
-      {price && <span className="nb-reg-option-price">{price}</span>}
     </label>
   );
 }

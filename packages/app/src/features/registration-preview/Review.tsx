@@ -1,23 +1,31 @@
 import {
-  AppButton,
   AppDialog,
-  Checkbox,
-  Radio,
   RegistrationCard,
+  RegistrationConsent,
   RegistrationNotice,
 } from '@nennbox/ui';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   classFor,
   entryPrice,
-  payableNow,
   sampleEvent,
   totalPrice,
   type PreviewConfig,
   type Step,
+  type Vehicle,
 } from './model.js';
 import { type FormProps } from './PersonFields.js';
+import { ReviewCard, ReviewRow } from './ReviewParts.js';
 import { money, words } from './text.js';
+
+const formatDate = (iso: string, locale: 'de' | 'en') => {
+  const [y, m, d] = iso.split('-');
+  return y && m && d ? (locale === 'de' ? `${d}.${m}.${y}` : iso) : iso;
+};
+const countryName = (code: string, locale: 'de' | 'en') =>
+  new Intl.DisplayNames([locale], { type: 'region' }).of(code) ?? code;
+
+export { Payment } from './Payment.js';
 
 export function Review({
   draft,
@@ -31,11 +39,16 @@ export function Review({
   const [legal, setLegal] = useState<string | null>(null);
   const w = words(locale),
     t = (de: string, en: string) => (locale === 'de' ? de : en);
-  const change = (step: Step) => (
-    <AppButton tone="ghost" onClick={() => go(step)}>
-      {t('Ändern', 'Edit')}
-    </AppButton>
+  const person = draft.person;
+  const changeLabel = t('Ändern', 'Edit');
+  const card = (title: string, step: Step, rows: ReactNode) => (
+    <ReviewCard title={title} change={() => go(step)} changeLabel={changeLabel}>
+      {rows}
+    </ReviewCard>
   );
+  const none = t('keine Angabe', 'not provided');
+  const vehicleLine = (v: Vehicle) =>
+    `${v.manufacturer} ${v.model}${v.year ? `, ${t('Baujahr', 'built')} ${v.year}` : ''}`;
   const consents = {
     terms: t(
       'Ich habe die Teilnahmebedingungen gelesen.',
@@ -50,120 +63,182 @@ export function Review({
       'I confirm the organiser’s safety information.',
     ),
   };
+  const readLabel = {
+    terms: t('Teilnahmebedingungen ansehen', 'Read the participation terms'),
+    privacy: t('Datenschutzhinweise ansehen', 'Read the privacy information'),
+    organizer: t('Sicherheitshinweis ansehen', 'Read the safety information'),
+  };
   return (
     <>
-      <p>
+      <p className="nb-reg-lead">
         {t(
           'Das ist die letzte Stelle, an der du etwas ohne E-Mail ans Nennbüro ändern kannst. Jede Gruppe führt zurück zu ihrem Schritt.',
           'This is your last chance to change details before contacting the entry office. Each group takes you back to its step.',
         )}
       </p>
-      <RegistrationCard title={w.aboutYou} action={change('person')}>
-        <p>
-          {draft.person.firstName} {draft.person.lastName} ·{' '}
-          {draft.person.birthDate} · {draft.person.country}
-        </p>
-        <strong className="nb-preview-email">{draft.person.email}</strong>
-        <p>
-          {draft.person.street}, {draft.person.postalCode} {draft.person.city}
-        </p>
-        <p>
-          {w.phone}: {draft.person.phone || '—'} · {w.licenseNumber}:{' '}
-          {draft.person.license}
-        </p>
-        <p>
-          {w.bloodGroup}:{' '}
-          {draft.person.bloodGroup || t('keine Angabe', 'not provided')}
-        </p>
-        <p>
-          {w.publicationPreference}:{' '}
-          {
+      {card(
+        w.aboutYou,
+        'person',
+        <>
+          <ReviewRow label={t('Name', 'Name')}>
+            {person.firstName} {person.lastName}
+          </ReviewRow>
+          <ReviewRow label={w.birthDate}>
+            {formatDate(person.birthDate, locale)}
+          </ReviewRow>
+          <ReviewRow label={w.country}>
+            {countryName(person.country, locale)}
+          </ReviewRow>
+          {person.guardianName && (
+            <ReviewRow label={w.guardianName}>
+              {person.guardianName} · {person.guardianEmail}
+            </ReviewRow>
+          )}
+          <ReviewRow label={w.email} strong>
+            <span className="nb-preview-email">{person.email}</span>
+          </ReviewRow>
+          <ReviewRow label={w.phone} tag={w.optional}>
+            {person.phone || '—'}
+          </ReviewRow>
+          <ReviewRow label={w.address}>
+            {person.street}, {person.postalCode} {person.city}
+          </ReviewRow>
+          <ReviewRow label={w.licenseNumber}>{person.license}</ReviewRow>
+          <ReviewRow label={w.bloodGroup} tag={w.optional}>
+            {person.bloodGroup || none}
+          </ReviewRow>
+          <ReviewRow label={w.publicationPreference}>
             {
-              name: w.publicationNameVisible,
-              initials: w.publicationInitials,
-              anonymous: w.publicationHidden,
-            }[draft.person.publication]
-          }
-        </p>
-        {draft.person.guardianName && (
-          <p>
-            {w.guardianName}: {draft.person.guardianName} ·{' '}
-            {draft.person.guardianEmail}
-          </p>
-        )}
-        <h3>{w.emergencyContact}</h3>
-        <p>
-          {draft.person.emergencyName} · {draft.person.emergencyPhone}
-        </p>
-      </RegistrationCard>
-      {draft.entries.map((entry, i) => (
-        <RegistrationCard
-          key={entry.id}
-          title={`${t('Startmeldung', 'Entry')} ${i + 1}`}
-          action={change('vehicle')}
-        >
-          <p>
-            {classFor(entry)?.name} · {money(entryPrice(entry), locale)}{' '}
-            {entry.waitlist && t('· Warteliste', '· Waiting list')}
-          </p>
-          <p>{Object.values(entry.vehicle).filter(Boolean).join(' · ')}</p>
-          {entry.replacement && (
-            <div className="nb-preview-inset">
-              <h3>{w.spareVehicle} · 0 €</h3>
-              <p>
-                {Object.values(entry.replacement).filter(Boolean).join(' · ')}
-              </p>
-            </div>
-          )}
-          {classFor(entry)?.passenger !== 'none' && (
-            <>
-              <h3>
-                {w.passenger} {change('passenger')}
-              </h3>
-              <p>
-                {entry.passenger.pending
-                  ? t('wird nachgetragen', 'to be added later')
-                  : Object.values(entry.passenger)
-                      .filter((v) => typeof v === 'string')
-                      .join(' · ')}
-              </p>
-            </>
-          )}
-        </RegistrationCard>
-      ))}
-      {(config.questions || config.uploads) && (
-        <RegistrationCard
-          title={t('Hinweise des Veranstalters', 'Organiser information')}
-          action={change('documents')}
-        >
-          {config.questions &&
-            sampleEvent.questions.map((q) => (
-              <p key={q.id}>
-                {q.label[locale]}: {String(draft.answers[q.id] ?? '—')}
-              </p>
-            ))}
-          {config.uploads &&
-            sampleEvent.documents.map((d) => (
-              <p key={d.id}>
-                {d.label[locale]}: {draft.uploads[d.id]?.name ?? '—'}
-              </p>
-            ))}
-        </RegistrationCard>
+              {
+                name: w.publicationNameVisible,
+                initials: w.publicationInitials,
+                anonymous: w.publicationHidden,
+              }[person.publication]
+            }
+          </ReviewRow>
+        </>,
       )}
-      <RegistrationCard title={t('Was es kostet', 'What it costs')}>
+      {draft.entries.map((entry, i) => (
+        <div className="nb-reg-stack" key={entry.id}>
+          {card(
+            `${t('Startmeldung', 'Entry')} ${i + 1}`,
+            'vehicle',
+            <>
+              <ReviewRow label={w.class}>
+                {classFor(entry)?.name} · {money(entryPrice(entry), locale)}
+                {entry.waitlist && ` · ${t('Warteliste', 'Waiting list')}`}
+              </ReviewRow>
+              <ReviewRow label={t('Fahrzeug', 'Vehicle')}>
+                {vehicleLine(entry.vehicle)}
+              </ReviewRow>
+              <ReviewRow label={w.registration}>
+                {entry.vehicle.plate || '—'}
+              </ReviewRow>
+              <ReviewRow label={w.displacement}>
+                {entry.vehicle.displacement} cm³
+                {entry.vehicle.cylinders &&
+                  ` · ${entry.vehicle.cylinders} ${t('Zylinder', 'cylinders')}`}
+              </ReviewRow>
+              <ReviewRow label={w.vehiclePassNumber}>
+                {entry.vehicle.vehiclePass}
+              </ReviewRow>
+              <ReviewRow label={w.transponderNumber} tag={w.optional}>
+                {entry.vehicle.transponder || none}
+              </ReviewRow>
+            </>,
+          )}
+          {entry.replacement &&
+            card(
+              w.spareVehicle,
+              'vehicle',
+              <>
+                <ReviewRow label={t('Fahrzeug', 'Vehicle')}>
+                  {vehicleLine(entry.replacement)}
+                </ReviewRow>
+                <ReviewRow label={w.registration}>
+                  {entry.replacement.plate || '—'}
+                </ReviewRow>
+                <ReviewRow label={t('Startgeld', 'Entry fee')}>
+                  0 € ·{' '}
+                  {t(
+                    'zählt nicht als eigene Startmeldung',
+                    'not a separate entry',
+                  )}
+                </ReviewRow>
+              </>,
+            )}
+          {classFor(entry)?.passenger !== 'none' &&
+            card(
+              w.passenger,
+              'passenger',
+              entry.passenger.pending ? (
+                <ReviewRow label={t('Name', 'Name')}>
+                  {t('wird nachgetragen', 'to be added later')}
+                </ReviewRow>
+              ) : (
+                <>
+                  <ReviewRow label={t('Name', 'Name')}>
+                    {entry.passenger.firstName} {entry.passenger.lastName}
+                  </ReviewRow>
+                  <ReviewRow label={w.email}>{entry.passenger.email}</ReviewRow>
+                </>
+              ),
+            )}
+        </div>
+      ))}
+      {card(
+        w.emergencyContact,
+        'person',
+        <>
+          <ReviewRow label={t('Name', 'Name')}>
+            {person.emergencyName}
+          </ReviewRow>
+          <ReviewRow label={w.phone}>{person.emergencyPhone}</ReviewRow>
+        </>,
+      )}
+      {(config.questions || config.uploads) &&
+        card(
+          t('Hinweise des Veranstalters', 'Organiser information'),
+          'documents',
+          <>
+            {config.questions &&
+              sampleEvent.questions.map((q) => (
+                <ReviewRow key={q.id} label={q.label[locale]}>
+                  {String(draft.answers[q.id] ?? '—')}
+                </ReviewRow>
+              ))}
+            {config.uploads &&
+              sampleEvent.documents.map((d) => (
+                <ReviewRow key={d.id} label={d.label[locale]}>
+                  {draft.uploads[d.id]?.name ?? '—'}
+                </ReviewRow>
+              ))}
+          </>,
+        )}
+      <RegistrationCard
+        className="is-cost"
+        title={t('Was es kostet', 'What it costs')}
+      >
         {draft.entries.map((entry, i) => (
-          <div key={entry.id}>
-            <p>
-              {t('Startmeldung', 'Entry')} {i + 1} · {classFor(entry)?.name}{' '}
-              <strong>{money(entryPrice(entry), locale)}</strong>
-            </p>
-            {entry.replacement && <p>{w.spareVehicle}: 0 €</p>}
+          <div className="nb-reg-stack" key={entry.id}>
+            <div className="nb-reg-cost-row">
+              <span>
+                {t('Startmeldung', 'Entry')} {i + 1} · {classFor(entry)?.name}
+              </span>
+              <span>{money(entryPrice(entry), locale)}</span>
+            </div>
+            {entry.replacement && (
+              <div className="nb-reg-cost-row">
+                <span>{w.spareVehicle}</span>
+                <span>0 €</span>
+              </div>
+            )}
           </div>
         ))}
-        <p>
-          {t('Startgeld', 'Entry fee')}:{' '}
+        <div className="nb-reg-cost-row is-total">
+          <span>{t('Startgeld', 'Entry fee')}</span>
           <strong>{money(totalPrice(draft), locale)}</strong>
-        </p>
+        </div>
         <RegistrationNotice>
           {config.instantPayment
             ? t(
@@ -176,20 +251,23 @@ export function Review({
               )}
         </RegistrationNotice>
       </RegistrationCard>
-      <fieldset>
-        <legend>{t('Bestätigungen', 'Confirmations')}</legend>
-        <p>
+      <RegistrationCard title={t('Bestätigungen', 'Confirmations')}>
+        <p className="nb-reg-hint">
           {t(
             'Bitte einzeln bestätigen. Nichts davon ist vorausgewählt.',
             'Please confirm each item individually. Nothing is preselected.',
           )}
         </p>
-        {(Object.keys(consents) as (keyof typeof consents)[]).map((key) => (
-          <div key={key}>
-            <Checkbox
+        <div className="nb-reg-consents">
+          {(Object.keys(consents) as (keyof typeof consents)[]).map((key) => (
+            <RegistrationConsent
+              key={key}
               id={`consents.${key}`}
               checked={draft.consents[key]}
               label={consents[key]}
+              readLabel={readLabel[key]}
+              error={errors[`consents.${key}`]}
+              onRead={() => setLegal(consents[key])}
               onBlur={() => onBlur(`consents.${key}`)}
               onChange={(e) =>
                 onDraft({
@@ -198,15 +276,9 @@ export function Review({
                 })
               }
             />
-            <AppButton tone="ghost" onClick={() => setLegal(consents[key])}>
-              {t('Text ansehen', 'Read text')}
-            </AppButton>
-            {errors[`consents.${key}`] && (
-              <p className="nb-preview-error">{errors[`consents.${key}`]}</p>
-            )}
-          </div>
-        ))}
-      </fieldset>
+          ))}
+        </div>
+      </RegistrationCard>
       {legal && (
         <AppDialog
           open
@@ -223,53 +295,6 @@ export function Review({
           </p>
         </AppDialog>
       )}
-    </>
-  );
-}
-export function Payment({
-  draft,
-  locale,
-  onDraft,
-  config,
-}: FormProps & { config: PreviewConfig }) {
-  const t = (de: string, en: string) => (locale === 'de' ? de : en);
-  return (
-    <>
-      <p>
-        {t(
-          'Der Verein verlangt das Startgeld sofort. Deine Nennung gilt erst als eingegangen, wenn bezahlt ist.',
-          'The organiser requires immediate payment. Your registration is received once payment is complete.',
-        )}
-      </p>
-      <RegistrationNotice>
-        {t(
-          'Prototyp: keine Zahlung und keine Übermittlung. Der nächste Klick simuliert die Rückkehr.',
-          'Prototype: no payment or submission. The next click simulates the return.',
-        )}
-      </RegistrationNotice>
-      <fieldset id="paymentMethod" tabIndex={-1}>
-        <legend>{t('Zahlungsart', 'Payment method')}</legend>
-        {(['online', 'transfer'] as const).map((method) => (
-          <Radio
-            key={method}
-            name="payment"
-            label={
-              method === 'online'
-                ? t(
-                    'Jetzt online bezahlen · Karte, Apple Pay oder SEPA',
-                    'Pay online · Card, Apple Pay or SEPA',
-                  )
-                : t('Überweisung', 'Bank transfer')
-            }
-            checked={draft.paymentMethod === method}
-            onChange={() => onDraft({ ...draft, paymentMethod: method })}
-          />
-        ))}
-      </fieldset>
-      <p>
-        {t('Gesamtbetrag', 'Total')}:{' '}
-        <strong>{money(payableNow(draft, config), locale)}</strong>
-      </p>
     </>
   );
 }

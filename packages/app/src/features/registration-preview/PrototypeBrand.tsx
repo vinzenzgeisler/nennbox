@@ -26,16 +26,18 @@ export function PrototypeBrand({
 }
 export function PrototypeFooter({
   locale,
+  club,
   sponsors,
 }: {
   locale: Locale;
+  club: RegistrationClub;
   sponsors: boolean;
 }) {
   const t = (de: string, en: string) => (locale === 'de' ? de : en);
   return (
     <>
       <p>
-        MSC Hohenstein e. V. ·{' '}
+        {club.name} ·{' '}
         {t(
           'Kontakt und Impressum: lokale Beispieldaten',
           'Contact and legal notice: local example data',

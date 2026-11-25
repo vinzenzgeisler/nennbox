@@ -1,7 +1,7 @@
 import {
   RegistrationField,
   RegistrationNotice,
-  Radio,
+  RegistrationOptionCard,
   SelectField,
 } from '@nennbox/ui';
 import {
@@ -110,14 +110,18 @@ export function PersonFields({
         )}
       </p>
       <fieldset>
-        <legend>{t('Name und Geburtsdatum', 'Name and date of birth')}</legend>
-        <p>{t('Wie im Ausweis', 'As shown on your ID')}</p>
-        <div className="nb-reg-pair">
+        <legend>
+          {t('Name und Geburtsdatum', 'Name and date of birth')}
+          <span className="nb-reg-legend-hint">
+            {t('Wie im Ausweis', 'As shown on your ID')}
+          </span>
+        </legend>
+        <div className="nb-reg-grid-2">
           {field('firstName', w.firstName)}
           {field('lastName', w.lastName)}
+          {field('birthDate', w.birthDate, true, 'date')}
+          {field('country', w.country)}
         </div>
-        {field('birthDate', w.birthDate, true, 'date')}
-        {field('country', w.country)}
         {age !== null && age < 12 ? (
           <RegistrationNotice tone="error">
             {w.minAge}{' '}
@@ -134,85 +138,139 @@ export function PersonFields({
                 'As you are under 18, the organiser needs permission from a parent or guardian. They receive their own email to sign. (Simulated)',
               )}
             </RegistrationNotice>
-            {field('guardianName', w.guardianName)}
-            {field('guardianEmail', w.guardianEmail, true, 'email')}
+            <div className="nb-reg-grid-2">
+              {field('guardianName', w.guardianName)}
+              {field('guardianEmail', w.guardianEmail, true, 'email')}
+            </div>
           </>
         ) : null}
       </fieldset>
       <fieldset>
         <legend>{t('Kontakt', 'Contact')}</legend>
-        {field(
-          'email',
-          w.email,
-          true,
-          'email',
-          t(
-            'Hierhin geht die Bestätigung und der Link zu deiner Nennung.',
-            'Your confirmation and registration link will be sent here.',
-          ),
-        )}
-        {field('phone', w.phone, false, 'tel', w.phoneHint)}
+        <div className="nb-reg-grid-2">
+          {field(
+            'email',
+            w.email,
+            true,
+            'email',
+            t(
+              'Hierhin geht die Bestätigung und der Link zu deiner Nennung.',
+              'Your confirmation and registration link will be sent here.',
+            ),
+          )}
+          {field('phone', w.phone, false, 'tel', w.phoneHint)}
+        </div>
       </fieldset>
       <fieldset>
         <legend>{w.address}</legend>
         {field('street', w.street)}
-        <div className="nb-reg-pair">
+        <div className="nb-reg-grid-plz">
           {field('postalCode', w.postalCode)}
           {field('city', w.city)}
         </div>
       </fieldset>
       <fieldset>
         <legend>{t('Lizenz und Gesundheit', 'Licence and health')}</legend>
-        {field(
-          'license',
-          w.licenseNumber,
-          true,
-          'text',
-          t(
-            'Steht auf deiner Lizenzkarte oben rechts.',
-            'Shown at the top right of your licence card.',
-          ),
-        )}
-        {field(
-          'bloodGroup',
-          w.bloodGroup,
-          false,
-          'text',
-          t(
-            'Nur für den Notfall vor Ort. Wird nach der Veranstaltung gelöscht und erscheint in keiner Liste. Im Prototyp nur lokal gespeichert.',
-            'For on-site emergencies only. Deleted after the event and never published. Stored locally only in this prototype.',
-          ),
-        )}
-      </fieldset>
-      <fieldset>
-        <legend>{w.emergencyContact}</legend>
-        {field('emergencyName', w.emergencyContactName)}
-        {field('emergencyPhone', w.emergencyContactPhone, true, 'tel')}
-      </fieldset>
-      <fieldset>
-        <legend>{w.publicationPreference}</legend>
-        <p>
-          {t(
-            'So erscheinst du in der öffentlichen Starterliste',
-            'How you appear in the public start list',
+        <div className="nb-reg-grid-2">
+          {field(
+            'license',
+            w.licenseNumber,
+            true,
+            'text',
+            t(
+              'Steht auf deiner Lizenzkarte oben rechts.',
+              'Shown at the top right of your licence card.',
+            ),
           )}
-        </p>
-        {(['name', 'initials', 'anonymous'] as const).map((value, index) => (
-          <Radio
-            key={value}
-            name="publication"
-            label={
-              [
-                w.publicationNameVisible,
-                w.publicationInitials,
-                w.publicationHidden,
-              ][index]!
-            }
-            checked={draft.person.publication === value}
-            onChange={() => set('publication', value)}
-          />
-        ))}
+          {field(
+            'bloodGroup',
+            w.bloodGroup,
+            false,
+            'text',
+            t(
+              'Nur für den Notfall vor Ort. Wird nach der Veranstaltung gelöscht und erscheint in keiner Liste. Im Prototyp nur lokal gespeichert.',
+              'For on-site emergencies only. Deleted after the event and never published. Stored locally only in this prototype.',
+            ),
+          )}
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>
+          {w.emergencyContact}
+          <span className="nb-reg-legend-hint">
+            {t(
+              'Wen sollen wir am Veranstaltungstag erreichen, wenn etwas passiert',
+              'Who should we reach on the day if something happens',
+            )}
+          </span>
+        </legend>
+        <div className="nb-reg-grid-2">
+          {field('emergencyName', w.emergencyContactName)}
+          {field('emergencyPhone', w.emergencyContactPhone, true, 'tel')}
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>
+          {w.publicationPreference}
+          <span className="nb-reg-legend-hint">
+            {t(
+              'So erscheinst du in der öffentlichen Starterliste',
+              'How you appear in the public start list',
+            )}
+          </span>
+        </legend>
+        <div className="nb-reg-options">
+          {(['name', 'initials', 'anonymous'] as const).map((value, index) => (
+            <RegistrationOptionCard
+              key={value}
+              name="publication"
+              label={
+                [
+                  w.publicationNameVisible,
+                  w.publicationInitials,
+                  w.publicationHidden,
+                ][index]!
+              }
+              meta={publicationMeta(value, draft.person, locale)}
+              detail={publicationDetail(value, locale)}
+              checked={draft.person.publication === value}
+              onChange={() => set('publication', value)}
+            />
+          ))}
+        </div>
       </fieldset>
     </>
   );
+}
+
+function publicationMeta(
+  value: 'name' | 'initials' | 'anonymous',
+  person: Person,
+  locale: Locale,
+) {
+  if (value === 'anonymous')
+    return locale === 'de' ? 'nicht gelistet' : 'not listed';
+  if (value === 'initials')
+    return `${person.firstName.charAt(0)}. ${person.lastName.charAt(0)}.`;
+  return `${person.firstName} ${person.lastName}`.trim();
+}
+function publicationDetail(
+  value: 'name' | 'initials' | 'anonymous',
+  locale: Locale,
+) {
+  const text = {
+    name: [
+      'So stehst du in der öffentlichen Starterliste und im Zeitplan.',
+      'This is how you appear in the public start list and the schedule.',
+    ],
+    initials: [
+      'Dein Name erscheint abgekürzt. Der Veranstalter sieht ihn vollständig.',
+      'Your name appears abbreviated. The organiser sees it in full.',
+    ],
+    anonymous: [
+      'Du tauchst in der öffentlichen Liste nicht auf, startest aber normal.',
+      'You do not appear in the public list but start as normal.',
+    ],
+  }[value];
+  return locale === 'de' ? text[0] : text[1];
 }

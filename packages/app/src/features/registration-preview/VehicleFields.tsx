@@ -1,5 +1,6 @@
 import {
-  AppButton,
+  RegistrationAddButton,
+  RegistrationButton,
   RegistrationCard,
   RegistrationField,
   RegistrationNotice,
@@ -37,23 +38,21 @@ export function VehicleFields({
   const fields = (entry: Entry, index: number, replacement = false) => {
     const vehicle = replacement ? entry.replacement! : entry.vehicle;
     const prefix = `entries.${index}.${replacement ? 'replacement' : 'vehicle'}`;
-    const items: [keyof Vehicle, string, boolean][] = [
-      ['manufacturer', w.make, true],
-      ['model', w.model, true],
-      ['year', w.year, true],
-      ['plate', w.registration, false],
-      ...(replacement
-        ? []
-        : ([
-            ['displacement', w.displacement, true],
-            ['cylinders', w.cylinders, false],
-            ['transponder', w.transponderNumber, false],
-            ['vehiclePass', w.vehiclePassNumber, true],
-            ['owner', w.owner, false],
-            ['history', w.history, false],
-          ] as [keyof Vehicle, string, boolean][])),
-    ];
-    return items.map(([key, label, required]) => (
+    const hints: Partial<Record<keyof Vehicle, string>> = {
+      transponder: t(
+        'Nur bei elektronischer Zeitnahme.',
+        'Only for electronic timing.',
+      ),
+      owner: t(
+        'Nur ausfüllen, wenn das Fahrzeug jemand anderem gehört.',
+        'Only fill in if someone else owns the vehicle.',
+      ),
+      history: t(
+        'Erscheint im Programmheft, wenn der Veranstalter eines macht.',
+        'Appears in the programme if the organiser publishes one.',
+      ),
+    };
+    const input = (key: keyof Vehicle, label: string, required: boolean) => (
       <RegistrationField
         key={key}
         id={`${prefix}.${key}`}
@@ -61,6 +60,8 @@ export function VehicleFields({
         required={required}
         requiredLabel={w.required}
         optionalLabel={w.optional}
+        hint={hints[key]}
+        className={key === 'plate' ? 'is-plate' : ''}
         value={vehicle[key]}
         error={errors[`${prefix}.${key}`]}
         inputMode={
@@ -78,11 +79,37 @@ export function VehicleFields({
           })
         }
       />
-    ));
+    );
+    return (
+      <div className="nb-reg-stack">
+        <div className="nb-reg-grid-2">
+          {input('manufacturer', w.make, true)}
+          {input('model', w.model, true)}
+        </div>
+        <div className={`nb-reg-grid-${replacement ? 2 : 3} is-keep-pair`}>
+          {input('year', w.year, true)}
+          {input('plate', w.registration, false)}
+          {!replacement && input('displacement', w.displacement, true)}
+        </div>
+        {!replacement && (
+          <>
+            <div className="nb-reg-grid-3">
+              {input('cylinders', w.cylinders, false)}
+              {input('transponder', w.transponderNumber, false)}
+              {input('vehiclePass', w.vehiclePassNumber, true)}
+            </div>
+            <div className="nb-reg-grid-2">
+              {input('owner', w.owner, false)}
+              {input('history', w.history, false)}
+            </div>
+          </>
+        )}
+      </div>
+    );
   };
   return (
     <>
-      <p>
+      <p className="nb-reg-lead">
         {t(
           'Eine Startmeldung ist ein Fahrzeug in einer Klasse. Wenn du mit zwei Fahrzeugen oder in zwei Klassen startest, sind das zwei Startmeldungen mit zwei Startgeldern.',
           'One entry is one vehicle in one class. Two vehicles or two classes mean two entries with two entry fees.',
@@ -91,13 +118,19 @@ export function VehicleFields({
       {draft.entries.map((entry, index) => (
         <RegistrationCard
           key={entry.id}
-          title={`${t('Startmeldung', 'Entry')} ${index + 1}`}
+          title={
+            <>
+              <span className="nb-reg-num" aria-hidden="true">
+                {index + 1}
+              </span>
+              {`${t('Startmeldung', 'Entry')} ${index + 1}`}
+            </>
+          }
           action={
             <>
-              <strong>{money(entryPrice(entry), locale)}</strong>
               {index > 0 && (
-                <AppButton
-                  tone="ghost"
+                <RegistrationButton
+                  tone="danger"
                   onClick={() =>
                     onDraft({
                       ...draft,
@@ -106,8 +139,11 @@ export function VehicleFields({
                   }
                 >
                   {w.remove}
-                </AppButton>
+                </RegistrationButton>
               )}
+              <strong className="nb-reg-card-price">
+                {money(entryPrice(entry), locale)}
+              </strong>
             </>
           }
         >
@@ -115,30 +151,33 @@ export function VehicleFields({
             <legend>
               {w.class} · {w.required}
             </legend>
-            {sampleEvent.classes.map((cls) => (
-              <RegistrationOptionCard
-                key={cls.id}
-                name={`class-${entry.id}`}
-                checked={entry.classId === cls.id}
-                label={cls.name}
-                price={money(cls.price, locale)}
-                unavailable={cls.available === 0}
-                detail={
-                  cls.available
-                    ? t(
-                        `${cls.available} von ${cls.capacity} Plätzen frei`,
-                        `${cls.available} of ${cls.capacity} places available`,
-                      )
-                    : t(
-                        `ausgebucht · ${cls.waitlistCount} auf der Warteliste`,
-                        `full · ${cls.waitlistCount} on the waiting list`,
-                      )
-                }
-                onChange={() =>
-                  patch(index, { classId: cls.id, waitlist: false })
-                }
-              />
-            ))}
+            <div className="nb-reg-options">
+              {sampleEvent.classes.map((cls) => (
+                <RegistrationOptionCard
+                  key={cls.id}
+                  name={`class-${entry.id}`}
+                  checked={entry.classId === cls.id}
+                  label={cls.name}
+                  price={money(cls.price, locale)}
+                  unavailable={cls.available === 0}
+                  detailTone={cls.available ? 'free' : undefined}
+                  detail={
+                    cls.available
+                      ? t(
+                          `${cls.available} von ${cls.capacity} Plätzen frei`,
+                          `${cls.available} of ${cls.capacity} places available`,
+                        )
+                      : t(
+                          `ausgebucht · ${cls.waitlistCount} auf der Warteliste`,
+                          `full · ${cls.waitlistCount} on the waiting list`,
+                        )
+                  }
+                  onChange={() =>
+                    patch(index, { classId: cls.id, waitlist: false })
+                  }
+                />
+              ))}
+            </div>
             {errors[`entries.${index}.classId`] && (
               <p role="alert">{errors[`entries.${index}.classId`]}</p>
             )}
@@ -170,55 +209,60 @@ export function VehicleFields({
           )}
           {fields(entry, index)}
           {entry.replacement ? (
-            <RegistrationCard
-              inset
-              title={w.spareVehicle}
-              description={t(
-                'zählt nicht als Startmeldung · 0 €',
-                'not a separate entry · €0',
-              )}
-              action={
-                <AppButton
-                  tone="ghost"
+            <div className="nb-reg-spare-box">
+              <header>
+                <strong>{w.spareVehicle}</strong>
+                <span className="nb-reg-tag">0 €</span>
+                <RegistrationButton
+                  tone="danger"
                   onClick={() => patch(index, { replacement: null })}
                 >
                   {w.remove}
-                </AppButton>
-              }
-            >
+                </RegistrationButton>
+              </header>
+              <p className="nb-reg-hint">
+                {t(
+                  'zählt nicht als Startmeldung · 0 €',
+                  'not a separate entry · €0',
+                )}
+              </p>
               {fields(entry, index, true)}
-              <p>
+              <p className="nb-reg-hint">
                 {t(
                   'Das Ersatzfahrzeug startet in derselben Klasse. Wenn es eine andere Klasse bräuchte, leg stattdessen eine weitere Startmeldung an.',
                   'The spare vehicle uses the same class. Add another entry if it needs a different class.',
                 )}
               </p>
-            </RegistrationCard>
+            </div>
           ) : (
-            <AppButton
+            <RegistrationAddButton
+              variant="spare"
+              title={w.addSpareVehicle}
+              description={t(
+                'Falls dieses Fahrzeug vor Ort ausfällt. Keine eigene Startmeldung.',
+                'In case this vehicle fails on site. Not a separate entry.',
+              )}
+              tag="0 €"
               onClick={() => patch(index, { replacement: { ...emptyVehicle } })}
-            >
-              {w.addSpareVehicle} · 0 €
-            </AppButton>
+            />
           )}
         </RegistrationCard>
       ))}
-      <AppButton
+      <RegistrationAddButton
+        variant="add"
+        title={w.addVehicle}
+        description={t(
+          'Eigene Startmeldung mit eigener Klasse und eigenem Startgeld.',
+          'A separate entry with its own class and entry fee.',
+        )}
+        tag={t('ab 80 €', 'from €80')}
         onClick={() =>
           onDraft({
             ...draft,
             entries: [...draft.entries, createEntry(`entry-${Date.now()}`)],
           })
         }
-      >
-        {w.addVehicle} · {t('ab 80 €', 'from €80')}
-      </AppButton>
-      <p>
-        {t(
-          'Eigene Startmeldung mit eigener Klasse und eigenem Startgeld.',
-          'A separate entry with its own class and entry fee.',
-        )}
-      </p>
+      />
     </>
   );
 }

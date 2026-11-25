@@ -32,7 +32,7 @@ describe('local arrival and return surfaces', () => {
             />,
           ),
         );
-        expect(container.querySelector('h2')?.textContent).toBe(
+        expect(container.querySelector('h1')?.textContent).toBe(
           surfaceCopy[option.value]?.title[locale],
         );
         expect(container.textContent).toContain(

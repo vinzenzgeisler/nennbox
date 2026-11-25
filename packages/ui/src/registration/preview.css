@@ -1,6 +1,9 @@
 @import '@fontsource/space-grotesk/500.css';
 @import '@fontsource/source-serif-4/600.css';
 @import '@fontsource-variable/archivo';
+@import './registration-controls.css';
+@import './registration-cards.css';
+@import './registration-surfaces.css';
 
 .nb-preview {
   background: var(--preview-background);
@@ -16,26 +19,23 @@
   gap: var(--preview-space);
   border: 0;
   padding: 0;
-  margin: 28px 0;
+  margin: 0;
   min-width: 0;
 }
 .nb-preview legend {
-  font-size: 15px;
-  font-weight: 600;
   padding: 0;
-  margin-bottom: 14px;
 }
 .nb-preview h1 {
   font-size: 26px;
   line-height: 1.2;
   letter-spacing: -0.02em;
-  margin: 8px 0 12px;
+  margin: 0;
 }
 .nb-preview h3 {
   font-size: 15px;
 }
 .nb-preview p {
-  margin: 0 0 14px;
+  margin: 0;
 }
 .nb-preview .nb-reg-field input {
   border-radius: var(--preview-field-radius);
@@ -103,7 +103,6 @@
   padding-top: 28px;
 }
 .nb-preview-email {
-  font-size: 18px;
   overflow-wrap: anywhere;
 }
 .nb-preview-error {
@@ -113,53 +112,6 @@
   margin-left: 20px;
   padding-left: 16px;
   border-left: 2px solid #eadedb;
-}
-.nb-reg-pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-.nb-reg-option {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 44px;
-  padding: 10px 14px;
-  border: 1px solid #e3e5e1;
-  border-radius: var(--preview-card-radius);
-  background: #fff;
-  cursor: pointer;
-}
-.nb-reg-option:has(input:checked) {
-  padding: 9.5px 13.5px;
-  border: 1.5px solid var(--ak);
-  background: var(--ak-fl);
-}
-.nb-reg-option:has(input:focus-visible) {
-  outline: 2px solid var(--ak-ring);
-  outline-offset: 2px;
-}
-.nb-reg-option input {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  accent-color: var(--ak);
-}
-.nb-reg-option-text {
-  flex: 1;
-  display: grid;
-  gap: 2px;
-}
-.nb-reg-option-text small {
-  font-size: 12.5px;
-  color: #6e7570;
-}
-.nb-reg-option.is-unavailable .nb-reg-option-text small {
-  color: #9a4a1c;
-}
-.nb-reg-option-price {
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
 }
 .nb-preview-tools {
   font-size: 12.5px;
@@ -216,7 +168,6 @@
     url('./band.svg') center / cover;
 }
 @media (width < 760px) {
-  .nb-reg-pair,
   .nb-preview-tool-grid {
     grid-template-columns: 1fr;
   }

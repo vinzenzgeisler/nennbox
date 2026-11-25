@@ -140,3 +140,62 @@ describe('hit areas and density', () => {
     expect(removals).toEqual([]);
   });
 });
+
+/** P9 “Maße”: the form's own measures, not the 32 px building blocks of the admin app. */
+describe('form measures of the design folder (P9)', () => {
+  const value = (selector: string, property: string) =>
+    declarations
+      .filter((d) => d.selector === selector && d.property === property)
+      .map((d) => d.value);
+  const sheet = (file: string) =>
+    readFileSync(join(directory, file), 'utf8').replace(
+      /\/\*[\s\S]*?\*\//g,
+      '',
+    );
+  const phones = (file: string) =>
+    sheet(file).split(/@media \(width <= 760px\)/)[1] ?? '';
+
+  it('makes the main action 44 px high, on every step and width', () => {
+    expect(value('.nb-reg-btn', 'height')).toEqual(['44px']);
+    expect(value('.nb-reg-btn', 'min-height')).toEqual(['44px']);
+    expect(value('.nb-reg-btn', 'padding')).toEqual(['0 20px']);
+    expect(value('.nb-reg-btn', 'font-size')).toEqual(['14.5px']);
+  });
+
+  it('stretches the main action over the full width on phones', () => {
+    expect(phones('registration-cards.css')).toMatch(
+      /\.nb-reg-actions > \.nb-reg-btn\.is-primary \{\s*flex: 1;/,
+    );
+    // The back action shrinks to its icon so the main action keeps the room.
+    expect(phones('registration-controls.css')).toMatch(
+      /\.nb-reg-btn\.is-icon-mobile \{\s*width: 44px;/,
+    );
+  });
+
+  it('keeps fields at 40 px and the form column at 680 px of content', () => {
+    expect(sheet('registration.css')).toMatch(
+      /\.nb-reg-field :where\([^{]*\) \{[^}]*height: 40px;/,
+    );
+    expect(value('.nb-reg-content', 'max-width')[0]).toBe('760px');
+    expect(value('.nb-reg-content', 'padding')[0]).toBe('32px 40px 28px');
+  });
+
+  it('lays fields out in the columns of the design folder and stacks them on phones', () => {
+    expect(value('.nb-reg-grid-2', 'grid-template-columns')).toEqual([
+      'repeat(2, minmax(0, 1fr))',
+    ]);
+    expect(value('.nb-reg-grid-3', 'grid-template-columns')).toEqual([
+      'repeat(3, minmax(0, 1fr))',
+    ]);
+    expect(value('.nb-reg-options', 'grid-template-columns')).toContain(
+      'repeat(2, minmax(0, 1fr))',
+    );
+    expect(phones('registration-controls.css')).toMatch(
+      /\.nb-reg-grid-2,\s*\.nb-reg-grid-3,[^{]*\{\s*grid-template-columns: 1fr;/,
+    );
+    // Year and displacement are the only pair that stays side by side.
+    expect(phones('registration-controls.css')).toMatch(
+      /\.nb-reg-grid-3\.is-keep-pair \{\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/,
+    );
+  });
+});

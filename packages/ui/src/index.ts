@@ -19,3 +19,6 @@ export * from './registration/registrationPalette.js';
 export * from './registration/registrationThemes.js';
 export * from './registration/registrationClubs.js';
 export * from './registration/RegistrationOptionCard.js';
+export * from './registration/RegistrationButton.js';
+export * from './registration/RegistrationConsent.js';
+export * from './registration/RegistrationAddButton.js';
