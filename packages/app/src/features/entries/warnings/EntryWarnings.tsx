@@ -56,7 +56,7 @@ export function EntryWarningsStatus({
   // Advisory reads must not move rows under the pointer during a double click.
   if (status === 'loading')
     return (
-      <p role="status" className="nb-visually-hidden">
+      <p aria-live="polite" className="nb-visually-hidden">
         Warnungen werden geladen …
       </p>
     );
