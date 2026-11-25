@@ -37,6 +37,7 @@
     "src/brand/signet.svg",
     "src/brand/app-icon.svg",
     "TRADEMARKS.md",
-    "src/app-tokens.css"
+    "src/app-tokens.css",
+    "src/registration/*.svg"
   ]
 }
