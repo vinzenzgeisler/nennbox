@@ -113,6 +113,16 @@ it('closes the detail on Escape without clearing selection or reopening it on En
   expect(callbacks.setSelected).not.toHaveBeenCalled();
 });
 
+it('closes a directly opened detail while its filtered list is still loading or empty', () => {
+  const callbacks = mount({ items: [] });
+  key('ArrowDown');
+  key('k');
+  expect(callbacks.openEntry).not.toHaveBeenCalled();
+  key('Escape');
+  expect(callbacks.closeDetail).toHaveBeenCalledOnce();
+  expect(callbacks.setSelected).not.toHaveBeenCalled();
+});
+
 it.each(['input', 'select', 'textarea', 'div'])(
   'leaves keys in %s editors alone',
   (tag) => {
