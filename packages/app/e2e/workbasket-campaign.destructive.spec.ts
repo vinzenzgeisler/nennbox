@@ -61,14 +61,18 @@ for (const width of [1440]) {
       });
       await documentsFilter.click();
       await expect(documentsFilter).toHaveAttribute('aria-pressed', 'true');
-      await filters.getByRole('button', { name: /^Alle Aufgaben/ }).click();
-      const firstTask = basket.locator('.nb-workbasket-task').first();
+      // The earlier destructive deletion may resolve the demo duplicate. This
+      // campaign concerns missing documents, so pin the rule instead of list order.
+      const firstTask = basket
+        .getByRole('region', { name: /^Fehlende Unterlagen$/ })
+        .locator('.nb-workbasket-task')
+        .first();
       await expect(firstTask).toBeVisible();
       await expect(
         firstTask.locator('.nb-workbasket-identity strong'),
       ).not.toBeEmpty();
       await expect(firstTask.locator('.nb-workbasket-detail')).toContainText(
-        'Doppelt mit Nennung',
+        /^Fahrerlizenz, Fahrzeugschein fehlen seit \d+ Tagen\.$/,
       );
       const campaigns: string[] = [];
       page.on('request', (request) => {
