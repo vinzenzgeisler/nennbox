@@ -474,15 +474,26 @@ describe.skipIf(!url)(
         await checkouts.applyProviderEvent(
           paid(s, { paymentId: late, sessionId: `cs-late-${s.suffix}` }),
         );
-        const [lateIntent] = await db
+        const intentHistory = await db
           .select()
           .from(paymentRefundIntents)
           .where(eq(paymentRefundIntents.invoiceId, s.invoice.id));
-        expect(lateIntent).toMatchObject({
-          trigger: 'late_payment',
-          status: 'failed',
-          failure: 'payment_after_cancellation',
-        });
+        // Failed late-payment intents do not participate in the partial unique
+        // index: they coexist with, and must not overwrite, completed history.
+        expect(intentHistory).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              trigger: 'late_payment',
+              status: 'failed',
+              failure: 'payment_after_cancellation',
+            }),
+            expect.objectContaining({
+              trigger: 'rejected',
+              status: 'done',
+              refundedCents: 2100,
+            }),
+          ]),
+        );
         const full = await refunds.reserve(s.ctx, manual(s, late, 4200));
         expect(full).toMatchObject({ status: 'reserved', amountCents: 4200 });
         // The whole collected amount is reserved now; nothing more can be claimed.
