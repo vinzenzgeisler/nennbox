@@ -62,14 +62,14 @@ const click = async (label: string) => {
   expect(button).toBeDefined();
   await act(async () => button.click());
 };
-async function open() {
+async function open(onDone = vi.fn()) {
   await act(async () =>
     root.render(
       <WorkbasketReminder
         eventId={eventId}
         ruleId="missingDocuments"
         entryIds={[entryId]}
-        onDone={vi.fn()}
+        onDone={onDone}
       />,
     ),
   );
@@ -152,4 +152,26 @@ it('keeps confirmation usable under StrictMode effect replay', async () => {
     }),
     expect.any(String),
   );
+});
+
+it('lets the user dismiss a sent campaign while its read-only status refresh is pending', async () => {
+  const done = vi.fn();
+  await open(done);
+  await click('Vorschau erstellen');
+  await click('Jetzt an 1 Empfänger senden');
+  let finish!: (items: never[]) => void;
+  vi.spyOn(messagesApi, 'campaigns').mockReturnValue(
+    new Promise((resolve) => {
+      finish = resolve;
+    }),
+  );
+  await click('Versandstatus aktualisieren');
+  await act(async () => {
+    document
+      .querySelector('dialog')!
+      .dispatchEvent(new Event('cancel', { bubbles: true, cancelable: true }));
+  });
+  expect(done).toHaveBeenCalledOnce();
+  await act(async () => finish([]));
+  expect(messagesApi.send).toHaveBeenCalledOnce();
 });
