@@ -1,4 +1,5 @@
 import type {
+  MessageCampaignCreate,
   MessageRecipientFilter,
   MessageRecipientPreview,
   MessageRenderedPreview,
@@ -37,5 +38,19 @@ export function makeFilter(ids: string[]): MessageRecipientFilter {
     payment: 'any',
     entryIds: ids,
     additionalAddresses: [],
+  };
+}
+
+/** Capture exactly the deduplicated addresses and representative entries shown for confirmation. */
+export function makeWorkbasketConfirmation(
+  ruleId: Rule,
+  preview: MessageRecipientPreview,
+): NonNullable<MessageCampaignCreate['workbasketConfirmation']> {
+  return {
+    ruleId,
+    recipients: preview.recipients.map(({ entryId, email }) => ({
+      entryId,
+      email,
+    })),
   };
 }

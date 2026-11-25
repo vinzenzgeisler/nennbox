@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import type {
   MessageCampaignCreate,
   MessageCampaignSendPorts,
@@ -28,6 +28,9 @@ import {
   messageCampaignRecipients,
   messageCampaigns,
 } from './messaging-schema.js';
+import { evaluateWorkbasket } from '@nennbox/core';
+import { createWorkbasketRepository } from './workbasket.js';
+import { loadWorkbasketSnapshot } from './workbasket-snapshot.js';
 import { resolveMessageRecipients } from './messaging-recipients.js';
 import { digestMessage, messageLocale } from './messaging-utils.js';
 
@@ -65,10 +68,34 @@ export function createMessageSender(
         ),
       transaction: (context, work) =>
         db.transaction(async (tx) => {
+          // Exclude even predicate-changing inserts and direct SQL writes until enqueue
+          // commits. Match the admission barrier's mode/order to avoid lock upgrades.
+          if (input.workbasketConfirmation)
+            await tx.execute(sql`LOCK TABLE organization, event, event_class, entry,
+              registration_group, person, vehicle, invoice, invoice_payment,
+              entry_document, event_entry_document_type, workbasket_configuration,
+              entry_workflow_revision IN SHARE ROW EXCLUSIVE MODE`);
           const transaction: MessageCampaignTransaction<
             Campaign,
             CampaignRecipient
           > = {
+            eligibleWorkbasketEntries: async (requestedEventId, ruleId) => {
+              const database = tx as unknown as Database;
+              const config = await createWorkbasketRepository(
+                database,
+              ).getConfiguration(context, requestedEventId);
+              if (!config) return [];
+              const snapshot = await loadWorkbasketSnapshot(
+                database,
+                context,
+                requestedEventId,
+              );
+              return evaluateWorkbasket(snapshot, config.effective)
+                .filter(
+                  (task) => task.ruleId === ruleId && task.entryId !== null,
+                )
+                .map((task) => task.entryId!);
+            },
             resolveRecipients: async (requestedEventId, filter) => {
               const resolved = await resolveMessageRecipients(
                 tx,

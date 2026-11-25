@@ -245,6 +245,7 @@ describe('message campaign send use case', () => {
     TestCampaign,
     TestRecipient
   > = {
+    eligibleWorkbasketEntries: async () => [],
     resolveRecipients: async (): Promise<
       import('./message-campaign-send.js').MessageCampaignRecipient[]
     > => {

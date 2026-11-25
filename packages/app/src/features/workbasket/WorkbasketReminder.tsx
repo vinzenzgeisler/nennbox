@@ -1,3 +1,4 @@
+import { WorkbasketReminderPreview } from './WorkbasketReminderPreview.js';
 import {
   useReminderRecovery,
   validateReminderConfirmation,
@@ -10,7 +11,6 @@ import {
   Icon,
   AppDialog,
   AppNotice,
-  AppSelectionList,
   AppTextInput,
   AppTextarea,
 } from '@nennbox/ui';
@@ -260,41 +260,7 @@ export function WorkbasketReminder({
                 setPreview(null);
               }}
             />
-            {preview && (
-              <>
-                <h3>
-                  Verbindliche Empfängervorschau: {preview.recipients.count}{' '}
-                  Empfänger
-                </h3>
-                <p>
-                  Die Nachricht wird ausschließlich an diese Auswahl beauftragt.
-                  Der Versand läuft anschließend im Hintergrund.
-                </p>
-                <AppSelectionList label="Empfänger">
-                  {preview.recipients.recipients.map((recipient) => (
-                    <span key={recipient.email}>
-                      {recipient.name} · {recipient.email}
-                    </span>
-                  ))}
-                </AppSelectionList>
-                {preview.skipped.length > 0 && (
-                  <AppNotice tone="warning">
-                    Nicht mehr passend oder ohne erreichbare E-Mail (bei
-                    gemeinsamer Adresse nur einmal angeschrieben):{' '}
-                    {preview.skipped.join(', ')}
-                  </AppNotice>
-                )}
-                <h3>Nachrichtenvorschau</h3>
-                <p>
-                  Beispiel für {preview.rendered.recipient.name} ·{' '}
-                  {preview.rendered.recipient.email}
-                </p>
-                <strong>{preview.rendered.subject}</strong>
-                <pre className="nb-workbasket-message-preview">
-                  {preview.rendered.text}
-                </pre>
-              </>
-            )}
+            {preview && <WorkbasketReminderPreview preview={preview} />}
             {attempted && !campaign && (
               <AppNotice tone="warning">
                 Der Versandauftrag wurde angefragt; das Ergebnis ist noch

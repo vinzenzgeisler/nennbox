@@ -1,3 +1,4 @@
+import { validateCampaignConfirmation } from './message-campaign-confirmation.js';
 import type { RequestContext } from './context.js';
 import { messageCampaignDelivery } from './message-campaign-delivery.js';
 import {
@@ -10,6 +11,7 @@ import type {
 } from './messages.js';
 
 export type MessageCampaignSendErrorCode =
+  | 'confirmation-changed'
   | 'invalid-template'
   | 'too-many-attachments'
   | 'attachment-unavailable'
@@ -74,6 +76,10 @@ export interface MessageCampaignRecipient {
 }
 
 export interface MessageCampaignTransaction<Campaign, CampaignRecipient> {
+  eligibleWorkbasketEntries(
+    eventId: string,
+    ruleId: 'missingDocuments' | 'paymentOpen',
+  ): Promise<readonly string[]>;
   resolveRecipients(
     eventId: string,
     filter: MessageRecipientFilter,
@@ -206,22 +212,6 @@ export async function sendMessageCampaign<Campaign, CampaignRecipient>(
   if (!attachmentError.ok) return { ok: false, error: attachmentError.error };
   const requestHash = ports.hashRequest(fingerprintMessageRequest(input));
   return ports.transaction(context, async (tx) => {
-    const resolved = await tx.resolveRecipients(eventId, input.recipients);
-    if (!resolved)
-      return {
-        ok: false,
-        error: { code: 'event-not-found', message: 'Event not found' },
-      };
-    if (!resolved.length)
-      return {
-        ok: false,
-        error: {
-          code: 'no-recipients',
-          message: 'No recipients match the selection',
-        },
-      };
-    const recipientValidation = strategy.validateRecipients(resolved);
-    if (!recipientValidation.ok) return recipientValidation;
     const existing = await tx.findByIdempotencyKey(idempotencyKey);
     if (existing) {
       if (existing.requestHash !== requestHash)
@@ -242,6 +232,29 @@ export async function sendMessageCampaign<Campaign, CampaignRecipient>(
         replayed: true,
       };
     }
+    const resolved = await tx.resolveRecipients(eventId, input.recipients);
+    if (!resolved)
+      return {
+        ok: false,
+        error: { code: 'event-not-found', message: 'Event not found' },
+      };
+    if (!resolved.length)
+      return {
+        ok: false,
+        error: {
+          code: 'no-recipients',
+          message: 'No recipients match the selection',
+        },
+      };
+    const confirmation = await validateCampaignConfirmation(
+      tx,
+      eventId,
+      input,
+      resolved,
+    );
+    if (!confirmation.ok) return confirmation;
+    const recipientValidation = strategy.validateRecipients(resolved);
+    if (!recipientValidation.ok) return recipientValidation;
     const campaign = await tx.createCampaign({
       eventId,
       idempotencyKey,

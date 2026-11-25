@@ -347,7 +347,7 @@ it('does not resurrect dismissed recovery when a pending status refresh resolves
   await open();
   await click('Vorschau erstellen');
   await click('Jetzt an 1 Empfänger senden');
-  const campaign = await vi.mocked(messagesApi.send).mock.results[0].value;
+  const campaign = await vi.mocked(messagesApi.send).mock.results[0]!.value;
   let finish!: (items: (typeof campaign)[]) => void;
   vi.spyOn(messagesApi, 'campaigns').mockReturnValue(
     new Promise((resolve) => {
