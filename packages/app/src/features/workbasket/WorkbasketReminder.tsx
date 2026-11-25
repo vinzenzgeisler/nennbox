@@ -9,6 +9,7 @@ import { WorkbasketCampaignResult } from './WorkbasketCampaignResult.js';
 import { useEffect, useRef, useState } from 'react';
 import {
   AppButton,
+  Icon,
   AppDialog,
   AppNotice,
   AppSelectionList,
@@ -176,6 +177,7 @@ export function WorkbasketReminder({
         disabled={!entryIds.length || entryIds.length > 500}
         onClick={() => setOpen(true)}
       >
+        <Icon name={ruleId === 'paymentOpen' ? 'payment' : 'document'} />
         {ruleId === 'paymentOpen'
           ? 'Zahlungserinnerung vorbereiten'
           : 'Unterlagen anfordern'}

@@ -110,26 +110,6 @@ for (const width of [1440, 1024, 390]) {
         await page.screenshot({ path: `${evidence}/reminder-${width}.png` });
       await page.keyboard.press('Escape');
       await expect(dialog).not.toBeVisible();
-      if (width === 1440) {
-        await basket
-          .getByRole('button', { name: 'Unterlagen anfordern', exact: true })
-          .click();
-        await dialog.getByRole('button', { name: /^Jetzt an/ }).click();
-        await expect(
-          dialog.getByRole('heading', { name: 'Versandergebnis', exact: true }),
-        ).toBeVisible();
-        expect(campaigns).toHaveLength(1);
-        await expect(
-          dialog.getByRole('group', { name: 'Versand je Empfänger' }),
-        ).toBeVisible();
-        await dialog
-          .getByRole('button', { name: 'Versandstatus aktualisieren' })
-          .click();
-        if (evidence)
-          await page.screenshot({ path: `${evidence}/result-${width}.png` });
-        await page.keyboard.press('Escape');
-        await expect(dialog).not.toBeVisible();
-      }
       const open = basket
         .getByRole('button', { name: 'Nennung öffnen', exact: true })
         .first();
@@ -148,7 +128,9 @@ for (const width of [1440, 1024, 390]) {
       );
       expect(detailWidth).toBeLessThanOrEqual(width);
       await expect(
-        page.getByRole('region', { name: 'Nennung im Detail', exact: true }),
+        page
+          .getByRole('region', { name: 'Nennung im Detail', exact: true })
+          .getByRole('tabpanel', { name: 'Übersicht', exact: true }),
       ).toContainText('Dieselbe Person ist mehrfach genannt');
       await page.keyboard.press('Escape');
       await expect(

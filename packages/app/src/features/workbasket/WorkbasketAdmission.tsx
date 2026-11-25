@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   AppButton,
+  Icon,
   AppDialog,
   AppNotice,
   AppSelectionList,
@@ -80,6 +81,7 @@ export function WorkbasketAdmission({
         disabled={busy || !entryIds.length}
         onClick={() => void prepare()}
       >
+        <Icon name="approval" />
         {busy ? 'Wird geprüft…' : 'Alle zulassen'}
       </AppButton>
       {error && <AppNotice tone="error">{error}</AppNotice>}

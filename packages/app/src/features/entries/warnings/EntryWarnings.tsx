@@ -53,8 +53,13 @@ export function EntryWarningsStatus({
   status: 'idle' | 'loading' | 'ready' | 'error';
   retry: () => void;
 }) {
+  // Advisory reads must not move rows under the pointer during a double click.
   if (status === 'loading')
-    return <p role="status">Warnungen werden geladen …</p>;
+    return (
+      <p role="status" className="nb-visually-hidden">
+        Warnungen werden geladen …
+      </p>
+    );
   if (status !== 'error') return null;
   return (
     <Banner tone="warning">

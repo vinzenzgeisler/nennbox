@@ -14,6 +14,10 @@ const confirmsDeletion = (source) =>
   /getByRole\('button',\s*\{\s*name:\s*'Nennung löschen',\s*exact:\s*true\s*\}\)\s*\.click\(\)/.test(
     source,
   );
+const confirmsCampaign = (source) =>
+  /getByRole\('button',\s*\{\s*name:\s*\/\^Jetzt an\/\s*\}\)\s*\.click\(\)/.test(
+    source,
+  );
 const picksRowByPosition = (source) =>
   /nb-entry-list-row'\)\s*\.(?:first|nth)\(/.test(source);
 
@@ -32,6 +36,11 @@ describe('browser specs and shared demo data', () => {
     },
   );
 
+  it.each(specs.filter((file) => !isDestructive(file)))(
+    '%s does not confirm campaigns against shared entries',
+    (file) => expect(confirmsCampaign(read(file))).toBe(false),
+  );
+
   it('runs destructive specs in a project that waits for all others', () => {
     const config = readFileSync(
       new URL('../packages/app/playwright.config.ts', import.meta.url),
@@ -41,6 +50,8 @@ describe('browser specs and shared demo data', () => {
     expect(config).toMatch(/testMatch:\s*destructive/);
     expect(config).toMatch(/dependencies:\s*\['shared-data'\]/);
     for (const file of specs.filter(isDestructive))
-      expect(confirmsDeletion(read(file))).toBe(true);
+      expect(confirmsDeletion(read(file)) || confirmsCampaign(read(file))).toBe(
+        true,
+      );
   });
 });

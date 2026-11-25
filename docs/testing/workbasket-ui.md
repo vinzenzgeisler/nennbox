@@ -7,7 +7,7 @@ background jobs are introduced.
 ## Real-stack acceptance
 
 Run from this worktree using `~/Developer/msc/tools/isolated-smoke.sh
-workbasket.smoke.spec.ts --workers=1`. On a resource-constrained host, execute the
+workbasket --workers=1`. On a resource-constrained host, execute the
 same script in a transient user systemd worker with `MemoryMax=1600M` and
 `NODE_OPTIONS=--max-old-space-size=192`; only one isolated stack is started.
 The script removes its containers and processes on completion.
@@ -16,8 +16,11 @@ The browser test signs in through Keycloak, uses the seeded Historischer
 Bergpreis 2027 (63 entries), and exercises real workbasket, warning, recipient
 preview, campaign and entry APIs. It checks live rule filtering, exact entry
 navigation, warning filtering, Escape, keyboard activation, reminder recipient
-counts and that no campaign is created before confirmation. The desktop case
-also confirms a real document reminder campaign and reads per-recipient results.
+counts and that no campaign is created before confirmation. The read-only cases never confirm a campaign.
+`workbasket-campaign.destructive.spec.ts` confirms a real document reminder
+campaign and reads per-recipient results in the serial destructive project, after
+all shared-data specs finish. The shared-data guard rejects campaign confirmation
+in read-only specs.
 
 | Viewport | `innerWidth` | Document width | Horizontal overflow | Touch |
 | --- | --- | --- | --- | --- |
@@ -33,7 +36,7 @@ The local `.workbasket-evidence/` directory is deliberately excluded from Git.
 
 ## Unit coverage
 
-Focused tests cover advisory-only warnings, inline field placement, stale read
+Focused tests cover advisory-only warnings, inline field placement within the active detail tabpanel, stale read
 cancellation, rule counts/ordering/filtering, quiet/error states, pinned custom
 workflow admission targets and permissions, stale admission eligibility,
 per-entry partial failures, cancellation, reminder confirmation, queued-vs-sent
