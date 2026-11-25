@@ -166,8 +166,9 @@ export function WorkbasketReminder({
       setBusy(false);
     }
   }
+  const canClose = !busy || Boolean(campaign);
   const close = () => {
-    if (busy && !campaign) return;
+    if (!canClose) return;
     setOpen(false);
     if (campaign || attempted) onDone();
   };
@@ -189,11 +190,7 @@ export function WorkbasketReminder({
         onClose={close}
         actions={
           <>
-            <AppButton
-              tone="secondary"
-              disabled={busy && !campaign}
-              onClick={close}
-            >
+            <AppButton tone="secondary" disabled={!canClose} onClick={close}>
               {campaign ? 'Fertig' : 'Schließen'}
             </AppButton>
             {!campaign && !attempted && (
