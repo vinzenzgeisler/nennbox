@@ -1,0 +1,214 @@
+@import '@fontsource/space-grotesk/500.css';
+@import '@fontsource/source-serif-4/600.css';
+@import '@fontsource-variable/archivo';
+@import './registration-controls.css';
+@import './registration-cards.css';
+@import './registration-summary.css';
+@import './registration-surfaces.css';
+
+.nb-preview {
+  background: var(--preview-background);
+}
+.nb-preview h1,
+.nb-preview h2,
+.nb-preview h3,
+.nb-preview legend {
+  font-family: var(--preview-heading);
+}
+.nb-preview fieldset {
+  display: grid;
+  gap: var(--preview-space);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.nb-preview legend {
+  padding: 0;
+}
+.nb-preview h1 {
+  font-size: 26px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.nb-preview h3 {
+  font-size: 15px;
+}
+.nb-preview p {
+  margin: 0;
+}
+.nb-preview .nb-reg-field input {
+  border-radius: var(--preview-field-radius);
+}
+.nb-preview .nb-reg-card {
+  border-radius: var(--preview-card-radius);
+}
+.nb-preview .nb-app-btn {
+  min-height: 44px;
+  height: auto;
+  white-space: normal;
+}
+.nb-preview .nb-app-btn-primary {
+  background: var(--ak);
+  color: var(--ak-fg);
+}
+.nb-preview .nb-app-btn-primary:hover {
+  background: var(--ak-h);
+}
+.nb-preview .nb-app-btn-primary:active {
+  background: var(--ak-a);
+}
+.nb-preview .nb-choice {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nb-preview .nb-choice input {
+  accent-color: var(--ak);
+}
+.nb-preview-logo {
+  background: var(--ak);
+  color: var(--ak-fg);
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  height: 40px;
+  width: 48px;
+  font-size: 12px;
+  flex: none;
+}
+.nb-preview-logo:has(img) {
+  background: #fff;
+}
+.nb-preview-logo img {
+  width: 48px;
+  height: 40px;
+}
+.nb-preview-position,
+.nb-preview-palette-hint {
+  font-size: 12.5px;
+  color: #6e7570;
+}
+.nb-preview .nb-reg-summary dt {
+  color: #6e7570;
+  font-size: 12.5px;
+  margin-top: 14px;
+}
+.nb-preview .nb-reg-summary dd {
+  margin: 4px 0;
+}
+.nb-preview-saved {
+  color: #156339;
+  padding-top: 28px;
+}
+.nb-preview-email {
+  overflow-wrap: anywhere;
+}
+.nb-preview-error {
+  color: #b42318;
+}
+.nb-preview-inset {
+  margin-left: 20px;
+  padding-left: 16px;
+  border-left: 2px solid #eadedb;
+}
+.nb-preview-tools {
+  font-size: 12.5px;
+  border: 1px dashed #dcdeda;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 24px;
+}
+.nb-preview-tools summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.nb-preview-tool-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+  padding: 12px 0;
+}
+.nb-preview-scenarios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.nb-preview-sponsors {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding: 16px 0;
+}
+.nb-preview-sponsors strong {
+  height: 24px;
+  font-size: 16px;
+}
+.nb-preview-farbband .nb-reg-top {
+  border-top: 6px solid var(--ak);
+}
+.nb-preview-grosses-logo .nb-preview-logo {
+  height: 44px;
+  width: 70px;
+}
+.nb-preview-imageband {
+  height: 128px;
+  border-radius: 0;
+  color: #fff;
+  display: flex;
+  align-items: end;
+  padding: 20px;
+  margin-bottom: 24px;
+  background:
+    linear-gradient(0deg, rgb(0 0 0 / 80%), transparent),
+    url('./band.svg') center / cover;
+}
+@media (width < 760px) {
+  .nb-preview-tool-grid {
+    grid-template-columns: 1fr;
+  }
+  .nb-preview-imageband {
+    height: 88px;
+  }
+  .nb-preview .nb-reg-brand strong {
+    font-size: 12px;
+  }
+  .nb-preview .nb-reg-header-end {
+    gap: 0;
+  }
+  .nb-preview .nb-reg-header-end .nb-app-btn {
+    padding-inline: 8px;
+  }
+}
+
+.nb-preview-schmal .nb-preview-logo,
+.nb-preview-farbband .nb-preview-logo {
+  height: 30px;
+}
+.nb-preview .nb-preview-logo img {
+  height: 100%;
+}
+.nb-preview-imageband,
+.nb-preview-colorband {
+  flex-direction: column;
+  justify-content: center;
+  align-items: start;
+  gap: 8px;
+}
+.nb-preview-colorband {
+  display: flex;
+  min-height: 96px;
+  background: var(--ak);
+  color: var(--ak-fg);
+  padding: 20px 32px;
+}
+.nb-preview-colorband strong,
+.nb-preview-imageband strong {
+  font-family: var(--preview-heading);
+  font-size: 24px;
+}

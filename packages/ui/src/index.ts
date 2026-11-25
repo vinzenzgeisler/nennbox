@@ -13,3 +13,13 @@ export * from './app-primitives/AppConfirmAction.js';
 export * from './app-primitives/AppEditorRow.js';
 
 export * from './app-primitives/AppSettings.js';
+
+export * from './registration/RegistrationComponents.js';
+export * from './registration/registrationPalette.js';
+export * from './registration/registrationThemes.js';
+export * from './registration/registrationClubs.js';
+export * from './registration/RegistrationOptionCard.js';
+export * from './registration/RegistrationButton.js';
+export * from './registration/RegistrationConsent.js';
+export * from './registration/RegistrationAddButton.js';
+export * from './registration/RegistrationSelect.js';
