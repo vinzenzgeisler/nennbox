@@ -120,3 +120,14 @@
 .nb-workbasket-bulk-action > p {
   margin: 0;
 }
+
+.nb-workbasket-other-rules {
+  flex-basis: 100%;
+  color: var(--nb-fg-muted);
+  font-size: var(--nb-text-sm);
+}
+
+.nb-workbasket-other-rules summary {
+  cursor: pointer;
+  padding: var(--nb-space-2) var(--nb-space-3);
+}

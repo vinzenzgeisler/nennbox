@@ -100,16 +100,47 @@ export function WorkbasketOverview({
                   >
                     Alle Aufgaben ({data.tasks.length})
                   </AppButton>
-                  {Object.entries(ruleLabels).map(([id, label]) => (
-                    <AppButton
-                      key={id}
-                      tone={rule === id ? 'secondary' : 'ghost'}
-                      aria-pressed={rule === id}
-                      onClick={() => filterByRule(id)}
-                    >
-                      {label} ({data.counts[id] ?? 0})
-                    </AppButton>
-                  ))}
+                  {Object.entries(ruleLabels)
+                    .filter(([id]) => (data.counts[id] ?? 0) > 0)
+                    .map(([id, label]) => (
+                      <AppButton
+                        key={id}
+                        tone={rule === id ? 'secondary' : 'ghost'}
+                        aria-pressed={rule === id}
+                        onClick={() => filterByRule(id)}
+                      >
+                        {label} ({data.counts[id] ?? 0})
+                      </AppButton>
+                    ))}
+                  {Object.entries(ruleLabels).some(
+                    ([id]) => !data.counts[id],
+                  ) && (
+                    <details className="nb-workbasket-other-rules">
+                      <summary>
+                        Weitere Regeln ohne Aufgaben (
+                        {
+                          Object.keys(ruleLabels).filter(
+                            (id) => !data.counts[id],
+                          ).length
+                        }
+                        )
+                      </summary>
+                      <div className="nb-workbasket-counts">
+                        {Object.entries(ruleLabels)
+                          .filter(([id]) => !data.counts[id])
+                          .map(([id, label]) => (
+                            <AppButton
+                              key={id}
+                              tone={rule === id ? 'secondary' : 'ghost'}
+                              aria-pressed={rule === id}
+                              onClick={() => filterByRule(id)}
+                            >
+                              {label} (0)
+                            </AppButton>
+                          ))}
+                      </div>
+                    </details>
+                  )}
                 </nav>
                 <AppSection
                   title="Sammelaktionen"
