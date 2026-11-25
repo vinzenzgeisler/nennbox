@@ -1,3 +1,4 @@
+import { GalleryRegistrationComponents } from './features/gallery/GalleryRegistrationComponents.js';
 import { GalleryAppSettings } from './features/gallery/GalleryAppSettings.js';
 import { GalleryAdminEditors } from './features/gallery/GalleryAdminEditors.js';
 import { GalleryAppViews } from './features/gallery/GalleryAppViews.js';
@@ -285,6 +286,7 @@ export function ComponentGallery() {
       <GalleryAdvancedComponents />
       <GalleryWorkspaceComponents />
       <GalleryOnboardingComponents />
+      <GalleryRegistrationComponents />
       {selected && (
         <SelectionBar
           label="Auswahlaktionen"

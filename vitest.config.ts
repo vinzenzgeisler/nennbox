@@ -8,6 +8,9 @@ export default defineConfig({
     // Tests run against package sources so they do not depend on a prior build.
     alias: {
       '@nennbox/core': source('core'),
+      '@nennbox/ui/registration-preview.css': fileURLToPath(
+        new URL('./packages/ui/src/registration/preview.css', import.meta.url),
+      ),
       '@nennbox/ui': source('ui'),
       '@nennbox/contracts': source('contracts'),
       '@nennbox/adapter-postgres': source('adapter-postgres'),

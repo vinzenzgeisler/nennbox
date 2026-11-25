@@ -161,3 +161,67 @@ these rules:
 A2 and F1 govern proportions, hierarchy, responsive control sizing and square
 geometry. Tokens remain defined here rather than repeated in app styles; only
 page-level layout belongs to `packages/app`.
+
+
+## Nennformular (Prototyp)
+
+Verbindliche Quelle ist die Designmappe vom 25.11.2026 (`nennbox-nennformular`,
+P1–P9). Der neue lokale Prototyp liegt unter `/app/registration-preview`, analog
+zum Einrichten: nur in Entwicklung oder mit `VITE_REGISTRATION_PREVIEW=true`.
+Normale Produktionsbuilds enthalten weder diese Route noch die Preview-Logik.
+Das öffentliche Formular unter `/events/:slug/register` bleibt unverändert.
+Bausteine stehen in `packages/ui/src/registration/` und in `/components`.
+
+| Quelle | Umsetzung |
+| --- | --- |
+| P1 Richtung | Dreispaltenrahmen, mobile Fortschrittslinie und aufklappbare Übersicht ohne fixierten Betrag; leere Schritte entfallen. Lokaler Entwurf mit sichtbarem Speicherstatus. |
+| P2 Über dich | Kontakt, Anschrift, Lizenz, Notfallkontakt, Veröffentlichung; Abzweigung für Minderjährige und Mindestalter. Erforderlich/Freiwillig am Feld. |
+| P3 Fahrzeug | Startmeldung als Einheit mit eigener Klasse und Preis, zweite Startmeldung, Wartelistenentscheidung bei voller Klasse, eingerücktes Ersatzfahrzeug für 0 €. |
+| P4 Nachweise | Beifahrer mit eigenem späteren Link; konfigurierbare Vereinsfragen zuletzt; Nachweise mit Kamera-/Dateiauswahl, leer/bereit/lädt/Formatfehler/zu groß. |
+| P5 Prüfen | Gruppen mit Rücksprung, hervorgehobene E-Mail, vollständige Kosten und drei einzelne, nicht vorausgewählte Zustimmungen; Texte im Dialog. |
+| P6 Bestätigung | Eingang und Warteliste, Zulassung/Überweisung, optionale Sofortzahlung; vier Zahlungsrückkehrzustände, vier E-Mail-Zustände, Entwurf laden/Link ungültig, Frist vorbei/abgesagt/gesperrt, Laden/Senden. |
+| P7 Verein | Neun Beispielvereine (sechs aus P7, drei Themenvereine) mit Logo/Initialen und Akzent umschaltbar, dazu die Probe „Akzent entfernt“ (Neutralgrau). Hinweis nur, wenn NENNBOX eingreift: abgedunkelt, aufgehellt oder nah am Erfolgsgrün – nie eine Sperre. Typisierte reine OKLCH-Ableitung mit Gamut-Mapping und WCAG-Messung; externe JavaScript-Datei ausschließlich gelesen, nie eingebunden oder ausgeführt. |
+| P8 Themen | Vier Beispielthemen mit Kopf, lokaler Schriftpaarung, Ecken, Grund, Dichte und Sponsorenstreifen. Bildband ist eine lokale Illustration, kein Veranstaltungsfoto. |
+| P9 Bausteine | Gemeinsame Felder, Karten, Radio-Karten mit Preis (`RegistrationOptionCard`), Hinweise, Uploads; echte Labels, Gruppen und Fokus. Fehler erst bei Blur, beim Absenden Sammelmeldung mit Sprung und Fokus aufs erste Fehlerfeld. |
+
+Deutsch/Englisch ist umschaltbar. Bestehende Formularübersetzungen werden
+wiederverwendet; zusätzliche Designtexte sind lokal übersetzt. Beispiel-Klassen
+und Vereinsnamen bleiben Inhalte des Veranstalters. Über die aufgeklappten
+**Prototyp-Werkzeuge** sind alle Sonderzustände direkt erreichbar; sie erlauben
+bewusst auch Sprünge für die Designabnahme, nicht für den echten Formularablauf.
+
+### Lokal simuliert
+
+Keine Server-Anbindung, kein neuer Server-Entwurf, kein echter Versand oder
+Geldfluss. E-Mail, Eltern-/Beifahrerlinks, Zulassung, Wartelistenposition und
+Zahlungsrückkehr werden lokal simuliert. Der kopierte Fortsetzungslink funktioniert
+nur auf demselben Gerät mit dessen localStorage; kein Magic Link. Uploads speichern
+nur Metadaten/Status, keine Dateiinhalte. Überweisung zeigt ausdrücklich ungültige
+Beispieldaten. Der PDF-Download ist ein lokal erzeugter Prototyp-Beleg. Rechtstexte
+sind keine veröffentlichten Einwilligungsdokumente. Lokale Fixtures enthalten keine
+echten Teilnehmerdaten.
+
+### Laut Mappe noch offen
+
+- Blutgruppe: rechtliche Grundlage, bewusstes Einschalten je Verein und tatsächliche
+  Löschfrist müssen vor einer Produktintegration geklärt werden.
+- Magic Links: Gültigkeit, Einmaligkeit, Weiterleitung und erneute Verifikation beim
+  Zugriff auf „Meine Nennung“ sind Produktentscheidungen. Die dargestellten sieben
+  Tage sind Designbeispiel, keine implementierte Sicherheitsregel.
+- Eine abschaltbare einmalige Erinnerung zwei Tage vor Nennungsschluss ist ein
+  Vorschlag der Mappe, kein eingerichteter Versandauftrag.
+- Vereinsfotos benötigen Mindestauflösung und Hinweise zu erkennbaren Personen.
+- Der Themen-Editor im Einrichten und freie Begrüßungs-/Schritthinweistexte werden
+  hier nicht integriert; diese Vorschau zeigt die vier vorgegebenen Beispielthemen.
+
+Der CSS-Vertragstest (`registrationStyles.test.ts`) nagelt „Was der Ton nie färbt“
+und `unveraenderlich` aus `themen.json` am Stylesheet fest: Akzentvariablen
+erscheinen nur in den sieben erlaubten Rollen, nie in Status-, Text-, Feld- oder
+Rahmenregeln; Trefferflächen bleiben mindestens 44 px, die Dichte ändert nur
+Abstände, der Fokusring wird nie entfernt.
+
+Unit-/Routentests prüfen Verzweigungen, Validierung/Fokus, Einzelzustimmungen,
+Preise sowie Ableitungs-Notbremsen/Kontrastgrenzen und unveränderliche Farben.
+Kein lokaler Browser-, Datenbank- oder e2e-Stack wird für diesen Auftrag gestartet.
+Die visuelle Abnahme bei 1440/1024/390 px erfolgt anschließend durch den Lead;
+sie ist nicht durch grüne Unit-Tests ersetzt.
