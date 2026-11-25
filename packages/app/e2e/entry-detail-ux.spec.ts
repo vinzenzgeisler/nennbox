@@ -30,6 +30,10 @@ for (const width of [1440, 1024, 390]) {
     await expect(
       page.getByRole('heading', { level: 1, name: 'Nennungen', exact: true }),
     ).toBeVisible({ timeout: 15_000 });
+    // Other shared specs create empty events; exercise the populated demo fixture.
+    await page
+      .getByRole('combobox', { name: 'Veranstaltung' })
+      .selectOption({ label: 'Historischer Bergpreis 2027' });
     const row = page.locator('.nb-entry-list-row').first();
     await expect(row).toBeVisible();
     await row.locator('[data-entry-action]').dblclick();
