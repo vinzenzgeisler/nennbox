@@ -13,12 +13,15 @@ export function useAutoPreviewEntry({
   eventId,
   items,
   workflow,
+  selected = null,
   openEntry,
 }: {
   autoSelectFirst: boolean;
   eventId: string;
   items: Entry[];
   workflow: WorkflowView | null;
+  /** The entry the user already opened: an automatic preview must never replace it. */
+  selected?: Entry | null;
   openEntry: (id: string) => Promise<void>;
 }) {
   const previewedEvent = useRef('');
@@ -34,6 +37,9 @@ export function useAutoPreviewEntry({
     )
       return;
     previewedEvent.current = eventId;
+    // Opening an entry switches the preview on, which re-arms this effect for an event that was
+    // never previewed. Re-opening then would close a detail the user just opened (double click).
+    if (selected) return;
     const firstPending = items.find(
       (item) =>
         workflow.statuses.find(
@@ -41,5 +47,5 @@ export function useAutoPreviewEntry({
         )?.category === 'waitlisted',
     );
     void openEntry((firstPending ?? items[0]!).id);
-  }, [autoSelectFirst, eventId, items, workflow, openEntry]);
+  }, [autoSelectFirst, eventId, items, workflow, selected, openEntry]);
 }

@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
+// Read-only on the shared demo data: dialogs are only opened and cancelled. Confirming a
+// deletion lives in entry-delete-feedback.destructive.spec.ts, which runs after all other specs.
+
 for (const width of [1440, 1024, 390]) {
   test(`detail tabs and action rail at ${width}px`, async ({ browser }) => {
     test.setTimeout(90_000);
@@ -123,24 +126,6 @@ for (const width of [1440, 1024, 390]) {
         `${evidence}/metrics-${width}.json`,
         JSON.stringify(metrics),
       );
-    }
-    if (width === 390) {
-      await destructive
-        .getByRole('button', { name: 'Nennung löschen …' })
-        .click();
-      const dialog = page.getByRole('dialog', {
-        name: 'Nennung löschen',
-        exact: true,
-      });
-      await dialog
-        .getByRole('textbox')
-        .fill('Isolierter UX-Smoke: Bestätigung und Rückmeldung');
-      await dialog
-        .getByRole('button', { name: 'Nennung löschen', exact: true })
-        .click();
-      await expect(detail).not.toBeVisible();
-      await expect(page.getByRole('status')).toContainText('Nennung gelöscht');
-      expect(errors).toEqual([]);
     }
     await context.close();
   });
