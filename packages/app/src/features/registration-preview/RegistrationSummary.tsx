@@ -56,7 +56,12 @@ export function RegistrationSummary({
               'Nur diese Sitzung · Speichern nicht möglich',
               'This session only · unable to save',
             )
-          : `✓ ${t('Entwurf gespeichert', 'Draft saved')} · ${savedAt}`}
+          : savedAt
+            ? `✓ ${t('Entwurf gespeichert', 'Draft saved')} · ${savedAt}`
+            : t(
+                'Lokaler Beispielentwurf · noch nicht gespeichert',
+                'Local example draft · not yet saved',
+              )}
       </p>
       <AppButton
         tone="ghost"

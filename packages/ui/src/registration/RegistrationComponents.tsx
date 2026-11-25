@@ -1,5 +1,4 @@
 import React, { cloneElement, isValidElement, useId, useState } from 'react';
-import './registration.css';
 
 export type RegistrationStep = {
   id: string;

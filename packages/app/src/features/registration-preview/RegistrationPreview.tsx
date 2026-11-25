@@ -28,7 +28,7 @@ import { type Surface } from './surfaces.js';
 import { PrototypeControls } from './PrototypeControls.js';
 import { useDraft } from './useDraft.js';
 import { money, words, stepTitles, type Locale } from './text.js';
-import './preview.css';
+import '@nennbox/ui/registration-preview.css';
 
 export default function RegistrationPreview() {
   const [locale, setLocale] = useState<Locale>('de');
@@ -132,7 +132,7 @@ export default function RegistrationPreview() {
       );
   return (
     <RegistrationShell
-      className={`nb-preview nb-preview-${theme.header}`}
+      className={`nb-preview nb-preview-${theme.header === 'grossesLogo' ? 'grosses-logo' : theme.header}`}
       style={style}
       brand={<PrototypeBrand logo={logo} themeId={themeId} />}
       title={t('Nennformular', 'Registration')}

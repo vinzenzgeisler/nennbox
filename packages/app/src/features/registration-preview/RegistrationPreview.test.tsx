@@ -231,9 +231,14 @@ describe('registration preview interactions', () => {
     expect(input('person.firstName').value).toBe(
       createDraft().person.firstName,
     );
-    expect(JSON.parse(localStorage.getItem(draftStorageKey)!)).toEqual(
-      createDraft(),
-    );
+    expect(
+      container.querySelector('.nb-reg-summary-toggle')?.textContent,
+    ).toContain('1 Startmeldungen');
+    type(input('person.firstName'), 'Recovered');
+    expect(JSON.parse(localStorage.getItem(draftStorageKey)!)).toEqual({
+      ...createDraft(),
+      person: { ...createDraft().person, firstName: 'Recovered' },
+    });
   });
 
   it('remains editable when localStorage access is denied and reports unsaved state', () => {
@@ -244,6 +249,7 @@ describe('registration preview interactions', () => {
       throw new DOMException('Denied', 'SecurityError');
     });
     mount();
+    type(input('person.firstName'), 'Session only');
     expect(container.textContent).toContain(
       'Nur diese Sitzung · Speichern nicht möglich',
     );

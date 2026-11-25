@@ -7,7 +7,8 @@
     "./tokens.css": "./src/tokens.css",
     "./base.css": "./src/base.css",
     "./components.css": "./src/components.css",
-    "./app-tokens.css": "./src/app-tokens.css"
+    "./app-tokens.css": "./src/app-tokens.css",
+    "./registration-preview.css": "./src/registration/preview.css"
   },
   "scripts": {
     "test": "vitest run"

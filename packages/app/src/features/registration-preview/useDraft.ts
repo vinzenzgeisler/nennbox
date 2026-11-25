@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createDraft, type Draft } from './model.js';
 
 export const draftStorageKey = 'nennbox-registration-preview-v1';
-function loadDraft(): Draft {
+function loadDraft(): { draft: Draft; storageFailed: boolean } {
   try {
     const raw: unknown = JSON.parse(
       localStorage.getItem(draftStorageKey) ?? 'null',
@@ -27,15 +27,22 @@ function loadDraft(): Draft {
         );
       return typeof value === typeof shape;
     };
-    return matches(raw, template) ? (raw as Draft) : template;
-  } catch {
-    return createDraft();
+    return {
+      draft: matches(raw, template) ? (raw as Draft) : template,
+      storageFailed: false,
+    };
+  } catch (error) {
+    return {
+      draft: createDraft(),
+      storageFailed: !(error instanceof SyntaxError),
+    };
   }
 }
 export function useDraft() {
-  const [draft, changeDraft] = useState<Draft>(loadDraft);
+  const [initial] = useState(loadDraft);
+  const [draft, changeDraft] = useState<Draft>(initial.draft);
   const [savedAt, setSavedAt] = useState('');
-  const [storageFailed, setStorageFailed] = useState(false);
+  const [storageFailed, setStorageFailed] = useState(initial.storageFailed);
   const setDraft = (next: Draft) => {
     changeDraft(next);
     try {
