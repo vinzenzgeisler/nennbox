@@ -1,0 +1,198 @@
+/* Right column “Deine Nennung”, review rows, costs and confirmations (P5, P9). */
+
+.nb-reg-summary .nb-reg-rows {
+  display: block;
+  margin: 0;
+}
+.nb-reg-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 13px;
+}
+.nb-reg-row dt {
+  flex: none;
+  width: 104px;
+  color: #6e7570;
+}
+.nb-reg-row dd {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: #18201c;
+  font-weight: 500;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.nb-reg-row.is-open dd {
+  color: #9aa19c;
+  font-weight: 400;
+}
+.nb-reg-row.is-sub dt {
+  visibility: hidden;
+}
+.nb-reg-row.is-warn dd {
+  color: #b45309;
+}
+.nb-reg-row.is-total {
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px solid #e3e5e1;
+}
+.nb-reg-row.is-total dd {
+  font-size: 15px;
+  font-weight: 600;
+}
+.nb-reg-summary-note {
+  color: #6e7570;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.nb-reg-summary-note.is-warn {
+  color: #b45309;
+}
+.nb-reg-summary-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid #e3e5e1;
+}
+.nb-reg-summary-saved {
+  color: #156339;
+  font-size: 12.5px;
+}
+
+/* Review page: label column and value column */
+.nb-reg-review-rows {
+  display: block;
+  margin: 0;
+}
+.nb-reg-review-row {
+  display: grid;
+  grid-template-columns: minmax(0, 168px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-top: 1px solid #f0f1ee;
+  font-size: 13.5px;
+}
+.nb-reg-review-row:first-child {
+  border-top: 0;
+}
+.nb-reg-review-row dt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  color: #6e7570;
+}
+.nb-reg-review-row dd {
+  margin: 0;
+  color: #18201c;
+  overflow-wrap: anywhere;
+}
+.nb-reg-review-row dd.is-strong {
+  font-weight: 600;
+}
+.nb-reg-review-row .nb-reg-tag {
+  height: 18px;
+  padding: 0 6px;
+  font-size: 10.5px;
+  font-weight: 500;
+}
+.nb-reg-card.is-cost {
+  background: #f7f7f5;
+  box-shadow: none;
+}
+.nb-reg-card.is-cost .nb-reg-notice {
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #e3e5e1;
+  color: #454d48;
+}
+.nb-reg-cost-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #565e59;
+  font-variant-numeric: tabular-nums;
+}
+.nb-reg-cost-row.is-total {
+  padding-top: 12px;
+  border-top: 1px solid #e3e5e1;
+  color: #18201c;
+  font-weight: 600;
+}
+.nb-reg-consents {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.nb-reg-consent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px #e3e5e1;
+  background: #fff;
+}
+.nb-reg-consent label {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  min-height: 24px;
+  cursor: pointer;
+}
+.nb-reg-consent input {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  margin: 2px 0 0;
+  accent-color: var(--ak, #1f4e79);
+}
+.nb-reg-consent-link {
+  align-self: flex-start;
+  min-height: 24px;
+  margin-left: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ak-link, #3e6c9a);
+  font-size: 13px;
+  text-decoration: underline;
+}
+.nb-reg-actions-note {
+  margin-left: auto;
+  color: #6e7570;
+  font-size: 12.5px;
+}
+.nb-reg-actions > .nb-reg-btn.is-primary {
+  margin-left: auto;
+}
+.nb-reg-actions-note + .nb-reg-btn.is-primary {
+  margin-left: 0;
+}
+
+@media (width <= 760px) {
+  .nb-reg-card > header,
+  .nb-reg-card-body {
+    padding-inline: 16px;
+  }
+  .nb-reg-review-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .nb-reg-actions > .nb-reg-btn.is-primary {
+    flex: 1;
+  }
+  .nb-reg-actions-note {
+    display: none;
+  }
+  .nb-reg-summary-foot {
+    margin-top: 0;
+  }
+}

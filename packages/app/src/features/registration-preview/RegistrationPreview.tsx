@@ -160,7 +160,7 @@ export default function RegistrationPreview() {
         'You do not need an account. Your details remain saved on this device when you close the window.',
       )}
       summaryTitle={t('Deine Nennung', 'Your registration')}
-      summaryCount={`${draft.entries.length} ${t('Startmeldungen', 'entries')}`}
+      summaryCount={`${draft.entries.length} ${draft.entries.length === 1 ? t('Startmeldung', 'entry') : t('Startmeldungen', 'entries')}`}
       summary={
         surface ? undefined : (
           <RegistrationSummary

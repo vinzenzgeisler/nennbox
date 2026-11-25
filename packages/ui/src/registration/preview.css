@@ -3,6 +3,7 @@
 @import '@fontsource-variable/archivo';
 @import './registration-controls.css';
 @import './registration-cards.css';
+@import './registration-summary.css';
 @import './registration-surfaces.css';
 
 .nb-preview {

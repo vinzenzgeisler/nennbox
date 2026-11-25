@@ -163,7 +163,7 @@ describe('form measures of the design folder (P9)', () => {
   });
 
   it('stretches the main action over the full width on phones', () => {
-    expect(phones('registration-cards.css')).toMatch(
+    expect(phones('registration-summary.css')).toMatch(
       /\.nb-reg-actions > \.nb-reg-btn\.is-primary \{\s*flex: 1;/,
     );
     // The back action shrinks to its icon so the main action keeps the room.

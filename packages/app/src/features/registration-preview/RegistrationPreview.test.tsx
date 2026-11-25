@@ -233,7 +233,7 @@ describe('registration preview interactions', () => {
     );
     expect(
       container.querySelector('.nb-reg-summary-toggle')?.textContent,
-    ).toContain('1 Startmeldungen');
+    ).toMatch(/1 Startmeldung(?!en)/);
     type(input('person.firstName'), 'Recovered');
     expect(JSON.parse(localStorage.getItem(draftStorageKey)!)).toEqual({
       ...createDraft(),

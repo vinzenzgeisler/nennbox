@@ -154,6 +154,9 @@
 }
 
 @media (width <= 760px) {
+  .nb-reg-surface-actions > .nb-reg-btn.is-primary {
+    flex: 1 1 100%;
+  }
   .nb-reg-surface {
     padding: 24px 20px;
   }

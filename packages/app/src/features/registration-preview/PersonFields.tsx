@@ -2,7 +2,7 @@ import {
   RegistrationField,
   RegistrationNotice,
   RegistrationOptionCard,
-  SelectField,
+  RegistrationSelect,
 } from '@nennbox/ui';
 import {
   ageOnEvent,
@@ -61,10 +61,8 @@ export function PersonFields({
           error={errors[`person.${key}`]}
         >
           {(control) => (
-            <SelectField
+            <RegistrationSelect
               {...control}
-              label={label}
-              labelHidden
               value={draft.person[key]}
               onChange={(event) => set(key, event.target.value)}
               onBlur={() => onBlur(`person.${key}`)}
@@ -74,7 +72,7 @@ export function PersonFields({
                   {name}
                 </option>
               ))}
-            </SelectField>
+            </RegistrationSelect>
           )}
         </RegistrationField>
       );
@@ -103,7 +101,7 @@ export function PersonFields({
   const age = ageOnEvent(draft.person.birthDate);
   return (
     <>
-      <p>
+      <p className="nb-reg-lead">
         {t(
           'Diese Angaben braucht der Veranstalter für die Startliste, die Zeitnahme und den Notfall. Du kannst jederzeit aufhören, dein Entwurf bleibt gespeichert.',
           'The organiser needs these details for the start list, timing and emergencies. You can stop at any time; your draft stays saved.',
