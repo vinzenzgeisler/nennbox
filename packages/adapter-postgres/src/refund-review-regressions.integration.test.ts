@@ -273,6 +273,7 @@ async function waitsForInvoiceLock<T>(
   pool: Pool,
   s: Seed,
   operation: () => Promise<T>,
+  expectedWaiters = 1,
 ): Promise<T> {
   const holder = await pool.connect();
   let released = false;
@@ -292,7 +293,7 @@ async function waitsForInvoiceLock<T>(
       const { rows } = await pool.query(
         `select count(*)::int as n from pg_stat_activity where datname = current_database() and wait_event_type = 'Lock' and pid <> pg_backend_pid()`,
       );
-      waiting = Number(rows[0].n) > 0;
+      waiting = Number(rows[0].n) >= expectedWaiters;
       if (!waiting) await sleep(50);
     }
     const finishedWhileLocked = settled;
@@ -1018,10 +1019,21 @@ describe.skipIf(!url)(
           await db.execute(
             sql`delete from payment_refund_reservation where invoice_id = ${s.invoice.id}`,
           );
-          const results = await Promise.all(
-            Array.from({ length: 4 }, () =>
-              refunds.reserve(s.ctx, manual(s, piOf(s), 3000)),
-            ),
+          // Hold the invoice until every contender is blocked. With the
+          // explicit lock they wait before reading the ledger. Without it,
+          // they all read the same balance, then block on the insert's foreign
+          // key check. Releasing this barrier deterministically exposes the
+          // overbooking instead of depending on scheduler timing.
+          const results = await waitsForInvoiceLock(
+            pool,
+            s,
+            () =>
+              Promise.all(
+                Array.from({ length: 4 }, () =>
+                  refunds.reserve(s.ctx, manual(s, piOf(s), 3000)),
+                ),
+              ),
+            4,
           );
           expect(results.filter((r) => r.status === 'reserved')).toHaveLength(
             1,

@@ -124,7 +124,9 @@ describe.skipIf(!url)('start-number migration', () => {
       }
     } finally {
       await pool.end();
-      await admin.query(`DROP DATABASE ${scratch} WITH (FORCE)`);
+      // Let the already-ended pool disconnect gracefully. FORCE can race
+      // its socket shutdown and emit an uncaught 57P01 on the closing client.
+      await admin.query(`DROP DATABASE ${scratch}`);
       await admin.end();
       rmSync(folder, { recursive: true, force: true });
     }
