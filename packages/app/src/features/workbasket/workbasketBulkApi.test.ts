@@ -1,5 +1,9 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { executeAdmissions, prepareAdmissions } from './workbasketBulkApi.js';
+import {
+  admissionFor,
+  executeAdmissions,
+  prepareAdmissions,
+} from './workbasketBulkApi.js';
 import { request } from '../entries/AdminEntriesModel.js';
 vi.mock('../entries/AdminEntriesModel.js', () => ({ request: vi.fn() }));
 const eventId = '10000000-0000-4000-8000-000000000001';
@@ -56,14 +60,26 @@ it('fails closed without pinned category metadata instead of guessing from liter
   expect(prepared.results[0]?.ok).toBe(false);
 });
 it('never executes a stale ready suggestion', async () => {
-  vi.mocked(request).mockResolvedValueOnce(tasks());
+  vi.mocked(request).mockImplementation(async (path, init) => {
+    if (String(path).endsWith('/workbasket')) return tasks();
+    return response({
+      ...entry(),
+      acceptanceStatus: init?.method === 'POST' ? 'approved' : 'open',
+    });
+  });
   const results = await executeAdmissions(
     eventId,
     [{ entryId, name: 'Anja', to: 'approved', label: 'Startberechtigt' }],
     'Geprüft',
   );
-  expect(results[0]?.ok).toBe(false);
-  expect(request).toHaveBeenCalledTimes(1);
+  expect(results[0]).toEqual({
+    entryId,
+    ok: false,
+    message: 'Nicht mehr bereit zum Zulassen; übersprungen.',
+  });
+  expect(request).toHaveBeenCalledExactlyOnceWith(
+    `/admin/events/${eventId}/workbasket`,
+  );
 });
 it('rejects a changed target after confirmation', async () => {
   vi.mocked(request)
@@ -101,6 +117,7 @@ it('continues sequentially after a per-entry failure and uses existing transitio
     {
       method: 'POST',
       body: JSON.stringify({
+        requireReadyForEvent: eventId,
         transition: 'acceptance',
         status: 'approved',
         reason: 'Unterlagen geprüft',
@@ -120,4 +137,77 @@ it('does not start more reads or mutations after the view is unmounted', async (
   );
   expect(result[0]?.ok).toBe(false);
   expect(request).not.toHaveBeenCalled();
+});
+
+it.each([
+  {
+    targets: [{ to: 'open', label: 'Offen', category: 'pending' }],
+    actions: ['acceptance:open'],
+  },
+  {
+    targets: [{ to: 'approved', label: 'Zugelassen', category: 'accepted' }],
+    actions: [],
+  },
+  {
+    targets: [
+      { to: 'approved', label: 'Zugelassen', category: 'accepted' },
+      { to: 'other', label: 'Anderes', category: 'accepted' },
+    ],
+    actions: ['acceptance:approved', 'acceptance:other'],
+  },
+])(
+  'fails closed for ineligible or ambiguous pinned targets: %j',
+  async ({ targets, actions }) => {
+    vi.mocked(request).mockResolvedValue(
+      response({
+        ...entry(),
+        acceptanceTransitions: targets,
+        availableActions: actions,
+      }),
+    );
+    await expect(admissionFor(eventId, entryId)).rejects.toThrow(
+      'Kein eindeutiger erlaubter Zulassungsstatus',
+    );
+  },
+);
+it('selects only the authorized accepted target from mixed targets', async () => {
+  vi.mocked(request).mockResolvedValue(
+    response({
+      ...entry(),
+      availableActions: ['acceptance:approved', 'acceptance:open'],
+      acceptanceTransitions: [
+        { to: 'open', label: 'Offen', category: 'pending' },
+        { to: 'unauthorized', label: 'Gesperrt', category: 'accepted' },
+        ...entry().acceptanceTransitions,
+      ],
+    }),
+  );
+  expect((await admissionFor(eventId, entryId)).to).toBe('approved');
+});
+it('sends authoritative readiness intent and displays a server-side race exclusion', async () => {
+  vi.mocked(request).mockImplementation(async (path, init) => {
+    if (String(path).endsWith('/workbasket')) return tasks(entryId);
+    if (init?.method === 'POST') {
+      expect(JSON.parse(String(init.body))).toMatchObject({
+        requireReadyForEvent: eventId,
+      });
+      return response(
+        { error: 'Nicht mehr bereit: inzwischen zurückgezogen; übersprungen.' },
+        409,
+      );
+    }
+    return response(entry());
+  });
+  expect(
+    (
+      await executeAdmissions(
+        eventId,
+        [{ entryId, name: 'Anja', to: 'approved', label: 'Startberechtigt' }],
+        'Geprüft',
+      )
+    )[0],
+  ).toMatchObject({
+    ok: false,
+    message: 'Nicht mehr bereit: inzwischen zurückgezogen; übersprungen.',
+  });
 });

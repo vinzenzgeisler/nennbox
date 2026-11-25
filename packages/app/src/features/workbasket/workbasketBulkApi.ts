@@ -112,12 +112,19 @@ export async function executeAdmissions(
           method: 'POST',
           ...(signal ? { signal } : {}),
           body: JSON.stringify({
+            requireReadyForEvent: eventId,
             transition: 'acceptance',
             status: planned.to,
             reason,
           }),
         },
       );
+      if (response.status === 409) {
+        const error = (await response.json()) as { error?: string };
+        throw new Error(
+          error.error ?? 'Nicht mehr bereit zum Zulassen; übersprungen.',
+        );
+      }
       if (!response.ok)
         throw new Error(
           'Statusänderung abgelehnt oder fehlgeschlagen. Bitte einzeln prüfen.',

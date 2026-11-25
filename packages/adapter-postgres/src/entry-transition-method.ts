@@ -9,6 +9,7 @@ import { projectEntryRows } from './entry-projection.js';
 import type { Database } from './database.js';
 import type { EntryRepository } from '@nennbox/core';
 import { attachAdminEntryDetails } from './entry-admin-details.js';
+import { assertReadyAdmission } from './workbasket-admission.js';
 import { offerWaitlistSeat } from './waitlist-offer.js';
 
 export function createEntryTransitionMethod(
@@ -24,8 +25,11 @@ export function createEntryTransitionMethod(
       actor,
       reason,
       workflow,
+      readiness,
     ) =>
       db.transaction(async (tx) => {
+        if (readiness)
+          await assertReadyAdmission(tx, ctx, id, readiness.eventId, workflow);
         const statusColumn =
           transition === 'verification'
             ? entries.verificationStatus
@@ -42,6 +46,9 @@ export function createEntryTransitionMethod(
               eq(entries.organizationId, ctx.organizationId),
               eq(entries.id, id),
               eq(statusColumn, fromStatus),
+              ...(readiness && workflow
+                ? [eq(entries.workflowRevisionId, workflow.workflowRevisionId)]
+                : []),
               sql`${entries.deletedAt} is null`,
             ),
           )
