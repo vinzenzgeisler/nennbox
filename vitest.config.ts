@@ -14,6 +14,7 @@ export default defineConfig({
       '@nennbox/ui': source('ui'),
       '@nennbox/contracts': source('contracts'),
       '@nennbox/adapter-postgres': source('adapter-postgres'),
+      '@nennbox/adapter-stripe': source('adapter-stripe'),
       '@nennbox/adapter-local-storage': source('adapter-local-storage'),
       '@nennbox/artifacts/pdf': fileURLToPath(
         new URL('./packages/artifacts/src/pdf.ts', import.meta.url),

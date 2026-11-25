@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Banner, Button, Field, FileUpload, FormSection } from '@nennbox/ui';
 import type { Entry, View } from './driverPortalTypes.js';
+import { DriverPortalPayment } from './DriverPortalPayment.js';
 const labels: Record<string, string> = {
   phone: 'Telefon',
   street: 'Straße',
@@ -23,6 +24,7 @@ export function DriverPortalReady({
   upload,
   save,
   pay,
+  cancelPayment,
   setWithdrawId,
   onLogout,
 }: {
@@ -31,6 +33,7 @@ export function DriverPortalReady({
   upload: (entryId: string, typeKey: string, file: File) => Promise<void>;
   save: (entryId: string, fields: Record<string, string>) => Promise<boolean>;
   pay: () => Promise<void>;
+  cancelPayment: () => Promise<void>;
   setWithdrawId: (id: string) => void;
   onLogout: () => void;
 }) {
@@ -169,60 +172,12 @@ export function DriverPortalReady({
         </div>
         <aside className="driver-portal-side">
           {view.payment && (
-            <section className="driver-portal-panel">
-              <p className="driver-portal-eyebrow">ZAHLUNG</p>
-              <h2>
-                {view.payment.status === 'paid'
-                  ? 'Bezahlt'
-                  : view.payment.status === 'partially_paid'
-                    ? 'Teilweise bezahlt'
-                    : 'Noch offen'}
-              </h2>
-              <p className="driver-portal-amount">
-                {new Intl.NumberFormat('de-DE', {
-                  style: 'currency',
-                  currency: view.payment.currency,
-                }).format(view.payment.totalCents / 100)}
-              </p>
-              {view.payment.paidCents > 0 && view.payment.status !== 'paid' && (
-                <p>
-                  Noch offen:{' '}
-                  {new Intl.NumberFormat('de-DE', {
-                    style: 'currency',
-                    currency: view.payment.currency,
-                  }).format(
-                    (view.payment.totalCents - view.payment.paidCents) / 100,
-                  )}
-                </p>
-              )}
-              {view.payment.onlinePayable && (
-                <Button disabled={working} onClick={() => void pay()}>
-                  Jetzt bezahlen
-                </Button>
-              )}
-              <dl>
-                <dt>Verwendungszweck</dt>
-                <dd>{view.payment.paymentReference}</dd>
-                {view.payment.accountName && (
-                  <>
-                    <dt>Empfänger</dt>
-                    <dd>{view.payment.accountName}</dd>
-                  </>
-                )}
-                {view.payment.iban && (
-                  <>
-                    <dt>IBAN</dt>
-                    <dd>{view.payment.iban}</dd>
-                  </>
-                )}
-                {view.payment.bic && (
-                  <>
-                    <dt>BIC</dt>
-                    <dd>{view.payment.bic}</dd>
-                  </>
-                )}
-              </dl>
-            </section>
+            <DriverPortalPayment
+              payment={view.payment}
+              working={working}
+              pay={pay}
+              cancelPayment={cancelPayment}
+            />
           )}
           <section className="driver-portal-panel">
             <p className="driver-portal-eyebrow">NACHRICHTEN</p>

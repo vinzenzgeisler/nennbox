@@ -95,6 +95,17 @@ export function EntryDetailContent({
             }
             onRecordPayment={() => setPending({ kind: 'payment' })}
             onRefundPayment={() => setPending({ kind: 'refund' })}
+            onReconcileRefund={(key, amountCents, currency) =>
+              setPending({
+                kind: 'reconcile_refund',
+                key,
+                amountCents,
+                currency,
+              })
+            }
+            onAbandonRefund={(key, amountCents, currency) =>
+              setPending({ kind: 'abandon_refund', key, amountCents, currency })
+            }
           />
           <EntryConsentsSection
             consents={entry.adminDetails!.consents ?? []}

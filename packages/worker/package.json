@@ -17,7 +17,8 @@
     "graphile-worker": "^0.16.6",
     "@nennbox/artifacts": "*",
     "@nennbox/adapter-local-storage": "*",
-    "@nennbox/adapter-s3": "*"
+    "@nennbox/adapter-s3": "*",
+    "@nennbox/adapter-stripe": "*"
   },
   "files": [
     "dist"

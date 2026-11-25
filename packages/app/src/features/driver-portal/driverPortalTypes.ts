@@ -25,6 +25,7 @@ export type View = {
     totalCents: number;
     paidCents: number;
     onlinePayable: boolean;
+    checkoutPending?: boolean;
     currency: string;
     paymentReference: string;
     accountName: string | null;

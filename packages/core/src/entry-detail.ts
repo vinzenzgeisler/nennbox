@@ -75,6 +75,19 @@ export interface AdminEntryInvoice {
     providerPaymentId: string;
     refundableCents: number;
   }>;
+  refundIntent?: {
+    status:
+      'pending' | 'processing' | 'done' | 'failed' | 'skipped' | 'superseded';
+    percent: number | null;
+    refundedCents: number;
+    failure: string | null;
+  } | null;
+  /** Reserved refunds the provider could not settle repeatedly; the office resolves them. */
+  stuckRefunds?: Array<{
+    key: string;
+    providerPaymentId: string;
+    amountCents: number;
+  }>;
 }
 
 /** Everything the admin detail shows about one entry beyond the entry record itself. */

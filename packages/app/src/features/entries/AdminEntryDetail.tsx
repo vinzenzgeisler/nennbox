@@ -9,7 +9,7 @@ import type { EntryResponse as Entry } from '@nennbox/contracts';
 import type { Outcome, WorkflowView } from './AdminEntriesModel.js';
 import type { Pending } from './detail/EntryDetailPending.js';
 import { EntryActionRail } from './detail/EntryActionRail.js';
-import type { UploadLine } from './documents/documentLines.js';
+import { uploadLines, type UploadLine } from './documents/documentLines.js';
 import { requestMessageSeed } from './documents/requestMessage.js';
 import { useEntryDocumentActions } from './documents/useEntryDocumentActions.js';
 import type { MessageSeed } from '../messages/messageSeed.js';
@@ -17,7 +17,6 @@ import { timelineFor } from './detail/entryDetailModel.js';
 import { EntryAdmissionProgress } from './detail/EntryAdmissionProgress.js';
 import { EntryProperties } from './detail/EntryProperties.js';
 import { EntryStatusToast } from './EntryStatusToast.js';
-import { uploadLines } from './documents/documentLines.js';
 import { EntryDetailActions } from './detail/EntryDetailActions.js';
 import { EntryDetailHeader } from './detail/EntryDetailHeader.js';
 import { useEntryDetailApi } from './detail/useEntryDetailApi.js';
@@ -122,14 +121,19 @@ export function AdminEntryDetail({
       );
       return result.ok ? close() : setDialogError(result.message);
     }
-    if (pending.kind === 'dimension') {
-      const result = await api.transitionDimension(
-        pending.action.dimension,
-        pending.action.status,
-        reason,
-      );
-      return result.ok ? close() : setDialogError(result.message);
-    }
+    const direct =
+      pending.kind === 'reconcile_refund' && details?.invoice
+        ? await api.reconcileRefund(details.invoice.id, pending.key, reason)
+        : pending.kind === 'abandon_refund' && details?.invoice
+          ? await api.abandonRefund(details.invoice.id, pending.key, reason)
+          : pending.kind === 'dimension'
+            ? await api.transitionDimension(
+                pending.action.dimension,
+                pending.action.status,
+                reason,
+              )
+            : null;
+    if (direct) return direct.ok ? close() : setDialogError(direct.message);
     const result =
       pending.kind === 'verify'
         ? await transition('verification', 'verified', reason)
@@ -209,9 +213,7 @@ export function AdminEntryDetail({
                 entry={selected}
                 workflow={workflow}
                 busy={busy || api.busy}
-                onStatus={(step) => {
-                  changeDetailStatus(step);
-                }}
+                onStatus={changeDetailStatus}
                 onVerify={() => setPending({ kind: 'verify' })}
                 onPayment={() => setPending({ kind: 'payment' })}
                 onDimension={(action) =>
@@ -252,9 +254,7 @@ export function AdminEntryDetail({
                   selected={selected}
                   workflow={workflow}
                   busy={busy || api.busy}
-                  onStatus={(step) => {
-                    changeDetailStatus(step);
-                  }}
+                  onStatus={changeDetailStatus}
                 />
               </>
             }

@@ -153,74 +153,13 @@ export function registerPaymentProviderRoutes(context: ApiRoutesContext): void {
       if (result.status === 201) return c.json({ url: result.url }, 201);
       if (result.status === 400)
         return c.json({ error: 'Payment method unavailable' }, 400);
+      if (result.status === 409)
+        return c.json({ error: 'Payment pending' }, 409);
       return result.status === 404
         ? c.json({ error: 'Not found' }, 404)
         : c.json({ error: 'Unavailable' }, 503);
     },
   );
-
-  app.post('/admin/invoices/:invoiceId/refunds', async (c) => {
-    if (!deps.paymentProvider || !deps.paymentRefunds)
-      return c.json({ error: 'Unavailable' }, 503);
-    const guard = await context.requireMember(c.req.raw, 'payment:write');
-    if (!guard.ok) return c.json({ error: guard.error }, guard.status);
-    const parsed = z
-      .object({
-        providerPaymentId: z.string().min(1).max(255),
-        amountCents: z.number().int().positive(),
-        reason: z.string().trim().min(1).max(1000),
-        idempotencyKey: z.string().uuid(),
-      })
-      .strict()
-      .safeParse(await c.req.json().catch(() => null));
-    if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
-    const payment = await deps.paymentRefunds.getRefundable(
-      guard.context,
-      c.req.param('invoiceId'),
-      parsed.data.providerPaymentId,
-    );
-    if (!payment || parsed.data.amountCents > payment.refundableCents)
-      return c.json({ error: 'Refund amount unavailable' }, 409);
-    const actor = guard.context.subject
-      ? `${guard.context.subject.issuer}#${guard.context.subject.subject}`
-      : guard.context.correlationId;
-    let refund: { readonly id: string };
-    try {
-      refund = await deps.paymentProvider.refund({
-        idempotencyKey: parsed.data.idempotencyKey,
-        organizationId: guard.context.organizationId,
-        invoiceId: payment.invoiceId,
-        paymentId: payment.providerPaymentId,
-        amountCents: parsed.data.amountCents,
-        reason: parsed.data.reason,
-      });
-    } catch (error) {
-      deps.logger.warn('Stripe provider refund failed', {
-        errorName: error instanceof Error ? error.name : 'unknown',
-      });
-      return c.json({ error: 'Refund unavailable' }, 503);
-    }
-    try {
-      const result = await deps.paymentRefunds.recordRefund(guard.context, {
-        ...payment,
-        amountCents: parsed.data.amountCents,
-        providerRefundId: refund.id,
-        actor,
-        reason: parsed.data.reason,
-      });
-      return result
-        ? c.json(
-            { refundId: refund.id, duplicate: result === 'duplicate' },
-            201,
-          )
-        : c.json({ error: 'Refund could not be recorded' }, 409);
-    } catch (error) {
-      deps.logger.warn('Stripe refund ledger write failed', {
-        errorName: error instanceof Error ? error.name : 'unknown',
-      });
-      return c.json({ error: 'Refund unavailable' }, 503);
-    }
-  });
 
   app.post('/webhooks/stripe', async (c) => {
     if (!deps.paymentProvider || !deps.checkoutRepository)
@@ -232,16 +171,39 @@ export function registerPaymentProviderRoutes(context: ApiRoutesContext): void {
         await c.req.text(),
         signature,
       );
+      // Authentic but nothing to apply (other event type, payment still pending).
+      if (!event) return c.json({ received: true, ignored: true });
       if (
         context.mode === 'community' &&
         event.organizationId !== context.communityOrganizationId
-      )
+      ) {
+        deps.logger.warn('Stripe webhook for a foreign organization rejected', {
+          eventId: event.id,
+        });
         return c.json({ error: 'Invalid event' }, 400);
+      }
       const result = await deps.checkoutRepository.applyProviderEvent(event);
-      if (result === 'not_found')
+      if (result === 'not_found') {
+        deps.logger.warn('Stripe webhook does not match any open invoice', {
+          eventId: event.id,
+          outcome: event.type,
+        });
         return c.json({ error: 'Unknown payment' }, 404);
-      return c.json({ received: true, duplicate: result === 'duplicate' });
-    } catch {
+      }
+      if (result === 'applied_with_mismatch')
+        deps.logger.warn(
+          'Stripe payment differs from the open invoice amount; recorded as received',
+          { eventId: event.id, invoiceId: event.invoiceId },
+        );
+      return c.json({
+        received: true,
+        duplicate: result === 'duplicate',
+        ...(result === 'applied_with_mismatch' ? { amountMismatch: true } : {}),
+      });
+    } catch (error) {
+      deps.logger.warn('Stripe webhook rejected', {
+        errorName: error instanceof Error ? error.name : 'unknown',
+      });
       return c.json({ error: 'Invalid webhook' }, 400);
     }
   });

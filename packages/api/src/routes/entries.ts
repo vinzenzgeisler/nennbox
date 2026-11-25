@@ -2,8 +2,10 @@ import type { ApiRoutesContext } from './context.js';
 import { registerEntryExportRoutes } from './entry-exports.js';
 import { registerOverviewRoutes } from './overview.js';
 import { z } from 'zod';
+import { settleRefundAfterCancellation } from './refund-settlement.js';
 import { registerEntryDocumentRoutes } from './documents.js';
 import { registerEntryAdminActionRoutes } from './entry-admin-actions.js';
+import { transitionFailure } from './entry-transition-failure.js';
 import {
   EntryDriverUpdateRequest,
   EntryVehicleUpdateRequest,
@@ -135,9 +137,38 @@ export function registerEntriesRoutes(context: ApiRoutesContext): void {
           workflows: deps.entryWorkflows,
         },
       );
-      return result ? c.json(result) : c.json({ error: 'Not found' }, 404);
-    } catch {
-      return c.json({ error: 'Forbidden or invalid transition' }, 403);
+      if (!result) return c.json({ error: 'Not found' }, 404);
+      const refund =
+        parsed.data.transition === 'acceptance'
+          ? await settleRefundAfterCancellation(
+              deps,
+              context,
+              c.req.param('entryId'),
+            )
+          : null;
+      const invoice = result.adminDetails?.invoice;
+      return c.json(
+        refund && invoice
+          ? {
+              ...result,
+              adminDetails: {
+                ...result.adminDetails,
+                invoice: {
+                  ...invoice,
+                  refundIntent: {
+                    status: refund.status,
+                    percent: refund.percent,
+                    refundedCents: refund.refundedCents,
+                    failure: refund.failure,
+                  },
+                },
+              },
+            }
+          : result,
+      );
+    } catch (error) {
+      const failure = transitionFailure(error);
+      return c.json(failure.body, failure.status);
     }
   });
   app.post(

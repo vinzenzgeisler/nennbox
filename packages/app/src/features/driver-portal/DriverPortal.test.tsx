@@ -203,3 +203,75 @@ describe('shared driver contact corrections', () => {
     ).toHaveLength(2);
   });
 });
+
+describe('driver portal payment', () => {
+  const payment = {
+    status: 'open',
+    totalCents: 4200,
+    paidCents: 0,
+    onlinePayable: true,
+    checkoutPending: false,
+    currency: 'EUR',
+    paymentReference: 'RF18 0000 0000',
+    accountName: null,
+    iban: null,
+    bic: null,
+  };
+  const portal = (override: Partial<typeof payment>) =>
+    fetchMock.mockImplementation(async (url) =>
+      String(url).endsWith('/redeem')
+        ? response({})
+        : response({ ...view, payment: { ...payment, ...override } }),
+    );
+  const text = () => container.textContent!.replace(/\u00a0/g, ' ');
+
+  it('shows the amount in the shared German format and offers to pay now', async () => {
+    portal({});
+    await render();
+    expect(text()).toContain('42,00 €');
+    expect(text()).toContain('Jetzt online bezahlen');
+    expect(text()).not.toContain('Zahlung abbrechen');
+  });
+
+  it('offers to resume or cancel an unfinished online payment, and cancelling asks the server then refreshes', async () => {
+    portal({ checkoutPending: true });
+    await render();
+    expect(text()).toContain('Zahlung fortsetzen');
+    fetchMock.mockClear();
+    fetchMock.mockImplementation(async (url) =>
+      String(url).endsWith('/payment/cancel')
+        ? response({ cancelled: true })
+        : response({
+            ...view,
+            payment: { ...payment, checkoutPending: false },
+          }),
+    );
+    await click('Zahlung abbrechen');
+    const cancel = fetchMock.mock.calls.find(([url]) =>
+      String(url).endsWith('/payment/cancel'),
+    );
+    expect(cancel?.[1]?.method).toBe('POST');
+    expect(text()).toContain('Die Online-Zahlung wurde abgebrochen');
+    expect(text()).not.toContain('Zahlung abbrechen');
+    expect(text()).toContain('Jetzt online bezahlen');
+  });
+
+  it('tells the driver when cancelling did not work instead of failing silently', async () => {
+    portal({ checkoutPending: true });
+    await render();
+    fetchMock.mockImplementation(async (url) =>
+      String(url).endsWith('/payment/cancel')
+        ? response({ error: 'Unavailable' }, 503)
+        : response({ ...view, payment: { ...payment, checkoutPending: true } }),
+    );
+    await click('Zahlung abbrechen');
+    expect(text()).toContain('Die Zahlung konnte nicht abgebrochen werden');
+  });
+
+  it('hides the pay button when the event has no online payment', async () => {
+    portal({ onlinePayable: false });
+    await render();
+    expect(text()).not.toContain('Jetzt online bezahlen');
+    expect(text()).toContain('RF18 0000 0000');
+  });
+});

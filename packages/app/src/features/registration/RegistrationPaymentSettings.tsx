@@ -1,5 +1,6 @@
 import { AppCheckbox, AppSection } from '@nennbox/ui';
 import type { RegistrationFormConfig } from '@nennbox/contracts';
+import { RegistrationRefundSettings } from './RegistrationRefundSettings.js';
 
 const methods = [
   ['card', 'Karte'],
@@ -11,11 +12,16 @@ const methods = [
 export function RegistrationPaymentSettings({
   config,
   updateConfig,
+  onRefundProblem,
+  showProblems,
 }: {
   config: RegistrationFormConfig;
   updateConfig: (
     updater: (current: RegistrationFormConfig) => RegistrationFormConfig,
   ) => void;
+  /** Reports what keeps the refund rule from being saved (null when it is complete). */
+  onRefundProblem?: (problem: string | null) => void;
+  showProblems?: boolean;
 }) {
   const toggleMethod = (
     method: (typeof methods)[number][0],
@@ -56,6 +62,12 @@ export function RegistrationPaymentSettings({
             },
           }))
         }
+      />
+      <RegistrationRefundSettings
+        config={config}
+        updateConfig={updateConfig}
+        {...(onRefundProblem ? { onProblem: onRefundProblem } : {})}
+        {...(showProblems ? { showProblems } : {})}
       />
     </AppSection>
   );

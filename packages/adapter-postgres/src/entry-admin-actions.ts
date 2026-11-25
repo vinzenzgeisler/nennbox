@@ -11,6 +11,8 @@ import {
 } from './schema/entry-admin.js';
 import { changeClass } from './entry-admin-action-class.js';
 import { adjustAmount } from './entry-admin-action-amount.js';
+import { lockInvoiceOfGroup } from './refund-transition.js';
+import { retryOnConflict } from './transaction-retry.js';
 import { eventClasses } from './schema/organization.js';
 
 export function createEntryAdminActionsRepository(
@@ -77,36 +79,9 @@ export function createEntryAdminActionsRepository(
         : actions;
     },
     perform: async (ctx, entryId, action, actor) =>
-      db.transaction(async (tx): Promise<EntryAdminActionResult> => {
-        const [initial] = await tx
-          .select()
-          .from(entries)
-          .where(
-            and(
-              eq(entries.organizationId, ctx.organizationId),
-              eq(entries.id, entryId),
-            ),
-          )
-          .limit(1);
-        if (!initial) return { status: 'not_found' };
-        let entry = initial;
-        if (action.kind === 'change_class' || action.kind === 'adjust_amount') {
-          const groupEntries = await tx
-            .select()
-            .from(entries)
-            .where(
-              and(
-                eq(entries.organizationId, ctx.organizationId),
-                eq(entries.registrationGroupId, initial.registrationGroupId),
-              ),
-            )
-            .orderBy(asc(entries.id))
-            .for('update');
-          const current = groupEntries.find((item) => item.id === entryId);
-          if (!current) return { status: 'not_found' };
-          entry = current;
-        } else {
-          const [current] = await tx
+      retryOnConflict(() =>
+        db.transaction(async (tx): Promise<EntryAdminActionResult> => {
+          const [initial] = await tx
             .select()
             .from(entries)
             .where(
@@ -115,56 +90,94 @@ export function createEntryAdminActionsRepository(
                 eq(entries.id, entryId),
               ),
             )
-            .for('update')
             .limit(1);
-          if (!current) return { status: 'not_found' };
-          entry = current;
-        }
-        if (action.kind === 'note') {
-          if (entry.deletedAt) return { status: 'not_found' };
-          await tx.insert(entryNotes).values({
-            organizationId: ctx.organizationId,
-            entryId,
-            visibility: action.visibility,
-            body: action.text.trim(),
-            actor,
-          });
-          return { status: 'updated' };
-        }
-        if (action.expectedVersion !== entry.revision)
-          return { status: 'conflict', reason: 'stale' };
-        if (action.kind === 'delete') {
-          if (entry.deletedAt) return { status: 'not_found' };
-          const deleted = true;
-          await tx
-            .update(entries)
-            .set({
-              deletedAt: deleted ? new Date() : null,
-              deletionReason: deleted ? action.reason.trim() : null,
-              revision: entry.revision + 1,
-            })
-            .where(
-              and(
-                eq(entries.organizationId, ctx.organizationId),
-                eq(entries.id, entryId),
-                eq(entries.revision, entry.revision),
-              ),
+          if (!initial) return { status: 'not_found' };
+          let entry = initial;
+          if (
+            action.kind === 'change_class' ||
+            action.kind === 'adjust_amount'
+          ) {
+            // Lock order: invoice before entry rows, as in refunds and transitions.
+            await lockInvoiceOfGroup(
+              tx,
+              ctx.organizationId,
+              initial.registrationGroupId,
             );
-          await tx.insert(entryAdminActionAuditEvents).values({
-            organizationId: ctx.organizationId,
-            entryId,
-            action: 'deleted',
-            beforeValue: { deletedAt: null },
-            afterValue: { deletedAt: true },
-            actor,
-            reason: action.reason.trim(),
-          });
-          return { status: 'updated' };
-        }
-        if (entry.deletedAt) return { status: 'not_found' };
-        if (action.kind === 'change_class')
-          return changeClass(tx, ctx.organizationId, entry, action, actor);
-        return adjustAmount(tx, ctx.organizationId, entry, action, actor);
-      }),
+            const groupEntries = await tx
+              .select()
+              .from(entries)
+              .where(
+                and(
+                  eq(entries.organizationId, ctx.organizationId),
+                  eq(entries.registrationGroupId, initial.registrationGroupId),
+                ),
+              )
+              .orderBy(asc(entries.id))
+              .for('update');
+            const current = groupEntries.find((item) => item.id === entryId);
+            if (!current) return { status: 'not_found' };
+            entry = current;
+          } else {
+            const [current] = await tx
+              .select()
+              .from(entries)
+              .where(
+                and(
+                  eq(entries.organizationId, ctx.organizationId),
+                  eq(entries.id, entryId),
+                ),
+              )
+              .for('update')
+              .limit(1);
+            if (!current) return { status: 'not_found' };
+            entry = current;
+          }
+          if (action.kind === 'note') {
+            if (entry.deletedAt) return { status: 'not_found' };
+            await tx.insert(entryNotes).values({
+              organizationId: ctx.organizationId,
+              entryId,
+              visibility: action.visibility,
+              body: action.text.trim(),
+              actor,
+            });
+            return { status: 'updated' };
+          }
+          if (action.expectedVersion !== entry.revision)
+            return { status: 'conflict', reason: 'stale' };
+          if (action.kind === 'delete') {
+            if (entry.deletedAt) return { status: 'not_found' };
+            const deleted = true;
+            await tx
+              .update(entries)
+              .set({
+                deletedAt: deleted ? new Date() : null,
+                deletionReason: deleted ? action.reason.trim() : null,
+                revision: entry.revision + 1,
+              })
+              .where(
+                and(
+                  eq(entries.organizationId, ctx.organizationId),
+                  eq(entries.id, entryId),
+                  eq(entries.revision, entry.revision),
+                ),
+              );
+            await tx.insert(entryAdminActionAuditEvents).values({
+              organizationId: ctx.organizationId,
+              entryId,
+              action: 'deleted',
+              beforeValue: { deletedAt: null },
+              afterValue: { deletedAt: true },
+              actor,
+              reason: action.reason.trim(),
+            });
+            return { status: 'updated' };
+          }
+          if (entry.deletedAt) return { status: 'not_found' };
+          if (action.kind === 'change_class')
+            return changeClass(tx, ctx.organizationId, entry, action, actor);
+          return adjustAmount(tx, ctx.organizationId, entry, action, actor);
+        }),
+      ),
   };
 }

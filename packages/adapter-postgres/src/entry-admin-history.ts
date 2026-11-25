@@ -7,7 +7,7 @@ import {
   entryAdminActionAuditEvents,
   entryNotes,
 } from './schema/entry-admin.js';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, sql } from 'drizzle-orm';
 import {
   organizationMemberships,
   userIdentities,
@@ -60,7 +60,7 @@ export async function loadEntryAdminHistory(
       .select({
         entryId: entries.id,
         id: invoicePaymentAuditEvents.id,
-        action: invoicePaymentAuditEvents.action,
+        action: sql<string>`case when ${invoicePayments.method} = 'online' and ${invoicePaymentAuditEvents.action} = 'recorded' then 'recorded_online' else ${invoicePaymentAuditEvents.action} end`,
         actor: invoicePaymentAuditEvents.actor,
         reason: invoicePaymentAuditEvents.reason,
         occurredAt: invoicePaymentAuditEvents.occurredAt,

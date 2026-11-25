@@ -5,6 +5,7 @@ import { passengerBrandStyle } from '../passenger/passengerBrand.js';
 import './driver-portal.css';
 
 import {
+  HttpError,
   json,
   portalUrl,
   useDriverPortalAccess,
@@ -47,8 +48,29 @@ export function DriverPortal({ eventSlug }: { eventSlug: string }) {
         url: string;
       };
       window.location.assign(url);
+    } catch (error) {
+      setNotice(
+        error instanceof HttpError && error.status === 409
+          ? 'Für diese Nennung läuft bereits eine Zahlung oder sie wurde schon bezahlt. Der Zahlungsstand wird aktualisiert, sobald Stripe sie bestätigt.'
+          : 'Die Online-Zahlung konnte nicht gestartet werden.',
+      );
+      setWorking(false);
+    }
+  };
+  const cancelPayment = async () => {
+    setWorking(true);
+    setNotice('');
+    try {
+      await json(`${portalUrl}/payment/cancel`, 'POST', {});
+      await refresh();
+      setNotice(
+        'Die Online-Zahlung wurde abgebrochen. Du kannst jederzeit später bezahlen, online oder per Überweisung.',
+      );
     } catch {
-      setNotice('Die Online-Zahlung konnte nicht gestartet werden.');
+      setNotice(
+        'Die Zahlung konnte nicht abgebrochen werden. Falls du schon bezahlt hast, wird der Zahlungsstand gleich aktualisiert.',
+      );
+    } finally {
       setWorking(false);
     }
   };
@@ -220,6 +242,7 @@ export function DriverPortal({ eventSlug }: { eventSlug: string }) {
             upload={upload}
             save={save}
             pay={pay}
+            cancelPayment={cancelPayment}
             setWithdrawId={setWithdrawId}
             onLogout={() => {
               void json(`${portalUrl}/logout`, 'POST').finally(() => {

@@ -10,6 +10,11 @@ import { AdminFileDownload } from '../AdminFileDownload.js';
 import { uploadLines, type UploadLine } from '../documents/documentLines.js';
 import { uploadRows } from '../documents/uploadRows.js';
 import { formatMoney } from './entryDetailModel.js';
+import {
+  overpaymentText,
+  refundIntentText,
+  stuckRefundText,
+} from './refundIntentText.js';
 
 type Dimension = NonNullable<Entry['statusProjection']>['dimensions'][number];
 export type DimensionAction = {
@@ -33,6 +38,8 @@ export function EntryDocumentsSection({
   onDimensionAction,
   onRecordPayment,
   onRefundPayment,
+  onAbandonRefund,
+  onReconcileRefund,
   onReviewDocument,
   onRejectDocument,
   onRequestDocument,
@@ -42,6 +49,10 @@ export function EntryDocumentsSection({
   onDimensionAction: (action: DimensionAction) => void;
   onRecordPayment: () => void;
   onRefundPayment: () => void;
+  onReconcileRefund?:
+    ((key: string, amountCents: number, currency: string) => void) | undefined;
+  onAbandonRefund?:
+    ((key: string, amountCents: number, currency: string) => void) | undefined;
   onReviewDocument: (line: UploadLine) => void;
   onRejectDocument: (line: UploadLine) => void;
   onRequestDocument?: ((line: UploadLine) => void) | undefined;
@@ -124,6 +135,47 @@ export function EntryDocumentsSection({
           Erstattung auslösen
         </Button>
       )}
+      {invoice && overpaymentText(invoice, hasRefundablePayment(invoice)) && (
+        <DetailNote>
+          {overpaymentText(invoice, hasRefundablePayment(invoice))}
+        </DetailNote>
+      )}
+      {invoice?.refundIntent && (
+        <DetailNote>
+          {refundIntentText(invoice.refundIntent, invoice.currency)}
+        </DetailNote>
+      )}
+      {invoice?.stuckRefunds?.map((stuck) => (
+        <DetailNote key={stuck.key}>
+          {stuckRefundText(stuck.amountCents, invoice.currency)}{' '}
+          {onReconcileRefund && (
+            <Button
+              variant="text"
+              size={32}
+              onClick={() =>
+                onReconcileRefund(
+                  stuck.key,
+                  stuck.amountCents,
+                  invoice.currency,
+                )
+              }
+            >
+              Klärung anfordern
+            </Button>
+          )}
+          {onAbandonRefund && (
+            <Button
+              variant="text"
+              size={32}
+              onClick={() =>
+                onAbandonRefund(stuck.key, stuck.amountCents, invoice.currency)
+              }
+            >
+              Erstattung abbrechen
+            </Button>
+          )}
+        </DetailNote>
+      ))}
       {invoice && invoice.paidCents > 0 && (
         <DetailNote>
           Bezahlt: {formatMoney(invoice.paidCents, invoice.currency)} von{' '}
@@ -134,3 +186,7 @@ export function EntryDocumentsSection({
     </DetailSection>
   );
 }
+
+const hasRefundablePayment = (
+  invoice: NonNullable<NonNullable<Entry['adminDetails']>['invoice']>,
+) => invoice.providerPayments.some((item) => item.refundableCents > 0);

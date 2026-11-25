@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { AppButton, AppSection, AppTextInput, AppTextarea } from '@nennbox/ui';
 import type { SetupDraft } from './eventSetupApi.js';
 
@@ -6,11 +7,14 @@ export function EventOrganizerFields({
   setDraft,
   busy,
   onClearRecipient,
+  paymentSettings,
 }: {
   draft: SetupDraft;
   setDraft: (draft: SetupDraft | ((current: SetupDraft) => SetupDraft)) => void;
   busy: boolean;
   onClearRecipient: () => void;
+  /** Payment methods and refund rule of this event. */
+  paymentSettings: ReactNode;
 }) {
   return (
     <>
@@ -105,6 +109,7 @@ export function EventOrganizerFields({
               : 'Bankverbindung entfernen'}
           </AppButton>
         </AppSection>
+        {paymentSettings}
       </section>
       <section id="event-setup-arrival" className="nb-app-anchor">
         <AppSection title="Anreise und Fahrerlager">

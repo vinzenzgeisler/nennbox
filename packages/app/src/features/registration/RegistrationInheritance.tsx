@@ -28,7 +28,7 @@ export function RegistrationInheritance({
       description="Nur hier geänderte Bereiche überschreiben die Organisation. Bestehende vollständige Kopien bleiben bis zur bewussten Übernahme erhalten."
     >
       {areas
-        .filter(([key]) => !embedded || key === 'fields' || key === 'payments')
+        .filter(([key]) => !embedded || key === 'fields')
         .map(([key, label]) => (
           <AppValueRow key={key} label={label}>
             <span>

@@ -122,7 +122,15 @@ export function useAdminEntryActions({
       );
       if (!isCurrent(transitionGate.current, generation, controller))
         return ignored;
-      if (!response.ok)
+      if (!response.ok) {
+        const reason =
+          response.status === 409
+            ? (
+                (await response.json().catch(() => null)) as {
+                  reason?: string;
+                } | null
+              )?.reason
+            : undefined;
         return (outcome = {
           ok: false,
           message:
@@ -130,8 +138,15 @@ export function useAdminEntryActions({
               ? 'Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.'
               : response.status === 403
                 ? 'Du darfst den Status dieser Nennung nicht ändern.'
-                : 'Die Statusänderung wurde abgelehnt.',
+                : reason === 'refund_in_progress'
+                  ? 'Die Nennung kann noch nicht wieder aufgenommen werden: Eine Erstattung läuft noch bei Stripe. Bitte versuche es in einigen Minuten erneut.'
+                  : reason === 'refund_needs_review'
+                    ? 'Die Nennung kann nicht wieder aufgenommen werden: Eine Erstattung hängt und braucht deine Entscheidung. Öffne dafür die Unterlagen der Nennung.'
+                    : reason === 'concurrent_update'
+                      ? 'Die Nennung wurde gerade gleichzeitig geändert. Bitte versuche es noch einmal.'
+                      : 'Die Statusänderung wurde abgelehnt.',
         });
+      }
       const updated = EntryResponse.parse(await response.json());
       if (
         !isCurrent(transitionGate.current, generation, controller) ||
