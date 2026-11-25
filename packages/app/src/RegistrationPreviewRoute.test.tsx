@@ -5,6 +5,20 @@ vi.mock('./AdminApplication.js', () => ({
   AuthenticatedAdmin: () => <h1>Admin route sentinel</h1>,
 }));
 
+// Keep the boundary test focused on route selection, not unrelated admin/gallery modules.
+vi.mock('./ComponentGallery.js', () => ({ ComponentGallery: () => null }));
+vi.mock('./Registration.js', () => ({
+  Registration: () => null,
+  RegistrationResume: () => null,
+  RegistrationVerification: () => null,
+}));
+vi.mock('./features/driver-portal/DriverPortal.js', () => ({
+  DriverPortal: () => null,
+}));
+vi.mock('./features/passenger/PassengerLink.js', () => ({
+  PassengerLink: () => null,
+}));
+
 let cleanup: (() => Promise<void>) | undefined;
 
 afterEach(async () => {

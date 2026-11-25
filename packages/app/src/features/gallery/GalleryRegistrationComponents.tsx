@@ -22,11 +22,14 @@ export function GalleryRegistrationComponents() {
       }
     >
       <h2>Nennformular (Prototyp)</h2>
-      <p>
-        <a href="/app/registration-preview">
-          Lokalen Nennformular-Prototyp öffnen (Entwicklungsbuild)
-        </a>
-      </p>
+      {(import.meta.env.DEV ||
+        import.meta.env.VITE_REGISTRATION_PREVIEW === 'true') && (
+        <p>
+          <a href="/app/registration-preview">
+            Lokalen Nennformular-Prototyp öffnen
+          </a>
+        </p>
+      )}
       <div className="nb-gallery-grid">
         <RegistrationField
           label="Hersteller"

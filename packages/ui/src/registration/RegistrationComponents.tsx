@@ -7,6 +7,7 @@ export type RegistrationStep = {
 };
 export type RegistrationShellProps = {
   brand: React.ReactNode;
+  banner?: React.ReactNode;
   title?: string;
   headerEnd?: React.ReactNode;
   steps: readonly RegistrationStep[];

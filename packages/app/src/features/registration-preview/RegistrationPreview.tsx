@@ -1,5 +1,9 @@
 import { prototypeStyle } from './prototypeStyle.js';
-import { PrototypeBrand, PrototypeFooter } from './PrototypeBrand.js';
+import {
+  PrototypeBrand,
+  PrototypeFooter,
+  PrototypeBanner,
+} from './PrototypeBrand.js';
 import { RegistrationSummary } from './RegistrationSummary.js';
 import { useRef, useState } from 'react';
 import {
@@ -135,6 +139,7 @@ export default function RegistrationPreview() {
       className={`nb-preview nb-preview-${theme.header === 'grossesLogo' ? 'grosses-logo' : theme.header}`}
       style={style}
       brand={<PrototypeBrand logo={logo} themeId={themeId} />}
+      banner={<PrototypeBanner header={theme.header} locale={locale} />}
       title={t('Nennformular', 'Registration')}
       headerEnd={
         <>
@@ -227,11 +232,6 @@ export default function RegistrationPreview() {
         surface={surface}
         onSurface={setSurface}
       />
-      {theme.header === 'bildband' && (
-        <div className="nb-preview-imageband">
-          <strong>Historischer Bergpreis 2027</strong>
-        </div>
-      )}
       {palette.adjusted && (
         <p className="nb-preview-palette-hint">
           {t(

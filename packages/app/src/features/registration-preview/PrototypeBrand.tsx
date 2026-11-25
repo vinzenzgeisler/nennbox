@@ -1,3 +1,4 @@
+import sampleLogo from './logo.svg';
 import { type Locale } from './text.js';
 export function PrototypeBrand({
   logo,
@@ -10,10 +11,7 @@ export function PrototypeBrand({
     <>
       <span className="nb-preview-logo">
         {logo ? (
-          <img
-            alt="MSC Hohenstein · Beispiellogo"
-            src="/registration-preview-logo.svg"
-          />
+          <img alt="MSC Hohenstein · Beispiellogo" src={sampleLogo} />
         ) : (
           'MSC'
         )}
@@ -57,5 +55,29 @@ export function PrototypeFooter({
         </div>
       )}
     </>
+  );
+}
+
+export function PrototypeBanner({
+  header,
+  locale,
+}: {
+  header: string;
+  locale: Locale;
+}) {
+  if (header !== 'bildband' && header !== 'farbband') return null;
+  return (
+    <div
+      className={
+        header === 'bildband' ? 'nb-preview-imageband' : 'nb-preview-colorband'
+      }
+    >
+      <strong>Historischer Bergpreis 2027</strong>
+      <span>
+        {locale === 'de'
+          ? '26. bis 27. April 2027 · Nennungsschluss 12. April'
+          : '26–27 April 2027 · Entry deadline 12 April'}
+      </span>
+    </div>
   );
 }

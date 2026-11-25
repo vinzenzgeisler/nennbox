@@ -1,4 +1,9 @@
-import { RegistrationField, RegistrationNotice, Radio } from '@nennbox/ui';
+import {
+  RegistrationField,
+  RegistrationNotice,
+  Radio,
+  SelectField,
+} from '@nennbox/ui';
 import {
   ageOnEvent,
   type Draft,
@@ -31,26 +36,70 @@ export function PersonFields({
     required = true,
     type = 'text',
     hint?: string,
-  ) => (
-    <RegistrationField
-      key={key}
-      id={`person.${key}`}
-      label={label}
-      required={required}
-      requiredLabel={w.required}
-      optionalLabel={w.optional}
-      type={type}
-      value={draft.person[key]}
-      onChange={(e) => set(key, e.target.value)}
-      onBlur={() => onBlur(`person.${key}`)}
-      error={errors[`person.${key}`]}
-      hint={hint}
-      autoComplete={
-        key === 'email' ? 'email' : key === 'birthDate' ? 'bday' : undefined
-      }
-      inputMode={key === 'postalCode' ? 'numeric' : undefined}
-    />
-  );
+  ) => {
+    if (key === 'country' || key === 'bloodGroup') {
+      const options =
+        key === 'country'
+          ? [
+              ['DE', w.germany],
+              ['AT', w.austria],
+              ['CH', w.switzerland],
+              ['NL', t('Niederlande', 'Netherlands')],
+            ]
+          : ['', 'A+', 'A−', 'B+', 'B−', 'AB+', 'AB−', '0+', '0−'].map(
+              (value) => [value, value || t('Bitte wählen', 'Please select')],
+            );
+      return (
+        <RegistrationField
+          key={key}
+          id={`person.${key}`}
+          label={label}
+          required={required}
+          requiredLabel={w.required}
+          optionalLabel={w.optional}
+          hint={hint}
+          error={errors[`person.${key}`]}
+        >
+          {(control) => (
+            <SelectField
+              {...control}
+              label={label}
+              labelHidden
+              value={draft.person[key]}
+              onChange={(event) => set(key, event.target.value)}
+              onBlur={() => onBlur(`person.${key}`)}
+            >
+              {options.map(([value, name]) => (
+                <option key={value} value={value}>
+                  {name}
+                </option>
+              ))}
+            </SelectField>
+          )}
+        </RegistrationField>
+      );
+    }
+    return (
+      <RegistrationField
+        key={key}
+        id={`person.${key}`}
+        label={label}
+        required={required}
+        requiredLabel={w.required}
+        optionalLabel={w.optional}
+        type={type}
+        value={draft.person[key]}
+        onChange={(e) => set(key, e.target.value)}
+        onBlur={() => onBlur(`person.${key}`)}
+        error={errors[`person.${key}`]}
+        hint={hint}
+        autoComplete={
+          key === 'email' ? 'email' : key === 'birthDate' ? 'bday' : undefined
+        }
+        inputMode={key === 'postalCode' ? 'numeric' : undefined}
+      />
+    );
+  };
   const age = ageOnEvent(draft.person.birthDate);
   return (
     <>

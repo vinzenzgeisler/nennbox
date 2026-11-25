@@ -172,7 +172,7 @@
 }
 .nb-preview-imageband {
   height: 128px;
-  border-radius: 8px;
+  border-radius: 0;
   color: #fff;
   display: flex;
   align-items: end;
@@ -180,7 +180,7 @@
   margin-bottom: 24px;
   background:
     linear-gradient(0deg, rgb(0 0 0 / 80%), transparent),
-    url('/registration-preview-band.svg') center / cover;
+    url('./band.svg') center / cover;
 }
 @media (width < 760px) {
   .nb-reg-pair,
@@ -199,4 +199,31 @@
   .nb-preview .nb-reg-header-end .nb-app-btn {
     padding-inline: 8px;
   }
+}
+
+.nb-preview-schmal .nb-preview-logo,
+.nb-preview-farbband .nb-preview-logo {
+  height: 30px;
+}
+.nb-preview .nb-preview-logo img {
+  height: 100%;
+}
+.nb-preview-imageband,
+.nb-preview-colorband {
+  flex-direction: column;
+  justify-content: center;
+  align-items: start;
+  gap: 8px;
+}
+.nb-preview-colorband {
+  display: flex;
+  min-height: 96px;
+  background: var(--ak);
+  color: var(--ak-fg);
+  padding: 20px 32px;
+}
+.nb-preview-colorband strong,
+.nb-preview-imageband strong {
+  font-family: var(--preview-heading);
+  font-size: 24px;
 }
