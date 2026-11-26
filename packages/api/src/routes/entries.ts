@@ -178,7 +178,7 @@ export function registerEntriesRoutes(context: ApiRoutesContext): void {
   app.post(
     '/admin/entries/:entryId/status-dimensions/:dimension/transitions',
     async (c) => {
-      const guard = await requireMember(c.req.raw, 'entry:write');
+      const guard = await requireMember(c.req.raw, 'entry:inspect');
       if (!guard.ok) return c.json({ error: guard.error }, guard.status);
       const context = guard.context;
       const dimension = z

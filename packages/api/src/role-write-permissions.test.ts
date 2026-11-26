@@ -229,7 +229,7 @@ async function build(role: MembershipRole, withEvent = false) {
   return { app, writes };
 }
 
-type Access = 'admin' | 'office' | 'cashier' | 'read';
+type Access = 'inspect' | 'admin' | 'office' | 'cashier' | 'read';
 type RouteCase = {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   path: string;
@@ -299,7 +299,7 @@ const cases: RouteCase[] = [
   route(
     'POST',
     '/admin/entries/:entryId/status-dimensions/:dimension/transitions',
-    'office',
+    'inspect',
   ),
   route('PUT', '/admin/entries/:entryId/status-hints', 'office'),
   route('PATCH', '/admin/entries/:entryId/driver', 'office'),
@@ -414,7 +414,7 @@ describe('writing admin route role matrix (#240)', () => {
 
   describe.each(roles)('%s', (role) => {
     it.each(['technical_inspection', 'waiver'])(
-      'checks entry:write for a valid %s transition (scrutineer remains read-only)',
+      'checks entry:inspect for a valid %s transition',
       async (dimension) => {
         const { app, writes } = await build(role);
         const response = await app.request(
@@ -423,12 +423,12 @@ describe('writing admin route role matrix (#240)', () => {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
-              status: 'passed',
+              status: dimension === 'waiver' ? 'f_signed' : 'passed',
               reason: 'Checked on site',
             }),
           },
         );
-        const allowed = role === 'admin' || role === 'office';
+        const allowed = ['admin', 'office', 'scrutineer'].includes(role);
         expect(response.status).toBe(allowed ? 404 : 403);
         expect(writes).toHaveBeenCalledTimes(allowed ? 1 : 0);
       },
@@ -451,6 +451,8 @@ describe('writing admin route role matrix (#240)', () => {
       const allowed =
         role === 'admin' ||
         testCase.access === 'read' ||
+        (testCase.access === 'inspect' &&
+          ['office', 'scrutineer'].includes(role)) ||
         (role === 'office' && testCase.access === 'office') ||
         (role === 'cashier' && testCase.access === 'cashier');
       if (!allowed) {

@@ -36,6 +36,7 @@ export function createEntryTransitionMethod(
     ) =>
       retryOnConflict(() =>
         workbasketTransaction(db, !!readiness, async (tx) => {
+          if (!ctx.permissions.has('entry:write')) throw new Error('Forbidden');
           if (readiness)
             await assertReadyAdmission(
               tx,

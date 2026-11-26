@@ -76,6 +76,8 @@ export function permissionsForRole(
     'timing:read',
     `role:${canonical}`,
   ]);
+  if (['admin', 'office', 'scrutineer'].includes(canonical))
+    permissions.add('entry:inspect');
   if (canonical === 'office') permissions.add('entry:write');
   if (canonical === 'cashier') permissions.add('payment:write');
   if (canonical === 'admin')

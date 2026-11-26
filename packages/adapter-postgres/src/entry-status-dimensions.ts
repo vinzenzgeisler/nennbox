@@ -26,7 +26,7 @@ export function createEntryStatusDimensionRepository(
   return {
     ...createEntryStatusConfigRepository(db),
     transition: async (ctx, entryId, dimension, to, actor, reason) => {
-      if (!ctx.permissions.has('entry:write')) throw new Error('Forbidden');
+      if (!ctx.permissions.has('entry:inspect')) throw new Error('Forbidden');
       if (!actor.trim() || !reason.trim())
         throw new Error('Actor and reason are required');
       return db.transaction(async (tx) => {

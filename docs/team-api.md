@@ -12,10 +12,10 @@ no table-wide locks. Direct operator SQL is outside the application API contract
 
 | Stable key | Label | Read | Write |
 | --- | --- | --- | --- |
-| admin | Administrator | all | organization, events, classes, entries, payments, timing, team |
-| office | Nennbüro | all | entries and entry messages |
+| admin | Administrator | all | organization, events, classes, entries, on-site inspection/waiver, payments, timing, team |
+| office | Nennbüro | all | entries, entry messages, on-site inspection/waiver |
 | cashier | Kasse | all | payments |
-| scrutineer | Abnahme vor Ort | all | none (see unresolved policy below) |
+| scrutineer | Abnahme vor Ort | all | on-site inspection/waiver only |
 | viewer | Nur lesen | all | none |
 
 The authoritative mapping is Core's tested permissionsForRole. Role markers
@@ -23,18 +23,24 @@ role:<key> also constrain workflow transitions. The migration keeps admin as the
 stable Administrator identifier and migrates member to viewer, preserving identity,
 organization, timestamps and active/disabled status.
 
-### Policy decision still needed
+### On-site inspection permission
 
-The existing permission vocabulary cannot express the entire #240 table:
-technical inspection/waiver transitions require entry:write, which also permits
-editing and admitting entries. Granting that broad permission to satisfy the
-role's one task would grant forbidden powers. This implementation fails closed:
-scrutineer cannot write. Entry messages use entry:write, allowing office to send
-without changing event settings; saving message templates remains a setting. A follow-up must separate operation-level
-permissions (e.g. entry:inspect) and enforce them throughout API,
-Core and repositories, or explicitly approve broader access. Read-only artifact
-generation remains available under entry:read; it produces downloads rather than
-mutating sporting/business records. This is not yet full acceptance of #240.
+`entry:inspect` allows only technical-inspection and waiver dimension transitions
+(and, when implemented, stamp cards). Administrator, Nennbüro and Abnahme vor Ort
+receive it; Kasse and Nur lesen do not. Both API and repository enforce it.
+`entry:write` alone does not authorize these dimensions. Conversely,
+`entry:inspect` never authorizes general field edits, admission, rejection or any
+entry-workflow transition. Configuration still requires `event:write`.
+Entry messages use `entry:write`; saving templates remains a setting.
+Read-only artifact generation remains available under `entry:read`.
+
+Inspection guards have independent HTTP and PostgreSQL role-matrix tests,
+including a synthetic `entry:write`-only caller. With a migrated disposable database
+in `NENNBOX_TEST_DATABASE_URL`, run `node scripts/entry-inspection-counterchecks.mjs`
+to verify eight removed/replaced guards turn the tests red; it restores each
+source file after its countercheck. Run it separately from other tests because it
+intentionally mutates source files temporarily. No additional migration is needed:
+permissions are derived from the current membership role on every request.
 
 ## API
 

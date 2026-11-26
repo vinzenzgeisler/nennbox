@@ -156,7 +156,8 @@ async function seed(
   const ctx = createRequestContext({
     deploymentMode: 'cloud',
     organizationId: organizationId(org!.id),
-    permissions: new Set(['payment:write', 'entry:read']),
+    // This fixture also exercises productive entry reactivation/withdrawal.
+    permissions: new Set(['payment:write', 'entry:read', 'entry:write']),
     capabilities: new Set(),
     correlationId: suffix,
   });

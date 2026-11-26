@@ -13,14 +13,15 @@ const writes = {
     'event:write',
     'class:write',
     'entry:write',
+    'entry:inspect',
     'payment:write',
     'timing:record',
     'timing:correct',
     'timing:publish',
   ],
-  office: ['entry:write'],
+  office: ['entry:write', 'entry:inspect'],
   cashier: ['payment:write'],
-  scrutineer: [],
+  scrutineer: ['entry:inspect'],
   viewer: [],
 };
 describe('canonical team roles', () => {
