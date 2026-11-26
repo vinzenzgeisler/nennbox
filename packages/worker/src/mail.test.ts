@@ -79,6 +79,49 @@ function setup(tenantId = 'org-a', overrides: Partial<MailOutboxRecord> = {}) {
   };
 }
 describe('mail outbox worker', () => {
+  it.each(['de', 'en'] as const)(
+    'delivers team invitations via the existing outbox in %s and rejects foreign origins',
+    async (locale) => {
+      const tenantId = '11111111-1111-4111-8111-111111111111';
+      const run = async (linkUrl: string) => {
+        const h = setup(tenantId, {
+          templateKey: 'team-invitation',
+          locale,
+          variables: { role: '<office>', linkUrl },
+        });
+        await createMailOutboxTask({
+          deploymentMode: 'cloud',
+          getOrganization: async () => ({ status: 'active' }),
+          repository: h.repo,
+          mail: h.mail,
+          canonicalOrigin: async () => 'https://example.test',
+        })(
+          {
+            type: 'mail.outbox',
+            schemaVersion: 1,
+            organizationId: tenantId,
+            correlationId: 'c',
+            payload: { outboxId: 'mail-1' },
+          },
+          { job: { id: 'j' } },
+        );
+        return h;
+      };
+      const sent = await run('https://example.test/invitation#token=opaque');
+      expect(sent.mail.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: expect.stringContaining(
+            'https://example.test/invitation#token=opaque',
+          ),
+          html: expect.stringContaining('&lt;office&gt;'),
+        }),
+      );
+      await expect(
+        run('https://foreign.test/invitation#token=opaque'),
+      ).rejects.toThrow(/canonical origin/);
+    },
+  );
+
   it('provides a complete escaped registration-resume template in both supported locales', () => {
     for (const locale of ['de', 'en'] satisfies ReadonlyArray<'de' | 'en'>) {
       const rendered = renderMailTemplate(

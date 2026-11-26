@@ -53,3 +53,5 @@ export type {
   WorkbasketResult,
   WorkbasketConfiguration,
 } from './workbasket-repository.js';
+
+export * from './team.js';

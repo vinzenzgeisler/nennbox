@@ -235,7 +235,7 @@ export const organizationMemberships = pgTable(
     ),
     check(
       'organization_membership_role_check',
-      sql`${t.role} in ('admin','member')`,
+      sql`${t.role} in ('admin','office','cashier','scrutineer','viewer')`,
     ),
     check(
       'organization_membership_status_check',

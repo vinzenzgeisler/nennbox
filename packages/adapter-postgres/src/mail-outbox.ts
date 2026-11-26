@@ -103,6 +103,7 @@ export function createMailOutboxRepository(
       | 'status-change'
       | 'message-campaign'
       | 'passenger-link'
+      | 'team-invitation'
       | 'driver-portal-link'
       | 'payment-received',
     templateVersion: row.templateVersion,

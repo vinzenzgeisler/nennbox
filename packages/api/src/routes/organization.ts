@@ -1,6 +1,7 @@
 import type { ApiRoutesContext } from './context.js';
 import {
   getOrganization,
+  membershipRoles,
   updateOrganization,
   type OrganizationPatch,
 } from '@nennbox/core';
@@ -17,9 +18,9 @@ export function registerOrganizationRoutes(context: ApiRoutesContext): void {
     const member = guard.context;
     const role = member.permissions.has('role:admin')
       ? 'admin'
-      : member.permissions.has('role:member')
-        ? 'member'
-        : null;
+      : (membershipRoles.find((role) =>
+          member.permissions.has(`role:${role}`),
+        ) ?? (member.permissions.has('role:member') ? 'member' : null));
     return role ? c.json({ role }) : c.json({ error: 'Forbidden' }, 403);
   });
   app.get('/admin/organization', async (c) => {

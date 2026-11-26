@@ -15,7 +15,7 @@ import {
 
 import { eq, and } from 'drizzle-orm';
 
-import { permissionsForRole } from '@nennbox/core';
+import { permissionsForRole, isMembershipRole } from '@nennbox/core';
 
 export function createMembershipRepository(db: Database): MembershipRepository {
   return {
@@ -50,9 +50,15 @@ export function createMembershipRepository(db: Database): MembershipRepository {
           .onConflictDoUpdate({
             target: [userIdentities.issuer, userIdentities.subject],
             set: {
-              email: identity.email ?? null,
-              emailVerified: identity.emailVerified ?? false,
-              displayName: identity.displayName ?? null,
+              ...(identity.email !== undefined
+                ? { email: identity.email }
+                : {}),
+              ...(identity.emailVerified !== undefined
+                ? { emailVerified: identity.emailVerified }
+                : {}),
+              ...(identity.displayName !== undefined
+                ? { displayName: identity.displayName }
+                : {}),
               updatedAt: new Date(),
             },
           })
@@ -87,7 +93,7 @@ export function createMembershipRepository(db: Database): MembershipRepository {
             ),
           );
         if (!membership) return new Set<string>();
-        if (membership.role !== 'admin' && membership.role !== 'member')
+        if (!isMembershipRole(membership.role) && membership.role !== 'member')
           return new Set<string>();
         return permissionsForRole(membership.role);
       }),

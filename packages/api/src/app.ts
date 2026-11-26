@@ -1,3 +1,4 @@
+import { registerTeamRoutes } from './routes/team.js';
 import { registerDriverPortalRoutes } from './routes/driver-portal.js';
 import { Hono } from 'hono';
 import { requestBodyLimit } from './request-body-limit.js';
@@ -91,6 +92,7 @@ export function createApp(deps: ApiDeps) {
   registerRuntimeBootstrapRoute(routes);
   app.get('/auth/config', (c) => c.json({ oidc: deps.oidcClient ?? null }));
   registerOrganizationRoutes(routes);
+  registerTeamRoutes(routes);
   registerEventsRoutes(routes);
   registerEntriesRoutes(routes);
   registerPassengerAdminRoutes(routes);

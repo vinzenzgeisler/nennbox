@@ -351,6 +351,20 @@
       "when": 1794422200018,
       "tag": "0049_refund_execution",
       "breakpoints": false
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1794422200019,
+      "tag": "0050_workbasket_office_details",
+      "breakpoints": false
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1795680347602,
+      "tag": "0051_team_roles",
+      "breakpoints": true
     }
   ]
 }

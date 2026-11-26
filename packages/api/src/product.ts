@@ -19,6 +19,7 @@ import {
   createPaymentRefundRepository,
   createRefundIntentRepository,
   createMembershipRepository,
+  createTeamRepository,
   createMessageRepository,
   createModuleActivationRepository,
   createOrganizationRepository,
@@ -70,12 +71,14 @@ export interface CommunityEdition {
 export interface CloudEdition {
   readonly deploymentMode: 'cloud';
   readonly contexts: ContextResolvers;
+  readonly authenticator?: Authenticator;
 }
 
 export type ProductEdition = CommunityEdition | CloudEdition;
 
 export interface ProductApiOptions {
   readonly db: Database;
+  readonly invitationLifetime?: import('@nennbox/core').InvitationLifetime;
   readonly edition: ProductEdition;
   readonly objectStorage?: ObjectStorageProvider;
   /**
@@ -114,6 +117,9 @@ function editionDeps(
     return {
       config: { deploymentMode: 'cloud' },
       contextResolvers: edition.contexts,
+      ...(edition.authenticator
+        ? { authenticator: edition.authenticator }
+        : {}),
     };
   return {
     config: {
@@ -190,6 +196,12 @@ export function createProductApi(options: ProductApiOptions): Hono {
       ? { driverPortal: createDriverPortalRepository(db, canonicalOrigin) }
       : {}),
     memberships: createMembershipRepository(db),
+    team: createTeamRepository(db, {
+      ...(canonicalOrigin ? { canonicalOrigin } : {}),
+      ...(options.invitationLifetime
+        ? { lifetime: options.invitationLifetime }
+        : {}),
+    }),
     payments: createInvoicePaymentRepository(db),
     ...(options.paymentReturnOrigin
       ? { paymentReturnOrigin: options.paymentReturnOrigin }

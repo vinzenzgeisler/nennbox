@@ -11,6 +11,7 @@ import { JobEnvelope, MESSAGE_ATTACHMENT_LIMITS } from '@nennbox/contracts';
 import { createJobContext } from './index.js';
 
 export const mailTemplateContracts = {
+  'team-invitation': ['linkUrl', 'role'],
   verification: ['recipientName', 'verificationUrl'],
   'registration-resume': ['recipientName', 'resumeUrl'],
   'entry-received': [
@@ -48,6 +49,18 @@ export interface MailTemplate {
   readonly html: string;
 }
 const defaultCopy: Record<MailTemplateKey, Record<MailLocale, MailTemplate>> = {
+  'team-invitation': {
+    de: {
+      subject: 'Einladung zum Team',
+      text: 'Du wurdest mit der Rolle {{role}} eingeladen. Melde dich an, um die Einladung anzunehmen: {{linkUrl}}',
+      html: '<p>Du wurdest mit der Rolle {{role}} eingeladen.</p><p><a href="{{linkUrl}}">Einladung annehmen</a></p>',
+    },
+    en: {
+      subject: 'Team invitation',
+      text: 'You were invited as {{role}}. Sign in to accept: {{linkUrl}}',
+      html: '<p>You were invited as {{role}}.</p><p><a href="{{linkUrl}}">Accept invitation</a></p>',
+    },
+  },
   verification: {
     de: {
       subject: 'Bitte bestätige deine E-Mail-Adresse',
@@ -397,6 +410,7 @@ export function createMailOutboxTask(deps: {
           )
         : [];
     const linkVariable = {
+      'team-invitation': 'linkUrl',
       verification: 'verificationUrl',
       'registration-resume': 'resumeUrl',
       'passenger-link': 'linkUrl',
