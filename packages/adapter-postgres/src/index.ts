@@ -109,3 +109,5 @@ export {
 
 export * from './team-schema.js';
 export { createTeamRepository } from './team.js';
+
+export { deriveTeamInvitationToken } from './team-token.js';

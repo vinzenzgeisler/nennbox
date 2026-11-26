@@ -61,6 +61,10 @@ const configSchema = z.object({
   STORAGE_S3_ENDPOINT: z.string().url().optional(),
   STORAGE_S3_ACCESS_KEY_ID: z.string().optional(),
   STORAGE_S3_SECRET_ACCESS_KEY: z.string().optional(),
+  TEAM_INVITATION_TOKEN_KEY: z
+    .string()
+    .regex(/^[a-f0-9]{64}$/i)
+    .optional(),
   TEAM_INVITATION_DEFAULT_SECONDS: z.coerce
     .number()
     .int()

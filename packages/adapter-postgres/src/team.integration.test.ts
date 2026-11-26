@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, createHmac, randomUUID } from 'node:crypto';
 import {
   cpSync,
   mkdirSync,
@@ -39,6 +39,7 @@ import { emailOutbox } from './mail-schema.js';
 const url = process.env.NENNBOX_TEST_DATABASE_URL;
 const migrations = fileURLToPath(new URL('../migrations', import.meta.url));
 const origin = staticCanonicalOrigin('https://team.example.test');
+const tokenKey = 'a'.repeat(64);
 const issuer = 'https://identity.example.test';
 const without = <T extends object, K extends keyof T>(
   value: T,
@@ -98,7 +99,7 @@ describe.skipIf(!url)(
       }
     });
     const repository = () =>
-      createTeamRepository(first.db, { canonicalOrigin: origin });
+      createTeamRepository(first.db, { tokenKey, canonicalOrigin: origin });
     const seed = async () => {
       const [org] = await first.db
         .insert(organizations)
@@ -153,9 +154,9 @@ describe.skipIf(!url)(
       // Outbox timestamps are not an ordering guarantee; the persisted hash identifies the current delivery.
       const hash = (await rowFor(id))!.tokenHash;
       const mail = mails.find((row) => {
-        const token = new URLSearchParams(
-          new URL(row.variables.linkUrl!).hash.slice(1),
-        ).get('token')!;
+        const token = createHmac('sha256', Buffer.from(tokenKey, 'hex'))
+          .update(row.variables.invitationNonce!)
+          .digest('base64url');
         return createHash('sha256').update(token).digest('hex') === hash;
       });
       expect(mail).toMatchObject({
@@ -163,12 +164,10 @@ describe.skipIf(!url)(
         locale: 'de',
         status: 'pending',
       });
-      const link = new URL(mail!.variables.linkUrl!);
-      expect(link.origin + link.pathname).toBe(
-        'https://team.example.test/invitation',
-      );
-      expect(link.search).toBe('');
-      const token = new URLSearchParams(link.hash.slice(1)).get('token')!;
+      expect(mail!.variables).not.toHaveProperty('linkUrl');
+      const token = createHmac('sha256', Buffer.from(tokenKey, 'hex'))
+        .update(mail!.variables.invitationNonce!)
+        .digest('base64url');
       expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/);
       return token;
     };
@@ -265,6 +264,11 @@ describe.skipIf(!url)(
       expect(row.expiresAt.getTime()).toBeLessThanOrEqual(
         Date.now() + 7 * 86400_000,
       );
+      const queued = await first.db
+        .select()
+        .from(emailOutbox)
+        .where(eq(emailOutbox.organizationId, a.org));
+      expect(JSON.stringify(queued)).not.toContain(invite.token);
       const snapshot = await repository().list(a.ctx);
       expect(snapshot.invitations).toContainEqual(
         expect.objectContaining({
@@ -390,11 +394,10 @@ describe.skipIf(!url)(
       const ctx = context(a.org, person, 'viewer');
       const results = await Promise.allSettled([
         repository().redeem(ctx, person, invite.token),
-        createTeamRepository(second.db, { canonicalOrigin: origin }).redeem(
-          ctx,
-          person,
-          invite.token,
-        ),
+        createTeamRepository(second.db, {
+          tokenKey,
+          canonicalOrigin: origin,
+        }).redeem(ctx, person, invite.token),
       ]);
       expect(
         results.filter((result) => result.status === 'fulfilled'),
@@ -473,11 +476,10 @@ describe.skipIf(!url)(
             : { kind, status: 'disabled' as const };
         const results = await Promise.allSettled([
           repository().change(a.ctx, otherId, change),
-          createTeamRepository(second.db, { canonicalOrigin: origin }).change(
-            otherContext,
-            a.adminId,
-            change,
-          ),
+          createTeamRepository(second.db, {
+            tokenKey,
+            canonicalOrigin: origin,
+          }).change(otherContext, a.adminId, change),
         ]);
         expect(
           results.filter((result) => result.status === 'fulfilled'),

@@ -78,6 +78,7 @@ export type ProductEdition = CommunityEdition | CloudEdition;
 
 export interface ProductApiOptions {
   readonly db: Database;
+  readonly invitationTokenKey?: string;
   readonly invitationLifetime?: import('@nennbox/core').InvitationLifetime;
   readonly edition: ProductEdition;
   readonly objectStorage?: ObjectStorageProvider;
@@ -197,6 +198,9 @@ export function createProductApi(options: ProductApiOptions): Hono {
       : {}),
     memberships: createMembershipRepository(db),
     team: createTeamRepository(db, {
+      ...(options.invitationTokenKey
+        ? { tokenKey: options.invitationTokenKey }
+        : {}),
       ...(canonicalOrigin ? { canonicalOrigin } : {}),
       ...(options.invitationLifetime
         ? { lifetime: options.invitationLifetime }

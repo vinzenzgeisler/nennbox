@@ -69,10 +69,19 @@ All values must be positive safe integers, ordered minimum <= default <= maximum
 Cloud can supply invitationLifetime to createProductApi. Individual invitations
 may specify a lifetime within these bounds.
 
-Tokens are 32 random bytes. Only SHA-256 digests are stored in team_invitation;
+API and worker must share TEAM_INVITATION_TOKEN_KEY: a secret, random 32-byte key
+encoded as 64 hexadecimal characters (generate with openssl rand -hex 32).
+Keep it outside the database and source control. Missing/invalid keys fail closed.
+Cloud supplies invitationTokenKey to both product assemblies. Drain queued mail
+before rotating the key; otherwise revoke and resend pending invitations.
+
+Tokens are HMAC-SHA-256 over a fresh 32-byte random nonce, derived with this key.
+Only SHA-256 token digests are stored in team_invitation;
 neither tokens nor hashes are exposed through the team API or history. The
-existing transactional mail outbox carries the delivery link, as it does other
-one-time email links. Treat outbox payloads as sensitive mail transport data.
+transactional mail outbox carries only the public random nonce and role. The
+worker derives the token in memory and constructs the canonical tenant link just
+before SMTP delivery. Neither bearer tokens nor the signing key are persisted in
+outbox/job/history data, so database-only reads/backups cannot reconstruct them.
 Resending invalidates every previous delivery link. The worker renders the
 team-invitation template and checks its link against the canonical tenant origin.
 The fragment-based link keeps the token out of HTTP request URLs. The future

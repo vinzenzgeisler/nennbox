@@ -1,3 +1,4 @@
+import { deriveTeamInvitationToken } from './team-token.js';
 import { teamGuards, teamFailure as fail } from './team-support.js';
 import { randomBytes, createHash } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
@@ -25,6 +26,7 @@ export function createTeamRepository(
   options: {
     canonicalOrigin?: CanonicalOrigin;
     lifetime?: InvitationLifetime;
+    tokenKey?: string;
   } = {},
 ): TeamRepository {
   const lifetime = options.lifetime ?? defaultInvitationLifetime;
@@ -44,8 +46,9 @@ export function createTeamRepository(
     tx: TransactionDatabase,
     ctx: RequestContext,
     invitation: typeof teamInvitations.$inferSelect,
-    token: string,
+    nonce: string,
   ) => {
+    const token = deriveTeamInvitationToken(options.tokenKey, nonce);
     const origin =
       options.canonicalOrigin &&
       (await resolveCanonicalOrigin(options.canonicalOrigin, ctx));
@@ -60,7 +63,7 @@ export function createTeamRepository(
         recipient: invitation.email,
         idempotencyKey: `team:${invitation.id}:${digest(token)}`,
         variables: {
-          linkUrl: `${origin}/invitation#token=${token}`,
+          invitationNonce: nonce,
           role: invitation.role,
         },
       },
@@ -118,7 +121,8 @@ export function createTeamRepository(
           seconds > lifetime.maximumSeconds
         )
           return fail('invalid_input');
-        const token = randomBytes(32).toString('base64url');
+        const nonce = randomBytes(32).toString('base64url');
+        const token = deriveTeamInvitationToken(options.tokenKey, nonce);
         const [invitation] = await tx
           .insert(teamInvitations)
           .values({
@@ -129,7 +133,7 @@ export function createTeamRepository(
             expiresAt: new Date(Date.now() + seconds * 1000),
           })
           .returning();
-        await send(tx, ctx, invitation!, token);
+        await send(tx, ctx, invitation!, nonce);
         await audit(tx, ctx, 'invited', invitation!.id, {
           email,
           role: input.role,
@@ -150,12 +154,13 @@ export function createTeamRepository(
       db.transaction(async (tx) => {
         await admin(tx, ctx);
         const invitation = await pending(tx, ctx, id);
-        const token = randomBytes(32).toString('base64url');
+        const nonce = randomBytes(32).toString('base64url');
+        const token = deriveTeamInvitationToken(options.tokenKey, nonce);
         await tx
           .update(teamInvitations)
           .set({ tokenHash: digest(token) })
           .where(scope(ctx, id));
-        await send(tx, ctx, invitation, token);
+        await send(tx, ctx, invitation, nonce);
         await audit(tx, ctx, 'invitation_resent', id);
       }),
     change: (ctx, id, change) =>

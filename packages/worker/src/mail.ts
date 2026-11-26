@@ -1,3 +1,4 @@
+import { deriveTeamInvitationToken } from '@nennbox/adapter-postgres';
 import { organizationId, resolveCanonicalOrigin } from '@nennbox/core';
 import type { CanonicalOrigin } from '@nennbox/core';
 import type {
@@ -341,6 +342,7 @@ export function createMailOutboxTask(deps: {
   repository: MailOutboxRepository;
   mail: MailProvider;
   canonicalOrigin: CanonicalOrigin;
+  invitationTokenKey?: string;
   storage?: ObjectStorageProvider;
 }) {
   return async (payload: unknown, helpers: { job: { id: string } }) => {
@@ -391,6 +393,13 @@ export function createMailOutboxTask(deps: {
       return;
     }
     const variables = { ...row.variables };
+    if (row.templateKey === 'team-invitation') {
+      const token = deriveTeamInvitationToken(
+        deps.invitationTokenKey,
+        variables.invitationNonce ?? '',
+      );
+      variables.linkUrl = `/invitation#token=${token}`;
+    }
     const attachmentReferences = row.attachmentRefs ?? [];
     const expectsAttachments = attachmentReferences.length > 0;
     if (

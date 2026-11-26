@@ -35,6 +35,8 @@ import type { ApiDeps } from './types.js';
 
 /** Fails at startup for edition inputs that cannot work together. */
 function assertEditionWiring(deps: ApiDeps): void {
+  if (deps.team && !deps.memberships)
+    throw new Error('Team requires per-request membership resolution');
   if (deps.config.deploymentMode === 'community' && !deps.config.organizationId)
     throw new Error('Community mode requires a configured organization');
   if (

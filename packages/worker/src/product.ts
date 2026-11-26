@@ -52,6 +52,7 @@ export interface ProductWorkerOptions {
     /** Verified origin per organization; verification and resume links are bound to it. */
     readonly canonicalOrigin: CanonicalOrigin;
     readonly leaseMs: number;
+    readonly invitationTokenKey?: string;
   };
   /** Online payment provider; without it no refund retry job is registered. */
   readonly payments?: {
@@ -158,6 +159,9 @@ export function createProductWorker(
           }),
           mail: mail.provider,
           canonicalOrigin: mail.canonicalOrigin,
+          ...(mail.invitationTokenKey
+            ? { invitationTokenKey: mail.invitationTokenKey }
+            : {}),
           ...(storage ? { storage } : {}),
         }),
       }

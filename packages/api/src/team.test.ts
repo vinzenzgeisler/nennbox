@@ -51,6 +51,11 @@ function fixture(identity: ExternalIdentity | null = user) {
   };
 }
 describe('team HTTP identity boundary', () => {
+  it('rejects a team assembly that cannot refresh active memberships', () => {
+    const f = fixture();
+    delete f.deps.memberships;
+    expect(() => createApp(f.deps)).toThrow(/membership resolution/);
+  });
   it('redeems with authenticated OIDC identity but without an existing membership', async () => {
     const f = fixture();
     f.disable();
