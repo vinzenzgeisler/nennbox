@@ -252,21 +252,27 @@ describe('co-driver routes', () => {
         .availableActions;
     };
     const base: Record<string, unknown> = { passengerMode: 'optional' };
-    expect(await actionsOf(base)).toEqual(['passenger:add', 'passenger:link']);
-    expect(await actionsOf({ ...base, passengerMode: 'none' })).toEqual([]);
+    expect(await actionsOf(base)).toEqual([
+      'message',
+      'passenger:add',
+      'passenger:link',
+    ]);
+    expect(await actionsOf({ ...base, passengerMode: 'none' })).toEqual([
+      'message',
+    ]);
     expect(
       await actionsOf({
         ...base,
         passenger: { status: 'invited' },
       }),
-    ).toEqual(['passenger:link']);
+    ).toEqual(['message', 'passenger:link']);
     expect(
       await actionsOf({
         ...base,
         passenger: { status: 'completed' },
       }),
-    ).toEqual([]);
-    expect(await actionsOf(base, { passengers: false })).toEqual([]);
+    ).toEqual(['message']);
+    expect(await actionsOf(base, { passengers: false })).toEqual(['message']);
     expect(await actionsOf(base, {}, ['entry:read'])).toEqual([]);
   });
 
