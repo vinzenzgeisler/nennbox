@@ -72,13 +72,9 @@
         "event_organization_id_organization_id_fk": {
           "name": "event_organization_id_organization_id_fk",
           "tableFrom": "event",
-          "columnsFrom": [
-            "organization_id"
-          ],
+          "columnsFrom": ["organization_id"],
           "tableTo": "organization",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -87,18 +83,12 @@
       "uniqueConstraints": {
         "event_organization_slug_unique": {
           "name": "event_organization_slug_unique",
-          "columns": [
-            "organization_id",
-            "slug"
-          ],
+          "columns": ["organization_id", "slug"],
           "nullsNotDistinct": false
         },
         "event_organization_id_unique": {
           "name": "event_organization_id_unique",
-          "columns": [
-            "organization_id",
-            "id"
-          ],
+          "columns": ["organization_id", "id"],
           "nullsNotDistinct": false
         }
       },
@@ -180,26 +170,18 @@
         "organization_membership_organization_id_organization_id_fk": {
           "name": "organization_membership_organization_id_organization_id_fk",
           "tableFrom": "organization_membership",
-          "columnsFrom": [
-            "organization_id"
-          ],
+          "columnsFrom": ["organization_id"],
           "tableTo": "organization",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "organization_membership_user_identity_id_user_identity_id_fk": {
           "name": "organization_membership_user_identity_id_user_identity_id_fk",
           "tableFrom": "organization_membership",
-          "columnsFrom": [
-            "user_identity_id"
-          ],
+          "columnsFrom": ["user_identity_id"],
           "tableTo": "user_identity",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -208,10 +190,7 @@
       "uniqueConstraints": {
         "organization_membership_org_identity_unique": {
           "name": "organization_membership_org_identity_unique",
-          "columns": [
-            "organization_id",
-            "user_identity_id"
-          ],
+          "columns": ["organization_id", "user_identity_id"],
           "nullsNotDistinct": false
         }
       },
@@ -303,9 +282,7 @@
       "uniqueConstraints": {
         "organization_slug_unique": {
           "name": "organization_slug_unique",
-          "columns": [
-            "slug"
-          ],
+          "columns": ["slug"],
           "nullsNotDistinct": false
         }
       },
@@ -381,10 +358,7 @@
       "uniqueConstraints": {
         "user_identity_issuer_subject_unique": {
           "name": "user_identity_issuer_subject_unique",
-          "columns": [
-            "issuer",
-            "subject"
-          ],
+          "columns": ["issuer", "subject"],
           "nullsNotDistinct": false
         }
       },
