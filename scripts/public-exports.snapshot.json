@@ -714,6 +714,7 @@
     "normalizeEntryWorkflow",
     "normalizeOrgaCode",
     "normalizeRequestedStartNumber",
+    "normalizeTeamEmail",
     "onboardingProgress",
     "onboardingSteps",
     "openEvent",

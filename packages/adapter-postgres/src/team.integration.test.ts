@@ -783,6 +783,7 @@ describe.skipIf(!url)('team role upgrade', () => {
         before.map((row) => ({
           ...row,
           role: row.role === 'member' ? 'viewer' : row.role,
+          last_signed_in_at: null,
         })),
       );
       const memberships = createMembershipRepository(drizzle(pool));

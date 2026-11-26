@@ -19,6 +19,30 @@ import { permissionsForRole, isMembershipRole } from '@nennbox/core';
 
 export function createMembershipRepository(db: Database): MembershipRepository {
   return {
+    recordSignIn: async (identity, orgId) => {
+      const [user] = await db
+        .select({ id: userIdentities.id })
+        .from(userIdentities)
+        .where(
+          and(
+            eq(userIdentities.issuer, identity.issuer),
+            eq(userIdentities.subject, identity.subject),
+          ),
+        );
+      if (!user) return false;
+      const rows = await db
+        .update(organizationMemberships)
+        .set({ lastSignedInAt: new Date() })
+        .where(
+          and(
+            eq(organizationMemberships.organizationId, orgId),
+            eq(organizationMemberships.userIdentityId, user.id),
+            eq(organizationMemberships.status, 'active'),
+          ),
+        )
+        .returning({ id: organizationMemberships.userIdentityId });
+      return rows.length === 1;
+    },
     resolvePermissions: async (
       identity: ExternalIdentity,
       orgId,

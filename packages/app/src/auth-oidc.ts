@@ -3,6 +3,7 @@ import type { AuthClient } from './auth.js';
 
 type OidcConfig = { issuerUrl: string; clientId: string; redirectUri: string };
 let managerPromise: Promise<UserManager | null> | null = null;
+let loginCompletion: Promise<void> | null = null;
 let accessToken: string | null = null;
 let identity: { name: string; role: string } | null = null;
 export function getAdminIdentity() {
@@ -54,6 +55,14 @@ export async function restoreAdminSession(): Promise<
     ? await (callbackPromise ??= client.signinRedirectCallback())
     : await client.getUser();
   if (isCallback) window.history.replaceState(null, '', '/app');
+  if (isCallback && user && !user.expired) {
+    await (loginCompletion ??= fetch('/auth/session', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${user.access_token}` },
+    }).then((response) => {
+      if (!response.ok) throw new Error('Organization sign-in failed');
+    }));
+  }
   accessToken = user && !user.expired ? user.access_token : null;
   if (user && !user.expired) {
     const profile = (user.profile ?? {}) as Record<string, unknown>;

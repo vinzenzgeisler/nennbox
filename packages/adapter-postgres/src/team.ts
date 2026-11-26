@@ -1,3 +1,4 @@
+import { normalizeTeamEmail } from '@nennbox/core';
 import { deriveTeamInvitationToken } from './team-token.js';
 import { teamGuards, teamFailure as fail } from './team-support.js';
 import { randomBytes, createHash } from 'node:crypto';
@@ -82,6 +83,7 @@ export function createTeamRepository(
             role: organizationMemberships.role,
             status: organizationMemberships.status,
             updatedAt: organizationMemberships.updatedAt,
+            lastSignedInAt: organizationMemberships.lastSignedInAt,
           })
           .from(organizationMemberships)
           .innerJoin(
@@ -112,10 +114,9 @@ export function createTeamRepository(
       db.transaction(async (tx) => {
         await admin(tx, ctx);
         const seconds = input.lifetimeSeconds ?? lifetime.defaultSeconds;
-        const email = input.email.trim().toLowerCase();
+        const email = normalizeTeamEmail(input.email);
         if (
           !isMembershipRole(input.role) ||
-          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
           !Number.isSafeInteger(seconds) ||
           seconds < lifetime.minimumSeconds ||
           seconds > lifetime.maximumSeconds
@@ -224,6 +225,7 @@ export function createTeamRepository(
           !/^[A-Za-z0-9_-]{43}$/.test(token)
         )
           return fail('forbidden');
+        const email = normalizeTeamEmail(identity.email);
         const [invitation] = await tx
           .select()
           .from(teamInvitations)
@@ -235,7 +237,7 @@ export function createTeamRepository(
           );
         if (
           !invitation ||
-          invitation.email !== identity.email.trim().toLowerCase() ||
+          invitation.email !== email ||
           invitation.revokedAt ||
           invitation.redeemedAt ||
           invitation.expiresAt <= new Date()
@@ -246,14 +248,14 @@ export function createTeamRepository(
           .values({
             issuer: identity.issuer,
             subject: identity.subject,
-            email: identity.email,
+            email,
             emailVerified: true,
             displayName: identity.displayName,
           })
           .onConflictDoUpdate({
             target: [userIdentities.issuer, userIdentities.subject],
             set: {
-              email: identity.email,
+              email,
               emailVerified: true,
               updatedAt: new Date(),
             },

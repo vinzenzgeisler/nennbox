@@ -221,6 +221,7 @@ export const organizationMemberships = pgTable(
       .references(() => userIdentities.id, { onDelete: 'cascade' }),
     role: text('role').notNull(),
     status: text('status').notNull().default('active'),
+    lastSignedInAt: timestamp('last_signed_in_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

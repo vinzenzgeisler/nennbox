@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   organizationId,
+  permissionsForRole,
+  membershipRoles,
   type Entry,
   type EntryAdminActionResult,
 } from '@nennbox/core';
@@ -182,7 +184,7 @@ describe('entry detail routes', () => {
     );
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
-      availableActions: ['change_class', 'delete'],
+      availableActions: ['change_class', 'delete', 'message'],
     });
     const readOnly = await appWith(['entry:read']).request(
       `/admin/entries/${entryId}`,
@@ -200,10 +202,23 @@ describe('entry detail routes', () => {
       );
       const body = await response.json();
       expect(body.availableActions.includes('message')).toBe(
-        permissions.includes('event:write'),
+        permissions.includes('entry:write'),
       );
     }
   });
+  it.each(membershipRoles)(
+    'discovers message actions for %s exactly like send authorization',
+    async (role) => {
+      const response = await appWith([...permissionsForRole(role)]).request(
+        `/admin/entries/${entryId}`,
+      );
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.availableActions.includes('message')).toBe(
+        role === 'admin' || role === 'office',
+      );
+    },
+  );
   it('lists the mails of an entry', async () => {
     const response = await appWith(['entry:read']).request(
       `/admin/entries/${entryId}/messages`,

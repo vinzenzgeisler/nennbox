@@ -1,10 +1,14 @@
 import { z } from 'zod';
-import { membershipRoles, ProviderError } from '@nennbox/core';
+import {
+  membershipRoles,
+  normalizeTeamEmail,
+  ProviderError,
+} from '@nennbox/core';
 import type { ApiRoutesContext } from './context.js';
 const id = z.string().uuid();
 const invitation = z
   .object({
-    email: z.string().email().max(320),
+    email: z.string().max(1024),
     role: z.enum(membershipRoles),
     lifetimeSeconds: z.number().int().positive().optional(),
   })
@@ -55,6 +59,11 @@ export function registerTeamRoutes({
     const parsed = invitation.safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
     try {
+      parsed.data.email = normalizeTeamEmail(parsed.data.email);
+    } catch (error) {
+      return c.json({ error: (error as Error).message }, 400);
+    }
+    try {
       return c.json({ id: await team.invite(guard.context, parsed.data) }, 201);
     } catch (error) {
       return c.json({ error: 'Team request failed' }, errorStatus(error));
@@ -99,13 +108,19 @@ export function registerTeamRoutes({
       .strict()
       .safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return c.json({ error: 'Invalid request' }, 400);
+    let email = identity.email;
+    try {
+      if (email !== undefined) email = normalizeTeamEmail(email);
+    } catch (error) {
+      return c.json({ error: (error as Error).message }, 400);
+    }
     try {
       await team.redeem(
         {
           ...tenant,
           subject: { issuer: identity.issuer, subject: identity.subject },
         },
-        identity,
+        { ...identity, ...(email !== undefined ? { email } : {}) },
         parsed.data.token,
       );
       return c.body(null, 204);

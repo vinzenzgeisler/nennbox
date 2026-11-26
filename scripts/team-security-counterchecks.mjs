@@ -17,12 +17,7 @@ const mutations = [
   ['expiry', team, /invitation\.expiresAt <= new Date\(\)/, 'false'],
   ['revocation', team, /invitation\.revokedAt \|\|/, ''],
   ['single use', team, /invitation\.redeemedAt \|\|/, ''],
-  [
-    'email binding',
-    team,
-    /invitation\.email !== identity\.email\.trim\(\)\.toLowerCase\(\) \|\|/,
-    '',
-  ],
+  ['email binding', team, /invitation\.email !== email \|\|/, ''],
   ['verified email', team, /!identity\.emailVerified \|\|/, ''],
   [
     'subject binding',
@@ -69,7 +64,7 @@ const mutations = [
   [
     'immediate deactivation',
     memberships,
-    /eq\(organizationMemberships\.status, 'active'\)/,
+    /eq\(organizationMemberships\.status, 'active'\)/g,
     'eq(organizationMemberships.status, organizationMemberships.status)',
   ],
   ['tenant serialization', support, /await tx\.execute\([\s\S]*?\n {4}\);/, ''],

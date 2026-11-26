@@ -1,3 +1,4 @@
+import { entryActionPermissions } from './entry-action-permissions.js';
 import type { ApiRoutesContext } from './context.js';
 import {
   MESSAGE_ATTACHMENT_LIMITS,
@@ -118,7 +119,10 @@ export function registerMessageRoutes(context: ApiRoutesContext): void {
   });
 
   app.post('/admin/events/:eventId/messages/actions/:action', async (c) => {
-    const access = await requireMember(c.req.raw, 'entry:write');
+    const access = await requireMember(
+      c.req.raw,
+      entryActionPermissions.message,
+    );
     if (!access.ok) return c.json({ error: access.error }, access.status);
     const member = access.context;
     const eventId = z.string().uuid().safeParse(c.req.param('eventId'));
@@ -156,7 +160,10 @@ export function registerMessageRoutes(context: ApiRoutesContext): void {
   });
 
   app.post('/admin/events/:eventId/messages/campaigns', async (c) => {
-    const access = await requireMember(c.req.raw, 'entry:write');
+    const access = await requireMember(
+      c.req.raw,
+      entryActionPermissions.message,
+    );
     if (!access.ok) return c.json({ error: access.error }, access.status);
     const member = access.context;
     const eventId = z.string().uuid().safeParse(c.req.param('eventId'));
@@ -209,7 +216,10 @@ export function registerMessageRoutes(context: ApiRoutesContext): void {
     );
   });
   app.post('/admin/message-campaigns/:campaignId/retry', async (c) => {
-    const access = await requireMember(c.req.raw, 'entry:write');
+    const access = await requireMember(
+      c.req.raw,
+      entryActionPermissions.message,
+    );
     if (!access.ok) return c.json({ error: access.error }, access.status);
     const member = access.context;
     const id = z.string().uuid().safeParse(c.req.param('campaignId'));
@@ -238,7 +248,10 @@ export function registerMessageAttachmentRoutes(
   storage: ObjectStorageProvider,
 ): void {
   app.post('/admin/events/:eventId/messages/attachments', async (c) => {
-    const access = await requireMember(c.req.raw, 'entry:write');
+    const access = await requireMember(
+      c.req.raw,
+      entryActionPermissions.message,
+    );
     if (!access.ok) return c.json({ error: access.error }, access.status);
     const member = access.context;
     const eventId = z.string().uuid().safeParse(c.req.param('eventId'));

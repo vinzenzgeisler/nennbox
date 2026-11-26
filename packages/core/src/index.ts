@@ -55,3 +55,5 @@ export type {
 } from './workbasket-repository.js';
 
 export * from './team.js';
+
+export * from './team-email.js';

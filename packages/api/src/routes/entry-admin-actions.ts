@@ -1,3 +1,4 @@
+import { entryActionPermissions } from './entry-action-permissions.js';
 import type { ApiRoutesContext } from './context.js';
 import { z } from 'zod';
 import {
@@ -15,7 +16,9 @@ export function registerEntryAdminActionRoutes(
     const context = guard.context;
     const entry = await deps.entries.getById(context, c.req.param('entryId'));
     if (!entry) return c.json({ error: 'Not found' }, 404);
-    const availableActions = context.permissions.has('entry:write')
+    const availableActions = context.permissions.has(
+      entryActionPermissions.admin,
+    )
       ? [
           ...((await deps.entryAdminActions.availableActions(
             context,
@@ -28,7 +31,7 @@ export function registerEntryAdminActionRoutes(
       label: string;
       category: string;
     }> = [];
-    if (context.permissions.has('entry:write')) {
+    if (context.permissions.has(entryActionPermissions.acceptance)) {
       const pinned = await deps.entryWorkflows.getPinnedForEntry(
         context,
         entry.id,
@@ -55,18 +58,24 @@ export function registerEntryAdminActionRoutes(
           });
       }
     }
-    if (context.permissions.has('event:write'))
+    if (context.permissions.has(entryActionPermissions.message))
       availableActions.push('message');
-    if (deps.startNumbers && context.permissions.has('entry:write'))
+    if (
+      deps.startNumbers &&
+      context.permissions.has(entryActionPermissions.startNumber)
+    )
       availableActions.push('start_number');
-    if (deps.passengers && context.permissions.has('entry:write'))
+    if (
+      deps.passengers &&
+      context.permissions.has(entryActionPermissions.passenger)
+    )
       availableActions.push(
         ...availablePassengerActions(entry.adminDetails ?? {}),
       );
     return c.json({ ...entry, availableActions, acceptanceTransitions });
   });
   app.post('/admin/entries/:entryId/actions', async (c) => {
-    const guard = await requireMember(c.req.raw, 'entry:write');
+    const guard = await requireMember(c.req.raw, entryActionPermissions.admin);
     if (!guard.ok) return c.json({ error: guard.error }, guard.status);
     const context = guard.context;
     const entryId = z.string().uuid().safeParse(c.req.param('entryId'));

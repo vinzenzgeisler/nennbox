@@ -39,8 +39,9 @@ including a synthetic `entry:write`-only caller. With a migrated disposable data
 in `NENNBOX_TEST_DATABASE_URL`, run `node scripts/entry-inspection-counterchecks.mjs`
 to verify eight removed/replaced guards turn the tests red; it restores each
 source file after its countercheck. Run it separately from other tests because it
-intentionally mutates source files temporarily. No additional migration is needed:
-permissions are derived from the current membership role on every request.
+intentionally mutates source files temporarily. Role permissions are derived from the current membership on every request.
+Migration `0052_membership_last_sign_in` adds a nullable login timestamp without
+changing any historical membership timestamps.
 
 ## API
 
@@ -56,7 +57,7 @@ All team administration endpoints require a current Administrator membership:
 - POST /auth/invitations/redeem: { token }; requires the configured OIDC
   authenticator but no prior membership. Cloud supplies its verified authenticator
   in addition to tenant context resolvers. Verified email must match after trimming
-  and case-folding. Existing memberships cannot be overwritten or reactivated via
+  and lowercasing, with IDNA domain normalization as described below. Existing memberships cannot be overwritten or reactivated via
   invitation. Explicit Administrator reactivation is required instead.
 
 Unknown tenant-scoped targets return 404. Last-admin changes and invalid invitation
@@ -98,3 +99,50 @@ not implemented pending the design source.
 Each mutation, including invite redemption and resend, records actor issuer,
 subject, timestamp, target, and role/status changes in team_history in the same
 transaction. No global identity is deleted on deactivation.
+
+## Action discovery
+
+`routes/entry-action-permissions.ts` supplies the permission keys to both entry
+`availableActions` discovery and the corresponding HTTP mutation endpoints:
+admin actions (`change_class`, `adjust_amount`, `delete`, `note:*`), acceptance
+transitions, message campaigns, start numbers, and passenger actions all require
+`entry:write`. Workflow role/edge restrictions and passenger-state eligibility
+remain additional restrictions, never permission grants. Office can discover and
+send messages; cashier, scrutineer and viewer cannot. Template settings remain
+`event:write` and do not control the entry's message action.
+
+## Email policy
+
+Both invitation input and the verified identity email at redemption use Core's
+`normalizeTeamEmail`, at the HTTP boundary and again at the repository boundary.
+Trim and lowercase first; convert Unicode domains to ASCII Punycode with the
+WHATWG URL IDNA implementation before validation, storage and comparison.
+Unicode local parts (SMTPUTF8) are unsupported and return a readable HTTP 400
+explaining the ASCII-local-part requirement. Invalid claims cannot consume an
+invitation. Dots and plus tags are preserved; no provider-specific alias merging
+is performed. Existing invitations created via the supported HTTP API already
+have ASCII domains; no email rewrite/backfill is needed.
+
+## Last organization sign-in
+
+`organization_membership.last_signed_in_at` is exposed as `lastSignedInAt`
+(ISO timestamp or null) on each team member. The generator-created custom
+migration `0052_membership_last_sign_in` leaves existing rows null: `updatedAt`
+contains membership changes and cannot reconstruct a login history.
+
+`POST /auth/session` completes the organization sign-in. It uses the configured
+member authenticator/context resolver, then updates only the active membership
+for the verified issuer+subject and server-resolved organization. It accepts no
+client timestamp, identity or tenant input. Community's existing OIDC callback
+calls it after successful code exchange with its access token, once even under
+concurrent StrictMode restores. Ordinary session restores, GET /admin/session,
+team reads and all other authenticated requests do not update it. Cloud auth
+clients must call this endpoint after login/organization selection; future invite
+clients call it after successful redemption if the membership was just created.
+The endpoint records server-side organization-login completion, not a provider's
+last authentication time or generic last activity. Disabled/missing memberships
+are rejected; membership `updatedAt` is never changed by login completion.
+
+Review-fix counterchecks run against a migrated disposable database with
+`node scripts/team-review-counterchecks.mjs`. They restore every mutated source
+and must not run concurrently with other test commands.

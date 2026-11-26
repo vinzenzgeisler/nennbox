@@ -55,6 +55,11 @@ export interface MembershipBootstrap {
 }
 
 export interface MembershipRepository {
+  /** Called only by the successful login completion boundary, never request resolution. */
+  recordSignIn?(
+    identity: Pick<ExternalIdentity, 'issuer' | 'subject'>,
+    organizationId: OrganizationId,
+  ): Promise<boolean>;
   resolvePermissions(
     identity: ExternalIdentity,
     organizationId: OrganizationId,
