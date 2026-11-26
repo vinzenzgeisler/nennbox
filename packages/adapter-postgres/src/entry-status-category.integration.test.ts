@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultEntryWorkflow } from '@nennbox/core';
 import { createDatabase } from './database-service.js';
 import { workbasketSeed } from './workbasket-test-fixture.js';
+import { createRegistrationSubmissionResponse } from './registration-submit-response.js';
 
 const url = process.env.NENNBOX_TEST_DATABASE_URL;
 describe.skipIf(!url)('pinned status resolver and number invariants', () => {
@@ -83,6 +84,22 @@ describe.skipIf(!url)('pinned status resolver and number invariants', () => {
         ).rows[0].n,
       ).toBe(0);
       await insert();
+      const waitlisted = await revision(4, 'waitlisted');
+      await pool.query(
+        'UPDATE entry SET workflow_revision_id=$1,requested_start_number=NULL,assigned_start_number=NULL WHERE id=$2',
+        [waitlisted, a.entry.id],
+      );
+      const response = await db.transaction((tx) =>
+        createRegistrationSubmissionResponse({
+          tx,
+          organizationId: a.org.id,
+          invoice: null,
+          entryIds: [a.entry.id],
+        }),
+      );
+      expect(response.entries).toEqual([
+        { entryId: a.entry.id, status: 'waitlisted', waitlistPosition: null },
+      ]);
       await expect(
         pool.query('SELECT entry_status_category($1,$2,$3)', [
           b.org.id,
