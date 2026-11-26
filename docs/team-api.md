@@ -135,7 +135,9 @@ member authenticator/context resolver, then updates only the active membership
 for the verified issuer+subject and server-resolved organization. It accepts no
 client timestamp, identity or tenant input. Community's existing OIDC callback
 calls it after successful code exchange with its access token, once even under
-concurrent StrictMode restores. Ordinary session restores, GET /admin/session,
+concurrent StrictMode restores. The Community Vite proxy forwards `/auth/session`
+to the API while `/auth/callback` remains a SPA route; a real HTTP proxy test pins
+both paths without starting a browser. Ordinary session restores, GET /admin/session,
 team reads and all other authenticated requests do not update it. Cloud auth
 clients must call this endpoint after login/organization selection; future invite
 clients call it after successful redemption if the membership was just created.

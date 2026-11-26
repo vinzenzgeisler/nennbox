@@ -8,6 +8,13 @@ const email = 'packages/core/src/team-email.ts';
 const membership = 'packages/adapter-postgres/src/memberships.ts';
 const mutations = [
   [
+    'login completion proxy omitted',
+    'packages/app/vite.config.ts',
+    "  '/auth/session',\n",
+    '',
+    'scripts/app-auth-routing.test.ts',
+  ],
+  [
     'message discovery requires event:write again',
     discovery,
     'context.permissions.has(entryActionPermissions.message)',
