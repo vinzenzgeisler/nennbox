@@ -1,3 +1,4 @@
+import { useSessionPermission } from '../../shell/SessionPermissions.js';
 import { EntryWarnings } from '../warnings/EntryWarnings.js';
 import type { EntryWarning } from '../warnings/entryWarnings.js';
 import { useState } from 'react';
@@ -48,6 +49,7 @@ export function EntryDriverSection({
   busy: boolean;
   onSave: (patch: EntryDriverUpdateRequest) => Promise<Outcome>;
 }) {
+  const canWrite = useSessionPermission('entry:write');
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
@@ -111,14 +113,14 @@ export function EntryDriverSection({
     <DetailSection
       title="Fahrer"
       action={
-        !editing ? (
+        canWrite && !editing ? (
           <AppButton tone="ghost" onClick={start}>
             Bearbeiten
           </AppButton>
         ) : undefined
       }
     >
-      {editing ? (
+      {canWrite && editing ? (
         <form
           onSubmit={(event) => {
             event.preventDefault();

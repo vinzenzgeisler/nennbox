@@ -1,3 +1,5 @@
+import { InvitationAcceptance } from './features/invitation/InvitationAcceptance.js';
+import { isInvitationRoute } from './features/invitation/invitation-session.js';
 import { DriverPortal } from './features/driver-portal/DriverPortal.js';
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import {
@@ -40,6 +42,7 @@ export interface AppProps {
 
 export function App({ renderContribution }: AppProps = {}) {
   const [state, setState] = useState<State>({ kind: 'loading' });
+  const isInvitation = isInvitationRoute();
   const isOnboardingPreview =
     OnboardingPreview !== null &&
     window.location.pathname === '/app/onboarding-preview';
@@ -47,6 +50,7 @@ export function App({ renderContribution }: AppProps = {}) {
     RegistrationPreview !== null &&
     window.location.pathname === '/app/registration-preview';
   const isAdmin =
+    !isInvitation &&
     !isRegistrationPreview &&
     !isOnboardingPreview &&
     (window.location.pathname.startsWith('/admin') ||
@@ -55,6 +59,7 @@ export function App({ renderContribution }: AppProps = {}) {
   const isComponentGallery = window.location.pathname === '/components';
   useEffect(() => {
     if (
+      isInvitation ||
       isAdmin ||
       isComponentGallery ||
       isOnboardingPreview ||
@@ -80,7 +85,15 @@ export function App({ renderContribution }: AppProps = {}) {
     return () => {
       current = false;
     };
-  }, [isAdmin, isComponentGallery, isOnboardingPreview, isRegistrationPreview]);
+  }, [
+    isInvitation,
+    isAdmin,
+    isComponentGallery,
+    isOnboardingPreview,
+    isRegistrationPreview,
+  ]);
+
+  if (isInvitation) return <InvitationAcceptance />;
 
   if (isComponentGallery) return <ComponentGallery />;
 

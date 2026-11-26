@@ -1,3 +1,4 @@
+import { useSessionPermission } from '../../shell/SessionPermissions.js';
 import {
   ActionGroup,
   Icon,
@@ -38,11 +39,7 @@ export function statusSteps(
     ?.nextAction?.key.replace(/^entry:/, '');
   const steps = (workflow?.transitions ?? [])
     .filter((edge) => edge.from === entry.acceptanceStatus)
-    .filter(
-      (edge) =>
-        !entry.availableActions ||
-        entry.availableActions.includes(`acceptance:${edge.to}`),
-    )
+    .filter((edge) => entry.availableActions?.includes(`acceptance:${edge.to}`))
     .map((edge): StatusStep => {
       const target = workflow?.statuses.find(
         (item) => (item.id ?? item.key) === edge.to,
@@ -101,6 +98,9 @@ export function EntryActionRail({
   onRequestDocument?: ((line: UploadLine) => void) | undefined;
   onPassenger: (kind: 'add' | 'link') => void;
 }) {
+  const canInspect = useSessionPermission('entry:inspect');
+  const canWrite = useSessionPermission('entry:write');
+  const canPayInvoice = useSessionPermission('payment:write');
   const { primary, others } = statusSteps(entry, workflow);
   const regular = others.filter((step) => !step.danger);
   const destructive = others.filter((step) => step.danger);
@@ -108,12 +108,11 @@ export function EntryActionRail({
   const invoice = entry.adminDetails?.invoice;
   const onSite = (entry.statusProjection?.dimensions ?? []).flatMap((item) => {
     const action = dimensionAction(item);
-    return action && item.required ? [action] : [];
+    return canInspect && action && item.required ? [action] : [];
   });
   const canPay =
-    invoice &&
-    (invoice.status === 'open' || invoice.status === 'partially_paid');
-  const canVerify = entry.verificationStatus !== 'verified';
+    canPayInvoice && ['open', 'partially_paid'].includes(invoice?.status ?? '');
+  const canVerify = canWrite && entry.verificationStatus !== 'verified';
   const canAddPassenger = entry.availableActions?.includes('passenger:add');
   const canLinkPassenger = entry.availableActions?.includes('passenger:link');
   return (
@@ -191,7 +190,7 @@ export function EntryActionRail({
           )}
         </ActionGroup>
       )}
-      {onMessage && (
+      {onMessage && entry.availableActions?.includes('message') && (
         <ActionGroup title="Kommunikation">
           {onRequestDocument &&
             requestableUploads(entry).map((line) => (

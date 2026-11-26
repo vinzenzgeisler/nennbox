@@ -1,3 +1,4 @@
+import { useSessionPermission } from '../shell/SessionPermissions.js';
 import { WorkbasketAdmission } from './WorkbasketAdmission.js';
 import { WorkbasketReminder } from './WorkbasketReminder.js';
 
@@ -9,6 +10,8 @@ export type WorkbasketBulkActionsProps = {
 };
 /** Explicitly confirmed, advisory actions; no mutation runs on mount or selection. */
 export function WorkbasketBulkActions(props: WorkbasketBulkActionsProps) {
+  const canWrite = useSessionPermission('entry:write');
+  if (!canWrite) return null;
   const key = `${props.eventId}:${props.ruleId}:${[...new Set(props.entryIds)].sort().join(',')}`;
   if (props.ruleId === 'ready')
     return <WorkbasketAdmission key={key} {...props} />;

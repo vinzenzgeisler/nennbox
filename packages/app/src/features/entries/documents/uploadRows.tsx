@@ -4,8 +4,8 @@ import { documentStatusView, type UploadLine } from './documentLines.js';
 
 type Handlers = {
   busy: boolean;
-  onReview: (line: UploadLine) => void;
-  onReject: (line: UploadLine) => void;
+  onReview?: ((line: UploadLine) => void) | undefined;
+  onReject?: ((line: UploadLine) => void) | undefined;
   onRequest?: ((line: UploadLine) => void) | undefined;
 };
 
@@ -36,7 +36,7 @@ function Actions({
           fileName={line.document.fileName}
         />
       )}
-      {line.status === 'uploaded' && (
+      {line.status === 'uploaded' && onReview && onReject && (
         <>
           <Button
             variant="text"

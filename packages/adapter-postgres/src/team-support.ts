@@ -77,3 +77,30 @@ export function teamGuards() {
   };
   return { audit, lock, admin, scope, pending };
 }
+
+/** Team history with the acting member's display name. */
+export const teamHistoryRows = (
+  tx: TransactionDatabase,
+  organizationId: string,
+) =>
+  tx
+    .select({
+      id: teamHistory.id,
+      organizationId: teamHistory.organizationId,
+      actorIssuer: teamHistory.actorIssuer,
+      actorSubject: teamHistory.actorSubject,
+      actorName: userIdentities.displayName,
+      action: teamHistory.action,
+      targetId: teamHistory.targetId,
+      details: teamHistory.details,
+      createdAt: teamHistory.createdAt,
+    })
+    .from(teamHistory)
+    .leftJoin(
+      userIdentities,
+      and(
+        eq(userIdentities.issuer, teamHistory.actorIssuer),
+        eq(userIdentities.subject, teamHistory.actorSubject),
+      ),
+    )
+    .where(eq(teamHistory.organizationId, organizationId));

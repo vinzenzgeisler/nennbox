@@ -157,6 +157,7 @@ test('Admin configures document activation persistently', async ({ page }) => {
   await page
     .getByRole('button', { name: 'Einstellungen', exact: true })
     .click();
+  await page.getByRole('link', { name: 'Nennung und Unterlagen' }).click();
   const settings = page.getByRole('region', {
     name: 'Nennungsunterlagen',
   });
@@ -185,6 +186,7 @@ test('Admin configures document activation persistently', async ({ page }) => {
   await page
     .getByRole('button', { name: 'Einstellungen', exact: true })
     .click();
+  await page.getByRole('link', { name: 'Nennung und Unterlagen' }).click();
   await expect(settings).toBeVisible();
   await expect(
     settings

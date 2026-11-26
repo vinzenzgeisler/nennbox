@@ -1,3 +1,4 @@
+import { useSessionPermission } from '../shell/SessionPermissions.js';
 import { useState } from 'react';
 import { useEntryWarnings } from './warnings/useEntryWarnings.js';
 import { warningsForEntry } from './warnings/entryWarnings.js';
@@ -57,6 +58,7 @@ type Props = {
   setPage: Dispatch<SetStateAction<number>>;
 };
 export function AdminEntryList(props: Props) {
+  const canWrite = useSessionPermission('entry:write');
   const {
     preview,
     mobilePreviewOpen,
@@ -222,7 +224,7 @@ export function AdminEntryList(props: Props) {
       >
         {content}
       </TabPanel>
-      {selectedIds.size > 0 && (
+      {canWrite && selectedIds.size > 0 && (
         <SelectionBar
           label="Massenaktionen"
           summary={`${selectedIds.size} von ${total} ausgewählt`}

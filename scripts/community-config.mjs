@@ -31,6 +31,11 @@ if (existsSync(stateFile)) {
     flag: 'wx',
   });
 }
+// Signs team invitation links; API and worker must share it. Older state files get one on first run.
+if (!config.invitationTokenKey) {
+  config.invitationTokenKey = randomBytes(32).toString('hex');
+  writeFileSync(stateFile, JSON.stringify(config, null, 2), { mode: 0o600 });
+}
 if (!existsSync(realmFile)) {
   writeFileSync(
     realmFile,
@@ -96,3 +101,5 @@ writeFileSync(
 if (process.argv.includes('--email')) process.stdout.write(config.email);
 else if (process.argv.includes('--password'))
   process.stdout.write(config.password);
+else if (process.argv.includes('--invitation-key'))
+  process.stdout.write(config.invitationTokenKey);

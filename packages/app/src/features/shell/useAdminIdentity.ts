@@ -1,8 +1,11 @@
+import { sessionPermissions } from './SessionPermissions.js';
+import { TeamRoleSchema, teamRoles } from '@nennbox/contracts';
 import { useEffect, useState } from 'react';
 import { adminFetch, getAdminIdentity, type AuthIdentity } from '../../auth.js';
 
 export type ShellIdentity = AuthIdentity & {
   organization?: string;
+  permissions?: readonly string[];
   canManageModules?: boolean;
 };
 
@@ -19,19 +22,23 @@ export function useAdminIdentity(): ShellIdentity | null {
     let active = true;
     void adminFetch('/admin/session', { cache: 'no-store' })
       .then((response) =>
-        response.ok ? (response.json() as Promise<{ role: string }>) : null,
+        response.ok
+          ? (response.json() as Promise<{
+              role: string;
+              permissions?: string[];
+            }>)
+          : null,
       )
       .then((session) => {
-        if (active && (session?.role === 'admin' || session?.role === 'member'))
-          setIdentity((current) =>
-            current
-              ? {
-                  ...current,
-                  role: session.role === 'admin' ? 'Admin' : 'Mitglied',
-                  canManageModules: session.role === 'admin',
-                }
-              : null,
-          );
+        if (active && session)
+          setIdentity((current) => ({
+            ...(current ?? { name: 'Angemeldet' }),
+            role: TeamRoleSchema.safeParse(session.role).success
+              ? teamRoles[session.role as keyof typeof teamRoles].label
+              : 'Nur lesen',
+            permissions: sessionPermissions(session),
+            canManageModules: session.role === 'admin',
+          }));
       })
       .catch(() => undefined);
     void adminFetch('/admin/organization', { cache: 'no-store' })

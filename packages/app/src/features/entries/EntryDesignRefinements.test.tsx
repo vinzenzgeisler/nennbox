@@ -24,7 +24,7 @@ const entry = {
   id: 'one',
   createdAt: '2026-04-12T16:12:00Z',
   acceptanceStatus: 'submitted',
-  availableActions: ['note:internal'],
+  availableActions: ['note:internal', 'acceptance:accepted', 'message'],
   adminDetails: {
     driver: { name: 'Thomas' },
     vehicle: { make: 'Honda', model: 'RS 250' },

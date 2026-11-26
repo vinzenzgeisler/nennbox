@@ -1,3 +1,4 @@
+import { useSessionPermission } from '../../shell/SessionPermissions.js';
 import {
   Button,
   DetailNote,
@@ -57,6 +58,9 @@ export function EntryDocumentsSection({
   onRejectDocument: (line: UploadLine) => void;
   onRequestDocument?: ((line: UploadLine) => void) | undefined;
 }) {
+  const canWrite = useSessionPermission('entry:write');
+  const canInspect = useSessionPermission('entry:inspect');
+  const canPay = useSessionPermission('payment:write');
   const projection = entry.statusProjection?.dimensions ?? [];
   const uploads = (entry.adminDetails?.customAnswers ?? []).filter(
     (answer) => answer.fileDownloadUrl,
@@ -66,9 +70,9 @@ export function EntryDocumentsSection({
   const rows = [
     ...uploadRows(entry.id, uploadLines(entry), {
       busy,
-      onReview: onReviewDocument,
-      onReject: onRejectDocument,
-      onRequest: onRequestDocument,
+      onReview: canWrite ? onReviewDocument : undefined,
+      onReject: canWrite ? onRejectDocument : undefined,
+      onRequest: canWrite ? onRequestDocument : undefined,
     }),
     ...uploads.map((answer) => ({
       id: `upload-${answer.key}`,
@@ -87,15 +91,16 @@ export function EntryDocumentsSection({
           label: 'Haftverzicht Fahrer',
           emphasis: item.meaning === 'missing',
           status: <StatusLabel status={item.meaning} label={item.label.de} />,
-          action: action ? (
-            <Button
-              variant="text"
-              size={32}
-              onClick={() => onDimensionAction(action)}
-            >
-              {action.label}
-            </Button>
-          ) : undefined,
+          action:
+            canInspect && action ? (
+              <Button
+                variant="text"
+                size={32}
+                onClick={() => onDimensionAction(action)}
+              >
+                {action.label}
+              </Button>
+            ) : undefined,
         };
       }),
     ...(payment && payment.meaning !== 'not_relevant'
@@ -113,6 +118,7 @@ export function EntryDocumentsSection({
               <StatusLabel status={payment.meaning} label={payment.label.de} />
             ),
             action:
+              canPay &&
               invoice &&
               (invoice.status === 'open' ||
                 invoice.status === 'partially_paid') ? (
@@ -130,11 +136,12 @@ export function EntryDocumentsSection({
         items={rows}
         empty={<p>Für diese Nennung sind keine Unterlagen erforderlich.</p>}
       />
-      {invoice?.providerPayments?.some((item) => item.refundableCents > 0) && (
-        <Button variant="text" onClick={onRefundPayment}>
-          Erstattung auslösen
-        </Button>
-      )}
+      {canPay &&
+        invoice?.providerPayments?.some((item) => item.refundableCents > 0) && (
+          <Button variant="text" onClick={onRefundPayment}>
+            Erstattung auslösen
+          </Button>
+        )}
       {invoice && overpaymentText(invoice, hasRefundablePayment(invoice)) && (
         <DetailNote>
           {overpaymentText(invoice, hasRefundablePayment(invoice))}
@@ -148,7 +155,7 @@ export function EntryDocumentsSection({
       {invoice?.stuckRefunds?.map((stuck) => (
         <DetailNote key={stuck.key}>
           {stuckRefundText(stuck.amountCents, invoice.currency)}{' '}
-          {onReconcileRefund && (
+          {canPay && onReconcileRefund && (
             <Button
               variant="text"
               size={32}
@@ -163,7 +170,7 @@ export function EntryDocumentsSection({
               Klärung anfordern
             </Button>
           )}
-          {onAbandonRefund && (
+          {canPay && onAbandonRefund && (
             <Button
               variant="text"
               size={32}

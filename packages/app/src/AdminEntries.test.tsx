@@ -3,7 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { defaultWorkflow } from './features/workflow/AdminWorkflow.js';
-import { AdminEntries } from './AdminEntries.js';
+import { AdminEntries as AdminEntriesView } from './AdminEntries.js';
+import { SessionPermissions } from './features/shell/SessionPermissions.js';
+function AdminEntries(props: React.ComponentProps<typeof AdminEntriesView>) {
+  return (
+    <SessionPermissions.Provider
+      value={['entry:write', 'payment:write', 'entry:inspect']}
+    >
+      <AdminEntriesView {...props} />
+    </SessionPermissions.Provider>
+  );
+}
 import { EntrySelectionProvider } from './features/entries/EntrySelectionState.js';
 
 const eventA = '10000000-0000-4000-8000-000000000001';
@@ -38,6 +48,14 @@ const entry = (id: string, eventId: string, classId: string) => ({
   vehicleId: '70000000-0000-4000-8000-000000000001',
   verificationStatus: 'unverified',
   acceptanceStatus: 'pending',
+  availableActions: [
+    'acceptance:accepted',
+    'acceptance:confirmed',
+    'acceptance:rejected',
+    'acceptance:withdrawn',
+    'start_number',
+    'message',
+  ],
   requestedStartNumber: null,
   assignedStartNumber: id === entryA ? '42' : null,
   startNumberStatus: id === entryA ? 'assigned' : 'unassigned',

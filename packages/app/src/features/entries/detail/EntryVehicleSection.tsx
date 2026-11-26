@@ -1,3 +1,4 @@
+import { useSessionPermission } from '../../shell/SessionPermissions.js';
 import { EntryWarnings } from '../warnings/EntryWarnings.js';
 import type { EntryWarning } from '../warnings/entryWarnings.js';
 import { useState } from 'react';
@@ -42,6 +43,7 @@ export function EntryVehicleSection({
   busy: boolean;
   onSave: (patch: EntryVehicleUpdateRequest) => Promise<Outcome>;
 }) {
+  const canWrite = useSessionPermission('entry:write');
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
@@ -108,7 +110,7 @@ export function EntryVehicleSection({
     <DetailSection
       title="Fahrzeug"
       action={
-        !editing ? (
+        canWrite && !editing ? (
           <AppButton tone="ghost" onClick={start}>
             Bearbeiten
           </AppButton>

@@ -41,11 +41,17 @@ export function EntryProperties({
         <dl>
           <dt>Startnummer</dt>
           <dd>
-            <AppButton tone="ghost" onClick={onNumber}>
-              {assignedNumber(entry)
-                ? `${assignedNumber(entry)} · bestätigt`
-                : 'Vergeben'}
-            </AppButton>
+            {entry.availableActions?.includes('start_number') ? (
+              <AppButton tone="ghost" onClick={onNumber}>
+                {assignedNumber(entry)
+                  ? `${assignedNumber(entry)} · bestätigt`
+                  : 'Vergeben'}
+              </AppButton>
+            ) : assignedNumber(entry) ? (
+              `${assignedNumber(entry)} · bestätigt`
+            ) : (
+              '—'
+            )}
             <EntryWarnings warnings={warnings} fields={['startNumber']} />
           </dd>
           <dt>Eingang</dt>

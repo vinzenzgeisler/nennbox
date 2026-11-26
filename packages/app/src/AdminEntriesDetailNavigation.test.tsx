@@ -2,7 +2,17 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeAll, afterAll, expect, it, vi } from 'vitest';
-import { AdminEntries } from './AdminEntries.js';
+import { AdminEntries as AdminEntriesView } from './AdminEntries.js';
+import { SessionPermissions } from './features/shell/SessionPermissions.js';
+function AdminEntries(props: React.ComponentProps<typeof AdminEntriesView>) {
+  return (
+    <SessionPermissions.Provider
+      value={['entry:write', 'payment:write', 'entry:inspect']}
+    >
+      <AdminEntriesView {...props} />
+    </SessionPermissions.Provider>
+  );
+}
 const eventA = '10000000-0000-4000-8000-000000000001';
 const classA = '20000000-0000-4000-8000-000000000001';
 const entryA = '30000000-0000-4000-8000-000000000001';
@@ -31,6 +41,14 @@ const entry = (id: string, eventId: string, classId: string) => ({
   vehicleId: '70000000-0000-4000-8000-000000000001',
   verificationStatus: 'unverified',
   acceptanceStatus: 'pending',
+  availableActions: [
+    'acceptance:accepted',
+    'acceptance:confirmed',
+    'acceptance:rejected',
+    'acceptance:withdrawn',
+    'start_number',
+    'message',
+  ],
   requestedStartNumber: null,
   assignedStartNumber: id === entryA ? '42' : null,
   startNumberStatus: id === entryA ? 'assigned' : 'unassigned',
@@ -92,6 +110,7 @@ const entry = (id: string, eventId: string, classId: string) => ({
   },
 });
 
+const detailActions = entry(entryA, eventA, classA).availableActions;
 const rows = Array.from({ length: 13 }, (_, index) => ({
   ...entry(
     `30000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
@@ -165,16 +184,18 @@ async function mount(
         });
       }
       const row = rows.find((item) => url === `/admin/entries/${item.id}`);
-      if (row)
+      if (row) {
+        const detail = { ...row, availableActions: detailActions };
         return Response.json(
           saved
             ? {
-                ...row,
+                ...detail,
                 assignedStartNumber: '77',
                 adminDetails: { ...row.adminDetails, startNumber: '77' },
               }
-            : row,
+            : detail,
         );
+      }
       return new Response('{}', { status: 404 });
     });
   window.history.replaceState(

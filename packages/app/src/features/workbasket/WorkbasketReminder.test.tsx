@@ -6,6 +6,9 @@ import { WorkbasketBulkActions } from './WorkbasketBulkActions.js';
 import { WorkbasketReminder } from './WorkbasketReminder.js';
 import { MessageApiError, messagesApi } from '../messages/messagesApi.js';
 import { freshRuleEntries } from './workbasketBulkApi.js';
+vi.mock('../shell/SessionPermissions.js', () => ({
+  useSessionPermission: () => true,
+}));
 vi.mock('./workbasketBulkApi.js', () => ({
   freshRuleEntries: vi.fn(),
   errorText: (error: Error) => error.message,

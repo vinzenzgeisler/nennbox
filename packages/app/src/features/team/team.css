@@ -1,0 +1,26 @@
+.nb-team-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nb-team-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nb-space-4);
+  padding-block: var(--nb-space-4);
+  border-bottom: 1px solid var(--nb-border-row);
+  overflow-wrap: anywhere;
+}
+
+.nb-team-row p {
+  margin-block: var(--nb-space-1);
+}
+
+@media (width <= 640px) {
+  .nb-team-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

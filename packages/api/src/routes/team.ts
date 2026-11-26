@@ -50,7 +50,17 @@ export function registerTeamRoutes({
     try {
       return c.json(await team.list(guard.context));
     } catch (error) {
-      return c.json({ error: 'Team request failed' }, errorStatus(error));
+      return c.json(
+        {
+          error:
+            error instanceof ProviderError &&
+            error.code === 'conflict' &&
+            error.message !== 'conflict'
+              ? error.message
+              : 'Team request failed',
+        },
+        errorStatus(error),
+      );
     }
   });
   app.post('/admin/team/invitations', async (c) => {
@@ -66,7 +76,17 @@ export function registerTeamRoutes({
     try {
       return c.json({ id: await team.invite(guard.context, parsed.data) }, 201);
     } catch (error) {
-      return c.json({ error: 'Team request failed' }, errorStatus(error));
+      return c.json(
+        {
+          error:
+            error instanceof ProviderError &&
+            error.code === 'conflict' &&
+            error.message !== 'conflict'
+              ? error.message
+              : 'Team request failed',
+        },
+        errorStatus(error),
+      );
     }
   });
   for (const action of ['revoke', 'resend'] as const) {
@@ -79,7 +99,17 @@ export function registerTeamRoutes({
         await team[action](guard.context, c.req.param('id'));
         return c.body(null, 204);
       } catch (error) {
-        return c.json({ error: 'Team request failed' }, errorStatus(error));
+        return c.json(
+          {
+            error:
+              error instanceof ProviderError &&
+              error.code === 'conflict' &&
+              error.message !== 'conflict'
+                ? error.message
+                : 'Team request failed',
+          },
+          errorStatus(error),
+        );
       }
     });
   }
@@ -93,7 +123,17 @@ export function registerTeamRoutes({
       await team.change(guard.context, c.req.param('id'), parsed.data);
       return c.body(null, 204);
     } catch (error) {
-      return c.json({ error: 'Team request failed' }, errorStatus(error));
+      return c.json(
+        {
+          error:
+            error instanceof ProviderError &&
+            error.code === 'conflict' &&
+            error.message !== 'conflict'
+              ? error.message
+              : 'Team request failed',
+        },
+        errorStatus(error),
+      );
     }
   });
   app.post('/auth/invitations/redeem', async (c) => {

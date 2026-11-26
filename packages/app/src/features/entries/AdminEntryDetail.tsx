@@ -15,7 +15,7 @@ import { uploadLines, type UploadLine } from './documents/documentLines.js';
 import { requestMessageSeed } from './documents/requestMessage.js';
 import { useEntryDocumentActions } from './documents/useEntryDocumentActions.js';
 import type { MessageSeed } from '../messages/messageSeed.js';
-import { timelineFor } from './detail/entryDetailModel.js';
+import { entryCan, timelineFor } from './detail/entryDetailModel.js';
 import { EntryAdmissionProgress } from './detail/EntryAdmissionProgress.js';
 import { EntryProperties } from './detail/EntryProperties.js';
 import { EntryStatusToast } from './EntryStatusToast.js';
@@ -80,10 +80,11 @@ export function AdminEntryDetail({
     notify('Änderung gespeichert'),
   );
   const documents = useEntryDocumentActions(api);
-  const writeMessage = onMessage && (() => onMessage({ entryId: selected.id }));
+  const message = entryCan(selected, 'message') ? onMessage : undefined;
+  const writeMessage = message && (() => message({ entryId: selected.id }));
   const requestDocument =
-    onMessage &&
-    ((line: UploadLine) => onMessage(requestMessageSeed(selected.id, line)));
+    message &&
+    ((line: UploadLine) => message(requestMessageSeed(selected.id, line)));
   const messages = useEntryMessages(selected);
   const dimensionLabels = useDimensionLabels(selected.eventId);
   const [pending, setPending] = useState<Pending | null>(null);

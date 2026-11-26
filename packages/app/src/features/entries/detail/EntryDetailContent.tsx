@@ -1,3 +1,4 @@
+import { useSessionPermission } from '../../shell/SessionPermissions.js';
 import { EntryWarnings } from '../warnings/EntryWarnings.js';
 import type { EntryWarning } from '../warnings/entryWarnings.js';
 import { Banner } from '@nennbox/ui';
@@ -53,11 +54,12 @@ export function EntryDetailContent({
   setNotice: (notice: { message: string }) => void;
   setPending: (pending: Pending) => void;
 }) {
+  const canWrite = useSessionPermission('entry:write');
   return (
     <>
       {error && !pending && <Banner tone="error">{error}</Banner>}
       {documents.error && <Banner tone="error">{documents.error}</Banner>}
-      {numberOpen && (
+      {numberOpen && entry.availableActions?.includes('start_number') && (
         <EntryStartNumber
           entry={entry}
           onUpdated={(entry) => {
@@ -130,7 +132,7 @@ export function EntryDetailContent({
           />
         </>
       )}
-      {tab === 'documents' && (
+      {tab === 'documents' && canWrite && (
         <EntryConfirmation
           eventId={entry.eventId}
           groupId={entry.registrationGroupId}

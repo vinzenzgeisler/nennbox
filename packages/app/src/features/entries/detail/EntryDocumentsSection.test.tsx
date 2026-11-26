@@ -3,6 +3,7 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { EntryResponse as Entry } from '@nennbox/contracts';
+import { SessionPermissions } from '../../shell/SessionPermissions.js';
 import { EntryDocumentsSection } from './EntryDocumentsSection.js';
 
 let host: HTMLDivElement;
@@ -41,15 +42,17 @@ const entryWith = (invoice: Record<string, unknown>) =>
 const render = (entry: Entry) =>
   act(async () =>
     root.render(
-      <EntryDocumentsSection
-        entry={entry}
-        busy={false}
-        onDimensionAction={() => {}}
-        onRecordPayment={() => {}}
-        onRefundPayment={() => {}}
-        onReviewDocument={() => {}}
-        onRejectDocument={() => {}}
-      />,
+      <SessionPermissions.Provider value={['payment:write']}>
+        <EntryDocumentsSection
+          entry={entry}
+          busy={false}
+          onDimensionAction={() => {}}
+          onRecordPayment={() => {}}
+          onRefundPayment={() => {}}
+          onReviewDocument={() => {}}
+          onRejectDocument={() => {}}
+        />
+      </SessionPermissions.Provider>,
     ),
   );
 const text = () => host.textContent!.replace(/\s/g, ' ');
@@ -91,17 +94,19 @@ it('shows a refund that needs review with the way out, and nothing the office ca
   const renderWith = (handler?: typeof onAbandonRefund) =>
     act(async () =>
       root.render(
-        <EntryDocumentsSection
-          entry={entryWith({ stuckRefunds: stuck })}
-          busy={false}
-          onDimensionAction={() => {}}
-          onRecordPayment={() => {}}
-          onRefundPayment={() => {}}
-          onAbandonRefund={handler}
-          onReconcileRefund={handler ? onReconcileRefund : undefined}
-          onReviewDocument={() => {}}
-          onRejectDocument={() => {}}
-        />,
+        <SessionPermissions.Provider value={['payment:write']}>
+          <EntryDocumentsSection
+            entry={entryWith({ stuckRefunds: stuck })}
+            busy={false}
+            onDimensionAction={() => {}}
+            onRecordPayment={() => {}}
+            onRefundPayment={() => {}}
+            onAbandonRefund={handler}
+            onReconcileRefund={handler ? onReconcileRefund : undefined}
+            onReviewDocument={() => {}}
+            onRejectDocument={() => {}}
+          />
+        </SessionPermissions.Provider>,
       ),
     );
   await renderWith(onAbandonRefund);

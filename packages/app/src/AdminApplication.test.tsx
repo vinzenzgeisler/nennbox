@@ -41,6 +41,13 @@ const alex = {
   vehicleId: '70000000-0000-4000-8000-000000000001',
   verificationStatus: 'verified',
   acceptanceStatus: 'pending',
+  availableActions: [
+    'acceptance:accepted',
+    'acceptance:waitlisted',
+    'acceptance:rejected',
+    'message',
+    'start_number',
+  ],
   requestedStartNumber: '42',
   priceSnapshotVersion: null,
   formSnapshotVersion: null,
