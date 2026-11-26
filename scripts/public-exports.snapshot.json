@@ -803,6 +803,8 @@
     "AppGrid",
     "AppMenuItem",
     "AppNotice",
+    "AppOptionCard",
+    "AppOptionCards",
     "AppPopover",
     "AppPreviewCard",
     "AppProgressDots",

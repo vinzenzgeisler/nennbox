@@ -2,6 +2,7 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { teamRoles } from '@nennbox/contracts';
 import { TeamView } from './TeamView.js';
 import { adminFetch } from '../../auth.js';
 vi.mock('../../auth.js', () => ({ adminFetch: vi.fn() }));
@@ -70,6 +71,8 @@ const click = async (label: string) =>
 const mutations = () =>
   vi.mocked(adminFetch).mock.calls.filter(([, init]) => init?.method);
 beforeEach(async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-11-26T10:00:00Z'));
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.mocked(adminFetch).mockImplementation(async (_url, init) =>
     init?.method ? new Response(null, { status: 204 }) : json(snapshot),
@@ -84,22 +87,39 @@ afterEach(async () => {
   container.remove();
   vi.clearAllMocks();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 it('shows names, roles, status, last login and invitation actor; protects the last administrator', () => {
   expect(container.textContent).toContain('Anna Admin');
   expect(container.textContent).toContain('Noch keine Anmeldung');
-  expect(container.textContent).toContain('25.11.2026');
+  expect(container.textContent).toContain('gestern 10:30');
   expect(container.textContent).toContain('Eingeladen von Anna Admin');
   const admin = container.querySelector('li')!;
   expect(admin.textContent).toContain('Letzter aktiver Administrator');
   expect(admin.querySelector('button')).toBeNull();
+  const rows = [...container.querySelectorAll('li')];
+  expect(rows[1]!.textContent).toContain('Nennbüro');
+  expect(rows[1]!.textContent).toContain('Aktiv');
+  expect(rows[2]!.textContent).toContain('Deaktiviert');
+});
+it('does not show a second navigation select or the old public-form labels', () => {
+  expect(container.querySelector('select')).toBeNull();
+  expect(container.querySelector('[role="tablist"]')).not.toBeNull();
+  expect(container.querySelector('.nb-text-label')).toBeNull();
 });
 it('describes all roles from the shared mapping and submits the invitation', async () => {
   await click('Person einladen');
   expect(document.body.textContent).toContain(
     'Bearbeitet technische Abnahme und Haftverzicht',
   );
-  const input = document.querySelector('input')!;
+  const radios = [
+    ...document.querySelectorAll<HTMLInputElement>('input[type="radio"]'),
+  ];
+  expect(radios).toHaveLength(Object.keys(teamRoles).length);
+  expect(radios.find((radio) => radio.checked)?.value).toBe('viewer');
+  const input = document.querySelector<HTMLInputElement>(
+    'input:not([type="radio"])',
+  )!;
   await act(async () => {
     Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -171,11 +191,10 @@ it('reactivates a disabled member and changes a role', async () => {
     status: 'active',
   });
   await click('Rolle ändern');
-  const select = document.querySelector<HTMLSelectElement>('dialog select')!;
-  await act(async () => {
-    select.value = 'cashier';
-    select.dispatchEvent(new Event('change', { bubbles: true }));
-  });
+  const card = document.querySelector<HTMLInputElement>(
+    'dialog input[type="radio"][value="cashier"]',
+  )!;
+  await act(async () => card.click());
   await click('Rolle speichern');
   expect(JSON.parse(String(mutations()[1]?.[1]?.body))).toEqual({
     kind: 'role',
@@ -183,11 +202,11 @@ it('reactivates a disabled member and changes a role', async () => {
   });
 });
 it('shows history with actor and date', async () => {
-  await act(async () => {
-    const select = container.querySelector('select')!;
-    select.value = 'history';
-    select.dispatchEvent(new Event('change', { bubbles: true }));
-  });
+  await click('Verlauf');
+  expect(
+    container.querySelector('[role="tab"][aria-selected="true"]')?.textContent,
+  ).toBe('Verlauf');
+  expect(container.querySelector('[role="tabpanel"]')).not.toBeNull();
   expect(container.textContent).toContain('Einladung erstellt');
   expect(container.textContent).toContain('Anna Admin');
   expect(container.textContent).toContain('25.11.2026');

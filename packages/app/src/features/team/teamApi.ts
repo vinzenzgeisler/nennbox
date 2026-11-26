@@ -75,3 +75,27 @@ export function dialogMutation(
     'Einladung wurde widerrufen.',
   ];
 }
+
+const berlin = { timeZone: 'Europe/Berlin' } as const;
+const dayKey = (date: Date) =>
+  new Intl.DateTimeFormat('sv-SE', berlin).format(date);
+/** Last sign-in in words: “heute 11:05”, “gestern 09:30”, “vor 3 Tagen”. */
+export function teamLastSignIn(value: string | null, now = Date.now()) {
+  if (!value) return 'Noch keine Anmeldung';
+  const date = new Date(value);
+  const time = new Intl.DateTimeFormat('de-DE', {
+    ...berlin,
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+  const days = Math.round(
+    (Date.parse(dayKey(new Date(now))) - Date.parse(dayKey(date))) / 86_400_000,
+  );
+  if (days <= 0) return `heute ${time}`;
+  if (days === 1) return `gestern ${time}`;
+  if (days < 14) return `vor ${days} Tagen`;
+  return new Intl.DateTimeFormat('de-DE', {
+    ...berlin,
+    dateStyle: 'medium',
+  }).format(date);
+}

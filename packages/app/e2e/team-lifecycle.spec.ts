@@ -11,7 +11,8 @@ import { resolve } from 'node:path';
 // Reuse the Community stack's generated administrator and local-operator fixtures.
 // COMMUNITY_STATE_DIR can point to a running checkout when testing a worktree.
 const stateDir =
-  process.env.COMMUNITY_STATE_DIR ?? resolve('../../.community-local');
+  process.env.COMMUNITY_STATE_DIR ??
+  resolve(import.meta.dirname, '../../../.community-local');
 function credentials() {
   const fromEnv = {
     email: process.env.COMMUNITY_ADMIN_EMAIL,
@@ -39,6 +40,7 @@ async function teamSettings(page: Page) {
   await page
     .getByRole('button', { name: 'Einstellungen', exact: true })
     .click();
+  await page.getByRole('link', { name: 'Team', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Team', exact: true }),
   ).toBeVisible();
@@ -137,9 +139,9 @@ test('team invitation requires explicit acceptance; role changes and deactivatio
     await page.getByRole('button', { name: 'Person einladen' }).click();
     let dialog = page.getByRole('dialog');
     await dialog.getByRole('textbox', { name: 'E-Mail-Adresse' }).fill(email);
-    await dialog
-      .getByRole('combobox', { name: 'Rolle', exact: true })
-      .selectOption({ label: 'Nur lesen' });
+    await expect(
+      dialog.getByRole('radio', { name: /Nur lesen/ }),
+    ).toBeChecked();
     await dialog
       .getByRole('button', { name: 'Einladung senden', exact: true })
       .click();
@@ -183,16 +185,14 @@ test('team invitation requires explicit acceptance; role changes and deactivatio
     await teamSettings(page);
     const member = page.getByRole('listitem').filter({ hasText: email });
     await expect(member).toContainText('Nur lesen');
-    await member.getByRole('button', { name: 'Rolle ändern' }).click();
+    await member.getByRole('button', { name: /^Aktionen für/ }).click();
+    await member.getByRole('menuitem', { name: 'Rolle ändern' }).click();
     dialog = page.getByRole('dialog');
-    await dialog
-      .getByRole('combobox', { name: 'Rolle', exact: true })
-      .selectOption({ label: 'Nennbüro' });
+    await dialog.getByRole('radio', { name: /Nennbüro/ }).check();
     await dialog.getByRole('button', { name: 'Rolle speichern' }).click();
     await expect(member).toContainText('Nennbüro');
-    await member
-      .getByRole('button', { name: 'Deaktivieren', exact: true })
-      .click();
+    await member.getByRole('button', { name: /^Aktionen für/ }).click();
+    await member.getByRole('menuitem', { name: 'Deaktivieren' }).click();
     await page
       .getByRole('dialog')
       .getByRole('button', { name: 'Deaktivieren', exact: true })

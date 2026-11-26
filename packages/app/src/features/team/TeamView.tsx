@@ -2,15 +2,23 @@ import { TeamHistory } from './TeamHistory.js';
 import { useEffect, useState } from 'react';
 import { teamRoles, type Team, type TeamRole } from '@nennbox/contracts';
 import {
-  AppActions,
   AppButton,
+  AppChip,
   AppNotice,
   AppSection,
-  Icon,
-  SelectField,
+  AppStatusPill,
+  Menu,
+  MenuItem,
+  TabList,
+  TabPanel,
 } from '@nennbox/ui';
 import { TeamDialogs, type TeamDialog } from './TeamDialogs.js';
-import { dialogMutation, teamDate, teamRequest } from './teamApi.js';
+import {
+  dialogMutation,
+  teamDate,
+  teamLastSignIn,
+  teamRequest,
+} from './teamApi.js';
 import './team.css';
 
 export function TeamView() {
@@ -24,7 +32,7 @@ export function TeamView() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [section, setSection] = useState('members');
+  const [section, setSection] = useState('team-members');
   const load = async () => {
     const next = await teamRequest();
     if (next) setTeam(next);
@@ -107,165 +115,176 @@ export function TeamView() {
   );
   return (
     <div className="nb-app-stack nb-team">
-      <AppActions>
-        <Icon name="person" />
-        <h2>Team</h2>
+      <header className="nb-team-head">
+        <div>
+          <h2>Team</h2>
+          <p>
+            Verwalte, wer im Verein mitarbeitet und welche Aufgaben die Person
+            übernehmen darf.
+          </p>
+        </div>
         <AppButton tone="primary" onClick={() => open({ kind: 'invite' })}>
           Person einladen
         </AppButton>
-      </AppActions>
-      <p>
-        Verwalte, wer im Verein mitarbeitet und welche Aufgaben die Person
-        übernehmen darf.
-      </p>
+      </header>
       {notice && <AppNotice tone="success">{notice}</AppNotice>}
       {error && !dialog && <AppNotice tone="error">{error}</AppNotice>}
-      <SelectField
-        label="Team-Bereich"
-        value={section}
-        onChange={(event) => setSection(event.target.value)}
-      >
-        <option value="members">Mitglieder und Einladungen</option>
-        <option value="history">Verlauf</option>
-      </SelectField>
-      {section === 'members' ? (
-        <>
-          <AppSection title={`Mitglieder (${team.members.length})`}>
-            <ul className="nb-team-list">
-              {team.members.map((member) => {
-                const name = member.displayName || member.email || 'Ohne Namen';
-                const lastAdmin =
-                  member.role === 'admin' &&
-                  member.status === 'active' &&
-                  adminCount === 1;
-                return (
-                  <li className="nb-team-row" key={member.id}>
-                    <div>
-                      <strong>{name}</strong>
-                      <p>{member.email ?? 'Keine E-Mail-Adresse'}</p>
-                      <p>
-                        {teamRoles[member.role].label} ·{' '}
-                        {member.status === 'active' ? 'Aktiv' : 'Deaktiviert'}
-                      </p>
-                      <small>
-                        Letzte Anmeldung: {teamDate(member.lastSignedInAt)}
-                      </small>
-                      {lastAdmin && <p>Letzter aktiver Administrator</p>}
-                    </div>
-                    <AppActions>
-                      {!lastAdmin && (
-                        <AppButton
-                          tone="secondary"
-                          disabled={busy}
-                          onClick={() =>
-                            open({
-                              kind: 'role',
-                              id: member.id,
-                              name,
-                              role: member.role,
-                            })
-                          }
-                        >
-                          Rolle ändern
-                        </AppButton>
-                      )}
-                      {member.status === 'disabled' ? (
-                        <AppButton
-                          tone="secondary"
-                          disabled={busy}
-                          onClick={() =>
-                            void mutate(
-                              `/members/${member.id}`,
-                              { kind: 'status', status: 'active' },
-                              'Mitglied wurde reaktiviert.',
-                              'PATCH',
-                            )
-                          }
-                        >
-                          Reaktivieren
-                        </AppButton>
-                      ) : (
-                        !lastAdmin && (
-                          <AppButton
-                            tone="secondary"
-                            disabled={busy}
-                            onClick={() =>
-                              open({ kind: 'disable', id: member.id, name })
-                            }
-                          >
-                            Deaktivieren
-                          </AppButton>
-                        )
-                      )}
-                    </AppActions>
-                  </li>
-                );
-              })}
-            </ul>
-          </AppSection>
-          <AppSection title={`Offene Einladungen (${invitations.length})`}>
-            {invitations.length ? (
+      <TabList
+        label="Team"
+        selected={section}
+        onChange={setSection}
+        tabs={[
+          { id: 'team-members', label: 'Mitglieder' },
+          { id: 'team-history', label: 'Verlauf' },
+        ]}
+      />
+      <TabPanel id={section}>
+        {section === 'team-members' ? (
+          <div className="nb-app-stack">
+            <AppSection title={`Mitglieder (${team.members.length})`}>
               <ul className="nb-team-list">
-                {invitations.map((row) => {
-                  const actor = team.history.find(
-                    (change) =>
-                      change.targetId === row.id && change.action === 'invited',
-                  );
+                {team.members.map((member) => {
+                  const name =
+                    member.displayName || member.email || 'Ohne Namen';
+                  const lastAdmin =
+                    member.role === 'admin' &&
+                    member.status === 'active' &&
+                    adminCount === 1;
                   return (
-                    <li className="nb-team-row" key={row.id}>
-                      <div>
-                        <strong>{row.email}</strong>
-                        <p>
-                          {teamRoles[row.role].label} · Gültig bis{' '}
-                          {teamDate(row.expiresAt)}
-                        </p>
+                    <li className="nb-team-row" key={member.id}>
+                      <div className="nb-team-person">
+                        <strong>{name}</strong>
+                        <span>{member.email ?? 'Keine E-Mail-Adresse'}</span>
+                      </div>
+                      <div className="nb-team-meta">
+                        <AppChip>{teamRoles[member.role].label}</AppChip>
+                        <AppStatusPill
+                          status={member.status === 'active' ? 'zu' : 'ab'}
+                        >
+                          {member.status === 'active' ? 'Aktiv' : 'Deaktiviert'}
+                        </AppStatusPill>
                         <small>
-                          Eingeladen von{' '}
-                          {actor?.actorName ||
-                            actor?.actorSubject ||
-                            'Unbekannt'}
+                          {member.lastSignedInAt
+                            ? `Zuletzt angemeldet: ${teamLastSignIn(member.lastSignedInAt, now)}`
+                            : teamLastSignIn(null)}
                         </small>
                       </div>
-                      <AppActions>
-                        <AppButton
-                          tone="secondary"
-                          disabled={busy}
-                          onClick={() =>
-                            void mutate(
-                              `/invitations/${row.id}/resend`,
-                              null,
-                              'Einladung wurde erneut gesendet. Der vorherige Link ist ungültig.',
-                            )
-                          }
-                        >
-                          Erneut senden
-                        </AppButton>
-                        <AppButton
-                          tone="secondary"
-                          disabled={busy}
-                          onClick={() =>
-                            open({
-                              kind: 'revoke',
-                              id: row.id,
-                              name: row.email,
-                            })
-                          }
-                        >
-                          Widerrufen
-                        </AppButton>
-                      </AppActions>
+                      {lastAdmin ? (
+                        <small className="nb-team-note">
+                          Letzter aktiver Administrator
+                        </small>
+                      ) : (
+                        <Menu label={`Aktionen für ${name}`}>
+                          <MenuItem
+                            disabled={busy}
+                            onClick={() =>
+                              open({
+                                kind: 'role',
+                                id: member.id,
+                                name,
+                                role: member.role,
+                              })
+                            }
+                          >
+                            Rolle ändern
+                          </MenuItem>
+                          {member.status === 'disabled' ? (
+                            <MenuItem
+                              disabled={busy}
+                              onClick={() =>
+                                void mutate(
+                                  `/members/${member.id}`,
+                                  { kind: 'status', status: 'active' },
+                                  'Mitglied wurde reaktiviert.',
+                                  'PATCH',
+                                )
+                              }
+                            >
+                              Reaktivieren
+                            </MenuItem>
+                          ) : (
+                            <MenuItem
+                              tone="danger"
+                              disabled={busy}
+                              onClick={() =>
+                                open({ kind: 'disable', id: member.id, name })
+                              }
+                            >
+                              Deaktivieren
+                            </MenuItem>
+                          )}
+                        </Menu>
+                      )}
                     </li>
                   );
                 })}
               </ul>
-            ) : (
-              <p>Keine offenen Einladungen.</p>
-            )}
-          </AppSection>
-        </>
-      ) : (
-        <TeamHistory team={team} />
-      )}
+            </AppSection>
+            <AppSection title={`Offene Einladungen (${invitations.length})`}>
+              {invitations.length ? (
+                <ul className="nb-team-list">
+                  {invitations.map((row) => {
+                    const actor = team.history.find(
+                      (change) =>
+                        change.targetId === row.id &&
+                        change.action === 'invited',
+                    );
+                    return (
+                      <li className="nb-team-row" key={row.id}>
+                        <div className="nb-team-person">
+                          <strong>{row.email}</strong>
+                          <span>
+                            Eingeladen von{' '}
+                            {actor?.actorName ||
+                              actor?.actorSubject ||
+                              'Unbekannt'}
+                          </span>
+                        </div>
+                        <div className="nb-team-meta">
+                          <AppChip>{teamRoles[row.role].label}</AppChip>
+                          <AppStatusPill status="vor">Eingeladen</AppStatusPill>
+                          <small>Gültig bis {teamDate(row.expiresAt)}</small>
+                        </div>
+                        <Menu label={`Aktionen für ${row.email}`}>
+                          <MenuItem
+                            disabled={busy}
+                            onClick={() =>
+                              void mutate(
+                                `/invitations/${row.id}/resend`,
+                                null,
+                                'Einladung wurde erneut gesendet. Der vorherige Link ist ungültig.',
+                              )
+                            }
+                          >
+                            Erneut senden
+                          </MenuItem>
+                          <MenuItem
+                            tone="danger"
+                            disabled={busy}
+                            onClick={() =>
+                              open({
+                                kind: 'revoke',
+                                id: row.id,
+                                name: row.email,
+                              })
+                            }
+                          >
+                            Widerrufen
+                          </MenuItem>
+                        </Menu>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p>Keine offenen Einladungen.</p>
+              )}
+            </AppSection>
+          </div>
+        ) : (
+          <TeamHistory team={team} />
+        )}
+      </TabPanel>
       {dialog && (
         <TeamDialogs
           key={JSON.stringify(dialog)}

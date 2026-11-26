@@ -4,8 +4,9 @@ import {
   AppButton,
   AppDialog,
   AppNotice,
-  SelectField,
-  TextInput,
+  AppOptionCard,
+  AppOptionCards,
+  AppTextInput,
 } from '@nennbox/ui';
 export type TeamDialog =
   | { kind: 'invite' }
@@ -77,9 +78,11 @@ export function TeamDialogs({
         }}
       >
         {dialog.kind === 'invite' && (
-          <TextInput
+          <AppTextInput
             label="E-Mail-Adresse"
             value={email}
+            autoComplete="off"
+            inputMode="email"
             required
             onChange={(event) => setEmail(event.target.value)}
           />
@@ -87,25 +90,20 @@ export function TeamDialogs({
         {dialog.kind === 'role' && <p>{dialog.name}</p>}
         {(dialog.kind === 'invite' || dialog.kind === 'role') && (
           <>
-            <SelectField
-              label="Rolle"
-              value={role}
-              disabled={busy}
-              onChange={(event) => setRole(event.target.value as TeamRole)}
-            >
+            <AppOptionCards label="Rolle">
               {Object.entries(teamRoles).map(([key, value]) => (
-                <option key={key} value={key}>
-                  {value.label}
-                </option>
+                <AppOptionCard
+                  key={key}
+                  name="team-role"
+                  value={key}
+                  checked={role === key}
+                  disabled={busy}
+                  onChange={() => setRole(key as TeamRole)}
+                  label={value.label}
+                  description={value.description}
+                />
               ))}
-            </SelectField>
-            <div className="nb-app-stack" aria-label="Rechte der Rollen">
-              {Object.entries(teamRoles).map(([key, value]) => (
-                <p key={key}>
-                  <strong>{value.label}</strong> — {value.description}
-                </p>
-              ))}
-            </div>
+            </AppOptionCards>
           </>
         )}
         {dialog.kind === 'disable' && (

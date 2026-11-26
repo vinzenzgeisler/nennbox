@@ -101,5 +101,7 @@ writeFileSync(
 if (process.argv.includes('--email')) process.stdout.write(config.email);
 else if (process.argv.includes('--password'))
   process.stdout.write(config.password);
+else if (process.argv.includes('--operator-password'))
+  process.stdout.write(config.operatorPassword);
 else if (process.argv.includes('--invitation-key'))
   process.stdout.write(config.invitationTokenKey);

@@ -1,0 +1,59 @@
+.nb-app-option-cards {
+  display: grid;
+  gap: var(--nb-space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.nb-app-option-cards legend {
+  margin-bottom: var(--nb-space-2);
+  padding: 0;
+  font-weight: 500;
+}
+
+.nb-app-option-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--nb-space-3);
+  min-height: 44px;
+  padding: var(--nb-space-3);
+  border-radius: var(--nb-radius-md);
+  box-shadow: inset 0 0 0 1px var(--nb-border-strong);
+  background: var(--nb-bg);
+  cursor: pointer;
+}
+
+.nb-app-option-card:hover {
+  background: var(--nb-bg-hover);
+}
+
+.nb-app-option-card:has(input:checked) {
+  box-shadow: inset 0 0 0 2px var(--nb-fg);
+}
+
+.nb-app-option-card:has(input:focus-visible) {
+  outline: 2px solid var(--nb-fg);
+  outline-offset: 2px;
+}
+
+.nb-app-option-card input {
+  flex: none;
+  margin-top: 3px;
+}
+
+.nb-app-option-card span {
+  display: grid;
+  gap: var(--nb-space-1);
+  min-width: 0;
+}
+
+.nb-app-option-card strong {
+  font-weight: 500;
+}
+
+.nb-app-option-card small {
+  color: var(--nb-fg-muted);
+  line-height: 1.45;
+}

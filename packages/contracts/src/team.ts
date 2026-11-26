@@ -19,13 +19,13 @@ export const teamRoles = {
   office: {
     label: 'Nennbüro',
     description:
-      'Bearbeitet Nennungen, lässt zu, prüft Unterlagen und Abnahme und schreibt Nachrichten. Keine Zahlungen oder Einstellungen.',
+      'Bearbeitet Nennungen, lässt zu, prüft Unterlagen und Abnahme und schreibt Nachrichten – ohne Zahlungen und Einstellungen.',
     permissions: ['entry:write', 'entry:inspect'],
   },
   cashier: {
     label: 'Kasse',
     description:
-      'Erfasst Zahlungen und Erstattungen; kann Nennungen lesen, aber nicht bearbeiten.',
+      'Erfasst Zahlungen und Erstattungen und kann Nennungen lesen, aber nicht bearbeiten.',
     permissions: ['payment:write'],
   },
   scrutineer: {
@@ -37,7 +37,7 @@ export const teamRoles = {
   viewer: {
     label: 'Nur lesen',
     description:
-      'Kann alles ansehen, aber nichts ändern. Kein Zugriff auf Einstellungen.',
+      'Kann alles ansehen, aber nichts ändern, und hat keinen Zugriff auf Einstellungen.',
     permissions: [],
   },
 } as const;

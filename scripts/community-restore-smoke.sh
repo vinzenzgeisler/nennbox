@@ -87,6 +87,7 @@ start_stack
 
 export COMMUNITY_ADMIN_PASSWORD="$(node scripts/community-config.mjs --password)"
 export COMMUNITY_ADMIN_EMAIL="$(node scripts/community-config.mjs --email)"
+export KC_BOOTSTRAP_ADMIN_PASSWORD="$(node scripts/community-config.mjs --operator-password)"
 export NENNBOX_API_URL="http://127.0.0.1:$COMMUNITY_API_PORT"
 export NENNBOX_APP_URL="$COMMUNITY_APP_URL"
 export NENNBOX_MAILPIT_URL="http://127.0.0.1:$COMMUNITY_MAILPIT_PORT"

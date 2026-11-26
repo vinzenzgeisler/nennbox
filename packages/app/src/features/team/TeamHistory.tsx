@@ -28,9 +28,9 @@ export function TeamHistory({ team }: { team: Team }) {
           .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
           .map((row) => (
             <li className="nb-team-row" key={row.id}>
-              <div>
+              <div className="nb-team-person">
                 <strong>{changeText(row)}</strong>
-                <p>
+                <span>
                   {team.members.find((member) => member.id === row.targetId)
                     ?.displayName ||
                     team.members.find((member) => member.id === row.targetId)
@@ -38,7 +38,7 @@ export function TeamHistory({ team }: { team: Team }) {
                     team.invitations.find((item) => item.id === row.targetId)
                       ?.email ||
                     String(row.details.email ?? '')}
-                </p>
+                </span>
                 <small>
                   {row.actorName || row.actorSubject} ·{' '}
                   {teamDate(row.createdAt)}
