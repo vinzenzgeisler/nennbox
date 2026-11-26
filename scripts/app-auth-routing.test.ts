@@ -48,13 +48,27 @@ describe('Community OIDC login-completion routing', () => {
           authorization: 'Bearer test-token',
         },
       ]);
+      const redemption = await fetch(`${origin}/auth/invitations/redeem`, {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer invitation-user',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: 'a'.repeat(43) }),
+      });
+      expect(redemption.status).toBe(204);
+      expect(received[1]).toEqual({
+        method: 'POST',
+        url: '/auth/invitations/redeem',
+        authorization: 'Bearer invitation-user',
+      });
       const callback = await fetch(
         `${origin}/auth/callback?code=test&state=test`,
         { headers: { Accept: 'text/html' } },
       );
       expect(callback.status).toBe(200);
       expect(callback.headers.get('content-type')).toContain('text/html');
-      expect(received).toHaveLength(1);
+      expect(received).toHaveLength(2);
     } finally {
       await app?.close();
       api.closeAllConnections();

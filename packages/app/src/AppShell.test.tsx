@@ -12,6 +12,7 @@ describe('AppShell', () => {
     await act(async () =>
       root.render(
         <AppShell
+          permissions={['role:admin', 'entry:write']}
           events={[{ id: 'event-1', name: 'Historischer Bergpreis' }]}
           activeEvent="event-1"
           onEventChange={onEventChange}
@@ -52,7 +53,7 @@ describe('AppShell', () => {
     const root = createRoot(container);
     await act(async () =>
       root.render(
-        <AppShell>
+        <AppShell permissions={['role:admin', 'entry:write']}>
           <p>Content</p>
         </AppShell>,
       ),
@@ -66,7 +67,11 @@ describe('AppShell', () => {
     const root = createRoot(container);
     await act(async () =>
       root.render(
-        <AppShell onClosePreview={onClosePreview} previewOpen>
+        <AppShell
+          permissions={['role:admin', 'entry:write']}
+          onClosePreview={onClosePreview}
+          previewOpen
+        >
           <p>Content</p>
         </AppShell>,
       ),
@@ -91,6 +96,7 @@ describe('AppShell', () => {
     await act(async () =>
       root.render(
         <AppShell
+          permissions={['role:admin', 'entry:write']}
           onEntrySearch={onEntrySearch}
           onClosePreview={onClosePreview}
           previewOpen
@@ -156,7 +162,11 @@ describe('AppShell', () => {
     document.body.append(container);
     const root = createRoot(container);
     await act(async () =>
-      root.render(<AppShell>{(view) => <p>View {view}</p>}</AppShell>),
+      root.render(
+        <AppShell permissions={['role:admin', 'entry:write']}>
+          {(view) => <p>View {view}</p>}
+        </AppShell>,
+      ),
     );
     const search = container.querySelector<HTMLButtonElement>(
       '.nb-admin-nav-search',
@@ -188,7 +198,11 @@ describe('focus after palette navigation', () => {
     document.body.append(container);
     const root = createRoot(container);
     await act(async () =>
-      root.render(<AppShell>{(view) => <p>View {view}</p>}</AppShell>),
+      root.render(
+        <AppShell permissions={['role:admin', 'entry:write']}>
+          {(view) => <p>View {view}</p>}
+        </AppShell>,
+      ),
     );
     return { container, unmount: () => act(async () => root.unmount()) };
   }
@@ -241,7 +255,10 @@ it.each([false, true])(
     const root = createRoot(container);
     await act(async () =>
       root.render(
-        <AppShell canManageModules={allowed}>
+        <AppShell
+          permissions={['role:admin', 'entry:write']}
+          canManageModules={allowed}
+        >
           {(view) => <p data-view={view}>View</p>}
         </AppShell>,
       ),

@@ -1,6 +1,10 @@
-import { normalizeTeamEmail } from '@nennbox/core';
+import { normalizeTeamEmail, ProviderError } from '@nennbox/core';
 import { deriveTeamInvitationToken } from './team-token.js';
-import { teamGuards, teamFailure as fail } from './team-support.js';
+import {
+  teamGuards,
+  teamFailure as fail,
+  teamHistoryRows,
+} from './team-support.js';
 import { randomBytes, createHash } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import {
@@ -17,7 +21,7 @@ import {
   organizationMemberships,
   userIdentities,
 } from './schema/organization.js';
-import { teamHistory, teamInvitations } from './team-schema.js';
+import { teamInvitations } from './team-schema.js';
 import { enqueueMailOutbox } from './mail-outbox.js';
 
 const digest = (token: string) =>
@@ -104,10 +108,7 @@ export function createTeamRepository(
           })
           .from(teamInvitations)
           .where(eq(teamInvitations.organizationId, ctx.organizationId));
-        const history = await tx
-          .select()
-          .from(teamHistory)
-          .where(eq(teamHistory.organizationId, ctx.organizationId));
+        const history = await teamHistoryRows(tx, ctx.organizationId);
         return { members, invitations, history };
       }),
     invite: (ctx, input) =>
@@ -202,7 +203,11 @@ export function createTeamRepository(
                 eq(organizationMemberships.status, 'active'),
               ),
             );
-          if (admins.length <= 1) return fail('conflict');
+          if (admins.length <= 1)
+            throw new ProviderError(
+              'conflict',
+              'Mindestens ein aktiver Administrator muss im Team bleiben.',
+            );
         }
         await tx
           .update(organizationMemberships)

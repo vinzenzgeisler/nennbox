@@ -79,6 +79,7 @@ may specify a lifetime within these bounds.
 API and worker must share TEAM_INVITATION_TOKEN_KEY: a secret, random 32-byte key
 encoded as 64 hexadecimal characters (generate with openssl rand -hex 32).
 Keep it outside the database and source control. Missing/invalid keys fail closed.
+Community: `scripts/community-config.mjs` generates the key once into `.community-local/config.json`, and `community-up.sh` exports it to API and worker.
 Cloud supplies invitationTokenKey to both product assemblies. Drain queued mail
 before rotating the key; otherwise revoke and resend pending invitations.
 

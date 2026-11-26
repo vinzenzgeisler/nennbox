@@ -20,6 +20,7 @@ describe('Community OIDC browser session', () => {
     vi.resetModules();
     vi.clearAllMocks();
     window.history.replaceState(null, '', '/app');
+    window.sessionStorage.clear();
   });
 
   it('adds the verified session token only to relative admin API calls', async () => {
@@ -100,6 +101,72 @@ describe('Community OIDC browser session', () => {
     const { restoreAdminSession } = await import('./auth.js');
     expect(await restoreAdminSession()).toBe('ready');
     expect(window.location.pathname + window.location.search).toBe('/app');
+    vi.unstubAllGlobals();
+  });
+
+  it('authenticates an invitation callback without automatic membership or redemption', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        oidc: {
+          issuerUrl: 'https://login.example.test/realm',
+          clientId: 'nennbox-app',
+          redirectUri: 'https://app.example.test/auth/callback',
+        },
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    window.history.replaceState(
+      null,
+      '',
+      '/auth/callback?code=secret&state=opaque',
+    );
+    oidc.signinRedirectCallback.mockResolvedValue({
+      access_token: 'secret',
+      expired: false,
+    });
+    const { restoreInvitationSession, redeemInvitation } =
+      await import('./auth.js');
+    expect(await restoreInvitationSession()).toBe('ready');
+    expect(window.location.pathname).toBe('/invitation');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await redeemInvitation('a'.repeat(43));
+    expect(fetchMock.mock.calls.map(([path]) => path)).toEqual([
+      '/auth/config',
+      '/auth/invitations/redeem',
+      '/auth/session',
+    ]);
+    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
+      method: 'POST',
+      body: JSON.stringify({ token: 'a'.repeat(43) }),
+      headers: { Authorization: 'Bearer secret' },
+    });
+    vi.unstubAllGlobals();
+  });
+
+  it('never completes organization sign-in after a rejected invitation', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          oidc: {
+            issuerUrl: 'https://login.example.test/realm',
+            clientId: 'nennbox-app',
+            redirectUri: 'https://app.example.test/auth/callback',
+          },
+        }),
+      })
+      .mockResolvedValue({ ok: false, status: 403 });
+    vi.stubGlobal('fetch', fetchMock);
+    oidc.getUser.mockResolvedValue({ access_token: 'secret', expired: false });
+    const { restoreInvitationSession, redeemInvitation } =
+      await import('./auth.js');
+    await restoreInvitationSession();
+    await expect(redeemInvitation('a'.repeat(43))).rejects.toThrow('Konto');
+    expect(fetchMock.mock.calls.map(([path]) => path)).not.toContain(
+      '/auth/session',
+    );
     vi.unstubAllGlobals();
   });
 

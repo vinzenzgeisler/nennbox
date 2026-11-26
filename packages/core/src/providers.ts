@@ -1,3 +1,4 @@
+import { teamRoles } from '@nennbox/contracts';
 import { organizationId } from './context.js';
 import { OrganizationId } from './context.js';
 
@@ -81,22 +82,8 @@ export function permissionsForRole(
     'timing:read',
     `role:${canonical}`,
   ]);
-  if (['admin', 'office', 'scrutineer'].includes(canonical))
-    permissions.add('entry:inspect');
-  if (canonical === 'office') permissions.add('entry:write');
-  if (canonical === 'cashier') permissions.add('payment:write');
-  if (canonical === 'admin')
-    for (const permission of [
-      'organization:update',
-      'event:write',
-      'class:write',
-      'entry:write',
-      'payment:write',
-      'timing:record',
-      'timing:correct',
-      'timing:publish',
-    ])
-      permissions.add(permission);
+  for (const permission of teamRoles[canonical].permissions)
+    permissions.add(permission);
   return permissions;
 }
 

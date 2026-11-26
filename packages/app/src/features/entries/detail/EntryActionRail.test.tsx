@@ -1,3 +1,4 @@
+import { SessionPermissions } from '../../shell/SessionPermissions.js';
 // @vitest-environment jsdom
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it, vi } from 'vitest';
@@ -13,6 +14,7 @@ it('keeps destructive transitions and deletion after every ordinary action', () 
       'acceptance:rejected',
       'acceptance:accepted',
       'delete',
+      'message',
       'note:internal',
       'change_class',
       'adjust_amount',
@@ -23,38 +25,40 @@ it('keeps destructive transitions and deletion after every ordinary action', () 
   } as unknown as Entry;
   const host = document.createElement('div');
   host.innerHTML = renderToStaticMarkup(
-    <EntryActionRail
-      entry={entry}
-      busy={false}
-      workflow={{
-        statuses: [
-          {
-            key: 'rejected',
-            category: 'rejected',
-            labels: { de: 'Abgelehnt', en: 'Rejected' },
-            color: '',
-          },
-          {
-            key: 'accepted',
-            category: 'accepted',
-            labels: { de: 'Zugelassen', en: 'Accepted' },
-            color: '',
-          },
-        ],
-        transitions: ['rejected', 'accepted'].map((to) => ({
-          from: 'pending',
-          to,
-          reasonRequired: true,
-        })),
-      }}
-      onStatus={vi.fn()}
-      onVerify={vi.fn()}
-      onPayment={vi.fn()}
-      onDimension={vi.fn()}
-      onAdminAction={vi.fn()}
-      onPassenger={vi.fn()}
-      onMessage={vi.fn()}
-    />,
+    <SessionPermissions.Provider value={['entry:write', 'payment:write']}>
+      <EntryActionRail
+        entry={entry}
+        busy={false}
+        workflow={{
+          statuses: [
+            {
+              key: 'rejected',
+              category: 'rejected',
+              labels: { de: 'Abgelehnt', en: 'Rejected' },
+              color: '',
+            },
+            {
+              key: 'accepted',
+              category: 'accepted',
+              labels: { de: 'Zugelassen', en: 'Accepted' },
+              color: '',
+            },
+          ],
+          transitions: ['rejected', 'accepted'].map((to) => ({
+            from: 'pending',
+            to,
+            reasonRequired: true,
+          })),
+        }}
+        onStatus={vi.fn()}
+        onVerify={vi.fn()}
+        onPayment={vi.fn()}
+        onDimension={vi.fn()}
+        onAdminAction={vi.fn()}
+        onPassenger={vi.fn()}
+        onMessage={vi.fn()}
+      />
+    </SessionPermissions.Provider>,
   );
   const buttons = [...host.querySelectorAll('button')];
   expect(buttons.map((button) => button.textContent)).toEqual([

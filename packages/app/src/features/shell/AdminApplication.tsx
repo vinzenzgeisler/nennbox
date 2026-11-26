@@ -1,3 +1,5 @@
+import { AccountSettings } from '../team/AccountSettings.js';
+import { SessionPermissions } from './SessionPermissions.js';
 import {
   pushEntryEvent,
   usePreviewPreference,
@@ -10,7 +12,8 @@ import { usePreviewStatusChange } from './usePreviewStatusChange.js';
 import { EntryStatusToast } from '../entries/EntryStatusToast.js';
 import { useWorkspacePreview } from '@nennbox/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { EntryResponse, type EntryResponse as Entry } from '@nennbox/contracts';
+import type { EntryResponse as Entry } from '@nennbox/contracts';
+import { fetchAdminEntry } from './fetchAdminEntry.js';
 import type { WorkflowView } from '../entries/AdminEntriesModel.js';
 import { AdminEntries } from '../entries/AdminEntries.js';
 import { AdminModules } from '../modules/AdminModules.js';
@@ -173,134 +176,132 @@ export function AdminApplication() {
     />
   ) : undefined;
   return (
-    <AppShell
-      canManageModules={identity?.canManageModules ?? false}
-      events={events}
-      messageEntryId={messageSeed?.entryId ?? null}
-      onClearMessageSelection={() => setMessageSeed(null)}
-      activeEvent={selectedEvent}
-      entryCount={entryCount}
-      entriesNavigationRevision={entriesTarget.revision}
-      onEventChange={changeEvent}
-      onEntrySelect={selectPaletteEntry}
-      onEntrySearch={(search) => {
-        setSelectedEntry(null);
-        setDetailOpen(false);
-        setEntriesTarget((current) => ({
-          revision: current.revision + 1,
-          filters: { search },
-        }));
-      }}
-      previewOpen={previewOpen && !detailOpen}
-      detailOpen={detailOpen}
-      identity={identity}
-      onClosePreview={closePreview}
-    >
-      {(view) =>
-        view === 'overview' ? (
-          <AdminOverview
-            eventId={selectedEvent}
-            onTotalChange={setEntryCount}
-            onOpenEntry={async (id) => {
-              const requestedEvent = activeEvent.current;
-              const response = await adminFetch(
-                `/admin/entries/${encodeURIComponent(id)}`,
-                { credentials: 'same-origin', cache: 'no-store' },
-              );
-              if (!response.ok) throw new Error('entry unavailable');
-              const entry = EntryResponse.parse(await response.json());
-              if (
-                activeEvent.current !== requestedEvent ||
-                entry.eventId !== requestedEvent
-              )
-                return;
-              selectPaletteEntry(entry);
-              setDetailOpen(true);
-            }}
-            onOpenEntries={(filters) => {
-              setSelectedEntry(null);
-              setDetailOpen(false);
-              setEntriesTarget((current) => ({
-                revision: current.revision + 1,
-                filters,
-              }));
-            }}
-          />
-        ) : view === 'exports' ? (
-          <AdminExports eventId={selectedEvent} />
-        ) : view === 'entries' ? (
-          <AdminEntries
-            filterRevision={entriesTarget.revision}
-            initialFilters={entriesTarget.filters}
-            onFiltersConsumed={() =>
-              setEntriesTarget((current) => ({ ...current, filters: {} }))
-            }
-            preview={
-              previewViewport && previewOpen && !detailOpen
-                ? entryPreview
-                : undefined
-            }
-            // Below the preview breakpoint a row opens its detail; a stale selection never covers the list.
-            mobilePreviewOpen={false}
-            eventId={selectedEvent}
-            onEventChange={changeEvent}
-            onTotalChange={setEntryCount}
-            detailOpen={detailOpen}
-            autoPreview={previewViewport}
-            autoSelectFirst={previewViewport && previewOpen}
-            onOpenDetail={() => {
-              setDetailOpen(true);
-              setPreviewOpen(false);
-            }}
-            onCloseDetail={() => {
-              setDetailOpen(false);
-              // A6 mobile returns to the list; only the wide workspace reopens its inline preview.
-              setPreviewOpen(previewViewport);
-            }}
-            onClosePreview={closePreview}
-            onMessage={openMessages}
-            onSelectionChange={handleSelectionChange}
-            onWorkflowChange={setPreviewWorkflow}
-            entriesRevision={entriesRevision}
-            previewAdvance={previewAdvance}
-            onPreviewAdvanceHandled={() => setPreviewAdvance(null)}
-            selectedEntry={selectedEntry}
-          />
-        ) : view === 'messages' ? (
-          <AdminMessages
-            key={selectedEvent}
-            eventId={selectedEvent}
-            seed={messageSeed ?? undefined}
-          />
-        ) : view === 'workflow' ? (
-          <AdminWorkflow eventId={selectedEvent} events={events} />
-        ) : view === 'setup' ? (
-          <EventSetup
-            eventId={selectedEvent}
-            onCreated={(event) => {
-              setEvents((current) => [
-                ...current.filter((item) => item.id !== event.id),
-                { ...event, registrationClosesAt: null },
-              ]);
-              changeEvent(event.id);
-            }}
-          />
-        ) : view === 'modules' && identity?.canManageModules ? (
-          <AdminModules />
-        ) : view === 'account' ? (
-          <>
-            <EventDocumentSettings
+    <SessionPermissions.Provider value={identity?.permissions ?? []}>
+      <AppShell
+        permissions={identity?.permissions ?? []}
+        canManageModules={identity?.canManageModules ?? false}
+        events={events}
+        messageEntryId={messageSeed?.entryId ?? null}
+        onClearMessageSelection={() => setMessageSeed(null)}
+        activeEvent={selectedEvent}
+        entryCount={entryCount}
+        entriesNavigationRevision={entriesTarget.revision}
+        onEventChange={changeEvent}
+        onEntrySelect={selectPaletteEntry}
+        onEntrySearch={(search) => {
+          setSelectedEntry(null);
+          setDetailOpen(false);
+          setEntriesTarget((current) => ({
+            revision: current.revision + 1,
+            filters: { search },
+          }));
+        }}
+        previewOpen={previewOpen && !detailOpen}
+        detailOpen={detailOpen}
+        identity={identity}
+        onClosePreview={closePreview}
+      >
+        {(view) =>
+          view === 'overview' ? (
+            <AdminOverview
               eventId={selectedEvent}
-              onSaved={() => {
-                // Configuration changes invalidate the selected entry's document projection too.
+              onTotalChange={setEntryCount}
+              onOpenEntry={async (id) => {
+                const requestedEvent = activeEvent.current;
+                const entry = await fetchAdminEntry(id);
+                if (
+                  activeEvent.current !== requestedEvent ||
+                  entry.eventId !== requestedEvent
+                )
+                  return;
+                selectPaletteEntry(entry);
+                setDetailOpen(true);
+              }}
+              onOpenEntries={(filters) => {
                 setSelectedEntry(null);
-                entriesChanged();
+                setDetailOpen(false);
+                setEntriesTarget((current) => ({
+                  revision: current.revision + 1,
+                  filters,
+                }));
               }}
             />
-            <RegistrationFormSettings eventId={selectedEvent} />
-          </>
-        ) : null
-      }
-    </AppShell>
+          ) : view === 'exports' ? (
+            <AdminExports eventId={selectedEvent} />
+          ) : view === 'entries' ? (
+            <AdminEntries
+              filterRevision={entriesTarget.revision}
+              initialFilters={entriesTarget.filters}
+              onFiltersConsumed={() =>
+                setEntriesTarget((current) => ({ ...current, filters: {} }))
+              }
+              preview={
+                previewViewport && previewOpen && !detailOpen
+                  ? entryPreview
+                  : undefined
+              }
+              // Below the preview breakpoint a row opens its detail; a stale selection never covers the list.
+              mobilePreviewOpen={false}
+              eventId={selectedEvent}
+              onEventChange={changeEvent}
+              onTotalChange={setEntryCount}
+              detailOpen={detailOpen}
+              autoPreview={previewViewport}
+              autoSelectFirst={previewViewport && previewOpen}
+              onOpenDetail={() => {
+                setDetailOpen(true);
+                setPreviewOpen(false);
+              }}
+              onCloseDetail={() => {
+                setDetailOpen(false);
+                // A6 mobile returns to the list; only the wide workspace reopens its inline preview.
+                setPreviewOpen(previewViewport);
+              }}
+              onClosePreview={closePreview}
+              onMessage={openMessages}
+              onSelectionChange={handleSelectionChange}
+              onWorkflowChange={setPreviewWorkflow}
+              entriesRevision={entriesRevision}
+              previewAdvance={previewAdvance}
+              onPreviewAdvanceHandled={() => setPreviewAdvance(null)}
+              selectedEntry={selectedEntry}
+            />
+          ) : view === 'messages' ? (
+            <AdminMessages
+              key={selectedEvent}
+              eventId={selectedEvent}
+              seed={messageSeed ?? undefined}
+            />
+          ) : view === 'workflow' ? (
+            <AdminWorkflow eventId={selectedEvent} events={events} />
+          ) : view === 'setup' ? (
+            <EventSetup
+              eventId={selectedEvent}
+              onCreated={(event) => {
+                setEvents((current) => [
+                  ...current.filter((item) => item.id !== event.id),
+                  { ...event, registrationClosesAt: null },
+                ]);
+                changeEvent(event.id);
+              }}
+            />
+          ) : view === 'modules' && identity?.canManageModules ? (
+            <AdminModules />
+          ) : view === 'account' ? (
+            <AccountSettings>
+              <EventDocumentSettings
+                eventId={selectedEvent}
+                onSaved={() => {
+                  // Configuration changes invalidate the selected entry's document projection too.
+                  setSelectedEntry(null);
+                  entriesChanged();
+                }}
+              />
+              <RegistrationFormSettings eventId={selectedEvent} />
+            </AccountSettings>
+          ) : null
+        }
+      </AppShell>
+    </SessionPermissions.Provider>
   );
 }

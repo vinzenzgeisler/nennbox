@@ -47,6 +47,8 @@ export OIDC_REDIRECT_URI="$COMMUNITY_APP_URL/auth/callback"
 export OIDC_BOOTSTRAP_EMAIL
 OIDC_BOOTSTRAP_EMAIL="$(node scripts/community-config.mjs --email)"
 export CANONICAL_BASE_URL="$COMMUNITY_APP_URL"
+export TEAM_INVITATION_TOKEN_KEY
+TEAM_INVITATION_TOKEN_KEY="$(node scripts/community-config.mjs --invitation-key)"
 export MAIL_PROVIDER=smtp SMTP_HOST=127.0.0.1 SMTP_PORT="$COMMUNITY_SMTP_PORT"
 export SMTP_FROM='noreply@nennbox.local'
 export STORAGE_PROVIDER=local STORAGE_LOCAL_ROOT="$PWD/.community-local/uploads"

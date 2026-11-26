@@ -181,3 +181,6 @@ export type {
 export * from './onboarding/index.js';
 export { PublicRegistrationResponseSchema } from './registration-response.js';
 export type { PublicRegistrationResponse } from './registration-response.js';
+
+export { teamRoles, TeamRoleSchema, TeamResponse } from './team.js';
+export type { TeamRole, Team } from './team.js';

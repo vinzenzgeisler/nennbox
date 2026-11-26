@@ -124,3 +124,7 @@ export function missingRequirements(entry: Entry): string | null {
 }
 
 export { timelineFor, type TimelineItem } from './entryTimeline.js';
+
+/** Whether the server offers this action for the entry. A missing list offers nothing. */
+export const entryCan = (entry: Entry, action: string): boolean =>
+  entry.availableActions?.includes(action) ?? false;

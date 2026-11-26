@@ -71,6 +71,7 @@ export function EntryPreview({
   const canAcceptNext = nextCategory === 'accepted';
   const canAdvance = Boolean(
     nextStatus &&
+    entry.availableActions?.includes(`acceptance:${nextStatus}`) &&
     PREVIEW_PROGRESS_CATEGORIES.some((category) => category === nextCategory),
   );
   const missingDimensions =
@@ -197,7 +198,9 @@ export function EntryPreview({
                 {nextStatus === 'accepted' ? 'Zulassen' : next.label.de}
               </AppButton>
             )}
-            <AppButton onClick={onMessage}>Unterlagen anfordern</AppButton>
+            {entry.availableActions?.includes('message') && (
+              <AppButton onClick={onMessage}>Unterlagen anfordern</AppButton>
+            )}
           </div>
           {canAdvance && canAcceptNext && nextStatus && missing.length > 0 && (
             <p className="nb-preview-hint">

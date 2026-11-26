@@ -7,6 +7,7 @@ const apiRoutes = [
   '/runtime',
   '/auth/config',
   '/auth/session',
+  '/auth/invitations/redeem',
   '/admin',
   '/public',
   '/health',

@@ -1,3 +1,4 @@
+import { useSessionPermission } from '../shell/SessionPermissions.js';
 import {
   useCallback,
   useEffect,
@@ -32,6 +33,7 @@ export function useAdminEntryActions({
   clearSelection: () => void;
   setRefreshRevision: Dispatch<SetStateAction<number>>;
 }) {
+  const canWrite = useSessionPermission('entry:write');
   const [reason, setReason] = useState('');
   const [bulkNotice, setBulkNotice] = useState<{
     id: number;
@@ -185,6 +187,7 @@ export function useAdminEntryActions({
   const acceptedStatusKey = acceptedStatus?.id ?? acceptedStatus?.key;
   const eligibleSelectedItems = items.filter(
     (item) =>
+      canWrite &&
       selectedIds.has(item.id) &&
       acceptedStatusKey !== undefined &&
       (workflow?.transitions ?? []).some(

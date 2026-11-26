@@ -1,3 +1,4 @@
+import { SessionPermissions } from '../../shell/SessionPermissions.js';
 // @vitest-environment jsdom
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -179,20 +180,22 @@ it('keeps driver edits limited to changed fields after adding inline findings', 
   const save = vi.fn().mockResolvedValue({ ok: true });
   act(() =>
     root.render(
-      <EntryDriverSection
-        driver={
-          {
-            name: 'Alex Test',
-            firstName: 'Alex',
-            lastName: 'Test',
-            phone: '111',
-          } as never
-        }
-        passenger={null}
-        busy={false}
-        onSave={save}
-        warnings={[]}
-      />,
+      <SessionPermissions.Provider value={['entry:write']}>
+        <EntryDriverSection
+          driver={
+            {
+              name: 'Alex Test',
+              firstName: 'Alex',
+              lastName: 'Test',
+              phone: '111',
+            } as never
+          }
+          passenger={null}
+          busy={false}
+          onSave={save}
+          warnings={[]}
+        />
+      </SessionPermissions.Provider>,
     ),
   );
   act(() => host.querySelector('button')!.click());

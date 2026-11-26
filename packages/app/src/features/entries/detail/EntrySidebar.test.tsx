@@ -25,7 +25,7 @@ const entry = {
   createdAt: '2026-04-12T16:12:00Z',
   acceptanceStatus: 'submitted',
   verificationStatus: 'verified',
-  availableActions: ['note:internal'],
+  availableActions: ['note:internal', 'message'],
   adminDetails: {
     driver: {
       name: 'Thomas Berger',

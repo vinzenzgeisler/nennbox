@@ -38,6 +38,7 @@ type EventOption = {
 };
 export function AppShell({
   children,
+  permissions = [],
   canManageModules = false,
   previewOpen = true,
   detailOpen = false,
@@ -55,6 +56,7 @@ export function AppShell({
 }: {
   children: ReactNode | ((view: View) => ReactNode);
   canManageModules?: boolean;
+  permissions?: readonly string[];
   previewOpen?: boolean;
   detailOpen?: boolean;
   /** `organization` replaces the role under the name once it is known. */
@@ -81,7 +83,23 @@ export function AppShell({
     (entriesNavigationRevision ?? 0) > selection.revision
       ? 'entries'
       : selection.view;
-  const currentView = messageEntryId && view === 'entries' ? 'messages' : view;
+  const requestedView =
+    messageEntryId && view === 'entries' ? 'messages' : view;
+  const canWrite = permissions.includes('entry:write');
+  const canAdmin = permissions.includes('role:admin');
+  const allowed = (id: View) =>
+    ['account', 'setup', 'workflow'].includes(id)
+      ? canAdmin
+      : id === 'messages'
+        ? canWrite
+        : id === 'modules'
+          ? canManageModules
+          : true;
+  const currentView = allowed(requestedView) ? requestedView : 'entries';
+  const navigationGroups = APP_NAVIGATION_REGISTRY.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => allowed(item.id)),
+  })).filter((group) => group.items.length);
   const selectedEvent = events.find((event) => event.id === activeEvent);
   usePreviewEscape(onClosePreview, previewOpen);
   const [now] = useState(() => Date.now());
@@ -111,13 +129,13 @@ export function AppShell({
       <span>{VIEW_TITLES[currentView]}</span>
     </span>
   );
-  const navigationItems = APP_NAVIGATION_REGISTRY.flatMap(
-    (group) => group.items,
-  ).concat(
-    canManageModules
-      ? [{ id: 'modules', label: 'Module', icon: 'settings' }]
-      : [],
-  );
+  const navigationItems = navigationGroups
+    .flatMap((group) => group.items)
+    .concat(
+      canManageModules
+        ? [{ id: 'modules', label: 'Module', icon: 'settings' }]
+        : [],
+    );
   const navigate = (id: string) => {
     onClearMessageSelection?.();
     const item = navigationItems.find((entry) => entry.id === id);
@@ -188,7 +206,7 @@ export function AppShell({
             }))}
             selectedEvent={activeEvent}
             onEventChange={(id) => onEventChange?.(id)}
-            groups={APP_NAVIGATION_REGISTRY.map((group) => ({
+            groups={navigationGroups.map((group) => ({
               label: group.label,
               items: group.items.map((item) => ({
                 ...item,
@@ -224,7 +242,7 @@ export function AppShell({
             <PageHeader
               title={VIEW_TITLES[currentView]}
               actions={
-                currentView === 'entries' ? (
+                currentView === 'entries' && canWrite ? (
                   <AppButton
                     tone="primary"
                     onClick={() => navigate('messages')}

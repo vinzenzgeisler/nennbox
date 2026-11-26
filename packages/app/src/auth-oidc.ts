@@ -43,9 +43,9 @@ async function manager(): Promise<UserManager | null> {
   return managerPromise;
 }
 
-export async function restoreAdminSession(): Promise<
-  'ready' | 'signed-out' | 'disabled'
-> {
+async function restoreSession(
+  invitation = false,
+): Promise<'ready' | 'signed-out' | 'disabled'> {
   const client = await manager();
   if (!client) return 'disabled';
   const isCallback = window.location.pathname === '/auth/callback';
@@ -54,8 +54,9 @@ export async function restoreAdminSession(): Promise<
   const user = isCallback
     ? await (callbackPromise ??= client.signinRedirectCallback())
     : await client.getUser();
-  if (isCallback) window.history.replaceState(null, '', '/app');
-  if (isCallback && user && !user.expired) {
+  if (isCallback)
+    window.history.replaceState(null, '', invitation ? '/invitation' : '/app');
+  if (!invitation && isCallback && user && !user.expired) {
     await (loginCompletion ??= fetch('/auth/session', {
       method: 'POST',
       headers: { Authorization: `Bearer ${user.access_token}` },
@@ -90,6 +91,36 @@ export async function restoreAdminSession(): Promise<
   return accessToken ? 'ready' : 'signed-out';
 }
 
+export const restoreAdminSession = () => restoreSession();
+export const restoreInvitationSession = () => restoreSession(true);
+
+export async function redeemInvitation(token: string): Promise<void> {
+  if (!accessToken) throw new Error('Bitte zuerst anmelden.');
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+  };
+  const response = await fetch('/auth/invitations/redeem', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ token }),
+  });
+  if (!response.ok) {
+    if (response.status === 403)
+      throw new Error(
+        'Die Einladung passt nicht zu diesem Konto. Bitte mit der eingeladenen, bestätigten E-Mail-Adresse anmelden.',
+      );
+    throw new Error(
+      'Die Einladung ist ungültig, abgelaufen oder wurde bereits verwendet. Bitte eine neue Einladung anfordern.',
+    );
+  }
+  const session = await fetch('/auth/session', { method: 'POST', headers });
+  if (!session.ok)
+    throw new Error(
+      'Die Einladung wurde angenommen, aber die Anmeldung konnte nicht abgeschlossen werden. Bitte die Anwendung neu öffnen.',
+    );
+}
+
 export async function signIn(): Promise<void> {
   const client = await manager();
   if (!client) throw new Error('Authentication is not configured');
@@ -117,6 +148,8 @@ export function adminFetch(
 /** Community's unchanged browser OIDC flow; the Cloud assembly may install another client. */
 export const oidcAuthClient: AuthClient = {
   restoreAdminSession,
+  restoreInvitationSession,
+  redeemInvitation,
   signIn,
   signOut,
   getAdminIdentity,

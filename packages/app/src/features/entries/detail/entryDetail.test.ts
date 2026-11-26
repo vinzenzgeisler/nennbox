@@ -168,6 +168,7 @@ describe('entry detail model', () => {
     const entry = (next: string) =>
       ({
         acceptanceStatus: 'accepted',
+        availableActions: ['acceptance:withdrawn', 'acceptance:pending'],
         statusProjection: {
           dimensions: [{ key: 'entry', nextAction: { key: `entry:${next}` } }],
         },
