@@ -64,6 +64,15 @@ ON entry FOR EACH ROW EXECUTE FUNCTION sync_entry_start_number_claims();
 DELETE FROM entry_start_number_claim c USING entry e
 WHERE c.organization_id=e.organization_id AND c.entry_id=e.id AND e.acceptance_category='withdrawn';
 --> statement-breakpoint
+-- Backfill claims omitted by the old raw-key predicate (e.g. an accepted
+-- custom status whose id is literally withdrawn). Conflicts must fail loudly.
+INSERT INTO entry_start_number_claim(organization_id,event_id,start_number,entry_id)
+SELECT DISTINCT e.organization_id,e.event_id,n.number,e.id
+FROM entry e CROSS JOIN LATERAL (VALUES(e.requested_start_number),(e.assigned_start_number)) n(number)
+WHERE e.deleted_at IS NULL AND e.acceptance_category IS DISTINCT FROM 'withdrawn' AND n.number IS NOT NULL
+AND NOT EXISTS(SELECT 1 FROM entry_start_number_claim c WHERE c.organization_id=e.organization_id
+ AND c.event_id=e.event_id AND c.start_number=n.number AND c.entry_id=e.id);
+--> statement-breakpoint
 -- Keep each writer's own signal. Remove only visible surplus signals for the
 -- same tenant/event, never wait for other writers or a reader's locked rows.
 -- Concurrent in-flight writers may temporarily exceed 256; subsequent writes
