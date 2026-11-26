@@ -148,6 +148,7 @@ export const entries = pgTable(
     verificationStatus: text('verification_status')
       .notNull()
       .default('unverified'),
+    acceptanceCategory: text('acceptance_category'),
     acceptanceStatus: text('acceptance_status').notNull().default('pending'),
     statusHints: jsonb('status_hints')
       .$type<Record<'double_starter' | 'passenger' | 'late_entry', boolean>>()
@@ -239,12 +240,12 @@ export const entries = pgTable(
     uniqueIndex('entry_event_assigned_start_number_unique')
       .on(t.organizationId, t.eventId, t.assignedStartNumber)
       .where(
-        sql`${t.assignedStartNumber} is not null and ${t.deletedAt} is null and ${t.acceptanceStatus} <> 'withdrawn'`,
+        sql`${t.assignedStartNumber} is not null and ${t.deletedAt} is null and ${t.acceptanceCategory} is distinct from 'withdrawn'`,
       ),
     uniqueIndex('entry_event_requested_start_number_unique')
       .on(t.organizationId, t.eventId, t.requestedStartNumber)
       .where(
-        sql`${t.requestedStartNumber} is not null and ${t.deletedAt} is null and ${t.acceptanceStatus} <> 'withdrawn'`,
+        sql`${t.requestedStartNumber} is not null and ${t.deletedAt} is null and ${t.acceptanceCategory} is distinct from 'withdrawn'`,
       ),
   ],
 );

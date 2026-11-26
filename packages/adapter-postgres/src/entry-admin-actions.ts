@@ -1,3 +1,4 @@
+import { entryStatusCategory } from './entry-status-category.js';
 import { and, asc, eq, ne, sql } from 'drizzle-orm';
 import {
   type EntryAdminActionResult,
@@ -64,7 +65,7 @@ export function createEntryAdminActionsRepository(
               eq(entries.organizationId, ctx.organizationId),
               eq(entries.classId, target.id),
               sql`${entries.deletedAt} is null`,
-              ne(entries.acceptanceStatus, 'withdrawn'),
+              ne(entryStatusCategory(), 'withdrawn'),
             ),
           );
         if ((occupancy?.count ?? 0) < target.maxParticipants)

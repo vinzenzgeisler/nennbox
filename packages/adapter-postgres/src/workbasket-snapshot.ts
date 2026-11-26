@@ -1,3 +1,4 @@
+import { entryStatusCategory } from './entry-status-category.js';
 import { sql } from 'drizzle-orm';
 import type { RequestContext, WorkbasketSnapshot } from '@nennbox/core';
 import type { Database } from './database.js';
@@ -32,8 +33,7 @@ export async function loadWorkbasketSnapshot(
     await db.execute(sql`
     SELECT e.id,e.orga_code AS "organizationCode",e.class_id AS "classId",to_char(e.created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "createdAt",
       (e.created_at AT TIME ZONE o.timezone)::date::text AS "createdOn",
-      (SELECT s->>'category' FROM jsonb_array_elements(w.workflow->'statuses') s
-       WHERE coalesce(s->>'id',s->>'key')=e.acceptance_status) AS status,
+      ${entryStatusCategory(sql`e.organization_id`, sql`e.workflow_revision_id`, sql`e.acceptance_status`)} AS status,
       e.acceptance_status AS "statusKey",p.first_name AS "firstName",p.last_name AS "lastName",
       p.date_of_birth::text AS "dateOfBirth",coalesce(g.contact_email,p.email) AS email,
       e.vehicle_id AS "vehicleId",v.vin,v.registration,v.displacement_cc AS "displacementCc",

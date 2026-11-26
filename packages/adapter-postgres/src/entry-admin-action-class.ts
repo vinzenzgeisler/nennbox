@@ -1,3 +1,4 @@
+import { entryStatusCategory } from './entry-status-category.js';
 import { and, asc, eq, ne, sql } from 'drizzle-orm';
 import {
   calculatePrice,
@@ -41,7 +42,7 @@ export async function changeClass(
         eq(entries.classId, target.id),
         ne(entries.id, entry.id),
         sql`${entries.deletedAt} is null`,
-        ne(entries.acceptanceStatus, 'withdrawn'),
+        ne(entryStatusCategory(), 'withdrawn'),
       ),
     );
   if (

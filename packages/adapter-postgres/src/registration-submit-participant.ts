@@ -1,3 +1,4 @@
+import { entryStatusCategory } from './entry-status-category.js';
 import type { RequestContext } from '@nennbox/core';
 import { RegistrationUnavailable } from '@nennbox/core';
 import {
@@ -113,7 +114,7 @@ export async function resolveRegistrationParticipant(args: {
         eq(entries.organizationId, ctx.organizationId),
         eq(entries.eventId, event.id),
         sql`${entries.deletedAt} is null`,
-        sql`${entries.acceptanceStatus} <> 'withdrawn'`,
+        sql`${entryStatusCategory()} <> 'withdrawn'`,
       ),
     );
   const usedNumbers = assignedRows.flatMap((row) =>
@@ -181,8 +182,8 @@ export async function resolveRegistrationParticipant(args: {
           eq(entries.eventId, event.id),
           eq(entries.classId, eventClass.id),
           sql`${entries.deletedAt} is null`,
-          sql`${entries.acceptanceStatus} <> 'withdrawn'`,
-          sql`(${entries.acceptanceStatus} <> 'waitlisted' or ${entries.waitlistConfirmationDeadline} > now())`,
+          sql`${entryStatusCategory()} <> 'withdrawn'`,
+          sql`(${entryStatusCategory()} <> 'waitlisted' or ${entries.waitlistConfirmationDeadline} > now())`,
         ),
       );
     if (eventClass.maxParticipants !== null) {

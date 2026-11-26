@@ -1,3 +1,4 @@
+import { entryStatusCategory } from './entry-status-category.js';
 import type { Database } from './database.js';
 
 import type { RequestContext } from '@nennbox/core';
@@ -51,11 +52,9 @@ export function createTimingRepository(db: Database): TimingRepository {
     listEntries: async (ctx, eventId) => {
       if (!timingUuid.test(eventId)) return [];
       const result = await db.execute(sql`SELECT e.id, e.assigned_start_number,
-        status.value->>'category' AS status_category
+        ${entryStatusCategory(sql`e.organization_id`, sql`e.workflow_revision_id`, sql`e.acceptance_status`)} AS status_category
         FROM entry e
         LEFT JOIN entry_workflow_revision w ON w.organization_id=e.organization_id AND w.id=e.workflow_revision_id
-        LEFT JOIN LATERAL jsonb_array_elements(COALESCE(w.workflow->'statuses', '[]'::jsonb)) AS status(value)
-          ON coalesce(status.value->>'id', status.value->>'key')=e.acceptance_status
         WHERE e.organization_id=${ctx.organizationId} AND e.event_id=${eventId} AND e.deleted_at IS NULL
         ORDER BY e.assigned_start_number, e.id`);
       const rows =

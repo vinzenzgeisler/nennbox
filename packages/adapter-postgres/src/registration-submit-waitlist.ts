@@ -14,13 +14,16 @@ export async function placeEntryOnWaitlist(
   let position = currentPosition;
   if (position === undefined) {
     const result = await tx.execute<{ next_position: number }>(
-      sql`select coalesce(max(waitlist_position), 0)::int + 1 as next_position from entry where organization_id = ${ctx.organizationId} and event_id = ${eventId} and class_id = ${classId} and acceptance_status = 'waitlisted' and deleted_at is null`,
+      sql`select coalesce(max(waitlist_position), 0)::int + 1 as next_position from entry where organization_id = ${ctx.organizationId} and event_id = ${eventId} and class_id = ${classId} and entry_status_category(organization_id, workflow_revision_id, acceptance_status) = 'waitlisted' and deleted_at is null`,
     );
     position = Number(result.rows[0]?.next_position ?? 1);
   }
   await tx
     .update(entries)
-    .set({ acceptanceStatus: 'waitlisted', waitlistPosition: position })
+    .set({
+      acceptanceStatus: sql`(select coalesce(s->>'id',s->>'key') from entry_workflow_revision r, jsonb_array_elements(r.workflow->'statuses') s where r.organization_id=${entries.organizationId} and r.id=${entries.workflowRevisionId} and s->>'category'='waitlisted' order by coalesce(s->>'id',s->>'key') limit 1)`,
+      waitlistPosition: position,
+    })
     .where(
       and(
         eq(entries.organizationId, ctx.organizationId),

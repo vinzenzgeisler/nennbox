@@ -1,3 +1,4 @@
+import { entryStatusCategory } from './entry-status-category.js';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import {
   resolveCanonicalOrigin,
@@ -36,7 +37,7 @@ export function createDriverPortalAccess(
           eq(driverPortalSessions.tokenHash, hashPersonalLinkToken(token)),
           isNull(driverPortalSessions.revokedAt),
           sql`${driverPortalSessions.expiresAt} > now()`,
-          sql`exists (select 1 from entry e join entry_workflow_revision r on r.organization_id=e.organization_id and r.id=e.workflow_revision_id where e.organization_id=${driverPortalSessions.organizationId} and e.event_id=${driverPortalSessions.eventId} and e.registration_group_id=${driverPortalSessions.registrationGroupId} and e.deleted_at is null and not exists (select 1 from jsonb_array_elements(r.workflow->'statuses') s where coalesce(s->>'id', s->>'key')=e.acceptance_status and s->>'category'='withdrawn'))`,
+          sql`exists (select 1 from entry e join entry_workflow_revision r on r.organization_id=e.organization_id and r.id=e.workflow_revision_id where e.organization_id=${driverPortalSessions.organizationId} and e.event_id=${driverPortalSessions.eventId} and e.registration_group_id=${driverPortalSessions.registrationGroupId} and e.deleted_at is null and ${entryStatusCategory(sql`e.organization_id`, sql`e.workflow_revision_id`, sql`e.acceptance_status`)} <> 'withdrawn')`,
         ),
       )
       .limit(1);
@@ -117,7 +118,7 @@ export function createDriverPortalAccess(
             eq(events.slug, eventSlug),
             sql`lower(trim(${registrationGroups.contactEmail})) = ${email.trim().toLowerCase()}`,
             eq(entries.verificationStatus, 'verified'),
-            sql`not exists (select 1 from entry_workflow_revision r, jsonb_array_elements(r.workflow->'statuses') s where r.organization_id=${entries.organizationId} and r.id=${entries.workflowRevisionId} and coalesce(s->>'id', s->>'key')=${entries.acceptanceStatus} and s->>'category'='withdrawn')`,
+            sql`${entryStatusCategory()} <> 'withdrawn'`,
             isNull(entries.deletedAt),
           ),
         )
@@ -197,7 +198,7 @@ export function createDriverPortalAccess(
           });
         if (!link) return null;
         const active = await tx.execute(
-          sql`select 1 from entry e join entry_workflow_revision r on r.organization_id=e.organization_id and r.id=e.workflow_revision_id where e.organization_id=${ctx.organizationId} and e.event_id=${link.eventId} and e.registration_group_id=${link.groupId} and e.deleted_at is null and not exists (select 1 from jsonb_array_elements(r.workflow->'statuses') s where coalesce(s->>'id', s->>'key')=e.acceptance_status and s->>'category'='withdrawn') limit 1`,
+          sql`select 1 from entry e join entry_workflow_revision r on r.organization_id=e.organization_id and r.id=e.workflow_revision_id where e.organization_id=${ctx.organizationId} and e.event_id=${link.eventId} and e.registration_group_id=${link.groupId} and e.deleted_at is null and ${entryStatusCategory(sql`e.organization_id`, sql`e.workflow_revision_id`, sql`e.acceptance_status`)} <> 'withdrawn' limit 1`,
         );
         if (!(active as unknown as { rows: unknown[] }).rows.length)
           return null;
