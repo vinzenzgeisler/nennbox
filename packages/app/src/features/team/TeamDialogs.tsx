@@ -80,6 +80,7 @@ export function TeamDialogs({
         {dialog.kind === 'invite' && (
           <AppTextInput
             label="E-Mail-Adresse"
+            type="email"
             value={email}
             autoComplete="off"
             inputMode="email"
