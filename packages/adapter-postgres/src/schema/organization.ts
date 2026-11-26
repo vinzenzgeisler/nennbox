@@ -221,6 +221,7 @@ export const organizationMemberships = pgTable(
       .references(() => userIdentities.id, { onDelete: 'cascade' }),
     role: text('role').notNull(),
     status: text('status').notNull().default('active'),
+    lastSignedInAt: timestamp('last_signed_in_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -235,7 +236,7 @@ export const organizationMemberships = pgTable(
     ),
     check(
       'organization_membership_role_check',
-      sql`${t.role} in ('admin','member')`,
+      sql`${t.role} in ('admin','office','cashier','scrutineer','viewer')`,
     ),
     check(
       'organization_membership_status_check',

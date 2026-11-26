@@ -796,7 +796,12 @@ describe('api entry', () => {
         },
         memberships: {
           resolvePermissions: async () =>
-            new Set(['event:read', 'event:write', 'entry:write']),
+            new Set([
+              'event:read',
+              'event:write',
+              'entry:write',
+              'entry:inspect',
+            ]),
         },
         entryStatusDimensions: {
           getEvent: async (ctx, eventId) => {

@@ -45,7 +45,17 @@ const entry: Entry = {
 };
 describe('entry domain rules', () => {
   it('exposes workflow role claims without granting members global entry write', () => {
-    expect(permissionsForRole('member')).toEqual(new Set(['role:member']));
+    expect(permissionsForRole('member')).toEqual(permissionsForRole('viewer'));
+    expect(permissionsForRole('viewer')).toEqual(
+      new Set([
+        'organization:read',
+        'event:read',
+        'entry:read',
+        'payment:read',
+        'timing:read',
+        'role:viewer',
+      ]),
+    );
     expect(permissionsForRole('admin').has('role:admin')).toBe(true);
     expect([...permissionsForRole('admin')]).toEqual(
       expect.arrayContaining([

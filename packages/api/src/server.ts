@@ -41,6 +41,14 @@ const app = createProductApi({
       }
     : {}),
   db,
+  ...(config.TEAM_INVITATION_TOKEN_KEY
+    ? { invitationTokenKey: config.TEAM_INVITATION_TOKEN_KEY }
+    : {}),
+  invitationLifetime: {
+    defaultSeconds: config.TEAM_INVITATION_DEFAULT_SECONDS,
+    minimumSeconds: config.TEAM_INVITATION_MINIMUM_SECONDS,
+    maximumSeconds: config.TEAM_INVITATION_MAXIMUM_SECONDS,
+  },
   edition: {
     deploymentMode: 'community',
     organizationId: organization.id,

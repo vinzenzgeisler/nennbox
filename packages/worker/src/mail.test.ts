@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { staticCanonicalOrigin } from '@nennbox/core';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -79,6 +80,57 @@ function setup(tenantId = 'org-a', overrides: Partial<MailOutboxRecord> = {}) {
   };
 }
 describe('mail outbox worker', () => {
+  it.each(['de', 'en'] as const)(
+    'derives team tokens only in worker memory and binds delivery to the canonical origin in %s',
+    async (locale) => {
+      const tenantId = '11111111-1111-4111-8111-111111111111';
+      const key = 'a'.repeat(64);
+      const nonce = 'b'.repeat(43);
+      const run = async (tokenKey: string | null = key) => {
+        const h = setup(tenantId, {
+          templateKey: 'team-invitation',
+          locale,
+          variables: {
+            role: '<office>',
+            invitationNonce: nonce,
+            linkUrl: 'https://evil.test/invitation#token=not-trusted',
+          },
+        });
+        await createMailOutboxTask({
+          ...(tokenKey ? { invitationTokenKey: tokenKey } : {}),
+          deploymentMode: 'cloud',
+          getOrganization: async () => ({ status: 'active' }),
+          repository: h.repo,
+          mail: h.mail,
+          canonicalOrigin: async () => 'https://example.test',
+        })(
+          {
+            type: 'mail.outbox',
+            schemaVersion: 1,
+            organizationId: tenantId,
+            correlationId: 'c',
+            payload: { outboxId: 'mail-1' },
+          },
+          { job: { id: 'j' } },
+        );
+        return h;
+      };
+      const sent = await run();
+      const token = createHmac('sha256', Buffer.from(key, 'hex'))
+        .update(nonce)
+        .digest('base64url');
+      expect(sent.mail.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: expect.stringContaining(
+            `https://example.test/invitation#token=${token}`,
+          ),
+          html: expect.stringContaining('&lt;office&gt;'),
+        }),
+      );
+      await expect(run(null)).rejects.toThrow(/token key/);
+    },
+  );
+
   it('provides a complete escaped registration-resume template in both supported locales', () => {
     for (const locale of ['de', 'en'] satisfies ReadonlyArray<'de' | 'en'>) {
       const rendered = renderMailTemplate(

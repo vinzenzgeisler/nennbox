@@ -56,7 +56,7 @@ export async function seedCommunityDemo(
   const ctx = {
     deploymentMode: options.deploymentMode ?? 'community',
     organizationId: organizationId(org.id),
-    permissions: new Set(['entry:write', 'role:admin']),
+    permissions: new Set(['entry:write', 'entry:inspect', 'role:admin']),
     capabilities: new Set<string>(),
     correlationId: 'community-demo-seed',
   };

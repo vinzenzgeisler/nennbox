@@ -358,6 +358,20 @@
       "when": 1794422200019,
       "tag": "0050_workbasket_office_details",
       "breakpoints": false
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1795680347602,
+      "tag": "0051_team_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1795683238540,
+      "tag": "0052_membership_last_sign_in",
+      "breakpoints": true
     }
   ]
 }

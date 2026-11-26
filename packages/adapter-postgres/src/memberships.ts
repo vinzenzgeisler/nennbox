@@ -15,10 +15,34 @@ import {
 
 import { eq, and } from 'drizzle-orm';
 
-import { permissionsForRole } from '@nennbox/core';
+import { permissionsForRole, isMembershipRole } from '@nennbox/core';
 
 export function createMembershipRepository(db: Database): MembershipRepository {
   return {
+    recordSignIn: async (identity, orgId) => {
+      const [user] = await db
+        .select({ id: userIdentities.id })
+        .from(userIdentities)
+        .where(
+          and(
+            eq(userIdentities.issuer, identity.issuer),
+            eq(userIdentities.subject, identity.subject),
+          ),
+        );
+      if (!user) return false;
+      const rows = await db
+        .update(organizationMemberships)
+        .set({ lastSignedInAt: new Date() })
+        .where(
+          and(
+            eq(organizationMemberships.organizationId, orgId),
+            eq(organizationMemberships.userIdentityId, user.id),
+            eq(organizationMemberships.status, 'active'),
+          ),
+        )
+        .returning({ id: organizationMemberships.userIdentityId });
+      return rows.length === 1;
+    },
     resolvePermissions: async (
       identity: ExternalIdentity,
       orgId,
@@ -50,9 +74,15 @@ export function createMembershipRepository(db: Database): MembershipRepository {
           .onConflictDoUpdate({
             target: [userIdentities.issuer, userIdentities.subject],
             set: {
-              email: identity.email ?? null,
-              emailVerified: identity.emailVerified ?? false,
-              displayName: identity.displayName ?? null,
+              ...(identity.email !== undefined
+                ? { email: identity.email }
+                : {}),
+              ...(identity.emailVerified !== undefined
+                ? { emailVerified: identity.emailVerified }
+                : {}),
+              ...(identity.displayName !== undefined
+                ? { displayName: identity.displayName }
+                : {}),
               updatedAt: new Date(),
             },
           })
@@ -87,7 +117,7 @@ export function createMembershipRepository(db: Database): MembershipRepository {
             ),
           );
         if (!membership) return new Set<string>();
-        if (membership.role !== 'admin' && membership.role !== 'member')
+        if (!isMembershipRole(membership.role) && membership.role !== 'member')
           return new Set<string>();
         return permissionsForRole(membership.role);
       }),

@@ -1,3 +1,4 @@
+import { entryActionPermissions } from './entry-action-permissions.js';
 import { z } from 'zod';
 import type { ApiRoutesContext } from './context.js';
 
@@ -87,7 +88,10 @@ export function registerStartNumberRoutes({
     }
   });
   app.post('/admin/events/:eventId/start-numbers/assign-all', async (c) => {
-    const guard = await requireMember(c.req.raw, 'entry:write');
+    const guard = await requireMember(
+      c.req.raw,
+      entryActionPermissions.startNumber,
+    );
     if (!guard.ok) return c.json({ error: guard.error }, guard.status);
     if (!deps.startNumbers) return c.json({ error: 'Unavailable' }, 404);
     const eventId = z.string().uuid().safeParse(c.req.param('eventId'));
@@ -105,7 +109,10 @@ export function registerStartNumberRoutes({
     }
   });
   app.put('/admin/events/:eventId/entries/:entryId/start-number', async (c) => {
-    const guard = await requireMember(c.req.raw, 'entry:write');
+    const guard = await requireMember(
+      c.req.raw,
+      entryActionPermissions.startNumber,
+    );
     if (!guard.ok) return c.json({ error: guard.error }, guard.status);
     if (!deps.startNumbers) return c.json({ error: 'Unavailable' }, 404);
     const ids = z
@@ -141,7 +148,10 @@ export function registerStartNumberRoutes({
   app.post(
     '/admin/events/:eventId/classes/:classId/waitlist/next',
     async (c) => {
-      const guard = await requireMember(c.req.raw, 'entry:write');
+      const guard = await requireMember(
+        c.req.raw,
+        entryActionPermissions.startNumber,
+      );
       if (!guard.ok) return c.json({ error: guard.error }, guard.status);
       if (!deps.startNumbers) return c.json({ error: 'Unavailable' }, 404);
       const ids = z

@@ -13,6 +13,11 @@ import { readStorageConfiguration } from './community-storage.js';
 import { parseRegistrationUploadRetentionDays } from './registration-upload-cleanup.js';
 
 const env = process.env;
+if (
+  env.TEAM_INVITATION_TOKEN_KEY &&
+  !/^[a-f0-9]{64}$/i.test(env.TEAM_INVITATION_TOKEN_KEY)
+)
+  throw new Error('Invalid TEAM_INVITATION_TOKEN_KEY');
 const databaseUrl = env.DATABASE_URL;
 if (!databaseUrl) throw new Error('DATABASE_URL is required');
 const mode = env.DEPLOYMENT_MODE;
@@ -102,6 +107,9 @@ const { taskList } = createProductWorker({
           provider: smtp,
           canonicalOrigin: staticCanonicalOrigin(canonicalBaseUrl),
           leaseMs,
+          ...(env.TEAM_INVITATION_TOKEN_KEY
+            ? { invitationTokenKey: env.TEAM_INVITATION_TOKEN_KEY }
+            : {}),
         },
       }
     : {}),

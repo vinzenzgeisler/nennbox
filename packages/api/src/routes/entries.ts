@@ -1,3 +1,4 @@
+import { entryActionPermissions } from './entry-action-permissions.js';
 import type { ApiRoutesContext } from './context.js';
 import { registerEntryExportRoutes } from './entry-exports.js';
 import { registerOverviewRoutes } from './overview.js';
@@ -107,7 +108,10 @@ export function registerEntriesRoutes(context: ApiRoutesContext): void {
     });
   });
   app.post('/admin/entries/:entryId/transitions', async (c) => {
-    const guard = await requireMember(c.req.raw, 'entry:write');
+    const guard = await requireMember(
+      c.req.raw,
+      entryActionPermissions.acceptance,
+    );
     if (!guard.ok) return c.json({ error: guard.error }, guard.status);
     const context = guard.context;
     const body = await c.req.json().catch(() => null);
@@ -178,7 +182,7 @@ export function registerEntriesRoutes(context: ApiRoutesContext): void {
   app.post(
     '/admin/entries/:entryId/status-dimensions/:dimension/transitions',
     async (c) => {
-      const guard = await requireMember(c.req.raw, 'entry:write');
+      const guard = await requireMember(c.req.raw, 'entry:inspect');
       if (!guard.ok) return c.json({ error: guard.error }, guard.status);
       const context = guard.context;
       const dimension = z

@@ -1,6 +1,7 @@
 import type { ApiRoutesContext } from './context.js';
 import {
   getOrganization,
+  membershipRoles,
   updateOrganization,
   type OrganizationPatch,
 } from '@nennbox/core';
@@ -11,15 +12,28 @@ import {
 
 export function registerOrganizationRoutes(context: ApiRoutesContext): void {
   const { app, deps, requireMember } = context;
+  app.post('/auth/session', async (c) => {
+    const guard = await requireMember(c.req.raw);
+    if (!guard.ok) return c.json({ error: guard.error }, guard.status);
+    const { subject, organizationId } = guard.context;
+    if (!subject) return c.json({ error: 'Unauthorized' }, 401);
+    if (!deps.memberships?.recordSignIn)
+      return c.json({ error: 'Login recording unavailable' }, 503);
+    const recorded = await deps.memberships.recordSignIn(
+      subject,
+      organizationId,
+    );
+    return recorded ? c.body(null, 204) : c.json({ error: 'Forbidden' }, 403);
+  });
   app.get('/admin/session', async (c) => {
     const guard = await requireMember(c.req.raw);
     if (!guard.ok) return c.json({ error: guard.error }, guard.status);
     const member = guard.context;
     const role = member.permissions.has('role:admin')
       ? 'admin'
-      : member.permissions.has('role:member')
-        ? 'member'
-        : null;
+      : (membershipRoles.find((role) =>
+          member.permissions.has(`role:${role}`),
+        ) ?? (member.permissions.has('role:member') ? 'member' : null));
     return role ? c.json({ role }) : c.json({ error: 'Forbidden' }, 403);
   });
   app.get('/admin/organization', async (c) => {

@@ -46,7 +46,16 @@ export function createContextResolvers(deps: ApiDeps): ResolvedContexts {
       mode,
       communityOrganizationId,
       public: delegated(deps.contextResolvers.public),
-      member: delegated(deps.contextResolvers.member),
+      member: delegated(async (request) => {
+        const context = await deps.contextResolvers!.member(request);
+        if (!context || !deps.memberships) return context;
+        if (!context.subject) return null;
+        const permissions = await deps.memberships.resolvePermissions(
+          context.subject,
+          context.organizationId,
+        );
+        return createRequestContext({ ...context, permissions });
+      }),
     };
   if (!communityOrganizationId)
     return {

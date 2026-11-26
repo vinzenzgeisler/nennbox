@@ -36,7 +36,17 @@ export interface IdentityProvider {
   verify(credential: string): Promise<ExternalIdentity>;
 }
 
-export type MembershipRole = 'admin' | 'member';
+export const membershipRoles = [
+  'admin',
+  'office',
+  'cashier',
+  'scrutineer',
+  'viewer',
+] as const;
+export type MembershipRole = (typeof membershipRoles)[number];
+export function isMembershipRole(role: string): role is MembershipRole {
+  return (membershipRoles as readonly string[]).includes(role);
+}
 
 export interface MembershipBootstrap {
   readonly issuer: string;
@@ -45,6 +55,11 @@ export interface MembershipBootstrap {
 }
 
 export interface MembershipRepository {
+  /** Called only by the successful login completion boundary, never request resolution. */
+  recordSignIn?(
+    identity: Pick<ExternalIdentity, 'issuer' | 'subject'>,
+    organizationId: OrganizationId,
+  ): Promise<boolean>;
   resolvePermissions(
     identity: ExternalIdentity,
     organizationId: OrganizationId,
@@ -52,25 +67,37 @@ export interface MembershipRepository {
   ): Promise<ReadonlySet<string>>;
 }
 
-export function permissionsForRole(role: MembershipRole): ReadonlySet<string> {
-  return role === 'admin'
-    ? new Set([
-        'organization:read',
-        'organization:update',
-        'event:read',
-        'event:write',
-        'class:write',
-        'entry:read',
-        'entry:write',
-        'payment:read',
-        'payment:write',
-        'timing:record',
-        'timing:correct',
-        'timing:publish',
-        'timing:read',
-        'role:admin',
-      ])
-    : new Set(['role:member']);
+/** Canonical roles, shared by HTTP authorization and workflow role restrictions. */
+export function permissionsForRole(
+  role: MembershipRole | 'member',
+): ReadonlySet<string> {
+  // Legacy member is read-only during rolling upgrades; the migration renames it.
+  const canonical = role === 'member' ? 'viewer' : role;
+  const permissions = new Set([
+    'organization:read',
+    'event:read',
+    'entry:read',
+    'payment:read',
+    'timing:read',
+    `role:${canonical}`,
+  ]);
+  if (['admin', 'office', 'scrutineer'].includes(canonical))
+    permissions.add('entry:inspect');
+  if (canonical === 'office') permissions.add('entry:write');
+  if (canonical === 'cashier') permissions.add('payment:write');
+  if (canonical === 'admin')
+    for (const permission of [
+      'organization:update',
+      'event:write',
+      'class:write',
+      'entry:write',
+      'payment:write',
+      'timing:record',
+      'timing:correct',
+      'timing:publish',
+    ])
+      permissions.add(permission);
+  return permissions;
 }
 
 export interface MailAttachmentReference {

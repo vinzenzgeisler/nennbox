@@ -40,6 +40,9 @@ describe('Community OIDC browser session', () => {
     oidc.getUser.mockResolvedValue({ access_token: 'secret', expired: false });
     const { restoreAdminSession, adminFetch } = await import('./auth.js');
     expect(await restoreAdminSession()).toBe('ready');
+    expect(
+      fetchMock.mock.calls.some(([path]) => path === '/auth/session'),
+    ).toBe(false);
     await adminFetch('/admin/events');
     await adminFetch('https://other.example.test/admin/events');
     expect((fetchMock.mock.calls[1]![1] as RequestInit).headers).toHaveProperty(
@@ -128,6 +131,14 @@ describe('Community OIDC browser session', () => {
       await Promise.all([restoreAdminSession(), restoreAdminSession()]),
     ).toEqual(['ready', 'ready']);
     expect(oidc.signinRedirectCallback).toHaveBeenCalledTimes(1);
+    const fetchMock = vi.mocked(fetch);
+    expect(
+      fetchMock.mock.calls.filter(([path]) => path === '/auth/session'),
+    ).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/session', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer secret' },
+    });
     expect(window.location.pathname + window.location.search).toBe('/app');
     vi.unstubAllGlobals();
   });

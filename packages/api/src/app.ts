@@ -1,3 +1,4 @@
+import { registerTeamRoutes } from './routes/team.js';
 import { registerDriverPortalRoutes } from './routes/driver-portal.js';
 import { Hono } from 'hono';
 import { requestBodyLimit } from './request-body-limit.js';
@@ -34,6 +35,8 @@ import type { ApiDeps } from './types.js';
 
 /** Fails at startup for edition inputs that cannot work together. */
 function assertEditionWiring(deps: ApiDeps): void {
+  if (deps.team && !deps.memberships)
+    throw new Error('Team requires per-request membership resolution');
   if (deps.config.deploymentMode === 'community' && !deps.config.organizationId)
     throw new Error('Community mode requires a configured organization');
   if (
@@ -91,6 +94,7 @@ export function createApp(deps: ApiDeps) {
   registerRuntimeBootstrapRoute(routes);
   app.get('/auth/config', (c) => c.json({ oidc: deps.oidcClient ?? null }));
   registerOrganizationRoutes(routes);
+  registerTeamRoutes(routes);
   registerEventsRoutes(routes);
   registerEntriesRoutes(routes);
   registerPassengerAdminRoutes(routes);

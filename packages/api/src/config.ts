@@ -61,6 +61,25 @@ const configSchema = z.object({
   STORAGE_S3_ENDPOINT: z.string().url().optional(),
   STORAGE_S3_ACCESS_KEY_ID: z.string().optional(),
   STORAGE_S3_SECRET_ACCESS_KEY: z.string().optional(),
+  TEAM_INVITATION_TOKEN_KEY: z
+    .string()
+    .regex(/^[a-f0-9]{64}$/i)
+    .optional(),
+  TEAM_INVITATION_DEFAULT_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(604800),
+  TEAM_INVITATION_MINIMUM_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(3600),
+  TEAM_INVITATION_MAXIMUM_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(2592000),
   OIDC_PROVIDER: z.enum(['disabled', 'oidc']).default('disabled'),
   OIDC_ISSUER_URL: z.string().optional(),
   OIDC_AUDIENCE: z.string().optional(),

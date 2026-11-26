@@ -17,6 +17,8 @@ import {
   messageCampaigns,
   migrate,
   organizations,
+  userIdentities,
+  organizationMemberships,
   registrationGroups,
   type Database,
 } from '@nennbox/adapter-postgres';
@@ -168,6 +170,17 @@ describe.skipIf(!databaseUrl)(
         };
       };
       tenants = { a: await make('a'), b: await make('b') };
+      for (const tenant of [tenants.a, tenants.b]) {
+        const [identity] = await db
+          .insert(userIdentities)
+          .values({ issuer: 'https://id.test', subject: `admin-${tenant.id}` })
+          .returning();
+        await db.insert(organizationMemberships).values({
+          organizationId: tenant.id,
+          userIdentityId: identity!.id,
+          role: 'admin',
+        });
+      }
       const byId = new Map(
         [tenants.a, tenants.b].map((tenant) => [tenant.id, tenant]),
       );
@@ -224,6 +237,12 @@ describe.skipIf(!databaseUrl)(
             .where(inArray(emailOutbox.organizationId, ids));
           await db.delete(events).where(inArray(events.organizationId, ids));
           await db.delete(organizations).where(inArray(organizations.id, ids));
+          await db.delete(userIdentities).where(
+            inArray(
+              userIdentities.subject,
+              ids.map((id) => `admin-${id}`),
+            ),
+          );
         }
       } finally {
         await end();

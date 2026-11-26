@@ -1,3 +1,4 @@
+import { entryActionPermissions } from './entry-action-permissions.js';
 import { z } from 'zod';
 import {
   AdminPassengerCreateRequest,
@@ -27,7 +28,10 @@ export function registerPassengerAdminRoutes({
   const passengers = deps.passengers;
   if (!passengers) return;
   app.post('/admin/entries/:entryId/passenger', async (c) => {
-    const guard = await requireMember(c.req.raw, 'entry:write');
+    const guard = await requireMember(
+      c.req.raw,
+      entryActionPermissions.passenger,
+    );
     if (!guard.ok) return c.json({ error: guard.error }, guard.status);
     const entryId = z.string().uuid().safeParse(c.req.param('entryId'));
     const parsed = AdminPassengerCreateRequest.safeParse(
@@ -50,7 +54,10 @@ export function registerPassengerAdminRoutes({
     return c.json({ created: true }, 201);
   });
   app.post('/admin/entries/:entryId/passenger/link', async (c) => {
-    const guard = await requireMember(c.req.raw, 'entry:write');
+    const guard = await requireMember(
+      c.req.raw,
+      entryActionPermissions.passenger,
+    );
     if (!guard.ok) return c.json({ error: guard.error }, guard.status);
     const entryId = z.string().uuid().safeParse(c.req.param('entryId'));
     const parsed = AdminPassengerLinkRequest.safeParse(
