@@ -185,13 +185,13 @@ test('team invitation requires explicit acceptance; role changes and deactivatio
     await teamSettings(page);
     const member = page.getByRole('listitem').filter({ hasText: email });
     await expect(member).toContainText('Nur lesen');
-    await member.getByRole('button', { name: /^Aktionen für/ }).click();
+    await member.locator('summary[aria-haspopup="menu"]').click();
     await member.getByRole('menuitem', { name: 'Rolle ändern' }).click();
     dialog = page.getByRole('dialog');
     await dialog.getByRole('radio', { name: /Nennbüro/ }).check();
     await dialog.getByRole('button', { name: 'Rolle speichern' }).click();
     await expect(member).toContainText('Nennbüro');
-    await member.getByRole('button', { name: /^Aktionen für/ }).click();
+    await member.locator('summary[aria-haspopup="menu"]').click();
     await member.getByRole('menuitem', { name: 'Deaktivieren' }).click();
     await page
       .getByRole('dialog')
