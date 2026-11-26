@@ -13,7 +13,7 @@ no table-wide locks. Direct operator SQL is outside the application API contract
 | Stable key | Label | Read | Write |
 | --- | --- | --- | --- |
 | admin | Administrator | all | organization, events, classes, entries, payments, timing, team |
-| office | Nennbüro | all | entries |
+| office | Nennbüro | all | entries and entry messages |
 | cashier | Kasse | all | payments |
 | scrutineer | Abnahme vor Ort | all | none (see unresolved policy below) |
 | viewer | Nur lesen | all | none |
@@ -27,11 +27,11 @@ organization, timestamps and active/disabled status.
 
 The existing permission vocabulary cannot express the entire #240 table:
 technical inspection/waiver transitions require entry:write, which also permits
-editing and admitting entries. Messages require event:write, which also permits
-event settings. Granting either broad permission to satisfy the role's one task
-would grant forbidden powers. This implementation fails closed: scrutineer cannot
-write, office cannot send messages. A follow-up must separate operation-level
-permissions (e.g. entry:inspect and message:write) and enforce them throughout API,
+editing and admitting entries. Granting that broad permission to satisfy the
+role's one task would grant forbidden powers. This implementation fails closed:
+scrutineer cannot write. Entry messages use entry:write, allowing office to send
+without changing event settings; saving message templates remains a setting. A follow-up must separate operation-level
+permissions (e.g. entry:inspect) and enforce them throughout API,
 Core and repositories, or explicitly approve broader access. Read-only artifact
 generation remains available under entry:read; it produces downloads rather than
 mutating sporting/business records. This is not yet full acceptance of #240.

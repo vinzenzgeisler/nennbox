@@ -14,7 +14,7 @@ const eventId = '00000000-0000-4000-8000-000000000002';
 const context = createRequestContext({
   deploymentMode: 'community',
   organizationId: organizationId(orgId),
-  permissions: new Set(['entry:read', 'event:write']),
+  permissions: new Set(['entry:read', 'entry:write', 'event:write']),
   capabilities: new Set(),
   correlationId: 'test-correlation',
 });
