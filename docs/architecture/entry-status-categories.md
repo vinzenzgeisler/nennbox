@@ -24,6 +24,13 @@ a category fallback.
   resolver; no fallback to raw keys.
 - `entry-group-activity.ts`: active groups use the pinned category; a custom
   status literally named withdrawn/rejected no longer overrides its category.
+- `registration-submit-response.ts`: public pending/waitlisted response values
+  are categories, not custom workflow keys.
+- `entry-transition-method.ts`, `refund-transition.ts`: cancellation side effects
+  and refund/reactivation guards use the pinned target category, never a raw-key
+  fallback or a raw-key override of an explicit category.
+- `driver-portal-mutations.ts`, API `routes/driver-portal.ts`: editing, withdrawal
+  and upload eligibility use the category returned by the ownership lookup.
 - `workbasket-snapshot.ts`: uses the same resolver as the mutations.
 - `driver-portal-access.ts`, `timing-repository.ts`: existing category lookups
   now share the resolver and fail on unknown keys.
@@ -45,6 +52,8 @@ a category fallback.
 - Projection and presentation preserve the original key for labels and workflow
   actions. Status defaults and seed fixtures intentionally create states in the
   default workflow; these are writes, not category decisions.
+- Core `status-projection.ts` requires the pending system identity to have the
+  pending category: this is workflow validation, not an entry decision.
 - Historical migrations and generated snapshots are immutable upgrade history;
   effective index/trigger behavior is replaced in 0053.
 

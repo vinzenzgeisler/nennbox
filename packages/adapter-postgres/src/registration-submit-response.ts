@@ -1,3 +1,4 @@
+import { entryStatusCategory } from './entry-status-category.js';
 import type { TransactionDatabase } from './database.js';
 import { organizationPaymentRecipients } from './schema/billing.js';
 import { and, eq, inArray } from 'drizzle-orm';
@@ -53,7 +54,7 @@ export async function createRegistrationSubmissionResponse({
   const rows = await tx
     .select({
       entryId: entries.id,
-      status: entries.acceptanceStatus,
+      status: entryStatusCategory(),
       waitlistPosition: entries.waitlistPosition,
     })
     .from(entries)

@@ -56,6 +56,7 @@ export function createDriverPortalAccess(
         eventId: entries.eventId,
         groupId: entries.registrationGroupId,
         status: entries.acceptanceStatus,
+        statusCategory: entryStatusCategory(),
       })
       .from(entries)
       .where(

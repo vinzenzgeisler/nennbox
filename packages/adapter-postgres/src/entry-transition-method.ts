@@ -46,13 +46,7 @@ export function createEntryTransitionMethod(
               workflow,
             );
           if (transition === 'acceptance')
-            await guardRefundTransition(
-              tx,
-              ctx.organizationId,
-              id,
-              toStatus,
-              workflow?.statusCategory,
-            );
+            await guardRefundTransition(tx, ctx.organizationId, id, toStatus);
           const statusColumn =
             transition === 'verification'
               ? entries.verificationStatus
@@ -96,10 +90,8 @@ export function createEntryTransitionMethod(
           });
           if (
             transition === 'acceptance' &&
-            (toStatus === 'withdrawn' ||
-              toStatus === 'rejected' ||
-              workflow?.statusCategory === 'withdrawn' ||
-              workflow?.statusCategory === 'rejected')
+            (row.acceptanceCategory === 'withdrawn' ||
+              row.acceptanceCategory === 'rejected')
           ) {
             await offerWaitlistSeat({
               tx,
@@ -112,10 +104,7 @@ export function createEntryTransitionMethod(
               tx,
               ctx.organizationId,
               id,
-              toStatus === 'withdrawn' ||
-                workflow?.statusCategory === 'withdrawn'
-                ? 'withdrawn'
-                : 'rejected',
+              row.acceptanceCategory === 'withdrawn' ? 'withdrawn' : 'rejected',
             );
           }
           if (transition === 'acceptance')
