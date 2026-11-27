@@ -310,6 +310,11 @@ describe.skipIf(!url)(
       ).toBeNull();
       expect(await memory.session(s.ctx, s.session!)).toBeNull();
       await memory.configure(admin, { enabled: true });
+      // The one-per-minute throttle also counts links that were revoked meanwhile.
+      await handle.db
+        .update(participantMemoryAccess)
+        .set({ createdAt: sql`now() - interval '2 minutes'` })
+        .where(eq(participantMemoryAccess.organizationId, t.org.id));
       const again = await fx.signIn(t, email);
       expect(
         await memory.view(again.ctx, again.identity!, 'bergpreis-2030'),
