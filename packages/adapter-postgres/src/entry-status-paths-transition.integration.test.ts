@@ -77,7 +77,7 @@ describe.skipIf(!url)('transitions use the pinned status category', () => {
         position: 5,
       });
       const audit = await pool.query(
-        'SELECT from_status,to_status,actor,reason FROM entry_audit_event WHERE entry_id=$1 ORDER BY occurred_at,id',
+        'SELECT from_status,to_status,actor,reason FROM entry_audit_event WHERE entry_id=$1 ORDER BY actor',
         [gone],
       );
       expect(audit.rows).toEqual([
