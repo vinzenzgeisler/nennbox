@@ -271,6 +271,31 @@ describe.skipIf(!url)('participant memory PostgreSQL integration', () => {
     ).toHaveLength(2);
   });
 
+  it('never offers or hands out stored data without an active consent, even if the data is still there', async () => {
+    const fx = f();
+    const t = await fx.tenant('Ohne Einwilligung');
+    await fx.registration(t, { email, passenger: true });
+    const s = await fx.enableAndSignIn(t, email);
+    await s.memory.grantConsent(s.ctx, s.identity!, version);
+    expect((await view(s))!.offer).not.toBeNull();
+    // Simulate an inconsistent state: the consent is closed but the data was not purged.
+    await handle.db
+      .update(participantMemoryConsents)
+      .set({ revokedAt: new Date(), revokedReason: 'withdrawn' })
+      .where(eq(participantMemoryConsents.organizationId, t.org.id));
+    expect(await rows(participantMemoryProfiles, t.org.id)).toHaveLength(1);
+    expect(await view(s)).toMatchObject({
+      consent: { granted: false },
+      offer: null,
+    });
+    expect(
+      await s.memory.take(s.ctx, s.identity!, {
+        eventSlug: 'bergpreis-2030',
+        driver: ['firstName'],
+      }),
+    ).toBeNull();
+  });
+
   it('only offers documents that are still valid on the day of the new event', async () => {
     const fx = f();
     const t = await fx.tenant('Unterlagen', '2030-06-02');
