@@ -459,6 +459,26 @@ describe.skipIf(!url)('participant memory PostgreSQL integration', () => {
       refreshParticipantMemoryForGroup(tx, t.org.id, second.group.id),
     );
     expect(await rows(participantMemoryVehicles, t.org.id)).toHaveLength(2);
+    // Only verified entries are captured: an unverified later registration changes nothing.
+    const stable = (list: Record<string, unknown>[]) =>
+      list.map((row) => ({ ...row, capturedAt: null }));
+    const before = stable(await rows(participantMemoryProfiles, t.org.id));
+    const unverified = await fx.registration(t, {
+      email,
+      event: 'past',
+      make: 'Unverified',
+      vin: null,
+      verified: false,
+    });
+    await handle.db.transaction((tx) =>
+      refreshParticipantMemoryForGroup(tx, t.org.id, unverified.group.id),
+    );
+    expect(stable(await rows(participantMemoryProfiles, t.org.id))).toEqual(
+      before,
+    );
+    expect(
+      (await rows(participantMemoryVehicles, t.org.id)).map((v) => v.make),
+    ).not.toContain('Unverified');
     // Without consent nothing is captured.
     const other = await fx.tenant('RefreshOther');
     const unconsented = await fx.registration(other, { email });
