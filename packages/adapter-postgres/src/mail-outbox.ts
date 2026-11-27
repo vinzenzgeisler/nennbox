@@ -104,6 +104,8 @@ export function createMailOutboxRepository(
       | 'message-campaign'
       | 'passenger-link'
       | 'team-invitation'
+      | 'participant-memory-link'
+      | 'participant-memory-delete'
       | 'driver-portal-link'
       | 'payment-received',
     templateVersion: row.templateVersion,
