@@ -1,5 +1,6 @@
 import { entryStatusCategory } from './entry-status-category.js';
-import { and, asc, eq, isNull, notInArray, sql } from 'drizzle-orm';
+import { entryHoldsClassSeat } from './entry-occupancy.js';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import {
   confirmationDeadline,
   organizationId as brandOrganizationId,
@@ -54,30 +55,12 @@ export async function offerWaitlistSeat(args: {
         eq(entries.eventId, eventId),
         eq(entries.classId, classId),
         isNull(entries.deletedAt),
-        notInArray(entryStatusCategory(), [
-          'withdrawn',
-          'rejected',
-          'waitlisted',
-        ]),
-      ),
-    );
-  const [activeOffers] = await tx
-    .select({ count: sql<number>`count(*)::int` })
-    .from(entries)
-    .where(
-      and(
-        eq(entries.organizationId, ctx.organizationId),
-        eq(entries.eventId, eventId),
-        eq(entries.classId, classId),
-        eq(entryStatusCategory(), 'waitlisted'),
-        isNull(entries.deletedAt),
-        sql`${entries.waitlistConfirmationDeadline} > ${now}`,
+        entryHoldsClassSeat(now),
       ),
     );
   if (
     eventClass.maxParticipants !== null &&
-    Number(occupancy?.count ?? 0) + Number(activeOffers?.count ?? 0) >=
-      eventClass.maxParticipants
+    Number(occupancy?.count ?? 0) >= eventClass.maxParticipants
   )
     return null;
   const [next] = await tx

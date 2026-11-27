@@ -19,6 +19,7 @@ export type RegistrationUnavailableReason =
   | 'too-many-classes'
   | 'class-unavailable'
   | 'capacity-exceeded'
+  | 'waitlist-unavailable'
   | 'shared-email-disallowed'
   | 'draft-field-unknown'
   | 'draft-upload-invalid'

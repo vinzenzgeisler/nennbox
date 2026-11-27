@@ -1,6 +1,7 @@
 import { describeWorkbasketTasks } from './workbasket-description.js';
 import { duplicateTasks } from './workbasket-duplicates.js';
 import { resolveWorkbasketConfig } from './workbasket-config.js';
+import { holdsClassSeat, releasesPlace } from './entry-occupancy.js';
 import type {
   WorkbasketConfig,
   WorkbasketConfigOverrides,
@@ -29,7 +30,8 @@ const waiting = (entry: WorkbasketEntry) => entry.status === 'waitlisted';
  * Pure, deterministic advisory projection. No clock, I/O, mutation or automatic actions.
  * Dates are ISO calendar dates; expiry is inclusive. Start-number conflicts are event-wide.
  * Duplicate exemptions apply only across DIFFERENT classes that BOTH allow multiple starts.
- * Capacity matches #29: all non-withdrawn, non-waitlisted entries plus active offers.
+ * Capacity matches #29: every entry that holds a place (not withdrawn or rejected, see
+ * `releasesPlace`), except waiters without an open offer.
  */
 export function evaluateWorkbasket(
   snapshot: WorkbasketSnapshot,
@@ -142,15 +144,15 @@ export function evaluateWorkbasket(
     const members = snapshot.entries.filter(
       (entry) =>
         entry.classId === klass.id &&
-        entry.status !== 'withdrawn' &&
+        !releasesPlace(entry.status) &&
         entry.status !== 'deleted',
     );
     const offered = (entry: WorkbasketEntry) =>
       waiting(entry) &&
       !!entry.waitlistOfferedUntil &&
       Date.parse(entry.waitlistOfferedUntil) > now;
-    const occupied = members.filter(
-      (entry) => !waiting(entry) || offered(entry),
+    const occupied = members.filter((entry) =>
+      holdsClassSeat(entry.status, offered(entry)),
     ).length;
     if (
       config.capacityNear.enabled &&

@@ -1,4 +1,5 @@
 import { entryStatusCategory } from './entry-status-category.js';
+import { entryHoldsClassSeat } from './entry-occupancy.js';
 import { and, eq, sql } from 'drizzle-orm';
 import type { OverviewRepository } from '@nennbox/core';
 import { events, eventClasses } from './schema/organization.js';
@@ -68,7 +69,7 @@ export function createOverviewRepository(db: Database): OverviewRepository {
                 eq(entries.eventId, eventClasses.eventId),
                 eq(entries.classId, eventClasses.id),
                 sql`${entries.deletedAt} is null`,
-                sql`${entryStatusCategory()} <> 'rejected'`,
+                entryHoldsClassSeat(),
               ),
             )
             .where(

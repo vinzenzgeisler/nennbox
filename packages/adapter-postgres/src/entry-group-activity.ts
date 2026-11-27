@@ -1,4 +1,5 @@
 import { entryStatusCategory } from './entry-status-category.js';
+import { entryHoldsPlace } from './entry-occupancy.js';
 import { sql } from 'drizzle-orm';
 import type { Database } from './database.js';
 
@@ -18,7 +19,7 @@ export async function countActiveEntries(
     where e.organization_id = ${organizationId}
       and e.registration_group_id = ${registrationGroupId}
       and e.deleted_at is null
-      and ${entryStatusCategory(sql`e.organization_id`, sql`e.workflow_revision_id`, sql`e.acceptance_status`)} not in ('withdrawn', 'rejected')`)) as unknown as {
+      and ${entryHoldsPlace(entryStatusCategory(sql`e.organization_id`, sql`e.workflow_revision_id`, sql`e.acceptance_status`))}`)) as unknown as {
     rows: { active: number }[];
   };
   return Number(result.rows[0]?.active ?? 0);

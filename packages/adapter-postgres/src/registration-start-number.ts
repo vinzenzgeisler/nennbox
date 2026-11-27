@@ -1,4 +1,4 @@
-import { entryStatusCategory } from './entry-status-category.js';
+import { entryHoldsPlace } from './entry-occupancy.js';
 import type { RequestContext } from '@nennbox/core';
 import { normalizeRequestedStartNumber } from '@nennbox/core';
 import { events } from './schema/organization.js';
@@ -47,7 +47,7 @@ export function createRegistrationStartNumberMethods(
               eq(entries.assignedStartNumber, number),
             ),
             sql`${entries.deletedAt} is null`,
-            sql`${entryStatusCategory()} <> 'withdrawn'`,
+            entryHoldsPlace(),
           ),
         )
         .limit(1);

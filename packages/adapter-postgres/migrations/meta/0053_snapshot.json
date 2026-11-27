@@ -2183,7 +2183,7 @@
             }
           ],
           "isUnique": true,
-          "where": "\"entry\".\"assigned_start_number\" is not null and \"entry\".\"deleted_at\" is null and \"entry\".\"acceptance_category\" is distinct from 'withdrawn'",
+          "where": "\"entry\".\"assigned_start_number\" is not null and \"entry\".\"deleted_at\" is null and entry_category_holds_place(\"entry\".\"acceptance_category\")",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2211,7 +2211,7 @@
             }
           ],
           "isUnique": true,
-          "where": "\"entry\".\"requested_start_number\" is not null and \"entry\".\"deleted_at\" is null and \"entry\".\"acceptance_category\" is distinct from 'withdrawn'",
+          "where": "\"entry\".\"requested_start_number\" is not null and \"entry\".\"deleted_at\" is null and entry_category_holds_place(\"entry\".\"acceptance_category\")",
           "concurrently": false,
           "method": "btree",
           "with": {}

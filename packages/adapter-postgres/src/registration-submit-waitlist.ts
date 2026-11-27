@@ -1,8 +1,33 @@
 import { and, eq, sql } from 'drizzle-orm';
-import type { RequestContext } from '@nennbox/core';
+import { RegistrationUnavailable, type RequestContext } from '@nennbox/core';
 import type { TransactionDatabase } from './database.js';
 import { entries } from './schema/entries.js';
 
+/**
+ * Status a waiting entry gets: the first `waitlisted` status of its own pinned
+ * revision, in workflow order. Null when that workflow has no waiting status.
+ */
+export async function waitlistStatusKey(
+  tx: TransactionDatabase,
+  organizationId: string,
+  entryId: string,
+): Promise<string | null> {
+  const result = await tx.execute<{ key: string }>(
+    sql`select coalesce(s.value->>'id', s.value->>'key') as key
+      from entry e
+      join entry_workflow_revision r on r.organization_id = e.organization_id and r.id = e.workflow_revision_id
+      cross join lateral jsonb_array_elements(r.workflow->'statuses') with ordinality s(value, position)
+      where e.organization_id = ${organizationId} and e.id = ${entryId} and s.value->>'category' = 'waitlisted'
+      order by s.position limit 1`,
+  );
+  return result.rows[0]?.key ?? null;
+}
+
+/**
+ * Returns the next free waitlist position. A class that is full while its
+ * workflow has no waiting status cannot take the entry: refuse with a named
+ * reason instead of writing a NULL status.
+ */
 export async function placeEntryOnWaitlist(
   tx: TransactionDatabase,
   ctx: RequestContext,
@@ -11,6 +36,8 @@ export async function placeEntryOnWaitlist(
   entryId: string,
   currentPosition?: number,
 ): Promise<number> {
+  const statusKey = await waitlistStatusKey(tx, ctx.organizationId, entryId);
+  if (!statusKey) throw new RegistrationUnavailable('waitlist-unavailable');
   let position = currentPosition;
   if (position === undefined) {
     const result = await tx.execute<{ next_position: number }>(
@@ -21,8 +48,10 @@ export async function placeEntryOnWaitlist(
   await tx
     .update(entries)
     .set({
-      acceptanceStatus: sql`(select coalesce(s->>'id',s->>'key') from entry_workflow_revision r, jsonb_array_elements(r.workflow->'statuses') s where r.organization_id=${entries.organizationId} and r.id=${entries.workflowRevisionId} and s->>'category'='waitlisted' order by coalesce(s->>'id',s->>'key') limit 1)`,
+      acceptanceStatus: statusKey,
       waitlistPosition: position,
+      waitlistOfferSentAt: null,
+      waitlistConfirmationDeadline: null,
     })
     .where(
       and(

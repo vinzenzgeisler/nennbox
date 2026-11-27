@@ -13,6 +13,7 @@ export * from './entries-model.js';
 export * from './artifact-jobs.js';
 export * from './entry-confirmation.js';
 export * from './entries-workflow.js';
+export * from './entry-occupancy.js';
 export * from './pricing.js';
 export * from './payments.js';
 export * from './exports.js';

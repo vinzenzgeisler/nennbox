@@ -240,12 +240,12 @@ export const entries = pgTable(
     uniqueIndex('entry_event_assigned_start_number_unique')
       .on(t.organizationId, t.eventId, t.assignedStartNumber)
       .where(
-        sql`${t.assignedStartNumber} is not null and ${t.deletedAt} is null and ${t.acceptanceCategory} is distinct from 'withdrawn'`,
+        sql`${t.assignedStartNumber} is not null and ${t.deletedAt} is null and entry_category_holds_place(${t.acceptanceCategory})`,
       ),
     uniqueIndex('entry_event_requested_start_number_unique')
       .on(t.organizationId, t.eventId, t.requestedStartNumber)
       .where(
-        sql`${t.requestedStartNumber} is not null and ${t.deletedAt} is null and ${t.acceptanceCategory} is distinct from 'withdrawn'`,
+        sql`${t.requestedStartNumber} is not null and ${t.deletedAt} is null and entry_category_holds_place(${t.acceptanceCategory})`,
       ),
   ],
 );
