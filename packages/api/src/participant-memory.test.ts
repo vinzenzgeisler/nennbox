@@ -18,10 +18,18 @@ const user: ExternalIdentity = {
   emailVerified: true,
 };
 
+const settings = {
+  enabled: true,
+  retentionDays: null,
+  effectiveRetentionDays: 365,
+  bounds: { minimumDays: 30, defaultDays: 365, maximumDays: 1095 },
+  storedParticipants: 0,
+};
+
 function fixture(role: 'admin' | 'viewer' = 'admin') {
   const memory = {
-    settings: vi.fn(async () => ({ enabled: true })),
-    configure: vi.fn(async () => ({ enabled: false, purged: 3 })),
+    settings: vi.fn(async () => settings),
+    configure: vi.fn(async () => ({ ...settings, enabled: false, purged: 3 })),
     requestAccess: vi.fn(async () => {}),
     redeemAccess: vi.fn(async (_c: unknown, value: string) =>
       value === token ? 'b'.repeat(43) : null,
