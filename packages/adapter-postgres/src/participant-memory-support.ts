@@ -18,14 +18,30 @@ export const DAY_MS = 24 * 60 * 60 * 1000;
 /** Revoked consent rows are the only trace left; they follow the statutory limitation period. */
 export const CONSENT_LOG_RETENTION_DAYS = 1095;
 
-/** Serializes everything that touches one participant's memory in one organization. */
-export const lockParticipant = (
+/**
+ * Serializes everything that touches one participant's memory in one organization.
+ * Participant work shares the organization lock; switching the feature off takes it
+ * exclusively, so no capture can slip in behind a purge. Locks are advisory and
+ * tenant-scoped, never table-wide.
+ */
+export const lockParticipant = async (
   tx: TransactionDatabase,
   organizationId: string,
   email: string,
+) => {
+  await tx.execute(
+    sql`select pg_advisory_xact_lock_shared(hashtextextended(${`nennbox.participant-memory.org:${organizationId}`}, 0))`,
+  );
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${`nennbox.participant-memory:${organizationId}:${email}`}, 0))`,
+  );
+};
+export const lockOrganization = (
+  tx: TransactionDatabase,
+  organizationId: string,
 ) =>
   tx.execute(
-    sql`select pg_advisory_xact_lock(hashtextextended(${`nennbox.participant-memory:${organizationId}:${email}`}, 0))`,
+    sql`select pg_advisory_xact_lock(hashtextextended(${`nennbox.participant-memory.org:${organizationId}`}, 0))`,
   );
 
 export async function loadSettings(
@@ -101,6 +117,7 @@ export async function purgeParticipant(
   tx: TransactionDatabase,
   organizationId: string,
   email: string,
+  options: { revokeSessions: boolean } = { revokeSessions: false },
 ) {
   let removed = 0;
   for (const table of [
@@ -117,7 +134,7 @@ export async function purgeParticipant(
       .returning({ email: table.email });
     removed += rows.length;
   }
-  // Open links and sessions die with the data they would have opened.
+  // Open links die with the data they would have opened; sessions only when asked.
   await tx
     .update(participantMemoryAccess)
     .set({ revokedAt: new Date() })
@@ -126,6 +143,9 @@ export async function purgeParticipant(
         eq(participantMemoryAccess.organizationId, organizationId),
         eq(participantMemoryAccess.email, email),
         sql`${participantMemoryAccess.revokedAt} is null`,
+        options.revokeSessions
+          ? sql`true`
+          : sql`${participantMemoryAccess.purpose} <> 'session'`,
       ),
     );
   return removed;

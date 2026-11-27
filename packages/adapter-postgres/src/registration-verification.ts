@@ -9,6 +9,7 @@ import type { PublicRegistrationDependencies } from './registration-public-types
 import { issueRegistrationPassengerLinks } from './passenger-registration-links.js';
 import { invoices } from './schema/billing.js';
 import { queueEntryReceivedMail } from './payment-mail.js';
+import { refreshParticipantMemoryForGroup } from './participant-memory-capture.js';
 
 export function createRegistrationVerificationMethods(
   dependencies: PublicRegistrationDependencies,
@@ -117,6 +118,13 @@ export function createRegistrationVerificationMethods(
             invoiceId: invoice.id,
             correlationKey: verification.registrationGroupId,
           });
+        // A participant who already consented keeps the memory current; failures stay inside a savepoint.
+        if (groupEntries.length > 0)
+          await refreshParticipantMemoryForGroup(
+            tx,
+            ctx.organizationId,
+            verification.registrationGroupId,
+          );
         return groupEntries.length > 0;
       }),
   };

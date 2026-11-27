@@ -42,6 +42,8 @@ export const participantMemoryConsentTerms = {
   },
 } as const;
 
+export type ParticipantMemoryBounds = ParticipantMemoryRetention;
+
 export const participantMemoryDriverFields = [
   'firstName',
   'lastName',
