@@ -1,4 +1,5 @@
 import { and, eq, isNull, ne } from 'drizzle-orm';
+import { entryStatusCategory } from './entry-status-category.js';
 import { assertWorkflowTransition } from '@nennbox/core';
 import { createEntryWorkflowRepository } from './entry-workflow.js';
 import {
@@ -79,7 +80,7 @@ export function createDriverPortalMutations(
       changes: Partial<Record<DriverPortalField, string>>,
     ) {
       const entry = await ownsEntry(ctx, token, entryId);
-      if (!entry || entry.status === 'withdrawn') return false;
+      if (!entry || entry.statusCategory === 'withdrawn') return false;
       const allowed = await db
         .select({ key: eventDriverPortalFields.fieldKey })
         .from(eventDriverPortalFields)
@@ -151,7 +152,7 @@ export function createDriverPortalMutations(
     },
     async withdraw(ctx: RequestContext, token: string, entryId: string) {
       const entry = await ownsEntry(ctx, token, entryId);
-      if (!entry || entry.status === 'withdrawn') return false;
+      if (!entry || entry.statusCategory === 'withdrawn') return false;
       const pinned = await createEntryWorkflowRepository(db).getPinnedForEntry(
         ctx,
         entryId,
@@ -176,7 +177,6 @@ export function createDriverPortalMutations(
           ctx.organizationId,
           entryId,
           target.id ?? target.key,
-          'withdrawn',
         );
         const now = new Date();
         const [updated] = await tx
@@ -212,7 +212,7 @@ export function createDriverPortalMutations(
             and(
               eq(entries.organizationId, ctx.organizationId),
               eq(entries.registrationGroupId, entry.groupId),
-              ne(entries.acceptanceStatus, target.id ?? target.key),
+              ne(entryStatusCategory(), 'withdrawn'),
               isNull(entries.deletedAt),
             ),
           )

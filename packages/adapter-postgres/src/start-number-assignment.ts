@@ -1,4 +1,6 @@
-import { and, asc, eq, isNull, ne, sql } from 'drizzle-orm';
+import { entryStatusCategory } from './entry-status-category.js';
+import { entryHoldsPlace } from './entry-occupancy.js';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import {
   allocateNextStartNumbers,
   availableStartNumbers,
@@ -38,7 +40,7 @@ export const assignAllStartNumbers =
             eq(entries.eventId, eventId),
             isNull(entries.assignedStartNumber),
             isNull(entries.deletedAt),
-            eq(entries.acceptanceStatus, 'accepted'),
+            eq(entryStatusCategory(), 'accepted'),
           ),
         )
         .orderBy(asc(entries.createdAt), asc(entries.id))
@@ -54,7 +56,7 @@ export const assignAllStartNumbers =
             eq(entries.organizationId, ctx.organizationId),
             eq(entries.eventId, eventId),
             isNull(entries.deletedAt),
-            ne(entries.acceptanceStatus, 'withdrawn'),
+            entryHoldsPlace(),
           ),
         );
       const assigned = assignedRows.flatMap((row) =>

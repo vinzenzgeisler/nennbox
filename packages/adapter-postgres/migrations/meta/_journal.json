@@ -372,6 +372,13 @@
       "when": 1795683238540,
       "tag": "0052_membership_last_sign_in",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1795723404892,
+      "tag": "0053_entry_status_categories",
+      "breakpoints": true
     }
   ]
 }

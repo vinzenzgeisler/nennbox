@@ -144,9 +144,11 @@ export function useAdminEntryActions({
                   ? 'Die Nennung kann noch nicht wieder aufgenommen werden: Eine Erstattung läuft noch bei Stripe. Bitte versuche es in einigen Minuten erneut.'
                   : reason === 'refund_needs_review'
                     ? 'Die Nennung kann nicht wieder aufgenommen werden: Eine Erstattung hängt und braucht deine Entscheidung. Öffne dafür die Unterlagen der Nennung.'
-                    : reason === 'concurrent_update'
-                      ? 'Die Nennung wurde gerade gleichzeitig geändert. Bitte versuche es noch einmal.'
-                      : 'Die Statusänderung wurde abgelehnt.',
+                    : reason === 'class_full_no_waitlist'
+                      ? 'Die Nennung kann nicht wieder aufgenommen werden: Die Klasse ist inzwischen voll und der Workflow hat keinen Status für die Warteliste.'
+                      : reason === 'concurrent_update'
+                        ? 'Die Nennung wurde gerade gleichzeitig geändert. Bitte versuche es noch einmal.'
+                        : 'Die Statusänderung wurde abgelehnt.',
         });
       }
       const updated = EntryResponse.parse(await response.json());

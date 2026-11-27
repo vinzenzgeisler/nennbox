@@ -1,4 +1,5 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { entryStatusCategory } from './entry-status-category.js';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { TransactionDatabase } from './database.js';
 import { entries } from './schema/entries.js';
 import { invoices } from './schema/billing.js';
@@ -57,11 +58,22 @@ export async function guardRefundTransition(
   organizationId: string,
   entryId: string,
   target: string,
-  category?: string,
 ) {
   const invoice = await lockInvoice(tx, organizationId, entryId);
-  if (!invoice || ['withdrawn', 'rejected'].includes(category ?? target))
-    return;
+  if (!invoice) return;
+  const [entry] = await tx
+    .select({
+      category: entryStatusCategory(
+        entries.organizationId,
+        entries.workflowRevisionId,
+        sql`${target}`,
+      ),
+    })
+    .from(entries)
+    .where(
+      and(eq(entries.organizationId, organizationId), eq(entries.id, entryId)),
+    );
+  if (entry && ['withdrawn', 'rejected'].includes(entry.category)) return;
   const [running] = await tx
     .select({
       id: paymentRefundReservations.id,

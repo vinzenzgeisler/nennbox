@@ -9,7 +9,9 @@ import { projectEntryRows } from './entry-projection.js';
 import type { Database } from './database.js';
 import type { EntryRepository } from '@nennbox/core';
 import { attachAdminEntryDetails } from './entry-admin-details.js';
+import { releasesPlace } from '@nennbox/core';
 import { offerWaitlistSeat } from './waitlist-offer.js';
+import { seatOrWaitlistReactivated } from './entry-reactivation.js';
 import {
   guardRefundTransition,
   invalidateReactivatedRefunds,
@@ -46,18 +48,24 @@ export function createEntryTransitionMethod(
               workflow,
             );
           if (transition === 'acceptance')
-            await guardRefundTransition(
-              tx,
-              ctx.organizationId,
-              id,
-              toStatus,
-              workflow?.statusCategory,
-            );
+            await guardRefundTransition(tx, ctx.organizationId, id, toStatus);
+          const [previous] =
+            transition === 'acceptance'
+              ? await tx
+                  .select({ category: entries.acceptanceCategory })
+                  .from(entries)
+                  .where(
+                    and(
+                      eq(entries.organizationId, ctx.organizationId),
+                      eq(entries.id, id),
+                    ),
+                  )
+              : [];
           const statusColumn =
             transition === 'verification'
               ? entries.verificationStatus
               : entries.acceptanceStatus;
-          const [row] = await tx
+          const [updatedRow] = await tx
             .update(entries)
             .set({
               [transition === 'verification'
@@ -81,7 +89,8 @@ export function createEntryTransitionMethod(
               ),
             )
             .returning();
-          if (!row) return null;
+          if (!updatedRow) return null;
+          let row = updatedRow;
           await tx.insert(entryAuditEvents).values({
             organizationId: ctx.organizationId,
             entryId: id,
@@ -94,12 +103,34 @@ export function createEntryTransitionMethod(
               workflow?.workflowRevisionId ?? row.workflowRevisionId!,
             ...(workflow ? { statusCategory: workflow.statusCategory } : {}),
           });
+          // Reactivation: a released place is taken again, or the class is full.
+          let redirectedToWaitlist = false;
           if (
             transition === 'acceptance' &&
-            (toStatus === 'withdrawn' ||
-              toStatus === 'rejected' ||
-              workflow?.statusCategory === 'withdrawn' ||
-              workflow?.statusCategory === 'rejected')
+            releasesPlace(previous?.category ?? '') &&
+            row.acceptanceCategory !== null &&
+            !releasesPlace(row.acceptanceCategory) &&
+            row.acceptanceCategory !== 'waitlisted'
+          ) {
+            redirectedToWaitlist =
+              (await seatOrWaitlistReactivated(tx, ctx, row)) !== null;
+            if (redirectedToWaitlist)
+              row = (
+                await tx
+                  .select()
+                  .from(entries)
+                  .where(
+                    and(
+                      eq(entries.organizationId, ctx.organizationId),
+                      eq(entries.id, id),
+                    ),
+                  )
+              )[0]!;
+          }
+          if (
+            transition === 'acceptance' &&
+            (row.acceptanceCategory === 'withdrawn' ||
+              row.acceptanceCategory === 'rejected')
           ) {
             await offerWaitlistSeat({
               tx,
@@ -112,15 +143,17 @@ export function createEntryTransitionMethod(
               tx,
               ctx.organizationId,
               id,
-              toStatus === 'withdrawn' ||
-                workflow?.statusCategory === 'withdrawn'
-                ? 'withdrawn'
-                : 'rejected',
+              row.acceptanceCategory === 'withdrawn' ? 'withdrawn' : 'rejected',
             );
           }
           if (transition === 'acceptance')
             await invalidateReactivatedRefunds(tx, ctx.organizationId, id);
-          if (transition === 'acceptance' && workflow?.notification) {
+          // The target's notification would announce a status the entry no longer has.
+          if (
+            transition === 'acceptance' &&
+            workflow?.notification &&
+            !redirectedToWaitlist
+          ) {
             const [recipient] = await tx
               .select({
                 email: sql<

@@ -1,4 +1,6 @@
-import { and, asc, eq, isNull, notInArray, sql } from 'drizzle-orm';
+import { entryStatusCategory } from './entry-status-category.js';
+import { entryHoldsClassSeat } from './entry-occupancy.js';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import {
   confirmationDeadline,
   organizationId as brandOrganizationId,
@@ -53,26 +55,12 @@ export async function offerWaitlistSeat(args: {
         eq(entries.eventId, eventId),
         eq(entries.classId, classId),
         isNull(entries.deletedAt),
-        notInArray(entries.acceptanceStatus, ['withdrawn', 'waitlisted']),
-      ),
-    );
-  const [activeOffers] = await tx
-    .select({ count: sql<number>`count(*)::int` })
-    .from(entries)
-    .where(
-      and(
-        eq(entries.organizationId, ctx.organizationId),
-        eq(entries.eventId, eventId),
-        eq(entries.classId, classId),
-        eq(entries.acceptanceStatus, 'waitlisted'),
-        isNull(entries.deletedAt),
-        sql`${entries.waitlistConfirmationDeadline} > ${now}`,
+        entryHoldsClassSeat(now),
       ),
     );
   if (
     eventClass.maxParticipants !== null &&
-    Number(occupancy?.count ?? 0) + Number(activeOffers?.count ?? 0) >=
-      eventClass.maxParticipants
+    Number(occupancy?.count ?? 0) >= eventClass.maxParticipants
   )
     return null;
   const [next] = await tx
@@ -83,7 +71,7 @@ export async function offerWaitlistSeat(args: {
         eq(entries.organizationId, ctx.organizationId),
         eq(entries.eventId, eventId),
         eq(entries.classId, classId),
-        eq(entries.acceptanceStatus, 'waitlisted'),
+        eq(entryStatusCategory(), 'waitlisted'),
         isNull(entries.deletedAt),
         isNull(entries.waitlistOfferSentAt),
       ),
@@ -184,7 +172,7 @@ export async function advanceExpiredWaitlistOffers(
     .where(
       and(
         eq(entries.organizationId, organizationId),
-        eq(entries.acceptanceStatus, 'waitlisted'),
+        eq(entryStatusCategory(), 'waitlisted'),
         sql`${entries.waitlistConfirmationDeadline} <= ${now}`,
         sql`${entries.waitlistConfirmationDeadline} is not null`,
         isNull(entries.deletedAt),
@@ -219,7 +207,7 @@ export async function advanceExpiredWaitlistOffers(
             eq(entries.organizationId, organizationId),
             eq(entries.eventId, group.eventId),
             eq(entries.classId, group.classId),
-            eq(entries.acceptanceStatus, 'waitlisted'),
+            eq(entryStatusCategory(), 'waitlisted'),
             sql`${entries.waitlistConfirmationDeadline} <= ${now}`,
             isNull(entries.deletedAt),
           ),
@@ -235,7 +223,7 @@ export async function advanceExpiredWaitlistOffers(
             eq(entries.organizationId, organizationId),
             eq(entries.eventId, group.eventId),
             eq(entries.classId, group.classId),
-            eq(entries.acceptanceStatus, 'waitlisted'),
+            eq(entryStatusCategory(), 'waitlisted'),
             isNull(entries.deletedAt),
           ),
         );

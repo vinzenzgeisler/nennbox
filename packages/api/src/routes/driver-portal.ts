@@ -228,7 +228,7 @@ export function registerDriverPortalRoutes(
         current.token,
         entryId.data,
       );
-      if (!owned || owned.status === 'withdrawn')
+      if (!owned || owned.statusCategory === 'withdrawn')
         return c.json({ error: 'Not found' }, 404);
       const blocked = await budget(
         c,

@@ -1,3 +1,4 @@
+import { entryHoldsClassSeat, entryHoldsPlace } from './entry-occupancy.js';
 import type { RequestContext } from '@nennbox/core';
 import { RegistrationUnavailable } from '@nennbox/core';
 import {
@@ -113,7 +114,7 @@ export async function resolveRegistrationParticipant(args: {
         eq(entries.organizationId, ctx.organizationId),
         eq(entries.eventId, event.id),
         sql`${entries.deletedAt} is null`,
-        sql`${entries.acceptanceStatus} <> 'withdrawn'`,
+        entryHoldsPlace(),
       ),
     );
   const usedNumbers = assignedRows.flatMap((row) =>
@@ -181,8 +182,7 @@ export async function resolveRegistrationParticipant(args: {
           eq(entries.eventId, event.id),
           eq(entries.classId, eventClass.id),
           sql`${entries.deletedAt} is null`,
-          sql`${entries.acceptanceStatus} <> 'withdrawn'`,
-          sql`(${entries.acceptanceStatus} <> 'waitlisted' or ${entries.waitlistConfirmationDeadline} > now())`,
+          entryHoldsClassSeat(),
         ),
       );
     if (eventClass.maxParticipants !== null) {

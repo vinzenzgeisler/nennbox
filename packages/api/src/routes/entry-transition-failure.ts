@@ -31,6 +31,14 @@ export function transitionFailure(error: unknown): {
         reason,
       },
     };
+  if (reason === 'class_full_no_waitlist')
+    return {
+      status: 409,
+      body: {
+        error: 'Class is full and the workflow has no waitlist status',
+        reason,
+      },
+    };
   if (reason === 'concurrent_update')
     return {
       status: 409,
