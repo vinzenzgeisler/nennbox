@@ -48,7 +48,8 @@ describe.skipIf(!url)('transitions use the pinned status category', () => {
   it.each(['withdrawn', 'rejected'])(
     'a status keyed "%s" with category accepted keeps its seat',
     (decoy) =>
-      withPaths({}, async (s, transition) => {
+      // Unlimited class: a wrongly released seat would be offered at once.
+      withPaths({ max: null }, async (s, transition) => {
         const holder = await s.addEntry('ok-1');
         const waiter = await s.addEntry('wait-1', { waitlistPosition: 1 });
         await transition(holder, 'ok-1', decoy);
