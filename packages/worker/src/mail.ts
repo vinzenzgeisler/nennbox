@@ -10,8 +10,14 @@ import type {
 } from '@nennbox/core';
 import { JobEnvelope, MESSAGE_ATTACHMENT_LIMITS } from '@nennbox/contracts';
 import { createJobContext } from './index.js';
+import {
+  participantMemoryLink,
+  participantMemoryMailContracts,
+  participantMemoryMailCopy,
+} from './participant-memory-mail.js';
 
 export const mailTemplateContracts = {
+  ...participantMemoryMailContracts,
   'team-invitation': ['linkUrl', 'role'],
   verification: ['recipientName', 'verificationUrl'],
   'registration-resume': ['recipientName', 'resumeUrl'],
@@ -50,6 +56,7 @@ export interface MailTemplate {
   readonly html: string;
 }
 const defaultCopy: Record<MailTemplateKey, Record<MailLocale, MailTemplate>> = {
+  ...participantMemoryMailCopy,
   'team-invitation': {
     de: {
       subject: 'Einladung zum Team',
@@ -400,6 +407,12 @@ export function createMailOutboxTask(deps: {
       );
       variables.linkUrl = `/invitation#token=${token}`;
     }
+    const memoryLink = participantMemoryLink(
+      row.templateKey,
+      deps.invitationTokenKey,
+      variables.accessNonce ?? '',
+    );
+    if (memoryLink) variables.linkUrl = memoryLink;
     const attachmentReferences = row.attachmentRefs ?? [];
     const expectsAttachments = attachmentReferences.length > 0;
     if (
@@ -420,6 +433,8 @@ export function createMailOutboxTask(deps: {
         : [];
     const linkVariable = {
       'team-invitation': 'linkUrl',
+      'participant-memory-link': 'linkUrl',
+      'participant-memory-delete': 'linkUrl',
       verification: 'verificationUrl',
       'registration-resume': 'resumeUrl',
       'passenger-link': 'linkUrl',

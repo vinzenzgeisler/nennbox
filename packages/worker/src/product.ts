@@ -23,6 +23,7 @@ import { composeWorkerTasks, type WorkerTaskHandler } from './index.js';
 import { createMailOutboxTask } from './mail.js';
 import { createModuleTasks } from './modules.js';
 import { createRegistrationUploadCleanupTask } from './registration-upload-cleanup.js';
+import { createParticipantMemoryCleanupTask } from './participant-memory-cleanup.js';
 import { createRefundRetryTask } from './refund-retry.js';
 import { createWaitlistDeadlineTask } from './waitlist-deadlines.js';
 
@@ -46,6 +47,7 @@ export interface ProductWorkerOptions {
   readonly storage?: ObjectStorageProvider;
   /** Retention for expired, unattached registration uploads (default: seven days). */
   readonly registrationUploadRetentionDays?: number;
+  readonly participantMemoryRetention?: import('@nennbox/core').ParticipantMemoryRetention;
   /** Outbound mail; without it the mail outbox job is not registered. */
   readonly mail?: {
     readonly provider: MailProvider;
@@ -127,6 +129,17 @@ export function createProductWorker(
         }),
       }
     : {};
+  const participantMemoryTasks = {
+    participant_memory_cleanup: createParticipantMemoryCleanupTask({
+      db,
+      ...(edition.deploymentMode === 'community'
+        ? { communityOrganizationId: edition.organizationId }
+        : {}),
+      ...(options.participantMemoryRetention
+        ? { retention: options.participantMemoryRetention }
+        : {}),
+    }),
+  };
   const waitlistTasks = {
     waitlist_deadlines: createWaitlistDeadlineTask({
       db,
@@ -171,6 +184,7 @@ export function createProductWorker(
       moduleTasks,
       artifactTasks,
       registrationUploadCleanupTasks,
+      participantMemoryTasks,
       waitlistTasks,
       paymentTasks,
       mailTasks,

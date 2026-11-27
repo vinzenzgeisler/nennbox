@@ -80,6 +80,21 @@ const configSchema = z.object({
     .int()
     .positive()
     .default(2592000),
+  PARTICIPANT_MEMORY_RETENTION_DEFAULT_DAYS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(365),
+  PARTICIPANT_MEMORY_RETENTION_MINIMUM_DAYS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(30),
+  PARTICIPANT_MEMORY_RETENTION_MAXIMUM_DAYS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(1095),
   OIDC_PROVIDER: z.enum(['disabled', 'oidc']).default('disabled'),
   OIDC_ISSUER_URL: z.string().optional(),
   OIDC_AUDIENCE: z.string().optional(),

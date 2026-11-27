@@ -55,7 +55,8 @@ describe.skipIf(!url)('participant memory PostgreSQL integration', () => {
       | typeof participantMemoryPassengers
       | typeof participantMemoryDocuments,
     org: string,
-  ) => handle.db.select().from(table).where(eq(table.organizationId, org));
+  ): Promise<Record<string, unknown>[]> =>
+    handle.db.select().from(table).where(eq(table.organizationId, org));
   const view = (
     s: {
       memory: ReturnType<ReturnType<typeof f>['repository']>;
@@ -306,10 +307,11 @@ describe.skipIf(!url)('participant memory PostgreSQL integration', () => {
     expect(String(copy!.validUntil)).toBe('2030-06-02');
     // An expired document cannot be forced through take, and a foreign entry is refused.
     const expired = stored.find((d) => String(d.validUntil) === '2030-06-01')!;
+    const expiredId = expired.id as string;
     expect(
       await s.memory.take(s.ctx, s.identity!, {
         eventSlug: 'bergpreis-2030',
-        documents: [{ id: expired.id, entryId: nextRegistration.entry.id }],
+        documents: [{ id: expiredId, entryId: nextRegistration.entry.id }],
       }),
     ).toBeNull();
     const stranger = await fx.registration(t, {

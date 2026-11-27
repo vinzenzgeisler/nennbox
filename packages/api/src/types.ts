@@ -134,6 +134,7 @@ export interface EditionApiDeps {
   publicRegistration?: PublicRegistrationModule;
   passengers?: PassengerModule;
   driverPortal?: DriverPortalRepository;
+  participantMemory?: import('@nennbox/core').ParticipantMemoryRepository;
   authenticator?: Authenticator;
   memberships?: MembershipRepository;
   bootstrap?: MembershipBootstrap;

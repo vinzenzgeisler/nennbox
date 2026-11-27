@@ -81,7 +81,10 @@ export function createParticipantMemoryConsent(
     },
     configure: async (
       ctx: RequestContext,
-      input: { enabled?: boolean; retentionDays?: number | null },
+      input: {
+        enabled?: boolean | undefined;
+        retentionDays?: number | null | undefined;
+      },
     ) => {
       requireAdmin(ctx);
       const days = input.retentionDays;

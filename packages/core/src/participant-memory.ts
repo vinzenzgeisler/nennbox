@@ -159,7 +159,10 @@ export interface ParticipantMemoryRepository {
   settings(ctx: RequestContext): Promise<ParticipantMemorySettings>;
   configure(
     ctx: RequestContext,
-    input: { enabled?: boolean; retentionDays?: number | null },
+    input: {
+      enabled?: boolean | undefined;
+      retentionDays?: number | null | undefined;
+    },
   ): Promise<ParticipantMemorySettings & { purged: number }>;
   /** Always silent: queues a link only when this organization may offer something to this e-mail. */
   requestAccess(

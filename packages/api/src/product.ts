@@ -20,6 +20,7 @@ import {
   createRefundIntentRepository,
   createMembershipRepository,
   createTeamRepository,
+  createParticipantMemoryRepository,
   createMessageRepository,
   createModuleActivationRepository,
   createOrganizationRepository,
@@ -80,6 +81,7 @@ export interface ProductApiOptions {
   readonly db: Database;
   readonly invitationTokenKey?: string;
   readonly invitationLifetime?: import('@nennbox/core').InvitationLifetime;
+  readonly participantMemoryRetention?: import('@nennbox/core').ParticipantMemoryRetention;
   readonly edition: ProductEdition;
   readonly objectStorage?: ObjectStorageProvider;
   /**
@@ -197,6 +199,17 @@ export function createProductApi(options: ProductApiOptions): Hono {
       ? { driverPortal: createDriverPortalRepository(db, canonicalOrigin) }
       : {}),
     memberships: createMembershipRepository(db),
+    ...(mail && canonicalOrigin && options.invitationTokenKey
+      ? {
+          participantMemory: createParticipantMemoryRepository(db, {
+            tokenKey: options.invitationTokenKey,
+            canonicalOrigin,
+            ...(options.participantMemoryRetention
+              ? { retention: options.participantMemoryRetention }
+              : {}),
+          }),
+        }
+      : {}),
     team: createTeamRepository(db, {
       ...(options.invitationTokenKey
         ? { tokenKey: options.invitationTokenKey }

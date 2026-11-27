@@ -44,6 +44,11 @@ const app = createProductApi({
   ...(config.TEAM_INVITATION_TOKEN_KEY
     ? { invitationTokenKey: config.TEAM_INVITATION_TOKEN_KEY }
     : {}),
+  participantMemoryRetention: {
+    defaultDays: config.PARTICIPANT_MEMORY_RETENTION_DEFAULT_DAYS,
+    minimumDays: config.PARTICIPANT_MEMORY_RETENTION_MINIMUM_DAYS,
+    maximumDays: config.PARTICIPANT_MEMORY_RETENTION_MAXIMUM_DAYS,
+  },
   invitationLifetime: {
     defaultSeconds: config.TEAM_INVITATION_DEFAULT_SECONDS,
     minimumSeconds: config.TEAM_INVITATION_MINIMUM_SECONDS,
