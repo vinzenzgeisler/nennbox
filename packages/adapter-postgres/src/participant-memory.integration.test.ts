@@ -371,6 +371,16 @@ describe.skipIf(!url)('participant memory PostgreSQL integration', () => {
       await handle.db.execute(
         sql`update ${sql.identifier(table)} set captured_at = ${old} where organization_id = ${a.org.id}`,
       );
+    // The other tenant's data is older than A's retention but within its own (default 365 days).
+    for (const table of [
+      'participant_memory_profile',
+      'participant_memory_vehicle',
+      'participant_memory_passenger',
+    ])
+      await handle.db.execute(
+        sql`update ${sql.identifier(table)} set captured_at = now() - interval '100 days' where organization_id = ${b.org.id}`,
+      );
+    const bBefore = await rows(participantMemoryProfiles, b.org.id);
     // Old but not yet cleaned up: already invisible.
     expect((await view(sa))!.offer).toBeNull();
     const cleanup = createParticipantMemoryCleanup(handle.db, {
@@ -388,7 +398,7 @@ describe.skipIf(!url)('participant memory PostgreSQL integration', () => {
     ] as const)
       expect(await rows(table, a.org.id)).toHaveLength(0);
     // The other tenant's data, with the same e-mail, was not touched.
-    expect(await rows(participantMemoryProfiles, b.org.id)).toHaveLength(1);
+    expect(await rows(participantMemoryProfiles, b.org.id)).toEqual(bBefore);
     expect((await view(sb))!.offer).not.toBeNull();
     // Consent without data is closed once it is older than the retention.
     await handle.db
