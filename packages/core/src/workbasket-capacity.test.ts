@@ -30,7 +30,7 @@ const snapshot = (
   entries,
 });
 describe('#29 capacity integration contract', () => {
-  it.each(['pending', 'accepted', 'rejected'])(
+  it.each(['pending', 'accepted'])(
     'reserves places for persisted %s non-waitlisted entries',
     (status) => {
       const tasks = evaluateWorkbasket(
@@ -38,6 +38,21 @@ describe('#29 capacity integration contract', () => {
       );
       expect(tasks.some((t) => t.ruleId === 'waitlistPromotion')).toBe(false);
       expect(tasks.some((t) => t.ruleId === 'capacityNear')).toBe(true);
+    },
+  );
+  // Decision on #236/#244: a rejected entry releases its place like a withdrawn one.
+  it.each(['rejected', 'withdrawn'])(
+    'releases the place of a %s entry, so the first waiter can be offered it',
+    (status) => {
+      const tasks = evaluateWorkbasket(
+        snapshot([entry('gone', status), entry('next', 'waitlisted')]),
+      );
+      expect(
+        tasks
+          .filter((t) => t.ruleId === 'waitlistPromotion')
+          .map((t) => t.entryId),
+      ).toEqual(['next']);
+      expect(tasks.some((t) => t.ruleId === 'capacityNear')).toBe(false);
     },
   );
   it('uses the exact clock for offer expiry independently of the local calendar day', () => {

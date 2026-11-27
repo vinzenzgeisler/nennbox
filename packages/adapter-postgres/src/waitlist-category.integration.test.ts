@@ -150,11 +150,16 @@ describe.skipIf(!url)('waitlist pinned workflow categories', () => {
           [b.org.id],
         )
       ).rows[0].n;
-      for (let n = 0; n < 300; n++)
-        await pool.query(
-          'UPDATE entry SET revision=revision+1 WHERE organization_id=$1 AND id=$2',
-          [a.org.id, a.entry.id],
-        );
+      // One UPDATE proves the trigger is wired; the bound itself is exercised in a
+      // single statement, so the test does not depend on 300 network round trips.
+      await pool.query(
+        'UPDATE entry SET revision=revision+1 WHERE organization_id=$1 AND id=$2',
+        [a.org.id, a.entry.id],
+      );
+      await pool.query(
+        'SELECT invalidate_workbasket_event($1,$2) FROM generate_series(1,300)',
+        [a.org.id, a.event.id],
+      );
       const count = (
         await pool.query(
           'SELECT count(*)::int AS n FROM workbasket_invalidation WHERE organization_id=$1 AND event_id=$2',

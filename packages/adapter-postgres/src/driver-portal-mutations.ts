@@ -1,4 +1,5 @@
 import { and, eq, isNull, ne } from 'drizzle-orm';
+import { entryStatusCategory } from './entry-status-category.js';
 import { assertWorkflowTransition } from '@nennbox/core';
 import { createEntryWorkflowRepository } from './entry-workflow.js';
 import {
@@ -211,7 +212,7 @@ export function createDriverPortalMutations(
             and(
               eq(entries.organizationId, ctx.organizationId),
               eq(entries.registrationGroupId, entry.groupId),
-              ne(entries.acceptanceStatus, target.id ?? target.key),
+              ne(entryStatusCategory(), 'withdrawn'),
               isNull(entries.deletedAt),
             ),
           )
