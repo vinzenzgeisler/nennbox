@@ -98,12 +98,13 @@ export async function captureParticipantMemory(
   const latest = groups[0];
   if (!latest) return true;
   const stamp = { capturedAt: now };
-  const { id: _group, personId: _person, ...fields } = latest;
   const profile = {
-    ...fields,
+    ...latest,
     sourceEventName: latest.eventName,
     sourceEventStartsOn: String(latest.eventStartsOn),
   } as Record<string, unknown>;
+  delete profile.id;
+  delete profile.personId;
   delete profile.eventName;
   delete profile.eventStartsOn;
   await tx

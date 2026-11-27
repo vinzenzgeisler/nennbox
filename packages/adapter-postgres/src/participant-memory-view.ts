@@ -15,14 +15,14 @@ import {
 } from '@nennbox/core';
 import type { Database, TransactionDatabase } from './database.js';
 import { events } from './schema/organization.js';
-import { entries, registrationGroups } from './schema/entries.js';
-import { entryDocuments, eventEntryDocumentTypes } from './schema/documents.js';
+import { eventEntryDocumentTypes } from './schema/documents.js';
 import {
   participantMemoryDocuments,
   participantMemoryPassengers,
   participantMemoryProfiles,
   participantMemoryVehicles,
 } from './participant-memory-schema.js';
+import { adoptMemoryDocument } from './participant-memory-adopt.js';
 import {
   activeConsent,
   lockParticipant,
@@ -258,63 +258,15 @@ export function createParticipantMemoryView(
         if (input.documents?.length) {
           const offered = await documentsFor(tx, identity, state);
           for (const wanted of input.documents) {
-            const document = offered.find((row) => row.id === wanted.id);
-            // The target entry must belong to this verified e-mail, in this event and organization.
-            const [entry] = await tx
-              .select({ id: entries.id })
-              .from(entries)
-              .innerJoin(
-                registrationGroups,
-                and(
-                  eq(registrationGroups.organizationId, entries.organizationId),
-                  eq(registrationGroups.id, entries.registrationGroupId),
-                ),
-              )
-              .where(
-                and(
-                  eq(entries.organizationId, state.org),
-                  eq(entries.eventId, state.event.id),
-                  eq(entries.id, wanted.entryId),
-                  eq(entries.verificationStatus, 'verified'),
-                  sql`${entries.deletedAt} is null`,
-                  sql`lower(trim(${registrationGroups.contactEmail})) = ${identity.email}`,
-                ),
-              );
-            if (!document || !entry) return null;
-            const [existing] = await tx
-              .select({ id: entryDocuments.id })
-              .from(entryDocuments)
-              .where(
-                and(
-                  eq(entryDocuments.organizationId, state.org),
-                  eq(entryDocuments.entryId, entry.id),
-                  eq(entryDocuments.typeKey, document.typeKey),
-                  eq(entryDocuments.objectId, document.objectId),
-                ),
-              );
-            const [created] = existing
-              ? [existing]
-              : await tx
-                  .insert(entryDocuments)
-                  .values({
-                    organizationId: state.org,
-                    eventId: state.event.id,
-                    entryId: entry.id,
-                    typeKey: document.typeKey,
-                    objectId: document.objectId,
-                    validUntil: String(document.validUntil),
-                    fileName: document.fileName,
-                    contentType: document.contentType,
-                    size: document.size,
-                    sha256: document.sha256,
-                    uploadedBy: 'participant-memory',
-                  })
-                  .returning({ id: entryDocuments.id });
-            taken.documents.push({
-              id: document.id,
-              entryId: entry.id,
-              entryDocumentId: created!.id,
-            });
+            const adopted = await adoptMemoryDocument(
+              tx,
+              identity,
+              state,
+              wanted,
+              offered.find((row) => row.id === wanted.id),
+            );
+            if (!adopted) return null;
+            taken.documents.push(adopted);
           }
         }
         return taken;
