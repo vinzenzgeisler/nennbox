@@ -1,8 +1,6 @@
 import { registerTeamRoutes } from './routes/team.js';
-import {
-  registerParticipantMemoryAdminRoutes,
-  registerParticipantMemoryRoutes,
-} from './routes/participant-memory.js';
+import { registerParticipantMemoryRoutes } from './routes/participant-memory.js';
+import { registerParticipantMemoryAdminRoutes } from './routes/participant-memory-admin.js';
 import { registerDriverPortalRoutes } from './routes/driver-portal.js';
 import { Hono } from 'hono';
 import { requestBodyLimit } from './request-body-limit.js';

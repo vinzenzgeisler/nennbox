@@ -74,6 +74,7 @@ describe.skipIf(!url)(
         'access',
         'de',
       );
+      await fx.processRequests();
       const token = (await fx.mailedToken(a.org.id, 'access', email))!;
       // The mail row carries a public nonce only, never the bearer or its hash.
       const [mail] = await handle.db
@@ -113,6 +114,7 @@ describe.skipIf(!url)(
         'access',
         'de',
       );
+      await fx.processRequests();
       // The session belongs to A only.
       expect(await memory.session(publicContext(a.org.id), session!)).toEqual({
         organizationId: a.org.id,
@@ -140,6 +142,7 @@ describe.skipIf(!url)(
         'access',
         'de',
       );
+      await fx.processRequests();
       const token = (await fx.mailedToken(t.org.id, 'access', email))!;
       const results = await Promise.all(
         Array.from({ length: 6 }, () =>
@@ -157,7 +160,9 @@ describe.skipIf(!url)(
       await memory.configure(adminContext(t.org.id), { enabled: true });
       const ctx = publicContext(t.org.id);
       await memory.requestAccess(ctx, email, 'access', 'de');
+      await fx.processRequests();
       await memory.requestAccess(ctx, email, 'access', 'de');
+      await fx.processRequests();
       expect(
         await handle.db
           .select()
@@ -176,6 +181,7 @@ describe.skipIf(!url)(
         })
         .where(eq(participantMemoryAccess.organizationId, t.org.id));
       await memory.requestAccess(ctx, email, 'access', 'de');
+      await fx.processRequests();
       const second = (await fx.mailedToken(t.org.id, 'access', email))!;
       expect(second).not.toBe(first);
       expect(await memory.redeemAccess(ctx, first)).toBeNull();
@@ -196,6 +202,7 @@ describe.skipIf(!url)(
       await sa.memory.grantConsent(sa.ctx, sa.identity!, version);
       await sb.memory.grantConsent(sb.ctx, sb.identity!, version);
       await sa.memory.requestAccess(sa.ctx, email, 'delete', 'de');
+      await fx.processRequests();
       const token = (await fx.mailedToken(a.org.id, 'delete', email))!;
       // Not valid at club B; an expired copy would not work either.
       expect(await sa.memory.redeemDelete(sb.ctx, token)).toBe(false);
@@ -249,6 +256,7 @@ describe.skipIf(!url)(
       ).toHaveLength(1);
       // Without consent or stored data no delete link is mailed.
       await sa.memory.requestAccess(sa.ctx, email, 'delete', 'de');
+      await fx.processRequests();
       expect(
         (
           await handle.db

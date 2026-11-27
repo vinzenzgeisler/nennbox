@@ -1,5 +1,8 @@
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
-import { normalizeTeamEmail } from '@nennbox/core';
+import { and, desc, eq, gt, inArray, notInArray, sql } from 'drizzle-orm';
+import {
+  normalizeTeamEmail,
+  type ParticipantMemoryRetention,
+} from '@nennbox/core';
 import type { TransactionDatabase } from './database.js';
 import { events } from './schema/organization.js';
 import {
@@ -9,9 +12,8 @@ import {
   vehicles,
 } from './schema/entries.js';
 import { entryPassengers } from './schema/passengers.js';
-import { entryDocuments, eventEntryDocumentTypes } from './schema/documents.js';
+import { captureDocuments } from './participant-memory-capture-documents.js';
 import {
-  participantMemoryDocuments,
   participantMemoryPassengers,
   participantMemoryProfiles,
   participantMemoryVehicles,
@@ -20,6 +22,10 @@ import {
   activeConsent,
   lockParticipant,
   memoryEnabled,
+  memoryOwner,
+  participantMemoryProcessBounds,
+  purgeParticipantData,
+  retentionCutoff,
 } from './participant-memory-support.js';
 
 const norm = (value: string | null) =>
@@ -38,91 +44,104 @@ export function vehicleFingerprint(v: {
 }
 
 /**
- * Copies what a participant entered in verified entries of this organization
- * into the memory. Source rows are selected by the verified contact e-mail of
- * the registration group and the organization id, nothing else.
+ * Makes the memory of one participant equal to what the verified entries of this
+ * organization say today. The memory belongs to a person, not to a contact
+ * address: only the person whose own address this is (see `memoryOwner`), only
+ * entries inside the retention period, only entries that still exist. What the
+ * sources no longer support is removed in the same transaction, so a deleted
+ * entry or a rejected document does not linger as a copy.
  * Callers hold the participant lock. Returns false without consent.
  */
 export async function captureParticipantMemory(
   tx: TransactionDatabase,
   organizationId: string,
   email: string,
+  bounds: ParticipantMemoryRetention = participantMemoryProcessBounds(),
 ): Promise<boolean> {
   if (!(await memoryEnabled(tx, organizationId))) return false;
   if (!(await activeConsent(tx, organizationId, email))) return false;
-  const now = new Date();
-  const groups = await tx
-    .select({
-      id: registrationGroups.id,
-      personId: registrationGroups.personId,
-      phone: registrationGroups.phone,
-      street: registrationGroups.street,
-      postalCode: registrationGroups.postalCode,
-      city: registrationGroups.city,
-      bloodGroup: registrationGroups.bloodGroup,
-      licenseNumber: registrationGroups.licenseNumber,
-      licenseValidUntil: registrationGroups.licenseValidUntil,
-      emergencyContactName: registrationGroups.emergencyContactName,
-      emergencyContactPhone: registrationGroups.emergencyContactPhone,
-      firstName: people.firstName,
-      lastName: people.lastName,
-      dateOfBirth: people.dateOfBirth,
-      country: people.country,
-      eventName: events.name,
-      eventStartsOn: events.startsOn,
-    })
-    .from(registrationGroups)
-    .innerJoin(
-      people,
-      and(
-        eq(people.organizationId, registrationGroups.organizationId),
-        eq(people.id, registrationGroups.personId),
-        sql`${people.deletedAt} is null`,
-      ),
-    )
-    .innerJoin(
-      events,
-      and(
-        eq(events.organizationId, registrationGroups.organizationId),
-        eq(events.id, registrationGroups.eventId),
-      ),
-    )
-    .where(
-      and(
-        eq(registrationGroups.organizationId, organizationId),
-        sql`lower(trim(${registrationGroups.contactEmail})) = ${email}`,
-        sql`exists (select 1 from entry e where e.organization_id = ${registrationGroups.organizationId} and e.registration_group_id = ${registrationGroups.id} and e.verification_status = 'verified' and e.deleted_at is null)`,
-      ),
-    )
-    .orderBy(desc(registrationGroups.createdAt));
+  const owner = await memoryOwner(tx, organizationId, email);
+  const cutoff = await retentionCutoff(tx, organizationId, bounds);
+  const groups = owner
+    ? await tx
+        .select({
+          id: registrationGroups.id,
+          phone: registrationGroups.phone,
+          street: registrationGroups.street,
+          postalCode: registrationGroups.postalCode,
+          city: registrationGroups.city,
+          bloodGroup: registrationGroups.bloodGroup,
+          licenseNumber: registrationGroups.licenseNumber,
+          licenseValidUntil: registrationGroups.licenseValidUntil,
+          emergencyContactName: registrationGroups.emergencyContactName,
+          emergencyContactPhone: registrationGroups.emergencyContactPhone,
+          firstName: people.firstName,
+          lastName: people.lastName,
+          dateOfBirth: people.dateOfBirth,
+          country: people.country,
+          eventName: events.name,
+          eventStartsOn: events.startsOn,
+          createdAt: registrationGroups.createdAt,
+        })
+        .from(registrationGroups)
+        .innerJoin(
+          people,
+          and(
+            eq(people.organizationId, registrationGroups.organizationId),
+            eq(people.id, registrationGroups.personId),
+            eq(people.id, owner),
+            sql`${people.deletedAt} is null`,
+          ),
+        )
+        .innerJoin(
+          events,
+          and(
+            eq(events.organizationId, registrationGroups.organizationId),
+            eq(events.id, registrationGroups.eventId),
+          ),
+        )
+        .where(
+          and(
+            eq(registrationGroups.organizationId, organizationId),
+            sql`lower(trim(${registrationGroups.contactEmail})) = ${email}`,
+            sql`exists (select 1 from entry e where e.organization_id = ${registrationGroups.organizationId} and e.registration_group_id = ${registrationGroups.id} and e.driver_person_id = ${owner} and e.verification_status = 'verified' and e.deleted_at is null and e.created_at > ${cutoff})`,
+          ),
+        )
+        .orderBy(desc(registrationGroups.createdAt))
+    : [];
   const latest = groups[0];
-  if (!latest) return true;
-  const stamp = { capturedAt: now };
+  if (!owner || !latest) {
+    await purgeParticipantData(tx, organizationId, email);
+    return true;
+  }
+  const { id, eventName, eventStartsOn, createdAt, ...fields } = latest;
+  void id;
   const profile = {
-    ...latest,
-    sourceEventName: latest.eventName,
-    sourceEventStartsOn: String(latest.eventStartsOn),
-  } as Record<string, unknown>;
-  delete profile.id;
-  delete profile.personId;
-  delete profile.eventName;
-  delete profile.eventStartsOn;
+    ...fields,
+    sourceEventName: eventName,
+    sourceEventStartsOn: String(eventStartsOn),
+    capturedAt: createdAt,
+  };
   await tx
     .insert(participantMemoryProfiles)
-    .values({ organizationId, email, ...profile, ...stamp } as never)
+    .values({ organizationId, email, ...profile })
     .onConflictDoUpdate({
       target: [
         participantMemoryProfiles.organizationId,
         participantMemoryProfiles.email,
       ],
-      set: { ...profile, ...stamp } as never,
+      set: profile,
     });
-  const groupIds = groups.map((group) => group.id);
   const verified = and(
     eq(entries.organizationId, organizationId),
-    inArray(entries.registrationGroupId, groupIds),
+    inArray(
+      entries.registrationGroupId,
+      groups.map((group) => group.id),
+    ),
+    eq(entries.driverPersonId, owner),
     eq(entries.verificationStatus, 'verified'),
     sql`${entries.deletedAt} is null`,
+    gt(entries.createdAt, cutoff),
   );
   const sourceVehicles = await tx
     .select({
@@ -137,6 +156,7 @@ export async function captureParticipantMemory(
       transponderNumber: vehicles.transponderNumber,
       vehiclePassNumber: vehicles.vehiclePassNumber,
       ownerName: vehicles.ownerName,
+      capturedAt: entries.createdAt,
     })
     .from(entries)
     .innerJoin(
@@ -154,26 +174,37 @@ export async function captureParticipantMemory(
     const fingerprint = vehicleFingerprint(vehicle);
     if (seen.has(fingerprint)) continue;
     seen.add(fingerprint);
+    const { capturedAt, ...values } = vehicle;
     await tx
       .insert(participantMemoryVehicles)
-      .values({ organizationId, email, fingerprint, ...vehicle, ...stamp })
+      .values({ organizationId, email, fingerprint, ...values, capturedAt })
       .onConflictDoUpdate({
         target: [
           participantMemoryVehicles.organizationId,
           participantMemoryVehicles.email,
           participantMemoryVehicles.fingerprint,
         ],
-        set: { ...vehicle, ...stamp },
+        set: { ...values, capturedAt },
       });
   }
+  await tx
+    .delete(participantMemoryVehicles)
+    .where(
+      and(
+        eq(participantMemoryVehicles.organizationId, organizationId),
+        eq(participantMemoryVehicles.email, email),
+        seen.size
+          ? notInArray(participantMemoryVehicles.fingerprint, [...seen])
+          : undefined,
+      ),
+    );
+  // The co-driver is a third party who gave no consent: name and e-mail as a pointer, nothing else.
   const [passenger] = await tx
     .select({
       firstName: entryPassengers.firstName,
       lastName: entryPassengers.lastName,
       passengerEmail: entryPassengers.email,
-      dateOfBirth: entryPassengers.dateOfBirth,
-      country: entryPassengers.country,
-      phone: entryPassengers.phone,
+      capturedAt: entryPassengers.completedAt,
     })
     .from(entryPassengers)
     .innerJoin(
@@ -189,71 +220,29 @@ export async function captureParticipantMemory(
   if (passenger)
     await tx
       .insert(participantMemoryPassengers)
-      .values({ organizationId, email, ...passenger, ...stamp })
+      .values({
+        organizationId,
+        email,
+        ...passenger,
+        capturedAt: passenger.capturedAt!,
+      })
       .onConflictDoUpdate({
         target: [
           participantMemoryPassengers.organizationId,
           participantMemoryPassengers.email,
         ],
-        set: { ...passenger, ...stamp },
+        set: { ...passenger, capturedAt: passenger.capturedAt! },
       });
-  // Only documents an organizer reviewed and that carry an expiry date are worth keeping.
-  const documents = await tx
-    .select({
-      typeKey: entryDocuments.typeKey,
-      typeName: eventEntryDocumentTypes.name,
-      objectId: entryDocuments.objectId,
-      validUntil: entryDocuments.validUntil,
-      fileName: entryDocuments.fileName,
-      contentType: entryDocuments.contentType,
-      size: entryDocuments.size,
-      sha256: entryDocuments.sha256,
-    })
-    .from(entryDocuments)
-    .innerJoin(
-      entries,
-      and(
-        eq(entries.organizationId, entryDocuments.organizationId),
-        eq(entries.id, entryDocuments.entryId),
-      ),
-    )
-    .innerJoin(
-      eventEntryDocumentTypes,
-      and(
-        eq(
-          eventEntryDocumentTypes.organizationId,
-          entryDocuments.organizationId,
-        ),
-        eq(eventEntryDocumentTypes.eventId, entryDocuments.eventId),
-        eq(eventEntryDocumentTypes.key, entryDocuments.typeKey),
-      ),
-    )
-    .where(
-      and(
-        verified,
-        eq(entryDocuments.status, 'reviewed'),
-        sql`${entryDocuments.validUntil} is not null`,
-      ),
-    );
-  for (const document of documents)
+  else
     await tx
-      .insert(participantMemoryDocuments)
-      .values({
-        organizationId,
-        email,
-        ...document,
-        validUntil: String(document.validUntil),
-        ...stamp,
-      })
-      .onConflictDoUpdate({
-        target: [
-          participantMemoryDocuments.organizationId,
-          participantMemoryDocuments.email,
-          participantMemoryDocuments.typeKey,
-          participantMemoryDocuments.objectId,
-        ],
-        set: { validUntil: String(document.validUntil), ...stamp },
-      });
+      .delete(participantMemoryPassengers)
+      .where(
+        and(
+          eq(participantMemoryPassengers.organizationId, organizationId),
+          eq(participantMemoryPassengers.email, email),
+        ),
+      );
+  await captureDocuments(tx, organizationId, email, verified);
   return true;
 }
 

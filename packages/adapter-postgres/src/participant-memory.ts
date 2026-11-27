@@ -8,6 +8,8 @@ import {
 import type { Database } from './database.js';
 import { createParticipantMemoryAccess } from './participant-memory-access.js';
 import { createParticipantMemoryConsent } from './participant-memory-consent.js';
+import { createParticipantMemoryErase } from './participant-memory-erase.js';
+import { setParticipantMemoryProcessBounds } from './participant-memory-support.js';
 import { createParticipantMemoryView } from './participant-memory-view.js';
 
 export function createParticipantMemoryRepository(
@@ -21,8 +23,10 @@ export function createParticipantMemoryRepository(
   const bounds = assertParticipantMemoryRetention(
     options.retention ?? defaultParticipantMemoryRetention,
   );
+  setParticipantMemoryProcessBounds(bounds);
   const access = createParticipantMemoryAccess(db, options);
-  const consent = createParticipantMemoryConsent(db, bounds);
+  const consent = createParticipantMemoryConsent(db, bounds, options.tokenKey);
+  const erase = createParticipantMemoryErase(db, options);
   const view = createParticipantMemoryView(db, bounds);
-  return { ...access, ...consent, ...view };
+  return { ...access, ...consent, ...erase, ...view };
 }

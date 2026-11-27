@@ -6,6 +6,8 @@ import {
 import type { Database } from './database.js';
 import {
   participantMemoryAccess,
+  participantMemoryAudit,
+  participantMemoryRequests,
   participantMemoryConsents,
   participantMemoryDocuments,
   participantMemoryPassengers,
@@ -113,7 +115,7 @@ export function createParticipantMemoryCleanup(
       // Consent whose data is gone has nothing left to cover: close it.
       const closed = await db
         .update(participantMemoryConsents)
-        .set({ revokedAt: now, revokedReason: 'expired' })
+        .set({ revokedAt: now, revokedReason: 'expired', email: null })
         .where(
           and(
             eq(participantMemoryConsents.organizationId, organizationId),
@@ -140,6 +142,29 @@ export function createParticipantMemoryCleanup(
             lt(
               participantMemoryConsents.revokedAt,
               new Date(now.getTime() - CONSENT_LOG_RETENTION_DAYS * DAY_MS),
+            ),
+          ),
+        );
+      // Erasure audit follows the consent log; stuck link requests never outlive a day.
+      await db
+        .delete(participantMemoryAudit)
+        .where(
+          and(
+            eq(participantMemoryAudit.organizationId, organizationId),
+            lt(
+              participantMemoryAudit.occurredAt,
+              new Date(now.getTime() - CONSENT_LOG_RETENTION_DAYS * DAY_MS),
+            ),
+          ),
+        );
+      await db
+        .delete(participantMemoryRequests)
+        .where(
+          and(
+            eq(participantMemoryRequests.organizationId, organizationId),
+            lt(
+              participantMemoryRequests.createdAt,
+              new Date(now.getTime() - DAY_MS),
             ),
           ),
         );

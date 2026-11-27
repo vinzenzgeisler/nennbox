@@ -14,6 +14,7 @@ import { changeClass } from './entry-admin-action-class.js';
 import { adjustAmount } from './entry-admin-action-amount.js';
 import { lockInvoiceOfGroup } from './refund-transition.js';
 import { retryOnConflict } from './transaction-retry.js';
+import { reconcileParticipantMemory } from './participant-memory-reconcile.js';
 import { eventClasses } from './schema/organization.js';
 
 export function createEntryAdminActionsRepository(
@@ -171,6 +172,9 @@ export function createEntryAdminActionsRepository(
               afterValue: { deletedAt: true },
               actor,
               reason: action.reason.trim(),
+            });
+            await reconcileParticipantMemory(tx, ctx.organizationId, {
+              entryId,
             });
             return { status: 'updated' };
           }

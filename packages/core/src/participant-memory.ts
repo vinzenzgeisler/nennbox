@@ -35,10 +35,10 @@ export function effectiveParticipantMemoryRetentionDays(
 
 /** Versioned wording the participant consents to; a change of text needs a new version. */
 export const participantMemoryConsentTerms = {
-  version: '2026-11-27.1',
+  version: '2026-11-27.2',
   text: {
-    de: 'Ich willige ein, dass dieser Verein meine Fahrer-, Fahrzeug- und Beifahrerdaten sowie gültige Unterlagen aus meinen Nennungen speichert, damit ich sie bei späteren Nennungen übernehmen kann. Ich kann die Einwilligung jederzeit widerrufen und die Daten löschen lassen; bestehende Nennungen bleiben davon unberührt.',
-    en: 'I consent to this club storing my driver, vehicle and co-driver details and valid documents from my entries so that I can reuse them in later entries. I can withdraw this consent and have the data deleted at any time; existing entries are not affected.',
+    de: 'Ich willige ein, dass dieser Verein meine eigenen Fahrerdaten, die von mir genannten Fahrzeuge, Name und E-Mail meines Beifahrers als Verweis sowie gültige Unterlagen aus meinen Nennungen speichert, damit ich sie bei späteren Nennungen übernehmen kann. Daten anderer Personen werden nicht gespeichert. Ich kann die Einwilligung jederzeit widerrufen und die Daten löschen lassen; bestehende Nennungen bleiben davon unberührt.',
+    en: 'I consent to this club storing my own driver details, the vehicles I named, the name and e-mail of my co-driver as a reference, and valid documents from my entries so that I can reuse them in later entries. No data of other people is stored. I can withdraw this consent and have the data deleted at any time; existing entries are not affected.',
   },
 } as const;
 
@@ -76,9 +76,6 @@ export const participantMemoryPassengerFields = [
   'firstName',
   'lastName',
   'email',
-  'dateOfBirth',
-  'country',
-  'phone',
 ] as const;
 export type ParticipantMemoryDriverField =
   (typeof participantMemoryDriverFields)[number];
@@ -175,6 +172,11 @@ export interface ParticipantMemoryRepository {
   redeemAccess(ctx: RequestContext, token: string): Promise<string | null>;
   /** Single use. Deletes the memory of the organization that issued the link. */
   redeemDelete(ctx: RequestContext, token: string): Promise<boolean>;
+  /** Organization administrators erase the memory of one person (e.g. on an Art. 17 request); audited. */
+  eraseParticipant(
+    ctx: RequestContext,
+    email: string,
+  ): Promise<{ removed: number }>;
   session(
     ctx: RequestContext,
     token: string,

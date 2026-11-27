@@ -8,6 +8,8 @@ import { eq, and } from 'drizzle-orm';
 
 import { sql } from 'drizzle-orm';
 
+import { reconcileParticipantMemory } from './participant-memory-reconcile.js';
+
 function mapPerson(
   row: typeof people.$inferSelect,
 ): import('@nennbox/core').Person {
@@ -70,18 +72,24 @@ export function createPersonRepository(
     },
     softDelete: async (ctx, id, reason) => {
       if (!reason.trim()) throw new Error('Deletion reason is required');
-      const [row] = await db
-        .update(people)
-        .set({ deletedAt: new Date(), deletionReason: reason.trim() })
-        .where(
-          and(
-            eq(people.organizationId, ctx.organizationId),
-            eq(people.id, id),
-            sql`${people.deletedAt} is null`,
-          ),
-        )
-        .returning();
-      return row ? mapPerson(row) : null;
+      return db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(people)
+          .set({ deletedAt: new Date(), deletionReason: reason.trim() })
+          .where(
+            and(
+              eq(people.organizationId, ctx.organizationId),
+              eq(people.id, id),
+              sql`${people.deletedAt} is null`,
+            ),
+          )
+          .returning();
+        if (row)
+          await reconcileParticipantMemory(tx, ctx.organizationId, {
+            personId: id,
+          });
+        return row ? mapPerson(row) : null;
+      });
     },
     findDuplicate: async (ctx, email, firstName, lastName, dateOfBirth) => {
       const normalizedEmail = email == null ? null : normalizeEmail(email);
@@ -154,18 +162,24 @@ export function createVehicleRepository(
     },
     softDelete: async (ctx, id, reason) => {
       if (!reason.trim()) throw new Error('Deletion reason is required');
-      const [row] = await db
-        .update(vehicles)
-        .set({ deletedAt: new Date(), deletionReason: reason.trim() })
-        .where(
-          and(
-            eq(vehicles.organizationId, ctx.organizationId),
-            eq(vehicles.id, id),
-            sql`${vehicles.deletedAt} is null`,
-          ),
-        )
-        .returning();
-      return row ? mapVehicle(row) : null;
+      return db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(vehicles)
+          .set({ deletedAt: new Date(), deletionReason: reason.trim() })
+          .where(
+            and(
+              eq(vehicles.organizationId, ctx.organizationId),
+              eq(vehicles.id, id),
+              sql`${vehicles.deletedAt} is null`,
+            ),
+          )
+          .returning();
+        if (row)
+          await reconcileParticipantMemory(tx, ctx.organizationId, {
+            vehicleId: id,
+          });
+        return row ? mapVehicle(row) : null;
+      });
     },
   };
 }

@@ -51,6 +51,7 @@ function fixture(role: 'admin' | 'viewer' = 'admin') {
     })),
     grantConsent: vi.fn(async () => true),
     revokeConsent: vi.fn(async () => {}),
+    eraseParticipant: vi.fn(async () => ({ removed: 4 })),
   } satisfies ParticipantMemoryRepository;
   const app = createApp(
     testDeps({
@@ -336,5 +337,130 @@ describe('participant memory admin settings', () => {
     });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'Rejected' });
+  });
+});
+
+describe('participant memory protections that must not silently disappear', () => {
+  const paths = ['request', 'delete-request'] as const;
+  it.each(paths)(
+    'refuses a %s from a foreign origin before anything is looked up',
+    async (path) => {
+      const f = fixture();
+      const res = await f.send(`/public/participant-memory/${path}`, {
+        body: { email: 'fahrer@example.test' },
+        origin: 'https://evil.test',
+      });
+      expect(res.status).toBe(403);
+      expect(f.memory.requestAccess).not.toHaveBeenCalled();
+      const same = await f.send(`/public/participant-memory/${path}`, {
+        body: { email: 'fahrer@example.test' },
+        origin: 'http://localhost',
+      });
+      expect(same.status).toBe(200);
+    },
+  );
+  it.each(paths)(
+    'limits %s per club and client: the seventh in a minute is refused',
+    async (path) => {
+      const f = fixture();
+      const codes: number[] = [];
+      for (let i = 0; i < 8; i += 1)
+        codes.push(
+          (
+            await f.send(`/public/participant-memory/${path}`, {
+              body: { email: `x${i}@example.test` },
+            })
+          ).status,
+        );
+      expect(codes).toEqual([200, 200, 200, 200, 200, 200, 429, 429]);
+      expect(f.memory.requestAccess).toHaveBeenCalledTimes(6);
+    },
+  );
+  it.each([
+    ['redeem', 'redeemAccess'],
+    ['delete', 'redeemDelete'],
+  ] as const)(
+    'limits attempts to %s a link: the 21st in a minute is refused',
+    async (path, method) => {
+      const f = fixture();
+      const codes: number[] = [];
+      for (let i = 0; i < 22; i += 1)
+        codes.push(
+          (
+            await f.send(`/public/participant-memory/${path}`, {
+              body: { token: 'z'.repeat(43) },
+            })
+          ).status,
+        );
+      expect(codes.slice(0, 20).every((code) => code === 404)).toBe(true);
+      expect(codes.slice(20)).toEqual([429, 429]);
+      expect(f.memory[method]).toHaveBeenCalledTimes(20);
+    },
+  );
+  it('answers a wrong, a malformed and a spent token alike', async () => {
+    const f = fixture();
+    const answers = [];
+    for (const value of ['z'.repeat(43), 'short', token]) {
+      f.memory.redeemDelete.mockResolvedValueOnce(false);
+      const res = await f.send('/public/participant-memory/delete', {
+        body: { token: value },
+      });
+      answers.push([res.status, await res.text()]);
+    }
+    expect(new Set(answers.map((a) => JSON.stringify(a))).size).toBe(1);
+  });
+  it('turns a collision that kept repeating into a conflict, never a server error', async () => {
+    const f = fixture();
+    f.memory.redeemDelete.mockRejectedValueOnce(new Error('concurrent_update'));
+    const res = await f.send('/public/participant-memory/delete', {
+      body: { token },
+    });
+    expect(res.status).toBe(409);
+    f.memory.redeemAccess.mockRejectedValueOnce(new Error('concurrent_update'));
+    expect(
+      (await f.send('/public/participant-memory/redeem', { body: { token } }))
+        .status,
+    ).toBe(409);
+  });
+});
+
+describe('participant memory erasure by the club', () => {
+  it('lets an administrator erase one person, with the address in the body', async () => {
+    const f = fixture();
+    const res = await f.send('/admin/participant-memory/erase', {
+      body: { email: 'fahrer@example.test' },
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ removed: 4 });
+    expect(f.memory.eraseParticipant).toHaveBeenCalledWith(
+      expect.anything(),
+      'fahrer@example.test',
+    );
+  });
+  it('refuses viewers, malformed bodies and invalid addresses', async () => {
+    const viewer = fixture('viewer');
+    expect(
+      (
+        await viewer.send('/admin/participant-memory/erase', {
+          body: { email: 'fahrer@example.test' },
+        })
+      ).status,
+    ).toBe(403);
+    expect(viewer.memory.eraseParticipant).not.toHaveBeenCalled();
+    const admin = fixture();
+    for (const body of [{}, { email: 'x@y.z', extra: 1 }, { email: 5 }])
+      expect(
+        (await admin.send('/admin/participant-memory/erase', { body })).status,
+      ).toBe(400);
+    admin.memory.eraseParticipant.mockRejectedValueOnce(
+      new ProviderError('invalid_input', 'invalid_input'),
+    );
+    expect(
+      (
+        await admin.send('/admin/participant-memory/erase', {
+          body: { email: 'no-address' },
+        })
+      ).status,
+    ).toBe(400);
   });
 });

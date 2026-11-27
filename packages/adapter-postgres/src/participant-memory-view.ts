@@ -27,6 +27,7 @@ import {
   activeConsent,
   lockParticipant,
   memoryEnabled,
+  memoryOwner,
   retentionCutoff,
 } from './participant-memory-support.js';
 
@@ -65,7 +66,11 @@ export function createParticipantMemoryView(
   db: Database,
   bounds: ParticipantMemoryBounds,
 ) {
-  /** Shared gate: feature on, consent active, event in this organization, unexpired data only. */
+  /**
+   * Shared gate: feature on, consent active under the current wording, an event that
+   * is open for registration in this organization, an address that identifies one
+   * person, unexpired data only.
+   */
   const gate = async (
     tx: TransactionDatabase,
     identity: ParticipantMemoryIdentity,
@@ -76,11 +81,19 @@ export function createParticipantMemoryView(
     const [event] = await tx
       .select({ id: events.id, endsOn: events.endsOn })
       .from(events)
-      .where(and(eq(events.organizationId, org), eq(events.slug, eventSlug)));
+      .where(
+        and(
+          eq(events.organizationId, org),
+          eq(events.slug, eventSlug),
+          eq(events.status, 'open'),
+        ),
+      );
     if (!event) return null;
     const consent = await activeConsent(tx, org, identity.email);
+    // Ownership may have changed since the copy was made (someone else was named under this address).
+    const owner = consent ? await memoryOwner(tx, org, identity.email) : null;
     const cutoff = await retentionCutoff(tx, org, bounds);
-    return { org, event, consent, cutoff };
+    return { org, event, consent, owner, cutoff };
   };
   const ownedBy = (
     table:
@@ -131,6 +144,8 @@ export function createParticipantMemoryView(
           ownedBy(participantMemoryDocuments, identity, state.cutoff),
           // Valid on the event day: an expired document is never offered.
           gte(participantMemoryDocuments.validUntil, state.event.endsOn),
+          // Still backed by its source: a rejected document or a deleted entry takes the copy off the offer.
+          sql`exists (select 1 from entry_document ed join entry e on e.organization_id = ed.organization_id and e.id = ed.entry_id where ed.organization_id = ${participantMemoryDocuments.organizationId} and ed.object_id = ${participantMemoryDocuments.objectId} and ed.type_key = ${participantMemoryDocuments.typeKey} and ed.status = 'reviewed' and e.verification_status = 'verified' and e.deleted_at is null)`,
         ),
       );
   return {
@@ -147,7 +162,7 @@ export function createParticipantMemoryView(
           grantedAt: state.consent?.grantedAt.toISOString() ?? null,
           wordingVersion: participantMemoryConsentTerms.version,
         };
-        if (!state.consent) return { consent, offer: null };
+        if (!state.consent || !state.owner) return { consent, offer: null };
         const [profile] = await tx
           .select()
           .from(participantMemoryProfiles)
@@ -203,7 +218,7 @@ export function createParticipantMemoryView(
       return db.transaction(async (tx) => {
         await lockParticipant(tx, identity.organizationId, identity.email);
         const state = await gate(tx, identity, input.eventSlug);
-        if (!state?.consent) return null;
+        if (!state?.consent || !state.owner) return null;
         const taken: ParticipantMemoryTaken = {
           driver: {},
           vehicles: [],

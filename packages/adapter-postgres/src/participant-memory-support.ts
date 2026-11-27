@@ -1,9 +1,12 @@
 import { and, eq, sql } from 'drizzle-orm';
 import {
+  defaultParticipantMemoryRetention,
   effectiveParticipantMemoryRetentionDays,
+  participantMemoryConsentTerms,
   type ParticipantMemoryRetention,
 } from '@nennbox/core';
 import type { TransactionDatabase } from './database.js';
+import { people } from './schema/entries.js';
 import {
   participantMemoryAccess,
   participantMemoryConsents,
@@ -73,7 +76,47 @@ export async function retentionCutoff(
   );
   return new Date(now.getTime() - days * DAY_MS);
 }
-export async function activeConsent(
+/**
+ * Retention applied when a change of a source entry reaches the memory from code
+ * that has no repository at hand (verification, entry deletion). Set once by the
+ * repository of this process; the cleanup task gets its bounds passed explicitly.
+ */
+let processBounds: ParticipantMemoryRetention =
+  defaultParticipantMemoryRetention;
+export const setParticipantMemoryProcessBounds = (
+  bounds: ParticipantMemoryRetention,
+) => {
+  processBounds = bounds;
+};
+export const participantMemoryProcessBounds = () => processBounds;
+
+/**
+ * The one person this address belongs to in this organization: the only person
+ * of the organization whose own e-mail it is. Registrations made through someone
+ * else's address (child, colleague) carry that address too, so an address held by
+ * two persons identifies nobody; then nothing is remembered. Null in that case.
+ */
+export async function memoryOwner(
+  tx: TransactionDatabase,
+  organizationId: string,
+  email: string,
+): Promise<string | null> {
+  const holders = await tx
+    .select({ id: people.id })
+    .from(people)
+    .where(
+      and(
+        eq(people.organizationId, organizationId),
+        sql`${people.deletedAt} is null`,
+        sql`lower(trim(coalesce(${people.emailNormalized}, ${people.email}))) = ${email}`,
+      ),
+    )
+    .limit(2);
+  return holders.length === 1 ? holders[0]!.id : null;
+}
+
+/** Any open consent, whatever wording it was given under. */
+export async function openConsent(
   tx: TransactionDatabase,
   organizationId: string,
   email: string,
@@ -89,6 +132,17 @@ export async function activeConsent(
       ),
     );
   return row ?? null;
+}
+/** Consent that counts: open and given under the wording in force. An older wording needs a new consent. */
+export async function activeConsent(
+  tx: TransactionDatabase,
+  organizationId: string,
+  email: string,
+) {
+  const row = await openConsent(tx, organizationId, email);
+  return row && row.wordingVersion === participantMemoryConsentTerms.version
+    ? row
+    : null;
 }
 export async function hasStoredData(
   tx: TransactionDatabase,
@@ -112,12 +166,11 @@ export async function hasStoredData(
   }
   return false;
 }
-/** Deletes one participant's stored data in one organization; consent log and entries stay. */
-export async function purgeParticipant(
+/** Deletes the copies stored for one address in one organization; nothing else. Returns the row count. */
+export async function purgeParticipantData(
   tx: TransactionDatabase,
   organizationId: string,
   email: string,
-  options: { revokeSessions: boolean } = { revokeSessions: false },
 ) {
   let removed = 0;
   for (const table of [
@@ -134,6 +187,16 @@ export async function purgeParticipant(
       .returning({ email: table.email });
     removed += rows.length;
   }
+  return removed;
+}
+/** Deletes one participant's stored data in one organization; consent log and entries stay. */
+export async function purgeParticipant(
+  tx: TransactionDatabase,
+  organizationId: string,
+  email: string,
+  options: { revokeSessions: boolean } = { revokeSessions: false },
+) {
+  const removed = await purgeParticipantData(tx, organizationId, email);
   // Open links die with the data they would have opened; sessions only when asked.
   await tx
     .update(participantMemoryAccess)
@@ -150,15 +213,18 @@ export async function purgeParticipant(
     );
   return removed;
 }
+export type ConsentEndReason =
+  'withdrawn' | 'deleted' | 'disabled' | 'expired' | 'superseded' | 'erased';
+/** Ends the consent and drops the cleartext address; the keyed hash stays as proof. */
 export async function closeConsent(
   tx: TransactionDatabase,
   organizationId: string,
   email: string,
-  reason: 'withdrawn' | 'deleted' | 'disabled' | 'expired',
+  reason: ConsentEndReason,
 ) {
   await tx
     .update(participantMemoryConsents)
-    .set({ revokedAt: new Date(), revokedReason: reason })
+    .set({ revokedAt: new Date(), revokedReason: reason, email: null })
     .where(
       and(
         eq(participantMemoryConsents.organizationId, organizationId),

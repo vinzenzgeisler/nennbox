@@ -8,29 +8,30 @@ import {
   type RequestContext,
 } from '@nennbox/core';
 import type { Database, TransactionDatabase } from './database.js';
-import { enqueueMailOutbox } from './mail-outbox.js';
 import { entries, registrationGroups } from './schema/entries.js';
-import { participantMemoryAccess } from './participant-memory-schema.js';
 import {
-  activeConsent,
+  participantMemoryAccess,
+  participantMemoryRequests,
+} from './participant-memory-schema.js';
+import { retryOnConflict } from './transaction-retry.js';
+import {
   closeConsent,
-  hasStoredData,
   lockParticipant,
   memoryEnabled,
   purgeParticipant,
 } from './participant-memory-support.js';
 import {
-  deriveParticipantMemoryToken,
   hashParticipantMemoryToken,
   newParticipantMemoryNonce,
   participantMemoryTokenPattern,
 } from './participant-memory-token.js';
 
 const MINUTE = 60_000;
-const lifetimeMs = { access: 30 * MINUTE, delete: 24 * 60 * MINUTE } as const;
+export const lifetimeMs = {
+  access: 30 * MINUTE,
+  delete: 24 * 60 * MINUTE,
+} as const;
 const SESSION_MS = 60 * MINUTE;
-/** One link per address and purpose at a time: no mail flooding through the public form. */
-const RESEND_AFTER_MS = MINUTE;
 
 /** An e-mail counts as verified once an entry of one of its registration groups was e-mail-confirmed. */
 export async function verifiedEmailKnown(
@@ -64,30 +65,44 @@ export function createParticipantMemoryAccess(
   db: Database,
   options: { tokenKey: string; canonicalOrigin: CanonicalOrigin },
 ) {
-  const consume = (
+  /**
+   * Lock first, then the link: the participant lock is taken before any access row is
+   * touched, the same order every other path uses (a link request revokes rows under
+   * that lock). The row is looked up unlocked to learn whose lock to take, then
+   * consumed with its conditions checked again.
+   */
+  const consume = async (
     tx: TransactionDatabase,
     ctx: RequestContext,
     token: string,
     purpose: ParticipantMemoryAccessPurpose,
-  ) =>
-    tx
+  ) => {
+    const match = and(
+      eq(participantMemoryAccess.organizationId, ctx.organizationId),
+      eq(participantMemoryAccess.purpose, purpose),
+      eq(participantMemoryAccess.tokenHash, hashParticipantMemoryToken(token)),
+      sql`${participantMemoryAccess.consumedAt} is null`,
+      sql`${participantMemoryAccess.revokedAt} is null`,
+      gt(participantMemoryAccess.expiresAt, new Date()),
+    );
+    const [peek] = await tx
+      .select({ email: participantMemoryAccess.email })
+      .from(participantMemoryAccess)
+      .where(match);
+    if (!peek) return [];
+    await lockParticipant(tx, ctx.organizationId, peek.email);
+    return tx
       .update(participantMemoryAccess)
       .set({ consumedAt: new Date() })
-      .where(
-        and(
-          eq(participantMemoryAccess.organizationId, ctx.organizationId),
-          eq(participantMemoryAccess.purpose, purpose),
-          eq(
-            participantMemoryAccess.tokenHash,
-            hashParticipantMemoryToken(token),
-          ),
-          sql`${participantMemoryAccess.consumedAt} is null`,
-          sql`${participantMemoryAccess.revokedAt} is null`,
-          gt(participantMemoryAccess.expiresAt, new Date()),
-        ),
-      )
+      .where(match)
       .returning({ email: participantMemoryAccess.email });
+  };
   return {
+    /**
+     * The same work for every address, known or not: validate, write one queue row, answer.
+     * What this club knows about the address is decided later by the worker, so neither
+     * the answer nor its duration depends on it.
+     */
     async requestAccess(
       ctx: RequestContext,
       rawEmail: string,
@@ -101,103 +116,43 @@ export function createParticipantMemoryAccess(
         return;
       }
       if (!(await resolveCanonicalOrigin(options.canonicalOrigin, ctx))) return;
-      await db.transaction(async (tx) => {
-        if (!(await memoryEnabled(tx, ctx.organizationId))) return;
-        await lockParticipant(tx, ctx.organizationId, email);
-        const eligible =
-          purpose === 'access'
-            ? await verifiedEmailKnown(tx, ctx.organizationId, email)
-            : Boolean(await activeConsent(tx, ctx.organizationId, email)) ||
-              (await hasStoredData(tx, ctx.organizationId, email));
-        if (!eligible) return;
-        const [recent] = await tx
-          .select({ id: participantMemoryAccess.id })
-          .from(participantMemoryAccess)
-          .where(
-            and(
-              eq(participantMemoryAccess.organizationId, ctx.organizationId),
-              eq(participantMemoryAccess.email, email),
-              eq(participantMemoryAccess.purpose, purpose),
-              gt(
-                participantMemoryAccess.createdAt,
-                new Date(Date.now() - RESEND_AFTER_MS),
-              ),
-            ),
-          )
-          .limit(1);
-        if (recent) return;
-        await tx
-          .update(participantMemoryAccess)
-          .set({ revokedAt: new Date() })
-          .where(
-            and(
-              eq(participantMemoryAccess.organizationId, ctx.organizationId),
-              eq(participantMemoryAccess.email, email),
-              eq(participantMemoryAccess.purpose, purpose),
-              sql`${participantMemoryAccess.consumedAt} is null`,
-              sql`${participantMemoryAccess.revokedAt} is null`,
-            ),
-          );
-        const nonce = newParticipantMemoryNonce();
-        const token = deriveParticipantMemoryToken(
-          options.tokenKey,
-          purpose,
-          nonce,
-        );
-        const [row] = await tx
-          .insert(participantMemoryAccess)
-          .values({
-            organizationId: ctx.organizationId,
-            email,
-            purpose,
-            tokenHash: hashParticipantMemoryToken(token),
-            expiresAt: new Date(Date.now() + lifetimeMs[purpose]),
-          })
-          .returning({ id: participantMemoryAccess.id });
-        await enqueueMailOutbox(
-          db,
-          ctx.organizationId,
-          {
-            templateKey: `participant-memory-${purpose === 'access' ? 'link' : 'delete'}`,
-            templateVersion: 1,
-            locale,
-            recipient: email,
-            idempotencyKey: `participant-memory:${row!.id}`,
-            variables: { accessNonce: nonce },
-          },
-          tx,
-        );
-      });
+      await db
+        .insert(participantMemoryRequests)
+        .values({ organizationId: ctx.organizationId, email, purpose, locale })
+        .onConflictDoNothing();
     },
     async redeemAccess(ctx: RequestContext, token: string) {
       if (!participantMemoryTokenPattern.test(token)) return null;
-      return db.transaction(async (tx) => {
-        const [link] = await consume(tx, ctx, token, 'access');
-        if (!link || !(await memoryEnabled(tx, ctx.organizationId)))
-          return null;
-        const session = newParticipantMemoryNonce();
-        await tx.insert(participantMemoryAccess).values({
-          organizationId: ctx.organizationId,
-          email: link.email,
-          purpose: 'session',
-          tokenHash: hashParticipantMemoryToken(session),
-          expiresAt: new Date(Date.now() + SESSION_MS),
-        });
-        return session;
-      });
+      return retryOnConflict(() =>
+        db.transaction(async (tx) => {
+          const [link] = await consume(tx, ctx, token, 'access');
+          if (!link || !(await memoryEnabled(tx, ctx.organizationId)))
+            return null;
+          const session = newParticipantMemoryNonce();
+          await tx.insert(participantMemoryAccess).values({
+            organizationId: ctx.organizationId,
+            email: link.email,
+            purpose: 'session',
+            tokenHash: hashParticipantMemoryToken(session),
+            expiresAt: new Date(Date.now() + SESSION_MS),
+          });
+          return session;
+        }),
+      );
     },
     async redeemDelete(ctx: RequestContext, token: string) {
       if (!participantMemoryTokenPattern.test(token)) return false;
-      return db.transaction(async (tx) => {
-        const [link] = await consume(tx, ctx, token, 'delete');
-        if (!link) return false;
-        await lockParticipant(tx, ctx.organizationId, link.email);
-        await purgeParticipant(tx, ctx.organizationId, link.email, {
-          revokeSessions: true,
-        });
-        await closeConsent(tx, ctx.organizationId, link.email, 'deleted');
-        return true;
-      });
+      return retryOnConflict(() =>
+        db.transaction(async (tx) => {
+          const [link] = await consume(tx, ctx, token, 'delete');
+          if (!link) return false;
+          await purgeParticipant(tx, ctx.organizationId, link.email, {
+            revokeSessions: true,
+          });
+          await closeConsent(tx, ctx.organizationId, link.email, 'deleted');
+          return true;
+        }),
+      );
     },
     async session(
       ctx: RequestContext,

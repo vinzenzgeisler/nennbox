@@ -22,7 +22,9 @@ import {
   adminContext,
   memoryFixture,
   publicContext,
+  tokenKey,
 } from './participant-memory-fixture.js';
+import { participantMemoryEmailHash } from './participant-memory-token.js';
 
 const url = process.env.NENNBOX_TEST_DATABASE_URL;
 const version = participantMemoryConsentTerms.version;
@@ -209,6 +211,7 @@ describe.skipIf(!url)('participant memory PostgreSQL integration', () => {
     await fx.registration(t, { email });
     const memory = fx.repository();
     await memory.requestAccess(publicContext(t.org.id), email, 'access', 'de');
+    await fx.processRequests();
     expect(await fx.mailedToken(t.org.id, 'access', email)).toBeNull();
     expect(
       await memory.view(
@@ -249,8 +252,10 @@ describe.skipIf(!url)('participant memory PostgreSQL integration', () => {
       .select()
       .from(participantMemoryConsents)
       .where(eq(participantMemoryConsents.organizationId, t.org.id));
+    // The address is gone from the log; only the organization-bound hash remains as proof.
     expect(log).toMatchObject({
-      email,
+      email: null,
+      emailHash: participantMemoryEmailHash(tokenKey, t.org.id, email),
       wordingVersion: version,
       revokedReason: 'withdrawn',
     });
@@ -281,7 +286,7 @@ describe.skipIf(!url)('participant memory PostgreSQL integration', () => {
     // Simulate an inconsistent state: the consent is closed but the data was not purged.
     await handle.db
       .update(participantMemoryConsents)
-      .set({ revokedAt: new Date(), revokedReason: 'withdrawn' })
+      .set({ revokedAt: new Date(), revokedReason: 'withdrawn', email: null })
       .where(eq(participantMemoryConsents.organizationId, t.org.id));
     expect(await rows(participantMemoryProfiles, t.org.id)).toHaveLength(1);
     expect(await view(s)).toMatchObject({

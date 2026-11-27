@@ -3,18 +3,15 @@ import { and, desc, eq } from 'drizzle-orm';
 import {
   createRequestContext,
   organizationId,
-  permissionsForRole,
-  staticCanonicalOrigin,
   type ParticipantMemoryRepository,
 } from '@nennbox/core';
 import {
-  createDatabase,
   createEntryRepository,
   createParticipantMemoryRepository,
+  createParticipantMemoryRequestProcessor,
   deriveParticipantMemoryToken,
   emailOutbox,
   entries,
-  entryDocuments,
   entryPassengers,
   eventClasses,
   eventEntryDocumentTypes,
@@ -26,30 +23,21 @@ import {
   vehicles,
 } from './index.js';
 
-export const tokenKey = 'c'.repeat(64);
-export const origin = staticCanonicalOrigin('https://memory.example.test');
-export type TestDb = Awaited<ReturnType<typeof createDatabase>>['db'];
-
-export const publicContext = (org: string) =>
-  createRequestContext({
-    deploymentMode: 'community',
-    organizationId: organizationId(org),
-    permissions: new Set(),
-    capabilities: new Set(),
-    correlationId: crypto.randomUUID(),
-  });
-export const adminContext = (org: string, role: 'admin' | 'viewer' = 'admin') =>
-  createRequestContext({
-    deploymentMode: 'community',
-    organizationId: organizationId(org),
-    subject: {
-      issuer: 'https://id.example.test',
-      subject: crypto.randomUUID(),
-    },
-    permissions: permissionsForRole(role),
-    capabilities: new Set(),
-    correlationId: crypto.randomUUID(),
-  });
+export {
+  adminContext,
+  origin,
+  publicContext,
+  tokenKey,
+  type TestDb,
+} from './participant-memory-context.js';
+import { participantMemorySources } from './participant-memory-sources.js';
+import {
+  adminContext,
+  origin,
+  publicContext,
+  tokenKey,
+  type TestDb,
+} from './participant-memory-context.js';
 
 export function memoryFixture(db: TestDb, organizationIds: string[]) {
   const repository = (): ParticipantMemoryRepository =>
@@ -57,6 +45,9 @@ export function memoryFixture(db: TestDb, organizationIds: string[]) {
       tokenKey,
       canonicalOrigin: origin,
     });
+  /** What the worker does every minute: decides the queued link requests and queues the mails. */
+  const processRequests = () =>
+    createParticipantMemoryRequestProcessor(db, { tokenKey }).processPending();
   /** An organization with one event (ends on `endsOn`) that asks for a "licence" document. */
   const tenant = async (name: string, endsOn = '2030-06-02') => {
     const [org] = await db
@@ -77,6 +68,7 @@ export function memoryFixture(db: TestDb, organizationIds: string[]) {
           slug,
           orgaCodePrefix: 'MEM',
           name: `${name} ${slug}`,
+          status: 'open',
           startsOn,
           endsOn: ends,
         })
@@ -118,19 +110,45 @@ export function memoryFixture(db: TestDb, organizationIds: string[]) {
       event?: 'past' | 'next';
       passenger?: boolean;
       licenseNumber?: string;
+      /** The person's own address as the public form stores it; defaults to the contact address. */
+      personEmail?: string | null;
     },
   ) => {
     const where = t[input.event ?? 'past'];
     const org = t.org.id;
-    const [person] = await db
-      .insert(people)
-      .values({
-        organizationId: org,
-        firstName: input.firstName ?? 'Alex',
-        lastName: input.lastName ?? t.org.name,
-        country: 'DE',
-      })
-      .returning();
+    const own =
+      input.personEmail === undefined ? input.email : input.personEmail;
+    const personName = {
+      firstName: input.firstName ?? 'Alex',
+      lastName: input.lastName ?? t.org.name,
+    };
+    // Like the public form: the same address and name is the same person, a new name is a new person.
+    const [known] = own
+      ? await db
+          .select()
+          .from(people)
+          .where(
+            and(
+              eq(people.organizationId, org),
+              eq(people.emailNormalized, own.trim().toLowerCase()),
+              eq(people.firstName, personName.firstName),
+              eq(people.lastName, personName.lastName),
+            ),
+          )
+      : [];
+    const [person] = known
+      ? [known]
+      : await db
+          .insert(people)
+          .values({
+            organizationId: org,
+            ...personName,
+            ...(own
+              ? { email: own, emailNormalized: own.trim().toLowerCase() }
+              : {}),
+            country: 'DE',
+          })
+          .returning();
     const [vehicle] = await db
       .insert(vehicles)
       .values({
@@ -195,32 +213,6 @@ export function memoryFixture(db: TestDb, organizationIds: string[]) {
       });
     return { person: person!, vehicle: vehicle!, group: group!, entry };
   };
-  const document = (
-    t: Tenant,
-    entryId: string,
-    validUntil: string | null,
-    status: 'reviewed' | 'uploaded' = 'reviewed',
-  ) =>
-    db
-      .insert(entryDocuments)
-      .values({
-        organizationId: t.org.id,
-        eventId: t.past.event.id,
-        entryId,
-        typeKey: 'licence',
-        objectId: crypto.randomUUID(),
-        validUntil,
-        fileName: 'lizenz.pdf',
-        contentType: 'application/pdf',
-        size: 1234,
-        sha256: 'a'.repeat(64),
-        uploadedBy: 'test',
-        ...(status === 'reviewed'
-          ? { status, reviewedAt: new Date(), reviewedBy: 'office' }
-          : {}),
-      })
-      .returning()
-      .then((rows) => rows[0]!);
   /** The bearer the worker would put into the mail, rebuilt from the outbox nonce. */
   const mailedToken = async (
     org: string,
@@ -278,6 +270,7 @@ export function memoryFixture(db: TestDb, organizationIds: string[]) {
     const memory = repository();
     const ctx = publicContext(t.org.id);
     await memory.requestAccess(ctx, email, 'access', 'de');
+    await processRequests();
     const token = await mailedToken(t.org.id, 'access', email);
     const session = token ? await memory.redeemAccess(ctx, token) : null;
     const identity = session ? await memory.session(ctx, session) : null;
@@ -285,9 +278,10 @@ export function memoryFixture(db: TestDb, organizationIds: string[]) {
   };
   return {
     repository,
+    processRequests,
     tenant,
     registration,
-    document,
+    ...participantMemorySources(db),
     mailedToken,
     enableAndSignIn,
     signIn,

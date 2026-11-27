@@ -11,6 +11,7 @@ import {
 } from '@nennbox/core';
 import type { Database } from './database.js';
 import { verifiedEmailKnown } from './participant-memory-access.js';
+import { participantMemoryEmailHash } from './participant-memory-token.js';
 import { captureParticipantMemory } from './participant-memory-capture.js';
 import {
   participantMemoryAccess,
@@ -22,12 +23,12 @@ import {
   participantMemoryVehicles,
 } from './participant-memory-schema.js';
 import {
-  activeConsent,
   closeConsent,
   loadSettings,
   lockOrganization,
   lockParticipant,
   memoryEnabled,
+  openConsent,
   purgeParticipant,
 } from './participant-memory-support.js';
 
@@ -45,6 +46,7 @@ export const consentWordingHash = () =>
 export function createParticipantMemoryConsent(
   db: Database,
   bounds: ParticipantMemoryBounds,
+  tokenKey: string,
 ) {
   const readSettings = async (
     tx: Parameters<Parameters<Database['transaction']>[0]>[0],
@@ -134,7 +136,11 @@ export function createParticipantMemoryConsent(
             ).length;
           await tx
             .update(participantMemoryConsents)
-            .set({ revokedAt: new Date(), revokedReason: 'disabled' })
+            .set({
+              revokedAt: new Date(),
+              revokedReason: 'disabled',
+              email: null,
+            })
             .where(
               and(
                 eq(participantMemoryConsents.organizationId, org),
@@ -169,10 +175,15 @@ export function createParticipantMemoryConsent(
           !(await verifiedEmailKnown(tx, org, email))
         )
           return false;
-        if (!(await activeConsent(tx, org, email)))
+        const open = await openConsent(tx, org, email);
+        // A consent given under an older wording does not cover the new text: close it, ask anew.
+        if (open && open.wordingVersion !== wordingVersion)
+          await closeConsent(tx, org, email, 'superseded');
+        if (!open || open.wordingVersion !== wordingVersion)
           await tx.insert(participantMemoryConsents).values({
             organizationId: org,
             email,
+            emailHash: participantMemoryEmailHash(tokenKey, org, email),
             wordingVersion,
             wordingHash: consentWordingHash(),
           });

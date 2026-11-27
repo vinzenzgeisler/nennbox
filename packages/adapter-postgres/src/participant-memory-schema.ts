@@ -51,7 +51,10 @@ export const participantMemoryConsents = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     organizationId: organizationColumn(),
-    email: text('email').notNull(),
+    /** Cleartext only while the consent is active; closing it removes the address, the keyed hash stays as proof. */
+    email: text('email'),
+    /** Organization-bound HMAC of the address (same key as the invitation tokens). */
+    emailHash: text('email_hash'),
     wordingVersion: text('wording_version').notNull(),
     wordingHash: text('wording_hash').notNull(),
     grantedAt: timestamp('granted_at', { withTimezone: true })
@@ -70,7 +73,15 @@ export const participantMemoryConsents = pgTable(
     ),
     check(
       'participant_memory_consent_revoked_check',
-      sql`(${t.revokedAt} is null and ${t.revokedReason} is null) or (${t.revokedAt} is not null and ${t.revokedReason} in ('withdrawn','deleted','disabled','expired'))`,
+      sql`(${t.revokedAt} is null and ${t.revokedReason} is null) or (${t.revokedAt} is not null and ${t.revokedReason} in ('withdrawn','deleted','disabled','expired','superseded','erased'))`,
+    ),
+    check(
+      'participant_memory_consent_address_check',
+      sql`(${t.revokedAt} is null and ${t.email} is not null) or (${t.revokedAt} is not null and ${t.email} is null)`,
+    ),
+    index('participant_memory_consent_hash_idx').on(
+      t.organizationId,
+      t.emailHash,
     ),
   ],
 );
@@ -139,7 +150,7 @@ export const participantMemoryVehicles = pgTable(
   ],
 );
 
-/** The co-driver's own data, reduced to identification and contact. */
+/** The co-driver as a reference only: name and e-mail, nothing else of a person who gave no consent. */
 export const participantMemoryPassengers = pgTable(
   'participant_memory_passenger',
   {
@@ -148,9 +159,6 @@ export const participantMemoryPassengers = pgTable(
     firstName: text('first_name').notNull(),
     lastName: text('last_name').notNull(),
     passengerEmail: text('passenger_email'),
-    dateOfBirth: date('date_of_birth'),
-    country: text('country'),
-    phone: text('phone'),
     capturedAt: capturedAt(),
   },
   (t) => [
@@ -225,6 +233,67 @@ export const participantMemoryAccess = pgTable(
     check(
       'participant_memory_access_hash_check',
       sql`${t.tokenHash} ~ '^[a-f0-9]{64}$'`,
+    ),
+  ],
+);
+
+/**
+ * Link requests wait here, so the public answer never depends on what this club knows:
+ * the request path writes exactly one row, the worker decides and mails. Rows live seconds.
+ */
+export const participantMemoryRequests = pgTable(
+  'participant_memory_request',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: organizationColumn(),
+    email: text('email').notNull(),
+    purpose: text('purpose').notNull(),
+    locale: text('locale').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique('participant_memory_request_unique').on(
+      t.organizationId,
+      t.email,
+      t.purpose,
+    ),
+    index('participant_memory_request_created_idx').on(t.createdAt),
+    check(
+      'participant_memory_request_purpose_check',
+      sql`${t.purpose} in ('access','delete')`,
+    ),
+    check(
+      'participant_memory_request_locale_check',
+      sql`${t.locale} in ('de','en')`,
+    ),
+  ],
+);
+
+/** Who erased whose memory and when. The address appears only as organization-bound hash. */
+export const participantMemoryAudit = pgTable(
+  'participant_memory_audit',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: organizationColumn(),
+    action: text('action').notNull(),
+    emailHash: text('email_hash').notNull(),
+    actorIssuer: text('actor_issuer').notNull(),
+    actorSubject: text('actor_subject').notNull(),
+    removedRows: integer('removed_rows').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index('participant_memory_audit_org_idx').on(
+      t.organizationId,
+      t.occurredAt,
+    ),
+    check(
+      'participant_memory_audit_action_check',
+      sql`${t.action} in ('erased')`,
     ),
   ],
 );

@@ -33,3 +33,23 @@ export function deriveParticipantMemoryToken(
 }
 export const newParticipantMemoryNonce = () =>
   randomBytes(32).toString('base64url');
+
+/**
+ * Proof that an address once consented, without keeping the address: an HMAC
+ * bound to the organization, keyed like the invitation tokens. Whoever holds the
+ * key and the address can verify it; the database alone cannot read the address back.
+ */
+export function participantMemoryEmailHash(
+  key: string | undefined,
+  organizationId: string,
+  email: string,
+): string {
+  if (!key || !/^[a-f0-9]{64}$/i.test(key))
+    throw new ProviderError(
+      'not_configured',
+      'Participant memory token key is not configured',
+    );
+  return createHmac('sha256', Buffer.from(key, 'hex'))
+    .update(`participant-memory:email:${organizationId}:${email}`)
+    .digest('hex');
+}

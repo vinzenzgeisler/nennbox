@@ -24,6 +24,7 @@ import { createMailOutboxTask } from './mail.js';
 import { createModuleTasks } from './modules.js';
 import { createRegistrationUploadCleanupTask } from './registration-upload-cleanup.js';
 import { createParticipantMemoryCleanupTask } from './participant-memory-cleanup.js';
+import { createParticipantMemoryRequestsTask } from './participant-memory-requests.js';
 import { createRefundRetryTask } from './refund-retry.js';
 import { createWaitlistDeadlineTask } from './waitlist-deadlines.js';
 
@@ -139,6 +140,14 @@ export function createProductWorker(
         ? { retention: options.participantMemoryRetention }
         : {}),
     }),
+    ...(mail?.invitationTokenKey
+      ? {
+          participant_memory_requests: createParticipantMemoryRequestsTask({
+            db,
+            tokenKey: mail.invitationTokenKey,
+          }),
+        }
+      : {}),
   };
   const waitlistTasks = {
     waitlist_deadlines: createWaitlistDeadlineTask({
