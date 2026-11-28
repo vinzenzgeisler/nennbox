@@ -58,3 +58,5 @@ export type {
 export * from './team.js';
 
 export * from './team-email.js';
+
+export * from './participant-memory.js';

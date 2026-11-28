@@ -108,6 +108,12 @@ export {
 } from './schema/workbasket.js';
 
 export * from './team-schema.js';
+export * from './participant-memory-schema.js';
+export { createParticipantMemoryRepository } from './participant-memory.js';
+export { createParticipantMemoryCleanup } from './participant-memory-cleanup.js';
+export { createParticipantMemoryRequestProcessor } from './participant-memory-requests.js';
+export { refreshParticipantMemoryForGroup } from './participant-memory-capture.js';
+export { deriveParticipantMemoryToken } from './participant-memory-token.js';
 export { createTeamRepository } from './team.js';
 
 export { deriveTeamInvitationToken } from './team-token.js';

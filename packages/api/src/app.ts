@@ -1,4 +1,6 @@
 import { registerTeamRoutes } from './routes/team.js';
+import { registerParticipantMemoryRoutes } from './routes/participant-memory.js';
+import { registerParticipantMemoryAdminRoutes } from './routes/participant-memory-admin.js';
 import { registerDriverPortalRoutes } from './routes/driver-portal.js';
 import { Hono } from 'hono';
 import { requestBodyLimit } from './request-body-limit.js';
@@ -95,6 +97,7 @@ export function createApp(deps: ApiDeps) {
   app.get('/auth/config', (c) => c.json({ oidc: deps.oidcClient ?? null }));
   registerOrganizationRoutes(routes);
   registerTeamRoutes(routes);
+  registerParticipantMemoryAdminRoutes(routes);
   registerEventsRoutes(routes);
   registerEntriesRoutes(routes);
   registerPassengerAdminRoutes(routes);
@@ -107,6 +110,7 @@ export function createApp(deps: ApiDeps) {
     registerPublicRegistrationRoutes(routes, registration);
     registerPassengerPublicRoutes(routes, registration);
     registerDriverPortalRoutes(routes, registration);
+    registerParticipantMemoryRoutes(routes, registration);
     registerPublicFormRoute(routes, registration.service);
     registerRegistrationResumeRoutes(routes, registration);
   } else registerPublicEventFormRoute(routes);

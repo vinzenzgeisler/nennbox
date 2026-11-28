@@ -379,6 +379,20 @@
       "when": 1795723404892,
       "tag": "0053_entry_status_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1795769930544,
+      "tag": "0054_participant_memory",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1795797853414,
+      "tag": "0055_participant_memory_person_scope",
+      "breakpoints": true
     }
   ]
 }

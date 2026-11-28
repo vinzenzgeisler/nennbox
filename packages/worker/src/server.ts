@@ -11,6 +11,7 @@ import { staticCanonicalOrigin } from '@nennbox/core';
 import { createProductWorker, type ProductWorkerEdition } from './product.js';
 import { readStorageConfiguration } from './community-storage.js';
 import { parseRegistrationUploadRetentionDays } from './registration-upload-cleanup.js';
+import { parseParticipantMemoryRetention } from './participant-memory-cleanup.js';
 
 const env = process.env;
 if (
@@ -101,6 +102,7 @@ const { taskList } = createProductWorker({
   registrationUploadRetentionDays: parseRegistrationUploadRetentionDays(
     env.REGISTRATION_UPLOAD_RETENTION_DAYS,
   ),
+  participantMemoryRetention: parseParticipantMemoryRetention(env),
   ...(smtp && canonicalBaseUrl
     ? {
         mail: {
@@ -117,6 +119,10 @@ const { taskList } = createProductWorker({
 });
 const crontab = [
   ...(storage ? ['*/5 * * * * registration_upload_cleanup'] : []),
+  '17 * * * * participant_memory_cleanup',
+  ...(env.TEAM_INVITATION_TOKEN_KEY && smtp && canonicalBaseUrl
+    ? ['* * * * * participant_memory_requests']
+    : []),
   '* * * * * waitlist_deadlines',
   ...(paymentProvider ? ['*/5 * * * * payment_refund_retry'] : []),
 ];

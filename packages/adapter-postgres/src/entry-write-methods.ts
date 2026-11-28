@@ -6,6 +6,7 @@ import type { Database } from './database.js';
 import type { EntryRepository } from '@nennbox/core';
 import { mapEntry } from './entry-projection.js';
 import { withAllocatedOrgaCode } from './orga-code.js';
+import { reconcileParticipantMemory } from './participant-memory-reconcile.js';
 
 export function createEntryWriteMethods(
   db: Database,
@@ -44,19 +45,25 @@ export function createEntryWriteMethods(
           return mapEntry(row!);
         },
       ),
-    softDelete: async (ctx, id, reason) => {
-      const [row] = await db
-        .update(entries)
-        .set({ deletedAt: new Date(), deletionReason: reason })
-        .where(
-          and(
-            eq(entries.organizationId, ctx.organizationId),
-            eq(entries.id, id),
-            sql`${entries.deletedAt} is null`,
-          ),
-        )
-        .returning();
-      return row ? mapEntry(row) : null;
-    },
+    softDelete: async (ctx, id, reason) =>
+      // A deleted entry must not live on as a remembered copy: reconcile in the same transaction.
+      db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(entries)
+          .set({ deletedAt: new Date(), deletionReason: reason })
+          .where(
+            and(
+              eq(entries.organizationId, ctx.organizationId),
+              eq(entries.id, id),
+              sql`${entries.deletedAt} is null`,
+            ),
+          )
+          .returning();
+        if (row)
+          await reconcileParticipantMemory(tx, ctx.organizationId, {
+            entryId: id,
+          });
+        return row ? mapEntry(row) : null;
+      }),
   };
 }
