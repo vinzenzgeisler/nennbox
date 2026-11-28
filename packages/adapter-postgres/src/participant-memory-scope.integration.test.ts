@@ -15,7 +15,6 @@ import {
   participantMemoryProfiles,
   participantMemoryVehicles,
   refreshParticipantMemoryForGroup,
-  registrationGroups,
 } from './index.js';
 import { memoryFixture } from './participant-memory-fixture.js';
 
